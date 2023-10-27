@@ -173,9 +173,7 @@ def return_(machine: Machine, instruction: Instruction) -> None:
     results = [machine.pop() for _ in range(n)]
     # Pop everything up to and including the frame. This will also include
     # the function's label. Basically skip all nesting levels.
-    frame = machine.pop()
-    while not isinstance(frame, values.Frame):
-        frame = machine.pop()
+    machine.pop_to_frame()
     # Push the results back on the stack
     for v in reversed(results):
         machine.push(v)

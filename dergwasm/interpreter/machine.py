@@ -77,6 +77,10 @@ class Machine(abc.ABC):
         """Pushes the frame onto the stack and sets it as the current frame."""
 
     @abc.abstractmethod
+    def pop_to_frame(self) -> None:
+        """Pops from the stack up to and including frame, set that as current frame."""
+
+    @abc.abstractmethod
     def add_func(self, func: FuncInstance) -> int:
         """Adds a function to the machine and returns its index."""
 

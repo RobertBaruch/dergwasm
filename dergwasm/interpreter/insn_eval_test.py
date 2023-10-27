@@ -11,7 +11,7 @@ from dergwasm.interpreter import insn_eval
 from dergwasm.interpreter.insn import Instruction
 from dergwasm.interpreter.values import Value, Frame, ValueType
 from dergwasm.interpreter.machine import ModuleFuncInstance
-from dergwasm.interpreter.testing.util import data_drop, i32_const, i32_add, i32_store
+from dergwasm.interpreter.testing.util import call, data_drop, i32_const, i32_add, i32_store
 from dergwasm.interpreter.testing.util import memory_init, nop, ret, drop
 from dergwasm.interpreter.testing.util import br, br_table, br_if, i32_block
 from dergwasm.interpreter.testing.util import i32_loop, if_, if_else
@@ -38,7 +38,25 @@ class InsnEvalTest(parameterized.TestCase):
             list(instructions),
         )
         func.body = flatten_instructions(func.body, 0)
-        return self.machine.add_func(func)
+        funcidx = self.machine.add_func(func)
+        self.module_inst.funcaddrs.append(funcidx)
+        return funcidx
+
+    def _add_i32_i32_func(self, *instructions: Instruction) -> int:
+        """Add an i32 function to the machine that takes an i32 argument.
+
+        There is also one i32 local var.
+        """
+        func = ModuleFuncInstance(
+            FuncType([ValueType.I32], [ValueType.I32]),
+            self.module_inst,
+            [ValueType.I32],
+            list(instructions),
+        )
+        func.body = flatten_instructions(func.body, 0)
+        funcidx = self.machine.add_func(func)
+        self.module_inst.funcaddrs.append(funcidx)
+        return funcidx
 
     def add_func_type(self, args: list[ValueType], returns: list[ValueType]) -> int:
         self.module_inst.func_types.append(FuncType(args, returns))
@@ -608,6 +626,41 @@ class InsnEvalTest(parameterized.TestCase):
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 11))
+
+    def test_call(self):
+        func_idx1 = self._add_i32_func(i32_const(1))
+        func_idx = self._add_i32_func(
+            call(func_idx1),
+        )
+        self.machine.invoke_func(func_idx)
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
+
+    def test_call_and_return(self):
+        func_idx1 = self._add_i32_func(i32_const(1), ret())
+        func_idx = self._add_i32_func(
+            call(func_idx1),
+        )
+        self.machine.invoke_func(func_idx)
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
+
+    def test_call_args(self):
+        func_idx1 = self._add_i32_i32_func(
+            local_get(0),
+            i32_const(1),
+            i32_add(),
+        )
+        func_idx = self._add_i32_func(
+            i32_const(2),
+            call(func_idx1),
+        )
+        self.machine.invoke_func(func_idx)
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 3))
 
 
 if __name__ == "__main__":

@@ -57,14 +57,10 @@ class MachineImpl(machine.Machine):
         results = [self.pop() for _ in range(n)]
         # There might be a label here, depending on whether we fell off the end.
         # A BR will have slid the label out, but falling off the end will not have.
-        frame = self.pop()
-        if isinstance(frame, values.Label):
-            frame = self.pop()
-            assert isinstance(frame, values.Frame)
+        self.pop_to_frame()
         # Push the results back on the stack
         for v in reversed(results):
             self.push(v)
-        self.current_frame = frame.prev_frame
 
     def execute_expr(self, expr: list[Instruction]) -> list[Instruction]:
         raise NotImplementedError()
@@ -78,6 +74,12 @@ class MachineImpl(machine.Machine):
         frame.prev_frame = self.current_frame
         self.current_frame = frame
         self.push(frame)
+
+    def pop_to_frame(self) -> None:
+        frame = self.pop()
+        while not isinstance(frame, values.Frame):
+            frame = self.pop()
+        self.current_frame = frame
 
     def add_func(self, func: machine.FuncInstance) -> int:
         self.funcs.append(func)
@@ -97,18 +99,6 @@ class MachineImpl(machine.Machine):
         self.push(values.Label(len(func_type.results), len(f.body)))
 
         self.execute_seq(f.body)
-
-        # We didn't execute a RETURN instruction (or fall off the end), so we returned
-        # via a BR instruction. That means we slid out the label, but not the frame.
-        # So we do that here.
-        # f = self.get_current_frame()
-        # n = f.arity
-        # results = [self.pop() for _ in range(n)]
-        # frame = self.pop()
-        # assert isinstance(frame, values.Frame)
-        # # Push the results back on the stack
-        # for v in reversed(results):
-        #     self.push(v)
 
     def add_table(self, table: machine.TableInstance) -> int:
         self.tables.append(table)

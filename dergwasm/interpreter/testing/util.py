@@ -126,3 +126,7 @@ def memory_init(dataidx: int, memidx: int) -> Instruction:
 
 def data_drop(dataidx: int) -> Instruction:
     return Instruction(InstructionType.DATA_DROP, [dataidx], 0, 0)
+
+
+def call(funcidx: int) -> Instruction:
+    return Instruction(InstructionType.CALL, [funcidx], 0, 0)

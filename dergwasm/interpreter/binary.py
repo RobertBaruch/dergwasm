@@ -269,6 +269,7 @@ def flatten_instructions(
             assert isinstance(i.operands[0], insn.Block)
             block_insns = [i]
             block_insns.extend(flatten_instructions(i.operands[0].instructions, pc + 1))
+            i.operands[0].instructions = []
             flattened_instructions.extend(block_insns)
             pc += len(block_insns)
             # Where to go on breakout.
@@ -278,6 +279,8 @@ def flatten_instructions(
             assert isinstance(i.operands[0], insn.Block)
             block_insns = [i]
             block_insns.extend(flatten_instructions(i.operands[0].instructions, pc + 1))
+            i.operands[0].instructions = []
+            i.operands[0].else_instructions = []
             flattened_instructions.extend(block_insns)
             # Where to go on breakout.
             i.continuation_pc = pc
@@ -292,10 +295,12 @@ def flatten_instructions(
             # If END, else_continuation_pc = END + 1.
             # IF ELSE, else_continuation_pc = ELSE + 1.
             true_insns = flatten_instructions(i.operands[0].instructions, pc + 1)
+            i.operands[0].instructions = []
             pc += len(true_insns) + 1
             i.else_continuation_pc = pc
 
             false_insns = flatten_instructions(i.operands[0].else_instructions, pc)
+            i.operands[0].else_instructions = []
             pc += len(false_insns)
             i.continuation_pc = pc
 
