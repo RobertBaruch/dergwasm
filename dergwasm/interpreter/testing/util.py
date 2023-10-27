@@ -39,7 +39,16 @@ def end() -> Instruction:
     return Instruction(InstructionType.END, [], 0, 0)
 
 
+def void_block(*instructions: Instruction) -> Instruction:
+    """A block that returns nothing."""
+    ended_instructions = list(instructions) + [end()]
+    return Instruction(
+        InstructionType.BLOCK, [Block(None, ended_instructions, [])], 0, 0
+    )
+
+
 def i32_block(*instructions: Instruction) -> Instruction:
+    """A block that returns an I32."""
     ended_instructions = list(instructions) + [end()]
     return Instruction(
         InstructionType.BLOCK, [Block(ValueType.I32, ended_instructions, [])], 0, 0
@@ -77,3 +86,19 @@ def i32_loop(func_type_idx: int, *instructions: Instruction) -> Instruction:
         0,
         0,
     )
+
+
+def local_tee(localidx: int) -> Instruction:
+    return Instruction(InstructionType.LOCAL_TEE, [localidx], 0, 0)
+
+
+def local_set(localidx: int) -> Instruction:
+    return Instruction(InstructionType.LOCAL_SET, [localidx], 0, 0)
+
+
+def local_get(localidx: int) -> Instruction:
+    return Instruction(InstructionType.LOCAL_GET, [localidx], 0, 0)
+
+
+def i32_lt_u() -> Instruction:
+    return Instruction(InstructionType.I32_LT_U, [], 0, 0)

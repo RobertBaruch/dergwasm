@@ -407,7 +407,9 @@ def i32_lt_s(machine: Machine, operands: EvalOperands) -> None:
 
 
 def i32_lt_u(machine: Machine, operands: EvalOperands) -> None:
-    raise NotImplementedError
+    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    machine.push(values.Value(values.ValueType.I32, int(c1 < c2)))
 
 
 def i32_gt_s(machine: Machine, operands: EvalOperands) -> None:

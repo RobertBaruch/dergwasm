@@ -8,10 +8,14 @@ from dergwasm.interpreter.binary import FuncType, Module, flatten_instructions
 from dergwasm.interpreter import machine_impl
 from dergwasm.interpreter import module_instance
 from dergwasm.interpreter import insn_eval
-from dergwasm.interpreter.insn import Block, Instruction, InstructionType
+from dergwasm.interpreter.insn import Instruction
 from dergwasm.interpreter.values import Value, Frame, ValueType
 from dergwasm.interpreter.machine import ModuleFuncInstance
-from dergwasm.interpreter.testing.util import i32_const, i32_add, nop, ret, drop, br, br_table, br_if, end, i32_block, if_, else_, if_else
+from dergwasm.interpreter.testing.util import i32_const, i32_add, nop, ret, drop
+from dergwasm.interpreter.testing.util import br, br_table, br_if, i32_block
+from dergwasm.interpreter.testing.util import i32_loop, if_, if_else
+from dergwasm.interpreter.testing.util import local_get, local_set, local_tee
+from dergwasm.interpreter.testing.util import i32_lt_u, void_block
 
 
 class InsnEvalTest(parameterized.TestCase):
@@ -21,26 +25,22 @@ class InsnEvalTest(parameterized.TestCase):
     starting_stack_depth: int
 
     def _add_i32_func(self, *instructions: Instruction) -> int:
+        """Add an i32 function to the machine that takes no arguments.
+
+        There is also one i32 local var.
+        """
         func = ModuleFuncInstance(
             FuncType([], [ValueType.I32]),
             self.module_inst,
-            [],
+            [ValueType.I32],
             list(instructions),
         )
         func.body = flatten_instructions(func.body, 0)
         return self.machine.add_func(func)
 
-    def i32_loop(self, *instructions: Instruction) -> Instruction:
-        # An i32_loop will take in an I32 and return an I32.
-        self.module_inst.func_types.append(FuncType([ValueType.I32], [ValueType.I32]))
-        func_type_idx = len(self.module_inst.func_types) - 1
-        ended_instructions = list(instructions) + [end()]
-        return Instruction(
-            InstructionType.LOOP,
-            [Block(func_type_idx, ended_instructions, [end()])],
-            0,
-            0,
-        )
+    def add_func_type(self, args: list[ValueType], returns: list[ValueType]) -> int:
+        self.module_inst.func_types.append(FuncType(args, returns))
+        return len(self.module_inst.func_types) - 1
 
     def _stack_depth(self) -> int:
         return self.machine.stack_.depth()
@@ -342,6 +342,26 @@ class InsnEvalTest(parameterized.TestCase):
         self.assertEqual(self._stack_depth(), self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
 
+    @parameterized.named_parameters(
+        ("1 < 2 is True", 1, 2, Value(ValueType.I32, 1)),
+        ("2 < 1 is False", 2, 1, Value(ValueType.I32, 0)),
+        ("1 < 1 is False", 1, 1, Value(ValueType.I32, 0)),
+        ("-2 < -1 unsigned is True", -2, -1, Value(ValueType.I32, 1)),
+        ("-1 < -2 unsigned is False", -1, -2, Value(ValueType.I32, 0)),
+        ("-1 < 1 unsigned is False", -1, 1, Value(ValueType.I32, 0)),
+        ("1 < -1 unsigned is True", 1, -1, Value(ValueType.I32, 1)),
+    )
+    def test_i32_lt_u(self, c1: int, c2: int, expected: Value):
+        func_idx = self._add_i32_func(
+            i32_const(c1),
+            i32_const(c2),
+            i32_lt_u(),
+        )
+        self.machine.invoke_func(func_idx)
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        self.assertEqual(self.machine.pop(), expected)
+
     def test_block_end(self):
         func_idx = self._add_i32_func(i32_block(i32_const(1)))
         self.machine.invoke_func(func_idx)
@@ -494,9 +514,11 @@ class InsnEvalTest(parameterized.TestCase):
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected_result))
 
     def test_loop_one_iterations(self):
+        func_type_idx = self.add_func_type([ValueType.I32], [ValueType.I32])
         func_idx = self._add_i32_func(
             i32_const(1),
-            self.i32_loop(
+            i32_loop(
+                func_type_idx,
                 i32_const(2),
                 i32_add(),
             ),
@@ -507,9 +529,11 @@ class InsnEvalTest(parameterized.TestCase):
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 3))
 
     def test_loop_return(self):
+        func_type_idx = self.add_func_type([ValueType.I32], [ValueType.I32])
         func_idx = self._add_i32_func(
             i32_const(1),
-            self.i32_loop(
+            i32_loop(
+                func_type_idx,
                 i32_const(2),
                 i32_add(),
                 ret(),
@@ -521,10 +545,12 @@ class InsnEvalTest(parameterized.TestCase):
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 3))
 
     def test_loop_br_1(self):
+        func_type_idx = self.add_func_type([ValueType.I32], [ValueType.I32])
         func_idx = self._add_i32_func(
             i32_block(
                 i32_const(1),
-                self.i32_loop(
+                i32_loop(
+                    func_type_idx,
                     i32_const(2),
                     i32_add(),
                     br(1),
@@ -535,6 +561,53 @@ class InsnEvalTest(parameterized.TestCase):
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 3))
+
+    def test_loop_continue(self):
+        func_type_idx = self.add_func_type([], [])
+        func_idx = self._add_i32_func(
+            i32_const(1),
+            local_set(0),
+            i32_loop(
+                func_type_idx,
+                local_get(0),
+                i32_const(2),
+                i32_add(),
+                local_tee(0),
+                i32_const(10),
+                i32_lt_u(),
+                br_if(0),
+            ),
+            local_get(0),
+        )
+        self.machine.invoke_func(func_idx)
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 11))
+
+    def test_loop_continue_from_inner_block(self):
+        func_type_idx = self.add_func_type([], [])
+        func_idx = self._add_i32_func(
+            i32_const(1),
+            local_set(0),
+            i32_loop(
+                func_type_idx,
+                local_get(0),
+                i32_const(2),
+                i32_add(),
+                local_set(0),
+                void_block(
+                    local_get(0),
+                    i32_const(10),
+                    i32_lt_u(),
+                    br_if(1),
+                ),
+            ),
+            local_get(0),
+        )
+        self.machine.invoke_func(func_idx)
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 11))
 
 
 if __name__ == "__main__":
