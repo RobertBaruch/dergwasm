@@ -2,17 +2,17 @@
 
 from typing import Type
 
-from dergwasm.interpreter.binary import FuncType
 from dergwasm.interpreter import stack
 from dergwasm.interpreter import machine
 from dergwasm.interpreter import values
-from dergwasm.interpreter.insn import Instruction, InstructionType, Block
+from dergwasm.interpreter.insn import Instruction, InstructionType
 from dergwasm.interpreter import insn_eval
 
 
 class MachineImpl(machine.Machine):
     """The state of the machine."""
 
+    current_frame: values.Frame | None
     stack_: stack.Stack
     funcs: list[machine.FuncInstance]
     tables: list[machine.TableInstance]
@@ -21,6 +21,7 @@ class MachineImpl(machine.Machine):
     datas: list[bytes]
 
     def __init__(self) -> None:
+        self.current_frame = None
         self.stack_ = stack.Stack()
         self.funcs = []
         self.tables = []
@@ -37,109 +38,9 @@ class MachineImpl(machine.Machine):
     def peek(self) -> values.StackValue:
         return self.stack_.data[-1]
 
-    def _block(self, block: Block, continuation_pc: int) -> None:
-        f = self.get_current_frame()
-        block_func_type = block.block_type
-        if isinstance(block_func_type, int):
-            block_func_type = f.module.func_types[block_func_type]
-        elif block_func_type is not None:
-            block_func_type = FuncType([], [block_func_type])
-        else:
-            block_func_type = FuncType([], [])
-
-        # Create a label for the block. Its continuation is the end of the
-        # block.
-        label = values.Label(len(block_func_type.results), continuation_pc)
-        # Slide the label under the params.
-        block_vals = [self.pop() for _ in block_func_type.parameters]
-        self.push(label)
-        for v in reversed(block_vals):
-            self.push(v)
-
-    def _loop(self, block: Block, continuation_pc: int) -> int:
-        f = self.get_current_frame()
-        block_func_type = block.block_type
-        if isinstance(block_func_type, int):
-            block_func_type = f.module.func_types[block_func_type]
-        elif block_func_type is not None:
-            block_func_type = FuncType([], [block_func_type])
-        else:
-            block_func_type = FuncType([], [])
-
-        label = values.Label(len(block_func_type.parameters), continuation_pc)
-        # Slide the label under the params.
-        block_vals = [self.pop() for _ in block_func_type.parameters]
-        self.push(label)
-        for v in reversed(block_vals):
-            self.push(v)
-
-    def _else(self) -> int:
-        # End of block reached without jump. Slide the first label out of the
-        # stack, and then jump to after its end.
-        stack_values = []
-        value = self.pop()
-        while not isinstance(value, values.Label):
-            stack_values.append(value)
-            value = self.pop()
-
-        label = value
-        print(f"END, label encountered: {label}")
-        # Push the vals back on the stack
-        while stack_values:
-            self.push(stack_values.pop())
-        return label.continuation
-
-    def _end(self) -> None:
-        # End of block reached without jump. Slide the first label out of the
-        # stack, and then jump to after its end.
-        stack_values = []
-        value = self.pop()
-        while not isinstance(value, values.Label):
-            stack_values.append(value)
-            value = self.pop()
-
-        label = value
-        print(f"END, label encountered: {label}")
-        # Push the vals back on the stack
-        while stack_values:
-            self.push(stack_values.pop())
-
-    def _return(self) -> None:
-        f = self.get_current_frame()
-        n = f.arity
-        results = [self.pop() for _ in range(n)]
-        # Pop everything up to and including the frame. This will also include
-        # the function's label. Basically skip all nesting levels.
-        frame = self.pop()
-        while not isinstance(frame, values.Frame):
-            frame = self.pop()
-        # Push the results back on the stack
-        for v in reversed(results):
-            self.push(v)
-
-    def _br(self, level: int) -> int:
-        # Branch out of a nested block. The sole exception is BR 0 when not
-        # in a block. That is the equivalent of a return.
-        # Find the level-th label (0-based) on the stack.
-        label: values.Label = self.get_nth_value_of_type(level, values.Label)
-        n = label.arity
-
-        # save the top n values on the stack
-        vals = [self.pop() for _ in range(n)]
-        # pop everything up to the label
-        while level >= 0:
-            value = self.pop()
-            if isinstance(value, values.Label):
-                level -= 1
-        # push the saved values back on the stack
-        for v in reversed(vals):
-            self.push(v)
-        return label.continuation
-
     # TODO: How does this now interact with global initializer exprs?
     def execute_seq(self, expr: list[Instruction]) -> None:
-        # Execute the instructions one by one until we hit a block, loop, if, br,
-        # br_if, br_table, or return instruction.
+        """Execute the instructions until RETURN or falling off end."""
         self.get_current_frame().pc = 0
         while self.get_current_frame().pc < len(expr):
             instruction = expr[self.get_current_frame().pc]
@@ -151,26 +52,32 @@ class MachineImpl(machine.Machine):
             else:
                 insn_eval.eval_insn(self, instruction)
 
-        # Since all nesting blocks end in an END, this can only happen if we fell
-        # off the end of a function. It's the equivalent of a return.
         f = self.get_current_frame()
         n = f.arity
         results = [self.pop() for _ in range(n)]
         # There might be a label here, depending on whether we fell off the end.
         # A BR will have slid the label out, but falling off the end will not have.
-        label_or_frame = self.pop()
-        if isinstance(label_or_frame, values.Label):
+        frame = self.pop()
+        if isinstance(frame, values.Label):
             frame = self.pop()
             assert isinstance(frame, values.Frame)
         # Push the results back on the stack
         for v in reversed(results):
             self.push(v)
+        self.current_frame = frame.prev_frame
 
     def execute_expr(self, expr: list[Instruction]) -> list[Instruction]:
         raise NotImplementedError()
 
     def get_current_frame(self) -> values.Frame:
-        return self.stack_.get_topmost_value_of_type(values.Frame)
+        if self.current_frame is None:
+            self.current_frame = self.stack_.get_topmost_value_of_type(values.Frame)
+        return self.current_frame
+
+    def new_frame(self, frame: values.Frame) -> None:
+        frame.prev_frame = self.current_frame
+        self.current_frame = frame
+        self.push(frame)
 
     def add_func(self, func: machine.FuncInstance) -> int:
         self.funcs.append(func)
@@ -186,10 +93,7 @@ class MachineImpl(machine.Machine):
         func_type = f.functype
         local_vars: list[values.Value] = [self.pop() for _ in func_type.parameters]
         local_vars.extend([values.StackValue.default(v) for v in f.local_vars])
-        self.push(values.Frame(len(func_type.results), local_vars, f.module, 0))
-        # The continuation is a special END instruction which we detect in order to
-        # determine whether we fell off the end of the function (END) or returned
-        # (no END).
+        self.new_frame(values.Frame(len(func_type.results), local_vars, f.module, 0))
         self.push(values.Label(len(func_type.results), len(f.body)))
 
         self.execute_seq(f.body)

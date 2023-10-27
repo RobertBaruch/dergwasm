@@ -92,6 +92,8 @@ class Frame(StackValue):
     module: module_instance.ModuleInstance
     # The current PC.
     pc: int
+    # The previous frame, if any
+    prev_frame: Frame | None = None
 
 
 @dataclasses.dataclass

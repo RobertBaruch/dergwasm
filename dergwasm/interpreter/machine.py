@@ -73,6 +73,10 @@ class Machine(abc.ABC):
         """Returns the current frame."""
 
     @abc.abstractmethod
+    def new_frame(self, frame: values.Frame) -> None:
+        """Pushes the frame onto the stack and sets it as the current frame."""
+
+    @abc.abstractmethod
     def add_func(self, func: FuncInstance) -> int:
         """Adds a function to the machine and returns its index."""
 

@@ -68,9 +68,7 @@ class InsnEvalTest(parameterized.TestCase):
         self.module_inst.dataaddrs = [2, 1, 0]
         self.machine.add_mem(bytearray(65536))
         self.module_inst.memaddrs = [0]
-        # Whatever instruction sequence we execute, define it as returning
-        # a single value.
-        self.machine.push(Frame(0, [], self.module_inst, 0))
+        self.machine.new_frame(Frame(0, [], self.module_inst, 0))
         self.starting_stack_depth = self._stack_depth()
 
     def test_nop(self):
@@ -240,7 +238,7 @@ class InsnEvalTest(parameterized.TestCase):
     )
     def test_local_get(self, localidx: int, expected: Value):
         local_vars = [Value(ValueType.I32, 1), Value(ValueType.F32, 2.2)]
-        self.machine.push(Frame(0, local_vars, self.module_inst, 0))
+        self.machine.new_frame(Frame(0, local_vars, self.module_inst, 0))
 
         insn_eval.local_get(self.machine, local_get(localidx))
 
@@ -253,7 +251,7 @@ class InsnEvalTest(parameterized.TestCase):
     )
     def test_local_set(self, localidx: int, expected: Value):
         local_vars = [Value(ValueType.I32, 0), Value(ValueType.F32, 0)]
-        self.machine.push(Frame(0, local_vars, self.module_inst, 0))
+        self.machine.new_frame(Frame(0, local_vars, self.module_inst, 0))
         self.machine.push(expected)
 
         insn_eval.local_set(self.machine, local_set(localidx))
@@ -267,7 +265,7 @@ class InsnEvalTest(parameterized.TestCase):
     )
     def test_local_tee(self, localidx: int, expected: Value):
         local_vars = [Value(ValueType.I32, 0), Value(ValueType.F32, 0)]
-        self.machine.push(Frame(0, local_vars, self.module_inst, 0))
+        self.machine.new_frame(Frame(0, local_vars, self.module_inst, 0))
         self.machine.push(expected)
 
         insn_eval.local_tee(self.machine, local_tee(localidx))
