@@ -2,7 +2,7 @@
 
 from typing import Type
 
-import values
+from dergwasm.interpreter import values
 
 
 class Stack:

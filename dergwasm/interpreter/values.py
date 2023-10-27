@@ -7,7 +7,7 @@ import enum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    import module_instance
+    from dergwasm.interpreter import module_instance
 
 
 @enum.unique

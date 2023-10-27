@@ -10,12 +10,13 @@ from typing import Union
 
 import leb128
 
-import values
+from dergwasm.interpreter import values
 
 
 @enum.unique
 class InstructionType(enum.Enum):
     """Instruction types."""
+
     # Control instructions
     UNREACHABLE = 0x00
     NOP = 0x01
@@ -833,9 +834,15 @@ INSTRUCTION_TYPE_STRINGS: dict[InstructionType, str] = {
 @dataclasses.dataclass
 class Instruction:
     """An instruction."""
+
     instruction_type: InstructionType
     # In standard Pythons, ints are bignums, and floats are represented as doubles.
     operands: list[Union[values.ValueType, int, float, "Block"]]
+    # For structured control instructions, where does ending it go? For all other
+    # instructions, where is the next instruction to execute?
+    continuation_pc: int
+    # Only for the IF instruction, where is the next instruction to execute if the condition is false?
+    else_continuation_pc: int
 
     @staticmethod
     def read(f: BytesIO) -> Instruction:
@@ -899,7 +906,7 @@ class Instruction:
         else:
             operands = []
 
-        return Instruction(instruction_type, operands)
+        return Instruction(instruction_type, operands, 0, 0)
 
     def to_str(self, indents: int) -> str:
         """Returns a string representation of the instruction."""
@@ -958,9 +965,6 @@ class Block:
                     else_instructions.append(insn)
                 break
             instructions.append(insn)
-
-        if not else_instructions:
-            else_instructions = [Instruction(InstructionType.END, [])]
 
         return Block(block_type, instructions, else_instructions)
 

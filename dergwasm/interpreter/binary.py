@@ -10,8 +10,8 @@ from typing import BinaryIO, Type
 
 import leb128
 
-import insn
-import values
+from dergwasm.interpreter import insn
+from dergwasm.interpreter import values
 
 
 @dataclasses.dataclass
@@ -236,6 +236,84 @@ class Element:
         return Element()
 
 
+def flatten_instructions(
+    insns: list[insn.Instruction], pc: int
+) -> list[insn.Instruction]:
+    """Flattens a list of instructions.
+
+    This is used to flatten out the instructions in a code section so we can compute
+    instruction program counter labels.
+
+    Every instruction has a continuation_pc. For all instructions except BLOCK, LOOP,
+    and IF, this is the PC of the next instruction to execute. For BLOCK and LOOP,
+    it is the PC to jump to when breaking out (i.e. if a BR 0 were to be executed).
+
+    IF instructions have two continuations. The first is the PC just after the END
+    instruction, as usual with blocks. The second is the else_continuation_pc, and
+    is the PC just after the ELSE instruction, if there is one, otherwise the PC
+    just after the END instruction.
+
+    When an ELSE instruction is encountered, its continuation is the PC just after
+    the END instruction.
+
+    The continuation for BR, BR_IF, BR_TABLE, instructions are irrelevant. They just
+    use the continuation_pc stored in the label they go to.
+
+    The continuation for RETURN is irrelevant.
+    """
+    flattened_instructions = []
+    for i in insns:
+        i.else_continuation_pc = 0
+
+        if i.instruction_type == insn.InstructionType.BLOCK:
+            assert isinstance(i.operands[0], insn.Block)
+            block_insns = [i]
+            block_insns.extend(flatten_instructions(i.operands[0].instructions, pc + 1))
+            flattened_instructions.extend(block_insns)
+            pc += len(block_insns)
+            # Where to go on breakout.
+            i.continuation_pc = pc
+
+        elif i.instruction_type == insn.InstructionType.LOOP:
+            assert isinstance(i.operands[0], insn.Block)
+            block_insns = [i]
+            block_insns.extend(flatten_instructions(i.operands[0].instructions, pc + 1))
+            flattened_instructions.extend(block_insns)
+            # Where to go on breakout.
+            i.continuation_pc = pc
+            pc += len(block_insns)
+
+        elif i.instruction_type == insn.InstructionType.IF:
+            assert isinstance(i.operands[0], insn.Block)
+            block_insns = [i]
+
+            # Ends in END or ELSE.
+            # continuation_pc = END + 1
+            # If END, else_continuation_pc = END + 1.
+            # IF ELSE, else_continuation_pc = ELSE + 1.
+            true_insns = flatten_instructions(i.operands[0].instructions, pc + 1)
+            pc += len(true_insns) + 1
+            i.else_continuation_pc = pc
+
+            false_insns = flatten_instructions(i.operands[0].else_instructions, pc)
+            pc += len(false_insns)
+            i.continuation_pc = pc
+
+            if true_insns[-1].instruction_type == insn.InstructionType.ELSE:
+                true_insns[-1].continuation_pc = pc
+
+            block_insns.extend(true_insns)
+            block_insns.extend(false_insns)
+            flattened_instructions.extend(block_insns)
+
+        else:
+            flattened_instructions.append(i)
+            pc += 1
+            i.continuation_pc = pc
+
+    return flattened_instructions
+
+
 @dataclasses.dataclass
 class Code:
     """A code specification."""
@@ -260,7 +338,10 @@ class Code:
             if instruction.instruction_type == insn.InstructionType.END:
                 break
 
-        return Code(local_vars, insns)
+        # Now we need to flatten out the instructions so we can compute instruction
+        # program counter labels.
+
+        return Code(local_vars, flatten_instructions(insns, 0))
 
     def __repr__(self) -> str:
         return "".join([i.to_str(0) for i in self.insns])

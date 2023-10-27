@@ -6,7 +6,7 @@ import abc
 import dataclasses
 from typing import TYPE_CHECKING, Callable, Type
 
-import binary
+from dergwasm.interpreter import binary
 
 if TYPE_CHECKING:
     import module_instance

@@ -4,10 +4,10 @@ from io import BytesIO
 
 from absl.testing import absltest, parameterized
 
-# from absl import flags
-
-import binary
-import values
+from dergwasm.interpreter import binary
+from dergwasm.interpreter import values
+from dergwasm.interpreter.insn import Instruction, InstructionType
+from dergwasm.interpreter.testing import util
 
 
 # class TestModule(unittest.TestCase):
@@ -82,7 +82,7 @@ import values
 #         self.assertEqual(code_section.code[0].insns[1], Instruction.opcode("i32.add"))
 
 
-class TestFuncType(absltest.TestCase):
+class FuncTypeTest(absltest.TestCase):
     def test_read_raises_on_bad_tag(self):
         # Test reading a FuncType from a binary stream
         data = bytes.fromhex("FF 02 7F 7F 01 7F")
@@ -104,7 +104,7 @@ class TestFuncType(absltest.TestCase):
         self.assertEqual(func_type.results[0], values.ValueType.I32)
 
 
-class TestTableType(absltest.TestCase):
+class TableTypeTest(absltest.TestCase):
     def test_read_raises_on_bad_limit_tag(self):
         data = bytes.fromhex("70 02 01")
         f = BytesIO(data)
@@ -133,7 +133,7 @@ class TestTableType(absltest.TestCase):
         self.assertEqual(table_type.max_limit, 2)
 
 
-class TestMemType(absltest.TestCase):
+class MemTypeTest(absltest.TestCase):
     def test_read_raises_on_bad_limit_tag(self):
         data = bytes.fromhex("02 01")
         f = BytesIO(data)
@@ -160,20 +160,113 @@ class TestMemType(absltest.TestCase):
         self.assertEqual(mem_type.max_limit, 2)
 
 
-class TestGlobalType(parameterized.TestCase):
+class GlobalTypeTest(parameterized.TestCase):
     @parameterized.named_parameters(
         ("I32_mutable", "7F 01", values.ValueType.I32, True),
         ("I64_mutable", "7E 01", values.ValueType.I64, True),
         ("I64_immutable", "7E 00", values.ValueType.I64, False),
     )
     def test_read(
-        self, hexdata: str, expected_value_type: values.ValueType, expected_mutable: bool
+        self,
+        hexdata: str,
+        expected_value_type: values.ValueType,
+        expected_mutable: bool,
     ):
         data = bytes.fromhex(hexdata)
         f = BytesIO(data)
         global_type = binary.GlobalType.read(f)
         self.assertEqual(global_type.value_type, expected_value_type)
         self.assertEqual(global_type.mutable, expected_mutable)
+
+
+class FlattenInstructionsTest(parameterized.TestCase):
+    @parameterized.named_parameters(
+        ("simple_insn", [util.nop()], [InstructionType.NOP], [1], [0]),
+        (
+            "simple_block",
+            [util.i32_block(util.nop(), util.nop())],
+            [
+                InstructionType.BLOCK,
+                InstructionType.NOP,
+                InstructionType.NOP,
+                InstructionType.END,
+            ],
+            [4, 2, 3, 4],
+            [0, 0, 0, 0],
+        ),
+        (
+            "nested_block",
+            [util.i32_block(util.nop(), util.i32_block(util.nop()), util.nop())],
+            [
+                InstructionType.BLOCK,
+                InstructionType.NOP,
+                InstructionType.BLOCK,
+                InstructionType.NOP,
+                InstructionType.END,
+                InstructionType.NOP,
+                InstructionType.END,
+            ],
+            [7, 2, 5, 4, 5, 6, 7],
+            [0, 0, 0, 0, 0, 0, 0],
+        ),
+        (
+            "loop",
+            [util.i32_loop(0, util.nop(), util.nop())],
+            [
+                InstructionType.LOOP,
+                InstructionType.NOP,
+                InstructionType.NOP,
+                InstructionType.END,
+            ],
+            [0, 2, 3, 4],
+            [0, 0, 0, 0],
+        ),
+        (
+            "if",
+            [util.if_(util.nop(), util.nop())],
+            [
+                InstructionType.IF,
+                InstructionType.NOP,
+                InstructionType.NOP,
+                InstructionType.END,
+            ],
+            [4, 2, 3, 4],
+            [4, 0, 0, 0],
+        ),
+        (
+            "if_else",
+            [util.if_else([util.nop(), util.nop()], [util.nop(), util.nop()])],
+            [
+                InstructionType.IF,
+                InstructionType.NOP,
+                InstructionType.NOP,
+                InstructionType.ELSE,
+                InstructionType.NOP,
+                InstructionType.NOP,
+                InstructionType.END,
+            ],
+            [7, 2, 3, 7, 5, 6, 7],
+            [4, 0, 0, 0, 0, 0, 0],
+        ),
+    )
+    def test_flatten(
+        self,
+        insns: list[Instruction],
+        expected_flattened_types: list[InstructionType],
+        expected_continuation_pcs: list[int],
+        expected_else_continuation_pcs: list[int],
+    ):
+        flattened = binary.flatten_instructions(insns, 0)
+
+        self.assertSequenceEqual(
+            [i.instruction_type for i in flattened], expected_flattened_types
+        )
+        self.assertSequenceEqual(
+            [i.continuation_pc for i in flattened], expected_continuation_pcs
+        )
+        self.assertSequenceEqual(
+            [i.else_continuation_pc for i in flattened], expected_else_continuation_pcs
+        )
 
 
 if __name__ == "__main__":

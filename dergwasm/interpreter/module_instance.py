@@ -2,10 +2,10 @@
 
 from __future__ import annotations  # For PEP563 - postponed evaluation of annotations
 
-import binary
-import insn_eval
-import values
-import machine
+from dergwasm.interpreter import binary
+from dergwasm.interpreter import insn_eval
+from dergwasm.interpreter import machine
+from dergwasm.interpreter import values
 
 
 class ModuleInstance:

@@ -5,10 +5,10 @@ from __future__ import annotations  # For PEP563 - postponed evaluation of annot
 import struct
 from typing import Callable, Union, cast
 
-from insn import InstructionType, Block
-import values
-from machine import Machine
-from binary import FuncType
+from dergwasm.interpreter.insn import InstructionType, Block
+from dergwasm.interpreter import values
+from dergwasm.interpreter.machine import Machine
+from dergwasm.interpreter.binary import FuncType
 
 EvalOperands = list[Union[values.ValueType, int, float, Block]]
 EvalFunc = Callable[[Machine, EvalOperands], None]
@@ -32,8 +32,6 @@ def block(machine: Machine, operands: EvalOperands) -> None:
         block_func_type = FuncType([], [block_func_type])
     else:
         block_func_type = FuncType([], [])
-    m = len(block_func_type.parameters)
-    n = len(block_func_type.results)
     label = values.Label(len(block_func_type.results), f.pc + 1)
     # Slide the label under the parameters.
     block_vals = [machine.pop() for _ in block_func_type.parameters]

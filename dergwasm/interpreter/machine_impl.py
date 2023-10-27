@@ -2,12 +2,12 @@
 
 from typing import Type
 
-from binary import FuncType
-import stack
-import machine
-import values
-from insn import Instruction, InstructionType, Block
-import insn_eval
+from dergwasm.interpreter.binary import FuncType
+from dergwasm.interpreter import stack
+from dergwasm.interpreter import machine
+from dergwasm.interpreter import values
+from dergwasm.interpreter.insn import Instruction, InstructionType, Block
+from dergwasm.interpreter import insn_eval
 
 
 class MachineImpl(machine.Machine):
@@ -37,7 +37,7 @@ class MachineImpl(machine.Machine):
     def peek(self) -> values.StackValue:
         return self.stack_.data[-1]
 
-    def _block(self, block: Block, use_else: bool = False) -> int:
+    def _block(self, block: Block, continuation_pc: int) -> None:
         f = self.get_current_frame()
         block_func_type = block.block_type
         if isinstance(block_func_type, int):
@@ -49,19 +49,14 @@ class MachineImpl(machine.Machine):
 
         # Create a label for the block. Its continuation is the end of the
         # block.
-        label = values.Label(len(block_func_type.results), 0)
+        label = values.Label(len(block_func_type.results), continuation_pc)
         # Slide the label under the params.
         block_vals = [self.pop() for _ in block_func_type.parameters]
         self.push(label)
         for v in reversed(block_vals):
             self.push(v)
 
-        # Execute the block's instruction sequence.
-        return self.execute_seq(
-            block.else_instructions if use_else else block.instructions
-        )
-
-    def _loop(self, block: Block) -> int:
+    def _loop(self, block: Block, continuation_pc: int) -> int:
         f = self.get_current_frame()
         block_func_type = block.block_type
         if isinstance(block_func_type, int):
@@ -71,34 +66,16 @@ class MachineImpl(machine.Machine):
         else:
             block_func_type = FuncType([], [])
 
-        while True:
-            # Create a label for the block. Its continuation is the *loop itself*.
-            # So a BR 0 in the block will result in another loop, rather than ending it.
-            # And, running off the end of the loop is a normal end.
-            #
-            # -2 is a special continuation value which tells us to quit the loop.
-            label = values.Label(len(block_func_type.parameters), -2)
-            # Slide the label under the params.
-            block_vals = [self.pop() for _ in block_func_type.parameters]
-            self.push(label)
-            for v in reversed(block_vals):
-                self.push(v)
+        label = values.Label(len(block_func_type.parameters), continuation_pc)
+        # Slide the label under the params.
+        block_vals = [self.pop() for _ in block_func_type.parameters]
+        self.push(label)
+        for v in reversed(block_vals):
+            self.push(v)
 
-            skip_levels = self.execute_seq(block.instructions)
-            # Return out of loop?
-            if skip_levels == -1:
-                return -1
-            # Exit loop?
-            if skip_levels == -2:
-                return 0
-            # Skip nesting levels?
-            if skip_levels != 0:
-                return skip_levels - 1
-
-    def _end(self) -> int:
+    def _else(self) -> int:
         # End of block reached without jump. Slide the first label out of the
-        # stack, and then jump to after its end. Unless the label was for a loop,
-        # in which case jump to the beginning of the loop.
+        # stack, and then jump to after its end.
         stack_values = []
         value = self.pop()
         while not isinstance(value, values.Label):
@@ -110,11 +87,24 @@ class MachineImpl(machine.Machine):
         # Push the vals back on the stack
         while stack_values:
             self.push(stack_values.pop())
-        # 0 = Jump to after the end: don't skip nesting levels.
-        # -2 = Jump to the beginning of the loop.
         return label.continuation
 
-    def _return(self) -> int:
+    def _end(self) -> None:
+        # End of block reached without jump. Slide the first label out of the
+        # stack, and then jump to after its end.
+        stack_values = []
+        value = self.pop()
+        while not isinstance(value, values.Label):
+            stack_values.append(value)
+            value = self.pop()
+
+        label = value
+        print(f"END, label encountered: {label}")
+        # Push the vals back on the stack
+        while stack_values:
+            self.push(stack_values.pop())
+
+    def _return(self) -> None:
         f = self.get_current_frame()
         n = f.arity
         results = [self.pop() for _ in range(n)]
@@ -126,13 +116,10 @@ class MachineImpl(machine.Machine):
         # Push the results back on the stack
         for v in reversed(results):
             self.push(v)
-        # Skip all the way out to the original invoke_func.
-        return -1
 
     def _br(self, level: int) -> int:
         # Branch out of a nested block. The sole exception is BR 0 when not
         # in a block. That is the equivalent of a return.
-        original_level = level
         # Find the level-th label (0-based) on the stack.
         label: values.Label = self.get_nth_value_of_type(level, values.Label)
         n = label.arity
@@ -147,90 +134,88 @@ class MachineImpl(machine.Machine):
         # push the saved values back on the stack
         for v in reversed(vals):
             self.push(v)
-        return original_level
+        return label.continuation
 
     # TODO: How does this now interact with global initializer exprs?
-    def execute_seq(self, expr: list[Instruction]) -> int:
+    def execute_seq(self, expr: list[Instruction]) -> None:
         # Execute the instructions one by one until we hit a block, loop, if, br,
         # br_if, br_table, or return instruction.
-        i = 0
-        while i < len(expr):
-            instruction = expr[i]
+        pc = 0
+        while pc < len(expr):
+            instruction = expr[pc]
             operands = instruction.operands
 
             if instruction.instruction_type == InstructionType.BLOCK:
-                skip_levels = self._block(operands[0])
-                if skip_levels == -1:
-                    return -1
-                if skip_levels > 0:
-                    return skip_levels - 1
-                i += 1
+                self._block(operands[0], instruction.continuation_pc)
+                pc += 1
 
             elif instruction.instruction_type == InstructionType.END:
-                return self._end()
+                self._end()
+                pc += 1
+
+            elif instruction.instruction_type == InstructionType.ELSE:
+                pc = self._else()
 
             elif instruction.instruction_type == InstructionType.RETURN:
-                return self._return()
+                self._return()
+                return
 
             elif instruction.instruction_type == InstructionType.BR:
                 assert isinstance(operands[0], int)
-                return self._br(operands[0])
+                pc = self._br(operands[0])
 
             elif instruction.instruction_type == InstructionType.BR_IF:
                 assert isinstance(operands[0], int)
                 cond: values.Value = self.pop()
                 if cond.value:
-                    return self._br(operands[0])
-                i += 1
+                    pc = self._br(operands[0])
+                else:
+                    pc += 1
 
             elif instruction.instruction_type == InstructionType.BR_TABLE:
                 idx_value: values.Value = self.pop()
                 assert isinstance(idx_value.value, int)
                 idx = idx_value.value
                 if idx < len(operands):
-                    return self._br(operands[idx])
-                return self._br(operands[-1])
+                    pc = self._br(operands[idx])
+                else:
+                    pc = self._br(operands[-1])
 
             elif instruction.instruction_type == InstructionType.IF:
                 assert isinstance(operands[0], Block)
                 cond: values.Value = self.pop()
                 if cond.value:
-                    skip_levels = self._block(operands[0], use_else=False)
+                    self._block(operands[0], instruction.continuation_pc)
+                    pc += 1
                 else:
-                    skip_levels = self._block(operands[0], use_else=True)
-                if skip_levels == -1:
-                    return -1
-                if skip_levels > 0:
-                    return skip_levels - 1
-                i += 1
+                    # If there's no else clause, don't start a block.
+                    if instruction.else_continuation_pc != instruction.continuation_pc:
+                        self._block(operands[0], instruction.continuation_pc)
+                    pc = instruction.else_continuation_pc
 
             elif instruction.instruction_type == InstructionType.LOOP:
                 assert isinstance(operands[0], Block)
-                skip_levels = self._loop(operands[0])
-                if skip_levels == -1:
-                    return -1
-                if skip_levels > 0:
-                    return skip_levels - 1
-                i += 1
+                self._loop(operands[0], instruction.continuation_pc)
+                pc += 1
 
             else:
                 insn_eval.eval_insn(instruction.instruction_type, operands, self)
-                i += 1
+                pc = instruction.continuation_pc
 
         # Since all nesting blocks end in an END, this can only happen if we fell
         # off the end of a function. It's the equivalent of a return.
         f = self.get_current_frame()
         n = f.arity
         results = [self.pop() for _ in range(n)]
-        # There's a label here, too.
-        label = self.pop()
-        assert isinstance(label, values.Label)
-        frame = self.pop()
-        assert isinstance(frame, values.Frame)
+        # There might be a label here, depending on whether we fell off the end.
+        # A BR will have slid the label out, but falling off the end will not have.
+        label_or_frame = self.pop()
+        if isinstance(label_or_frame, values.Label):
+            frame = self.pop()
+            assert isinstance(frame, values.Frame)
         # Push the results back on the stack
         for v in reversed(results):
             self.push(v)
-        return -1
 
     def execute_expr(self, expr: list[Instruction]) -> list[Instruction]:
         raise NotImplementedError()
@@ -256,22 +241,21 @@ class MachineImpl(machine.Machine):
         # The continuation is a special END instruction which we detect in order to
         # determine whether we fell off the end of the function (END) or returned
         # (no END).
-        self.push(values.Label(len(func_type.results), 0))
+        self.push(values.Label(len(func_type.results), len(f.body)))
 
-        skip_levels = self.execute_seq(f.body)
-        if skip_levels == -1:
-            return
+        self.execute_seq(f.body)
+
         # We didn't execute a RETURN instruction (or fall off the end), so we returned
         # via a BR instruction. That means we slid out the label, but not the frame.
         # So we do that here.
-        f = self.get_current_frame()
-        n = f.arity
-        results = [self.pop() for _ in range(n)]
-        frame = self.pop()
-        assert isinstance(frame, values.Frame)
-        # Push the results back on the stack
-        for v in reversed(results):
-            self.push(v)
+        # f = self.get_current_frame()
+        # n = f.arity
+        # results = [self.pop() for _ in range(n)]
+        # frame = self.pop()
+        # assert isinstance(frame, values.Frame)
+        # # Push the results back on the stack
+        # for v in reversed(results):
+        #     self.push(v)
 
     def add_table(self, table: machine.TableInstance) -> int:
         self.tables.append(table)

@@ -4,74 +4,17 @@ from absl.testing import absltest, parameterized
 
 # from absl import flags
 
-from binary import FuncType, Module
-import machine_impl
-import module_instance
-import insn_eval
-from insn import Block, Instruction, InstructionType
-from values import Value, Frame, ValueType
-from machine import ModuleFuncInstance
+from dergwasm.interpreter.binary import FuncType, Module, flatten_instructions
+from dergwasm.interpreter import machine_impl
+from dergwasm.interpreter import module_instance
+from dergwasm.interpreter import insn_eval
+from dergwasm.interpreter.insn import Block, Instruction, InstructionType
+from dergwasm.interpreter.values import Value, Frame, ValueType
+from dergwasm.interpreter.machine import ModuleFuncInstance
+from dergwasm.interpreter.testing.util import i32_const, i32_add, nop, ret, drop, br, br_table, br_if, end, i32_block, if_, else_, if_else
 
 
-def i32_const(value: int) -> Instruction:
-    return Instruction(InstructionType.I32_CONST, [value])
-
-
-def i32_add() -> Instruction:
-    return Instruction(InstructionType.I32_ADD, [])
-
-
-def nop() -> Instruction:
-    return Instruction(InstructionType.NOP, [])
-
-
-def ret() -> Instruction:
-    return Instruction(InstructionType.RETURN, [])
-
-
-def drop() -> Instruction:
-    return Instruction(InstructionType.DROP, [])
-
-
-def br(labelidx: int) -> Instruction:
-    return Instruction(InstructionType.BR, [labelidx])
-
-
-def br_table(*labelidxs: int) -> Instruction:
-    return Instruction(InstructionType.BR_TABLE, list(labelidxs))
-
-
-def br_if(labelidx: int) -> Instruction:
-    return Instruction(InstructionType.BR_IF, [labelidx])
-
-
-def end() -> Instruction:
-    return Instruction(InstructionType.END, [])
-
-
-def i32_block(*instructions: Instruction) -> Instruction:
-    ended_instructions = list(instructions) + [end()]
-    return Instruction(
-        InstructionType.BLOCK, [Block(ValueType.I32, ended_instructions, [end()])]
-    )
-
-
-def _if(*instructions: Instruction) -> Instruction:
-    ended_instructions = list(instructions) + [end()]
-    return Instruction(
-        InstructionType.IF, [Block(ValueType.I32, ended_instructions, [end()])]
-    )
-
-
-def _if_else(if_insns: list[Instruction], else_insns: list[Instruction]) -> Instruction:
-    ended_if_insns = list(if_insns) + [end()]
-    ended_else_insns = list(else_insns) + [end()]
-    return Instruction(
-        InstructionType.IF, [Block(ValueType.I32, ended_if_insns, ended_else_insns)]
-    )
-
-
-class TestInsnEval(parameterized.TestCase):
+class InsnEvalTest(parameterized.TestCase):
     machine: machine_impl.MachineImpl
     module: Module
     module_inst: module_instance.ModuleInstance
@@ -82,8 +25,9 @@ class TestInsnEval(parameterized.TestCase):
             FuncType([], [ValueType.I32]),
             self.module_inst,
             [],
-            [i for i in instructions],
+            list(instructions),
         )
+        func.body = flatten_instructions(func.body, 0)
         return self.machine.add_func(func)
 
     def i32_loop(self, *instructions: Instruction) -> Instruction:
@@ -92,7 +36,10 @@ class TestInsnEval(parameterized.TestCase):
         func_type_idx = len(self.module_inst.func_types) - 1
         ended_instructions = list(instructions) + [end()]
         return Instruction(
-            InstructionType.LOOP, [Block(func_type_idx, ended_instructions, [end()])]
+            InstructionType.LOOP,
+            [Block(func_type_idx, ended_instructions, [end()])],
+            0,
+            0,
         )
 
     def _stack_depth(self) -> int:
@@ -334,6 +281,7 @@ class TestInsnEval(parameterized.TestCase):
             [],
             [nop()],
         )
+        func.body = flatten_instructions(func.body, 0)
         func_idx = self.machine.add_func(func)
         self.machine.invoke_func(func_idx)
 
@@ -346,6 +294,7 @@ class TestInsnEval(parameterized.TestCase):
             [],
             [i32_const(1), i32_const(2)],
         )
+        func.body = flatten_instructions(func.body, 0)
         func_idx = self.machine.add_func(func)
         self.machine.invoke_func(func_idx)
 
@@ -360,6 +309,7 @@ class TestInsnEval(parameterized.TestCase):
             [],
             [nop(), ret(), nop()],
         )
+        func.body = flatten_instructions(func.body, 0)
         func_idx = self.machine.add_func(func)
         self.machine.invoke_func(func_idx)
 
@@ -379,6 +329,7 @@ class TestInsnEval(parameterized.TestCase):
             [],
             [nop(), br(0), nop()],
         )
+        func.body = flatten_instructions(func.body, 0)
         func_idx = self.machine.add_func(func)
         self.machine.invoke_func(func_idx)
 
@@ -518,7 +469,7 @@ class TestInsnEval(parameterized.TestCase):
     def test_if(self, val: int, expected_result: int):
         func_idx = self._add_i32_func(
             i32_const(val),
-            _if(i32_const(2), ret()),
+            if_(i32_const(2), ret()),
             i32_const(1),
         )
         self.machine.invoke_func(func_idx)
@@ -533,7 +484,7 @@ class TestInsnEval(parameterized.TestCase):
     def test_if_else(self, val: int, expected_result: int):
         func_idx = self._add_i32_func(
             i32_const(val),
-            _if_else([i32_const(2)], [i32_const(1)]),
+            if_else([i32_const(2)], [i32_const(1)]),
             i32_const(1),
             i32_add(),
         )
@@ -548,7 +499,7 @@ class TestInsnEval(parameterized.TestCase):
             self.i32_loop(
                 i32_const(2),
                 i32_add(),
-            )
+            ),
         )
         self.machine.invoke_func(func_idx)
 
@@ -562,7 +513,7 @@ class TestInsnEval(parameterized.TestCase):
                 i32_const(2),
                 i32_add(),
                 ret(),
-            )
+            ),
         )
         self.machine.invoke_func(func_idx)
 
@@ -577,7 +528,7 @@ class TestInsnEval(parameterized.TestCase):
                     i32_const(2),
                     i32_add(),
                     br(1),
-                )
+                ),
             )
         )
         self.machine.invoke_func(func_idx)
