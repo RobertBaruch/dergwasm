@@ -20,7 +20,7 @@ def unreachable(machine: Machine, instruction: Instruction) -> None:
 
 
 def nop(machine: Machine, instruction: Instruction) -> None:
-    return
+    machine.get_current_frame().pc += 1
 
 
 def block(machine: Machine, instruction: Instruction) -> None:
@@ -43,6 +43,7 @@ def block(machine: Machine, instruction: Instruction) -> None:
     machine.push(label)
     for v in reversed(block_vals):
         machine.push(v)
+    f.pc += 1
 
 
 def loop(machine: Machine, instruction: Instruction) -> None:
@@ -85,6 +86,7 @@ def return_(machine: Machine, instruction: Instruction) -> None:
 
 def call(machine: Machine, instruction: Instruction) -> None:
     f = machine.get_current_frame()
+    f.pc += 1
     operands = instruction.operands
     a = f.module.funcaddrs[operands[0]]
     machine.invoke_func(a)
@@ -110,6 +112,7 @@ def ref_func(machine: Machine, instruction: Instruction) -> None:
 # Parametric instructions,
 def drop(machine: Machine, instruction: Instruction) -> None:
     machine.pop()
+    machine.get_current_frame().pc += 1
 
 
 def select(machine: Machine, instruction: Instruction) -> None:
@@ -130,6 +133,7 @@ def local_get(machine: Machine, instruction: Instruction) -> None:
     f = machine.get_current_frame()
     operands = instruction.operands
     machine.push(f.local_vars[operands[0]])
+    f.pc += 1
 
 
 def local_set(machine: Machine, instruction: Instruction) -> None:
@@ -143,6 +147,7 @@ def local_set(machine: Machine, instruction: Instruction) -> None:
     f = machine.get_current_frame()
     operands = instruction.operands
     f.local_vars[operands[0]] = machine.pop()
+    f.pc += 1
 
 
 def local_tee(machine: Machine, instruction: Instruction) -> None:
@@ -156,6 +161,7 @@ def local_tee(machine: Machine, instruction: Instruction) -> None:
     f = machine.get_current_frame()
     operands = instruction.operands
     f.local_vars[operands[0]] = machine.peek()
+    f.pc += 1
 
 
 def global_get(machine: Machine, instruction: Instruction) -> None:
@@ -222,6 +228,7 @@ def i32_load(machine: Machine, instruction: Instruction) -> None:
         )
     val = struct.unpack("<i", mem[ea : ea + 4])[0]
     machine.push(values.Value(values.ValueType.I32, val))
+    f.pc += 1
 
 
 def i64_load(machine: Machine, instruction: Instruction) -> None:
@@ -298,6 +305,7 @@ def i32_store(machine: Machine, instruction: Instruction) -> None:
             f"i32.store: access out of bounds: base {i} offset {operands[1]}"
         )
     mem[ea : ea + 4] = struct.pack("<i", c)
+    f.pc += 1
 
 
 def i64_store(machine: Machine, instruction: Instruction) -> None:
@@ -363,6 +371,7 @@ def memory_init(machine: Machine, instruction: Instruction) -> None:
     if n == 0:
         return
     mem[d : d + n] = data[s : s + n]
+    machine.get_current_frame().pc += 1
 
 
 def data_drop(machine: Machine, instruction: Instruction) -> None:
@@ -373,6 +382,7 @@ def data_drop(machine: Machine, instruction: Instruction) -> None:
 
     da = machine.get_current_frame().module.dataaddrs[operands[0]]
     machine.datas[da] = bytearray()
+    machine.get_current_frame().pc += 1
 
 
 def memory_copy(machine: Machine, instruction: Instruction) -> None:
@@ -390,6 +400,7 @@ def i32_const(machine: Machine, instruction: Instruction) -> None:
     assert len(operands) == 1
     assert isinstance(operands[0], int)
     machine.push(values.Value(values.ValueType.I32, operands[0]))
+    machine.get_current_frame().pc += 1
 
 
 def i64_const(machine: Machine, instruction: Instruction) -> None:
@@ -424,6 +435,7 @@ def i32_lt_u(machine: Machine, instruction: Instruction) -> None:
     c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
     c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
     machine.push(values.Value(values.ValueType.I32, int(c1 < c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i32_gt_s(machine: Machine, instruction: Instruction) -> None:
@@ -558,18 +570,21 @@ def i32_add(machine: Machine, instruction: Instruction) -> None:
     c2 = int(cast(values.Value, machine.pop()).value)
     c1 = int(cast(values.Value, machine.pop()).value)
     machine.push(values.Value(values.ValueType.I32, (c1 + c2) % 0x100000000))
+    machine.get_current_frame().pc += 1
 
 
 def i32_sub(machine: Machine, instruction: Instruction) -> None:
     c2 = int(cast(values.Value, machine.pop()).value)
     c1 = int(cast(values.Value, machine.pop()).value)
     machine.push(values.Value(values.ValueType.I32, (c1 - c2) % 0x100000000))
+    machine.get_current_frame().pc += 1
 
 
 def i32_mul(machine: Machine, instruction: Instruction) -> None:
     c2 = int(cast(values.Value, machine.pop()).value)
     c1 = int(cast(values.Value, machine.pop()).value)
     machine.push(values.Value(values.ValueType.I32, (c1 * c2) % 0x100000000))
+    machine.get_current_frame().pc += 1
 
 
 def i32_div_s(machine: Machine, instruction: Instruction) -> None:

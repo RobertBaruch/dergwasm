@@ -140,21 +140,21 @@ class MachineImpl(machine.Machine):
     def execute_seq(self, expr: list[Instruction]) -> None:
         # Execute the instructions one by one until we hit a block, loop, if, br,
         # br_if, br_table, or return instruction.
-        pc = 0
-        while pc < len(expr):
-            instruction = expr[pc]
+        self.get_current_frame().pc = 0
+        while self.get_current_frame().pc < len(expr):
+            instruction = expr[self.get_current_frame().pc]
             operands = instruction.operands
 
             if instruction.instruction_type == InstructionType.BLOCK:
                 self._block(operands[0], instruction.continuation_pc)
-                pc += 1
+                self.get_current_frame().pc += 1
 
             elif instruction.instruction_type == InstructionType.END:
                 self._end()
-                pc += 1
+                self.get_current_frame().pc += 1
 
             elif instruction.instruction_type == InstructionType.ELSE:
-                pc = self._else()
+                self.get_current_frame().pc = self._else()
 
             elif instruction.instruction_type == InstructionType.RETURN:
                 self._return()
@@ -162,45 +162,44 @@ class MachineImpl(machine.Machine):
 
             elif instruction.instruction_type == InstructionType.BR:
                 assert isinstance(operands[0], int)
-                pc = self._br(operands[0])
+                self.get_current_frame().pc = self._br(operands[0])
 
             elif instruction.instruction_type == InstructionType.BR_IF:
                 assert isinstance(operands[0], int)
                 cond: values.Value = self.pop()
                 if cond.value:
-                    pc = self._br(operands[0])
+                    self.get_current_frame().pc = self._br(operands[0])
                 else:
-                    pc += 1
+                    self.get_current_frame().pc += 1
 
             elif instruction.instruction_type == InstructionType.BR_TABLE:
                 idx_value: values.Value = self.pop()
                 assert isinstance(idx_value.value, int)
                 idx = idx_value.value
                 if idx < len(operands):
-                    pc = self._br(operands[idx])
+                    self.get_current_frame().pc = self._br(operands[idx])
                 else:
-                    pc = self._br(operands[-1])
+                    self.get_current_frame().pc = self._br(operands[-1])
 
             elif instruction.instruction_type == InstructionType.IF:
                 assert isinstance(operands[0], Block)
                 cond: values.Value = self.pop()
                 if cond.value:
                     self._block(operands[0], instruction.continuation_pc)
-                    pc += 1
+                    self.get_current_frame().pc += 1
                 else:
                     # If there's no else clause, don't start a block.
                     if instruction.else_continuation_pc != instruction.continuation_pc:
                         self._block(operands[0], instruction.continuation_pc)
-                    pc = instruction.else_continuation_pc
+                    self.get_current_frame().pc = instruction.else_continuation_pc
 
             elif instruction.instruction_type == InstructionType.LOOP:
                 assert isinstance(operands[0], Block)
                 self._loop(operands[0], instruction.continuation_pc)
-                pc += 1
+                self.get_current_frame().pc += 1
 
             else:
                 insn_eval.eval_insn(self, instruction)
-                pc = instruction.continuation_pc
 
         # Since all nesting blocks end in an END, this can only happen if we fell
         # off the end of a function. It's the equivalent of a return.
@@ -237,7 +236,7 @@ class MachineImpl(machine.Machine):
         func_type = f.functype
         local_vars: list[values.Value] = [self.pop() for _ in func_type.parameters]
         local_vars.extend([values.StackValue.default(v) for v in f.local_vars])
-        self.push(values.Frame(len(func_type.results), local_vars, f.module))
+        self.push(values.Frame(len(func_type.results), local_vars, f.module, 0))
         # The continuation is a special END instruction which we detect in order to
         # determine whether we fell off the end of the function (END) or returned
         # (no END).

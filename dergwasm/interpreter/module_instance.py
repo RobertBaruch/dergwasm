@@ -191,7 +191,7 @@ class ModuleInstance:
 
         # First initialize the globals.
         # Push a frame (the "initial" frame) onto the stack with no local vars.
-        frame = values.Frame(0, [], instance)
+        frame = values.Frame(0, [], instance, 0)
         machine_inst.push(frame)
 
         # Determine the value of each global by running its init code.
@@ -214,7 +214,7 @@ class ModuleInstance:
         _ = machine_inst.pop()
 
         # Push a frame (the "auxilliary" frame) onto the stack with no local vars.
-        frame = values.Frame(0, [], instance)
+        frame = values.Frame(0, [], instance, 0)
         machine_inst.push(frame)
 
         # Skip elements again

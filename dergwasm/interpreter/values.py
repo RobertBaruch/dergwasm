@@ -90,6 +90,8 @@ class Frame(StackValue):
     arity: int
     local_vars: list[Value]
     module: module_instance.ModuleInstance
+    # The current PC.
+    pc: int
 
 
 @dataclasses.dataclass
