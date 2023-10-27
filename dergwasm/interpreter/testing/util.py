@@ -11,6 +11,14 @@ def i32_add() -> Instruction:
     return Instruction(InstructionType.I32_ADD, [], 0, 0)
 
 
+def i32_sub() -> Instruction:
+    return Instruction(InstructionType.I32_SUB, [], 0, 0)
+
+
+def i32_mul() -> Instruction:
+    return Instruction(InstructionType.I32_MUL, [], 0, 0)
+
+
 def nop() -> Instruction:
     return Instruction(InstructionType.NOP, [], 0, 0)
 
@@ -102,3 +110,19 @@ def local_get(localidx: int) -> Instruction:
 
 def i32_lt_u() -> Instruction:
     return Instruction(InstructionType.I32_LT_U, [], 0, 0)
+
+
+def i32_load(alignment: int, offset: int) -> Instruction:
+    return Instruction(InstructionType.I32_LOAD, [alignment, offset], 0, 0)
+
+
+def i32_store(alignment: int, offset: int) -> Instruction:
+    return Instruction(InstructionType.I32_STORE, [alignment, offset], 0, 0)
+
+
+def memory_init(dataidx: int, memidx: int) -> Instruction:
+    return Instruction(InstructionType.MEMORY_INIT, [dataidx, memidx], 0, 0)
+
+
+def data_drop(dataidx: int) -> Instruction:
+    return Instruction(InstructionType.DATA_DROP, [dataidx], 0, 0)

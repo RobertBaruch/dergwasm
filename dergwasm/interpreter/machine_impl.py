@@ -199,7 +199,7 @@ class MachineImpl(machine.Machine):
                 pc += 1
 
             else:
-                insn_eval.eval_insn(instruction.instruction_type, operands, self)
+                insn_eval.eval_insn(self, instruction)
                 pc = instruction.continuation_pc
 
         # Since all nesting blocks end in an END, this can only happen if we fell

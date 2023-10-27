@@ -11,11 +11,13 @@ from dergwasm.interpreter import insn_eval
 from dergwasm.interpreter.insn import Instruction
 from dergwasm.interpreter.values import Value, Frame, ValueType
 from dergwasm.interpreter.machine import ModuleFuncInstance
-from dergwasm.interpreter.testing.util import i32_const, i32_add, nop, ret, drop
+from dergwasm.interpreter.testing.util import data_drop, i32_const, i32_add, i32_store
+from dergwasm.interpreter.testing.util import memory_init, nop, ret, drop
 from dergwasm.interpreter.testing.util import br, br_table, br_if, i32_block
 from dergwasm.interpreter.testing.util import i32_loop, if_, if_else
 from dergwasm.interpreter.testing.util import local_get, local_set, local_tee
-from dergwasm.interpreter.testing.util import i32_lt_u, void_block
+from dergwasm.interpreter.testing.util import i32_lt_u, void_block, i32_mul, i32_sub
+from dergwasm.interpreter.testing.util import i32_load
 
 
 class InsnEvalTest(parameterized.TestCase):
@@ -72,11 +74,11 @@ class InsnEvalTest(parameterized.TestCase):
         self.starting_stack_depth = self._stack_depth()
 
     def test_nop(self):
-        insn_eval.nop(self.machine, [])
+        insn_eval.nop(self.machine, nop())
         self.assertEqual(self._stack_depth(), self.starting_stack_depth)
 
     def test_i32_const(self):
-        insn_eval.i32_const(self.machine, [42])
+        insn_eval.i32_const(self.machine, i32_const(42))
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 42))
         self.assertEqual(self._stack_depth(), self.starting_stack_depth)
 
@@ -84,7 +86,7 @@ class InsnEvalTest(parameterized.TestCase):
         self.machine.push(Value(ValueType.I32, 2))
         self.machine.push(Value(ValueType.I32, 1))
 
-        insn_eval.i32_add(self.machine, [])
+        insn_eval.i32_add(self.machine, i32_add())
 
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 3))
         self.assertEqual(self._stack_depth(), self.starting_stack_depth)
@@ -93,7 +95,7 @@ class InsnEvalTest(parameterized.TestCase):
         self.machine.push(Value(ValueType.I32, 0xFEDC0000))
         self.machine.push(Value(ValueType.I32, 0x56780000))
 
-        insn_eval.i32_add(self.machine, [])
+        insn_eval.i32_add(self.machine, i32_add())
 
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 0x55540000))
         self.assertEqual(self._stack_depth(), self.starting_stack_depth)
@@ -102,7 +104,7 @@ class InsnEvalTest(parameterized.TestCase):
         self.machine.push(Value(ValueType.I32, 2))
         self.machine.push(Value(ValueType.I32, 3))
 
-        insn_eval.i32_mul(self.machine, [])
+        insn_eval.i32_mul(self.machine, i32_mul())
 
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 6))
         self.assertEqual(self._stack_depth(), self.starting_stack_depth)
@@ -111,7 +113,7 @@ class InsnEvalTest(parameterized.TestCase):
         self.machine.push(Value(ValueType.I32, 0xFEDC1234))
         self.machine.push(Value(ValueType.I32, 0x56789ABC))
 
-        insn_eval.i32_mul(self.machine, [])
+        insn_eval.i32_mul(self.machine, i32_mul())
 
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 0x8CF0A630))
         self.assertEqual(self._stack_depth(), self.starting_stack_depth)
@@ -120,7 +122,7 @@ class InsnEvalTest(parameterized.TestCase):
         self.machine.push(Value(ValueType.I32, 2))
         self.machine.push(Value(ValueType.I32, 1))
 
-        insn_eval.i32_sub(self.machine, [])
+        insn_eval.i32_sub(self.machine, i32_sub())
 
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
         self.assertEqual(self._stack_depth(), self.starting_stack_depth)
@@ -129,7 +131,7 @@ class InsnEvalTest(parameterized.TestCase):
         self.machine.push(Value(ValueType.I32, 0x00001234))
         self.machine.push(Value(ValueType.I32, 0x56789ABC))
 
-        insn_eval.i32_sub(self.machine, [])
+        insn_eval.i32_sub(self.machine, i32_sub())
 
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 0xA9877778))
         self.assertEqual(self._stack_depth(), self.starting_stack_depth)
@@ -144,7 +146,7 @@ class InsnEvalTest(parameterized.TestCase):
         self.machine.push(Value(ValueType.I32, base))
         self.machine.get_mem(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
 
-        insn_eval.i32_load(self.machine, [4, offset])
+        insn_eval.i32_load(self.machine, i32_load(4, offset))
 
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected))
         self.assertEqual(self._stack_depth(), self.starting_stack_depth)
@@ -153,7 +155,7 @@ class InsnEvalTest(parameterized.TestCase):
         self.machine.push(Value(ValueType.I32, 65535))
 
         with self.assertRaisesRegex(RuntimeError, "i32.load: access out of bounds"):
-            insn_eval.i32_load(self.machine, [4, 0])
+            insn_eval.i32_load(self.machine, i32_load(4, 0))
 
     @parameterized.named_parameters(
         (
@@ -186,7 +188,7 @@ class InsnEvalTest(parameterized.TestCase):
         self.machine.push(Value(ValueType.I32, 0x12345678))
         self.machine.get_mem(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
 
-        insn_eval.i32_store(self.machine, [4, offset])
+        insn_eval.i32_store(self.machine, i32_store(4, offset))
 
         self.assertEqual(self.machine.get_mem(0)[0:10], expected)
         self.assertEqual(self._stack_depth(), self.starting_stack_depth)
@@ -196,14 +198,14 @@ class InsnEvalTest(parameterized.TestCase):
         self.machine.push(Value(ValueType.I32, 0x12345678))
 
         with self.assertRaisesRegex(RuntimeError, "i32.store: access out of bounds"):
-            insn_eval.i32_store(self.machine, [4, 0])
+            insn_eval.i32_store(self.machine, i32_store(4, 0))
 
     def test_memory_init(self):
         self.machine.push(Value(ValueType.I32, 2))  # dest offset
         self.machine.push(Value(ValueType.I32, 1))  # source offset
         self.machine.push(Value(ValueType.I32, 2))  # data size
 
-        insn_eval.memory_init(self.machine, [1, 0])
+        insn_eval.memory_init(self.machine, memory_init(1, 0))
 
         self.assertEqual(self.machine.get_mem(0)[0:5], b"\x00\x00ar\x00")
         self.assertEqual(self._stack_depth(), self.starting_stack_depth)
@@ -214,7 +216,7 @@ class InsnEvalTest(parameterized.TestCase):
         self.machine.push(Value(ValueType.I32, 2))  # data size
 
         with self.assertRaisesRegex(RuntimeError, "source is out of bounds"):
-            insn_eval.memory_init(self.machine, [1, 0])
+            insn_eval.memory_init(self.machine, memory_init(1, 0))
 
     def test_memory_init_traps_dest_out_of_bounds(self):
         self.machine.push(Value(ValueType.I32, 65535))  # dest offset
@@ -222,10 +224,10 @@ class InsnEvalTest(parameterized.TestCase):
         self.machine.push(Value(ValueType.I32, 2))  # data size
 
         with self.assertRaisesRegex(RuntimeError, "destination is out of bounds"):
-            insn_eval.memory_init(self.machine, [1, 0])
+            insn_eval.memory_init(self.machine, memory_init(1, 0))
 
     def test_data_drop(self):
-        insn_eval.data_drop(self.machine, [2])
+        insn_eval.data_drop(self.machine, data_drop(2))
 
         self.assertEqual(self.machine.datas[0], b"")
         self.assertEqual(self.machine.datas[1], b"bar")
@@ -240,7 +242,7 @@ class InsnEvalTest(parameterized.TestCase):
         local_vars = [Value(ValueType.I32, 1), Value(ValueType.F32, 2.2)]
         self.machine.push(Frame(0, local_vars, self.module_inst))
 
-        insn_eval.local_get(self.machine, [localidx])
+        insn_eval.local_get(self.machine, local_get(localidx))
 
         self.assertEqual(self.machine.pop(), expected)
         self.assertEqual(self._stack_depth(), self.starting_stack_depth + 1)
@@ -254,7 +256,7 @@ class InsnEvalTest(parameterized.TestCase):
         self.machine.push(Frame(0, local_vars, self.module_inst))
         self.machine.push(expected)
 
-        insn_eval.local_set(self.machine, [localidx])
+        insn_eval.local_set(self.machine, local_set(localidx))
 
         self.assertEqual(local_vars[localidx], expected)
         self.assertEqual(self._stack_depth(), self.starting_stack_depth + 1)
@@ -268,7 +270,7 @@ class InsnEvalTest(parameterized.TestCase):
         self.machine.push(Frame(0, local_vars, self.module_inst))
         self.machine.push(expected)
 
-        insn_eval.local_tee(self.machine, [localidx])
+        insn_eval.local_tee(self.machine, local_tee(localidx))
 
         self.assertEqual(local_vars[localidx], expected)
         self.assertEqual(self.machine.pop(), expected)

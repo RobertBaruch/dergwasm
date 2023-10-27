@@ -5,7 +5,7 @@ from __future__ import annotations  # For PEP563 - postponed evaluation of annot
 import struct
 from typing import Callable, Union, cast
 
-from dergwasm.interpreter.insn import InstructionType, Block
+from dergwasm.interpreter.insn import Instruction, InstructionType, Block
 from dergwasm.interpreter import values
 from dergwasm.interpreter.machine import Machine
 from dergwasm.interpreter.binary import FuncType
@@ -15,117 +15,124 @@ EvalFunc = Callable[[Machine, EvalOperands], None]
 
 
 # Control instructions
-def unreachable(machine: Machine, operands: EvalOperands) -> None:
+def unreachable(machine: Machine, instruction: Instruction) -> None:
     raise RuntimeError("unreachable instruction reached!")
 
 
-def nop(machine: Machine, operands: EvalOperands) -> None:
+def nop(machine: Machine, instruction: Instruction) -> None:
     return
 
 
-def block(machine: Machine, operands: EvalOperands) -> None:
+def block(machine: Machine, instruction: Instruction) -> None:
     f = machine.get_current_frame()
-    block_func_type = operands[0].block_type
+    operands = instruction.operands
+    block: Block = operands[0]
+    block_func_type = block.block_type
     if isinstance(block_func_type, int):
         block_func_type = f.module.func_types[block_func_type]
     elif block_func_type is not None:
         block_func_type = FuncType([], [block_func_type])
     else:
         block_func_type = FuncType([], [])
-    label = values.Label(len(block_func_type.results), f.pc + 1)
-    # Slide the label under the parameters.
+
+    # Create a label for the block. Its continuation is the end of the
+    # block.
+    label = values.Label(len(block_func_type.results), instruction.continuation_pc)
+    # Slide the label under the params.
     block_vals = [machine.pop() for _ in block_func_type.parameters]
     machine.push(label)
     for v in reversed(block_vals):
         machine.push(v)
 
 
-def loop(machine: Machine, operands: EvalOperands) -> None:
+def loop(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def if_(machine: Machine, operands: EvalOperands) -> None:
+def if_(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
 # Not really an instruction, but it's used to end an if-block and start an else-block.,
-def else_(machine: Machine, operands: EvalOperands) -> None:
+def else_(machine: Machine, instruction: Instruction) -> None:
     raise RuntimeError(
         "else psuedo-instruction reached! There aren't supposed to be any!"
     )
 
 
 # Not really an instruction, but it's used to end blocks.,
-def end(machine: Machine, operands: EvalOperands) -> None:
+def end(machine: Machine, instruction: Instruction) -> None:
     raise RuntimeError(
         "end psuedo-instruction reached! There aren't supposed to be any!"
     )
 
 
-def br(machine: Machine, operands: EvalOperands) -> None:
+def br(machine: Machine, instruction: Instruction) -> None:
     raise RuntimeError("br is supposed to be handled in the machine")
 
 
-def br_if(machine: Machine, operands: EvalOperands) -> None:
+def br_if(machine: Machine, instruction: Instruction) -> None:
     raise RuntimeError("br_if is supposed to be handled in the machine")
 
 
-def br_table(machine: Machine, operands: EvalOperands) -> None:
+def br_table(machine: Machine, instruction: Instruction) -> None:
     raise RuntimeError("br_table is supposed to be handled in the machine")
 
 
-def return_(machine: Machine, operands: EvalOperands) -> None:
+def return_(machine: Machine, instruction: Instruction) -> None:
     raise RuntimeError("return is supposed to be handled in the machine")
 
 
-def call(machine: Machine, operands: EvalOperands) -> None:
+def call(machine: Machine, instruction: Instruction) -> None:
     f = machine.get_current_frame()
+    operands = instruction.operands
     a = f.module.funcaddrs[operands[0]]
     machine.invoke_func(a)
 
 
-def call_indirect(machine: Machine, operands: EvalOperands) -> None:
+def call_indirect(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
 # Reference instructions,
-def ref_null(machine: Machine, operands: EvalOperands) -> None:
+def ref_null(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def ref_is_null(machine: Machine, operands: EvalOperands) -> None:
+def ref_is_null(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def ref_func(machine: Machine, operands: EvalOperands) -> None:
+def ref_func(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
 # Parametric instructions,
-def drop(machine: Machine, operands: EvalOperands) -> None:
+def drop(machine: Machine, instruction: Instruction) -> None:
     machine.pop()
 
 
-def select(machine: Machine, operands: EvalOperands) -> None:
+def select(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def select_vec(machine: Machine, operands: EvalOperands) -> None:
+def select_vec(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
 # Variable instructions,
-def local_get(machine: Machine, operands: EvalOperands) -> None:
+def local_get(machine: Machine, instruction: Instruction) -> None:
     """Gets a local variable from the current frame.
 
     Operands:
       0: local index (int)
     """
     f = machine.get_current_frame()
+    operands = instruction.operands
     machine.push(f.local_vars[operands[0]])
 
 
-def local_set(machine: Machine, operands: EvalOperands) -> None:
+def local_set(machine: Machine, instruction: Instruction) -> None:
     """Sets a local variable in the current frame.
 
     Expects the value to set to be on the top of the stack.
@@ -134,10 +141,11 @@ def local_set(machine: Machine, operands: EvalOperands) -> None:
       0: local index (int)
     """
     f = machine.get_current_frame()
+    operands = instruction.operands
     f.local_vars[operands[0]] = machine.pop()
 
 
-def local_tee(machine: Machine, operands: EvalOperands) -> None:
+def local_tee(machine: Machine, instruction: Instruction) -> None:
     """Sets a local variable in the current frame, but doesn't consume stack.
 
     Expects the value to set to be on the top of the stack.
@@ -146,52 +154,53 @@ def local_tee(machine: Machine, operands: EvalOperands) -> None:
       0: local index (int)
     """
     f = machine.get_current_frame()
+    operands = instruction.operands
     f.local_vars[operands[0]] = machine.peek()
 
 
-def global_get(machine: Machine, operands: EvalOperands) -> None:
+def global_get(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def global_set(machine: Machine, operands: EvalOperands) -> None:
+def global_set(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
 # Table instructions,
-def table_get(machine: Machine, operands: EvalOperands) -> None:
+def table_get(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def table_set(machine: Machine, operands: EvalOperands) -> None:
+def table_set(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def table_init(machine: Machine, operands: EvalOperands) -> None:
+def table_init(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def elem_drop(machine: Machine, operands: EvalOperands) -> None:
+def elem_drop(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def table_copy(machine: Machine, operands: EvalOperands) -> None:
+def table_copy(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def table_grow(machine: Machine, operands: EvalOperands) -> None:
+def table_grow(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def table_size(machine: Machine, operands: EvalOperands) -> None:
+def table_size(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def table_fill(machine: Machine, operands: EvalOperands) -> None:
+def table_fill(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
 # Memory instructions,
-def i32_load(machine: Machine, operands: EvalOperands) -> None:
+def i32_load(machine: Machine, instruction: Instruction) -> None:
     """Loads a 32-bit integer from memory.
 
     Expects the base address (i32) to be on the top of the stack.
@@ -201,6 +210,7 @@ def i32_load(machine: Machine, operands: EvalOperands) -> None:
       1: offset (int)
     """
     f = machine.get_current_frame()
+    operands = instruction.operands
     i = int(cast(values.Value, machine.pop()).value)  # base (i32)
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # memaddr
@@ -214,59 +224,59 @@ def i32_load(machine: Machine, operands: EvalOperands) -> None:
     machine.push(values.Value(values.ValueType.I32, val))
 
 
-def i64_load(machine: Machine, operands: EvalOperands) -> None:
+def i64_load(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_load(machine: Machine, operands: EvalOperands) -> None:
+def f32_load(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_load(machine: Machine, operands: EvalOperands) -> None:
+def f64_load(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_load8_s(machine: Machine, operands: EvalOperands) -> None:
+def i32_load8_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_load8_u(machine: Machine, operands: EvalOperands) -> None:
+def i32_load8_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_load16_s(machine: Machine, operands: EvalOperands) -> None:
+def i32_load16_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_load16_u(machine: Machine, operands: EvalOperands) -> None:
+def i32_load16_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_load8_s(machine: Machine, operands: EvalOperands) -> None:
+def i64_load8_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_load8_u(machine: Machine, operands: EvalOperands) -> None:
+def i64_load8_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_load16_s(machine: Machine, operands: EvalOperands) -> None:
+def i64_load16_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_load16_u(machine: Machine, operands: EvalOperands) -> None:
+def i64_load16_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_load32_s(machine: Machine, operands: EvalOperands) -> None:
+def i64_load32_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_load32_u(machine: Machine, operands: EvalOperands) -> None:
+def i64_load32_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_store(machine: Machine, operands: EvalOperands) -> None:
+def i32_store(machine: Machine, instruction: Instruction) -> None:
     """Stores a 32-bit integer to memory.
 
     Expects the stack to contain, starting from top: [value (i32), base addr (i32)].
@@ -276,6 +286,7 @@ def i32_store(machine: Machine, operands: EvalOperands) -> None:
       1: offset (int)
     """
     f = machine.get_current_frame()
+    operands = instruction.operands
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
     mem = machine.get_mem(a)
@@ -289,48 +300,49 @@ def i32_store(machine: Machine, operands: EvalOperands) -> None:
     mem[ea : ea + 4] = struct.pack("<i", c)
 
 
-def i64_store(machine: Machine, operands: EvalOperands) -> None:
+def i64_store(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_store(machine: Machine, operands: EvalOperands) -> None:
+def f32_store(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_store(machine: Machine, operands: EvalOperands) -> None:
+def f64_store(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_store8(machine: Machine, operands: EvalOperands) -> None:
+def i32_store8(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_store16(machine: Machine, operands: EvalOperands) -> None:
+def i32_store16(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_store8(machine: Machine, operands: EvalOperands) -> None:
+def i64_store8(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_store16(machine: Machine, operands: EvalOperands) -> None:
+def i64_store16(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_store32(machine: Machine, operands: EvalOperands) -> None:
+def i64_store32(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def memory_size(machine: Machine, operands: EvalOperands) -> None:
+def memory_size(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def memory_grow(machine: Machine, operands: EvalOperands) -> None:
+def memory_grow(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def memory_init(machine: Machine, operands: EvalOperands) -> None:
+def memory_init(machine: Machine, instruction: Instruction) -> None:
     """Initializes a memory segment."""
+    operands = instruction.operands
     assert len(operands) == 2
     assert isinstance(operands[0], int)  # dataindex
     assert isinstance(operands[1], int)  # memindex = 0
@@ -353,8 +365,9 @@ def memory_init(machine: Machine, operands: EvalOperands) -> None:
     mem[d : d + n] = data[s : s + n]
 
 
-def data_drop(machine: Machine, operands: EvalOperands) -> None:
+def data_drop(machine: Machine, instruction: Instruction) -> None:
     """Drops a data segment."""
+    operands = instruction.operands
     assert len(operands) == 1
     assert isinstance(operands[0], int)  # dataindex
 
@@ -362,1078 +375,1077 @@ def data_drop(machine: Machine, operands: EvalOperands) -> None:
     machine.datas[da] = bytearray()
 
 
-def memory_copy(machine: Machine, operands: EvalOperands) -> None:
+def memory_copy(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def memory_fill(machine: Machine, operands: EvalOperands) -> None:
+def memory_fill(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
 # Numeric instructions,
-def i32_const(machine: Machine, operands: EvalOperands) -> None:
+def i32_const(machine: Machine, instruction: Instruction) -> None:
     """Pushes a 32-bit integer constant onto the stack."""
+    operands = instruction.operands
     assert len(operands) == 1
     assert isinstance(operands[0], int)
     machine.push(values.Value(values.ValueType.I32, operands[0]))
 
 
-def i64_const(machine: Machine, operands: EvalOperands) -> None:
+def i64_const(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_const(machine: Machine, operands: EvalOperands) -> None:
+def f32_const(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_const(machine: Machine, operands: EvalOperands) -> None:
+def f64_const(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_eqz(machine: Machine, operands: EvalOperands) -> None:
+def i32_eqz(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_eq(machine: Machine, operands: EvalOperands) -> None:
+def i32_eq(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_ne(machine: Machine, operands: EvalOperands) -> None:
+def i32_ne(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_lt_s(machine: Machine, operands: EvalOperands) -> None:
+def i32_lt_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_lt_u(machine: Machine, operands: EvalOperands) -> None:
+def i32_lt_u(machine: Machine, instruction: Instruction) -> None:
     c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
     c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
     machine.push(values.Value(values.ValueType.I32, int(c1 < c2)))
 
 
-def i32_gt_s(machine: Machine, operands: EvalOperands) -> None:
+def i32_gt_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_gt_u(machine: Machine, operands: EvalOperands) -> None:
+def i32_gt_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_le_s(machine: Machine, operands: EvalOperands) -> None:
+def i32_le_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_le_u(machine: Machine, operands: EvalOperands) -> None:
+def i32_le_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_ge_s(machine: Machine, operands: EvalOperands) -> None:
+def i32_ge_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_ge_u(machine: Machine, operands: EvalOperands) -> None:
+def i32_ge_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_eqz(machine: Machine, operands: EvalOperands) -> None:
+def i64_eqz(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_eq(machine: Machine, operands: EvalOperands) -> None:
+def i64_eq(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_ne(machine: Machine, operands: EvalOperands) -> None:
+def i64_ne(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_lt_s(machine: Machine, operands: EvalOperands) -> None:
+def i64_lt_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_lt_u(machine: Machine, operands: EvalOperands) -> None:
+def i64_lt_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_gt_s(machine: Machine, operands: EvalOperands) -> None:
+def i64_gt_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_gt_u(machine: Machine, operands: EvalOperands) -> None:
+def i64_gt_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_le_s(machine: Machine, operands: EvalOperands) -> None:
+def i64_le_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_le_u(machine: Machine, operands: EvalOperands) -> None:
+def i64_le_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_ge_s(machine: Machine, operands: EvalOperands) -> None:
+def i64_ge_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_ge_u(machine: Machine, operands: EvalOperands) -> None:
+def i64_ge_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_eq(machine: Machine, operands: EvalOperands) -> None:
+def f32_eq(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_ne(machine: Machine, operands: EvalOperands) -> None:
+def f32_ne(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_lt(machine: Machine, operands: EvalOperands) -> None:
+def f32_lt(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_gt(machine: Machine, operands: EvalOperands) -> None:
+def f32_gt(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_le(machine: Machine, operands: EvalOperands) -> None:
+def f32_le(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_ge(machine: Machine, operands: EvalOperands) -> None:
+def f32_ge(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_eq(machine: Machine, operands: EvalOperands) -> None:
+def f64_eq(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_ne(machine: Machine, operands: EvalOperands) -> None:
+def f64_ne(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_lt(machine: Machine, operands: EvalOperands) -> None:
+def f64_lt(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_gt(machine: Machine, operands: EvalOperands) -> None:
+def f64_gt(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_le(machine: Machine, operands: EvalOperands) -> None:
+def f64_le(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_ge(machine: Machine, operands: EvalOperands) -> None:
+def f64_ge(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_clz(machine: Machine, operands: EvalOperands) -> None:
+def i32_clz(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_ctz(machine: Machine, operands: EvalOperands) -> None:
+def i32_ctz(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_popcnt(machine: Machine, operands: EvalOperands) -> None:
+def i32_popcnt(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_add(machine: Machine, operands: EvalOperands) -> None:
+def i32_add(machine: Machine, instruction: Instruction) -> None:
     c2 = int(cast(values.Value, machine.pop()).value)
     c1 = int(cast(values.Value, machine.pop()).value)
     machine.push(values.Value(values.ValueType.I32, (c1 + c2) % 0x100000000))
 
 
-def i32_sub(machine: Machine, operands: EvalOperands) -> None:
+def i32_sub(machine: Machine, instruction: Instruction) -> None:
     c2 = int(cast(values.Value, machine.pop()).value)
     c1 = int(cast(values.Value, machine.pop()).value)
     machine.push(values.Value(values.ValueType.I32, (c1 - c2) % 0x100000000))
 
 
-def i32_mul(machine: Machine, operands: EvalOperands) -> None:
+def i32_mul(machine: Machine, instruction: Instruction) -> None:
     c2 = int(cast(values.Value, machine.pop()).value)
     c1 = int(cast(values.Value, machine.pop()).value)
     machine.push(values.Value(values.ValueType.I32, (c1 * c2) % 0x100000000))
 
 
-def i32_div_s(machine: Machine, operands: EvalOperands) -> None:
+def i32_div_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_div_u(machine: Machine, operands: EvalOperands) -> None:
+def i32_div_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_rem_s(machine: Machine, operands: EvalOperands) -> None:
+def i32_rem_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_rem_u(machine: Machine, operands: EvalOperands) -> None:
+def i32_rem_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_and(machine: Machine, operands: EvalOperands) -> None:
+def i32_and(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_or(machine: Machine, operands: EvalOperands) -> None:
+def i32_or(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_xor(machine: Machine, operands: EvalOperands) -> None:
+def i32_xor(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_shl(machine: Machine, operands: EvalOperands) -> None:
+def i32_shl(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_shr_s(machine: Machine, operands: EvalOperands) -> None:
+def i32_shr_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_shr_u(machine: Machine, operands: EvalOperands) -> None:
+def i32_shr_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_rotl(machine: Machine, operands: EvalOperands) -> None:
+def i32_rotl(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_rotr(machine: Machine, operands: EvalOperands) -> None:
+def i32_rotr(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_clz(machine: Machine, operands: EvalOperands) -> None:
+def i64_clz(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_ctz(machine: Machine, operands: EvalOperands) -> None:
+def i64_ctz(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_popcnt(machine: Machine, operands: EvalOperands) -> None:
+def i64_popcnt(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_add(machine: Machine, operands: EvalOperands) -> None:
+def i64_add(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_sub(machine: Machine, operands: EvalOperands) -> None:
+def i64_sub(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_mul(machine: Machine, operands: EvalOperands) -> None:
+def i64_mul(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_div_s(machine: Machine, operands: EvalOperands) -> None:
+def i64_div_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_div_u(machine: Machine, operands: EvalOperands) -> None:
+def i64_div_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_rem_s(machine: Machine, operands: EvalOperands) -> None:
+def i64_rem_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_rem_u(machine: Machine, operands: EvalOperands) -> None:
+def i64_rem_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_and(machine: Machine, operands: EvalOperands) -> None:
+def i64_and(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_or(machine: Machine, operands: EvalOperands) -> None:
+def i64_or(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_xor(machine: Machine, operands: EvalOperands) -> None:
+def i64_xor(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_shl(machine: Machine, operands: EvalOperands) -> None:
+def i64_shl(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_shr_s(machine: Machine, operands: EvalOperands) -> None:
+def i64_shr_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_shr_u(machine: Machine, operands: EvalOperands) -> None:
+def i64_shr_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_rotl(machine: Machine, operands: EvalOperands) -> None:
+def i64_rotl(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_rotr(machine: Machine, operands: EvalOperands) -> None:
+def i64_rotr(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_abs(machine: Machine, operands: EvalOperands) -> None:
+def f32_abs(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_neg(machine: Machine, operands: EvalOperands) -> None:
+def f32_neg(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_ceil(machine: Machine, operands: EvalOperands) -> None:
+def f32_ceil(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_floor(machine: Machine, operands: EvalOperands) -> None:
+def f32_floor(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_trunc(machine: Machine, operands: EvalOperands) -> None:
+def f32_trunc(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_nearest(machine: Machine, operands: EvalOperands) -> None:
+def f32_nearest(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_sqrt(machine: Machine, operands: EvalOperands) -> None:
+def f32_sqrt(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_add(machine: Machine, operands: EvalOperands) -> None:
+def f32_add(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_sub(machine: Machine, operands: EvalOperands) -> None:
+def f32_sub(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_mul(machine: Machine, operands: EvalOperands) -> None:
+def f32_mul(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_div(machine: Machine, operands: EvalOperands) -> None:
+def f32_div(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_min(machine: Machine, operands: EvalOperands) -> None:
+def f32_min(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_max(machine: Machine, operands: EvalOperands) -> None:
+def f32_max(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_copysign(machine: Machine, operands: EvalOperands) -> None:
+def f32_copysign(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_abs(machine: Machine, operands: EvalOperands) -> None:
+def f64_abs(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_neg(machine: Machine, operands: EvalOperands) -> None:
+def f64_neg(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_ceil(machine: Machine, operands: EvalOperands) -> None:
+def f64_ceil(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_floor(machine: Machine, operands: EvalOperands) -> None:
+def f64_floor(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_trunc(machine: Machine, operands: EvalOperands) -> None:
+def f64_trunc(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_nearest(machine: Machine, operands: EvalOperands) -> None:
+def f64_nearest(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_sqrt(machine: Machine, operands: EvalOperands) -> None:
+def f64_sqrt(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_add(machine: Machine, operands: EvalOperands) -> None:
+def f64_add(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_sub(machine: Machine, operands: EvalOperands) -> None:
+def f64_sub(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_mul(machine: Machine, operands: EvalOperands) -> None:
+def f64_mul(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_div(machine: Machine, operands: EvalOperands) -> None:
+def f64_div(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_min(machine: Machine, operands: EvalOperands) -> None:
+def f64_min(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_max(machine: Machine, operands: EvalOperands) -> None:
+def f64_max(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_copysign(machine: Machine, operands: EvalOperands) -> None:
+def f64_copysign(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_i32_wrap(machine: Machine, operands: EvalOperands) -> None:
+def i64_i32_wrap(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_trunc_f32_s(machine: Machine, operands: EvalOperands) -> None:
+def i32_trunc_f32_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_trunc_f32_u(machine: Machine, operands: EvalOperands) -> None:
+def i32_trunc_f32_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_trunc_f64_s(machine: Machine, operands: EvalOperands) -> None:
+def i32_trunc_f64_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_trunc_f64_u(machine: Machine, operands: EvalOperands) -> None:
+def i32_trunc_f64_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_extend_i32_s(machine: Machine, operands: EvalOperands) -> None:
+def i64_extend_i32_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_extend_i32_u(machine: Machine, operands: EvalOperands) -> None:
+def i64_extend_i32_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_trunc_f32_s(machine: Machine, operands: EvalOperands) -> None:
+def i64_trunc_f32_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_trunc_f32_u(machine: Machine, operands: EvalOperands) -> None:
+def i64_trunc_f32_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_trunc_f64_s(machine: Machine, operands: EvalOperands) -> None:
+def i64_trunc_f64_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_trunc_f64_u(machine: Machine, operands: EvalOperands) -> None:
+def i64_trunc_f64_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_convert_i32_s(machine: Machine, operands: EvalOperands) -> None:
+def f32_convert_i32_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_convert_i32_u(machine: Machine, operands: EvalOperands) -> None:
+def f32_convert_i32_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_convert_i64_s(machine: Machine, operands: EvalOperands) -> None:
+def f32_convert_i64_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_convert_i64_u(machine: Machine, operands: EvalOperands) -> None:
+def f32_convert_i64_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_demote_f64(machine: Machine, operands: EvalOperands) -> None:
+def f32_demote_f64(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_convert_i32_s(machine: Machine, operands: EvalOperands) -> None:
+def f64_convert_i32_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_convert_i32_u(machine: Machine, operands: EvalOperands) -> None:
+def f64_convert_i32_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_convert_i64_s(machine: Machine, operands: EvalOperands) -> None:
+def f64_convert_i64_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_convert_i64_u(machine: Machine, operands: EvalOperands) -> None:
+def f64_convert_i64_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_f64_promote(machine: Machine, operands: EvalOperands) -> None:
+def f32_f64_promote(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_i32_reinterpret(machine: Machine, operands: EvalOperands) -> None:
+def f32_i32_reinterpret(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_i64_reinterpret(machine: Machine, operands: EvalOperands) -> None:
+def f64_i64_reinterpret(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32_reinterpret_i32(machine: Machine, operands: EvalOperands) -> None:
+def f32_reinterpret_i32(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64_reinterpret_i64(machine: Machine, operands: EvalOperands) -> None:
+def f64_reinterpret_i64(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_extend8_s(machine: Machine, operands: EvalOperands) -> None:
+def i32_extend8_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_extend16_s(machine: Machine, operands: EvalOperands) -> None:
+def i32_extend16_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_extend8_s(machine: Machine, operands: EvalOperands) -> None:
+def i64_extend8_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_extend16_s(machine: Machine, operands: EvalOperands) -> None:
+def i64_extend16_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_extend32_s(machine: Machine, operands: EvalOperands) -> None:
+def i64_extend32_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_trunc_sat_f32_s(machine: Machine, operands: EvalOperands) -> None:
+def i32_trunc_sat_f32_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_trunc_sat_f32_u(machine: Machine, operands: EvalOperands) -> None:
+def i32_trunc_sat_f32_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_trunc_sat_f64_s(machine: Machine, operands: EvalOperands) -> None:
+def i32_trunc_sat_f64_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32_trunc_sat_f64_u(machine: Machine, operands: EvalOperands) -> None:
+def i32_trunc_sat_f64_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_trunc_sat_f32_s(machine: Machine, operands: EvalOperands) -> None:
+def i64_trunc_sat_f32_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_trunc_sat_f32_u(machine: Machine, operands: EvalOperands) -> None:
+def i64_trunc_sat_f32_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_trunc_sat_f64_s(machine: Machine, operands: EvalOperands) -> None:
+def i64_trunc_sat_f64_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_trunc_sat_f64_u(machine: Machine, operands: EvalOperands) -> None:
+def i64_trunc_sat_f64_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
 # Vector instructions,
-def v128_load(machine: Machine, operands: EvalOperands) -> None:
+def v128_load(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_load8x8_s(machine: Machine, operands: EvalOperands) -> None:
+def v128_load8x8_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_load8x8_u(machine: Machine, operands: EvalOperands) -> None:
+def v128_load8x8_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_load16x4_s(machine: Machine, operands: EvalOperands) -> None:
+def v128_load16x4_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_load16x4_u(machine: Machine, operands: EvalOperands) -> None:
+def v128_load16x4_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_load32x2_s(machine: Machine, operands: EvalOperands) -> None:
+def v128_load32x2_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_load32x2_u(machine: Machine, operands: EvalOperands) -> None:
+def v128_load32x2_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_load8_splat(machine: Machine, operands: EvalOperands) -> None:
+def v128_load8_splat(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_load16_splat(machine: Machine, operands: EvalOperands) -> None:
+def v128_load16_splat(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_load32_splat(machine: Machine, operands: EvalOperands) -> None:
+def v128_load32_splat(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_load64_splat(machine: Machine, operands: EvalOperands) -> None:
+def v128_load64_splat(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_load32_zero(machine: Machine, operands: EvalOperands) -> None:
+def v128_load32_zero(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_load64_zero(machine: Machine, operands: EvalOperands) -> None:
+def v128_load64_zero(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_store(machine: Machine, operands: EvalOperands) -> None:
+def v128_store(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_load8_lane(machine: Machine, operands: EvalOperands) -> None:
+def v128_load8_lane(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_load16_lane(machine: Machine, operands: EvalOperands) -> None:
+def v128_load16_lane(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_load32_lane(machine: Machine, operands: EvalOperands) -> None:
+def v128_load32_lane(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_load64_lane(machine: Machine, operands: EvalOperands) -> None:
+def v128_load64_lane(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_store8_lane(machine: Machine, operands: EvalOperands) -> None:
+def v128_store8_lane(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_store16_lane(machine: Machine, operands: EvalOperands) -> None:
+def v128_store16_lane(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_store32_lane(machine: Machine, operands: EvalOperands) -> None:
+def v128_store32_lane(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_store64_lane(machine: Machine, operands: EvalOperands) -> None:
+def v128_store64_lane(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_const(machine: Machine, operands: EvalOperands) -> None:
+def v128_const(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_shuffle(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_shuffle(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_extract_lane_s(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_extract_lane_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_extract_lane_u(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_extract_lane_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_replace_lane(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_replace_lane(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i16x8_extract_lane_s(machine: Machine, operands: EvalOperands) -> None:
+def i16x8_extract_lane_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i16x8_extract_lane_u(machine: Machine, operands: EvalOperands) -> None:
+def i16x8_extract_lane_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i16x8_replace_lane(machine: Machine, operands: EvalOperands) -> None:
+def i16x8_replace_lane(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32x4_extract_lane(machine: Machine, operands: EvalOperands) -> None:
+def i32x4_extract_lane(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32x4_replace_lane(machine: Machine, operands: EvalOperands) -> None:
+def i32x4_replace_lane(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64x2_extract_lane(machine: Machine, operands: EvalOperands) -> None:
+def i64x2_extract_lane(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64x2_replace_lane(machine: Machine, operands: EvalOperands) -> None:
+def i64x2_replace_lane(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32x4_extract_lane(machine: Machine, operands: EvalOperands) -> None:
+def f32x4_extract_lane(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32x4_replace_lane(machine: Machine, operands: EvalOperands) -> None:
+def f32x4_replace_lane(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64x2_extract_lane(machine: Machine, operands: EvalOperands) -> None:
+def f64x2_extract_lane(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64x2_replace_lane(machine: Machine, operands: EvalOperands) -> None:
+def f64x2_replace_lane(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_swizzle(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_swizzle(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_splat(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_splat(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i16x8_splat(machine: Machine, operands: EvalOperands) -> None:
+def i16x8_splat(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32x4_splat(machine: Machine, operands: EvalOperands) -> None:
+def i32x4_splat(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64x2_splat(machine: Machine, operands: EvalOperands) -> None:
+def i64x2_splat(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32x4_splat(machine: Machine, operands: EvalOperands) -> None:
+def f32x4_splat(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64x2_splat(machine: Machine, operands: EvalOperands) -> None:
+def f64x2_splat(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_eq(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_eq(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_ne(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_ne(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_lt_s(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_lt_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_lt_u(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_lt_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_gt_s(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_gt_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_gt_u(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_gt_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_le_s(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_le_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_le_u(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_le_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_ge_s(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_ge_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_ge_u(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_ge_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i16x8_eq(machine: Machine, operands: EvalOperands) -> None:
+def i16x8_eq(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i16x8_ne(machine: Machine, operands: EvalOperands) -> None:
+def i16x8_ne(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i16x8_lt_s(machine: Machine, operands: EvalOperands) -> None:
+def i16x8_lt_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i16x8_lt_u(machine: Machine, operands: EvalOperands) -> None:
+def i16x8_lt_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i16x8_gt_s(machine: Machine, operands: EvalOperands) -> None:
+def i16x8_gt_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i16x8_gt_u(machine: Machine, operands: EvalOperands) -> None:
+def i16x8_gt_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i16x8_le_s(machine: Machine, operands: EvalOperands) -> None:
+def i16x8_le_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i16x8_le_u(machine: Machine, operands: EvalOperands) -> None:
+def i16x8_le_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i16x8_ge_s(machine: Machine, operands: EvalOperands) -> None:
+def i16x8_ge_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i16x8_ge_u(machine: Machine, operands: EvalOperands) -> None:
+def i16x8_ge_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32x4_eq(machine: Machine, operands: EvalOperands) -> None:
+def i32x4_eq(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32x4_ne(machine: Machine, operands: EvalOperands) -> None:
+def i32x4_ne(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32x4_lt_s(machine: Machine, operands: EvalOperands) -> None:
+def i32x4_lt_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32x4_lt_u(machine: Machine, operands: EvalOperands) -> None:
+def i32x4_lt_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32x4_gt_s(machine: Machine, operands: EvalOperands) -> None:
+def i32x4_gt_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32x4_gt_u(machine: Machine, operands: EvalOperands) -> None:
+def i32x4_gt_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32x4_le_s(machine: Machine, operands: EvalOperands) -> None:
+def i32x4_le_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32x4_le_u(machine: Machine, operands: EvalOperands) -> None:
+def i32x4_le_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32x4_ge_s(machine: Machine, operands: EvalOperands) -> None:
+def i32x4_ge_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i32x4_ge_u(machine: Machine, operands: EvalOperands) -> None:
+def i32x4_ge_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64x2_eq(machine: Machine, operands: EvalOperands) -> None:
+def i64x2_eq(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64x2_ne(machine: Machine, operands: EvalOperands) -> None:
+def i64x2_ne(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64x2_lt_s(machine: Machine, operands: EvalOperands) -> None:
+def i64x2_lt_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64x2_gt_s(machine: Machine, operands: EvalOperands) -> None:
+def i64x2_gt_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64x2_le_s(machine: Machine, operands: EvalOperands) -> None:
+def i64x2_le_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64x2_ge_s(machine: Machine, operands: EvalOperands) -> None:
+def i64x2_ge_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32x4_eq(machine: Machine, operands: EvalOperands) -> None:
+def f32x4_eq(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32x4_ne(machine: Machine, operands: EvalOperands) -> None:
+def f32x4_ne(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32x4_lt(machine: Machine, operands: EvalOperands) -> None:
+def f32x4_lt(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32x4_gt(machine: Machine, operands: EvalOperands) -> None:
+def f32x4_gt(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32x4_le(machine: Machine, operands: EvalOperands) -> None:
+def f32x4_le(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f32x4_ge(machine: Machine, operands: EvalOperands) -> None:
+def f32x4_ge(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64x2_eq(machine: Machine, operands: EvalOperands) -> None:
+def f64x2_eq(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64x2_ne(machine: Machine, operands: EvalOperands) -> None:
+def f64x2_ne(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64x2_lt(machine: Machine, operands: EvalOperands) -> None:
+def f64x2_lt(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64x2_gt(machine: Machine, operands: EvalOperands) -> None:
+def f64x2_gt(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64x2_le(machine: Machine, operands: EvalOperands) -> None:
+def f64x2_le(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def f64x2_ge(machine: Machine, operands: EvalOperands) -> None:
+def f64x2_ge(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_not(machine: Machine, operands: EvalOperands) -> None:
+def v128_not(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_and(machine: Machine, operands: EvalOperands) -> None:
+def v128_and(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_andnot(machine: Machine, operands: EvalOperands) -> None:
+def v128_andnot(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_or(machine: Machine, operands: EvalOperands) -> None:
+def v128_or(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_xor(machine: Machine, operands: EvalOperands) -> None:
+def v128_xor(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_bitselect(machine: Machine, operands: EvalOperands) -> None:
+def v128_bitselect(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def v128_any_true(machine: Machine, operands: EvalOperands) -> None:
+def v128_any_true(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_abs(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_abs(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_neg(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_neg(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_popcnt(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_popcnt(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_all_true(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_all_true(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_bitmask(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_bitmask(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_narrow_i16x8_s(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_narrow_i16x8_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_narrow_i16x8_u(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_narrow_i16x8_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_shl(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_shl(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_shr_s(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_shr_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_shr_u(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_shr_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_add(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_add(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_add_sat_s(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_add_sat_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_add_sat_u(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_add_sat_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_sub(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_sub(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_sub_sat_s(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_sub_sat_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_sub_sat_u(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_sub_sat_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_min_s(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_min_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_min_u(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_min_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_max_s(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_max_s(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_max_u(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_max_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i8x16_avgr_u(machine: Machine, operands: EvalOperands) -> None:
+def i8x16_avgr_u(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def eval_insn(
-    instruction: InstructionType, operands: EvalOperands, machine: Machine
-) -> None:
+def eval_insn(machine: Machine, instruction: Instruction) -> None:
     """Evaluates an instruction."""
     try:
-        print(f"{instruction} {operands}")
-        INSTRUCTION_FUNCS[instruction](machine, operands)
+        print(f"{instruction} {instruction.operands}")
+        INSTRUCTION_FUNCS[instruction.instruction_type](machine, instruction)
     except NotImplementedError:
         print("Instruction not implemented:", instruction)
         print("Current stack:")
