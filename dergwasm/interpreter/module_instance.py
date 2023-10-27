@@ -4,8 +4,9 @@ from __future__ import annotations  # For PEP563 - postponed evaluation of annot
 
 from dergwasm.interpreter import binary
 from dergwasm.interpreter import insn_eval
-from dergwasm.interpreter import machine
+from dergwasm.interpreter.machine import Machine, ModuleFuncInstance, TableInstance, GlobalInstance
 from dergwasm.interpreter import values
+from dergwasm.interpreter.insn import Instruction, InstructionType
 
 
 class ModuleInstance:
@@ -34,7 +35,7 @@ class ModuleInstance:
         self.exports = {}
 
     def allocate(
-        self, machine_inst: machine.Machine, externvals: list[values.RefVal]
+        self, machine_inst: Machine, externvals: list[values.RefVal]
     ) -> None:
         """Allocates the module."""
 
@@ -46,7 +47,7 @@ class ModuleInstance:
 
         for func_spec in function_section.funcs:
             func_type = type_section.types[func_spec.typeidx]
-            func = machine.ModuleFuncInstance(
+            func = ModuleFuncInstance(
                 func_type, self, func_spec.local_vars, func_spec.body
             )
             self.funcaddrs.append(machine_inst.add_func(func))
@@ -54,7 +55,7 @@ class ModuleInstance:
         # Allocate tables.
         table_section: binary.TableSection = self.module.sections[binary.TableSection]
         for table_spec in table_section.tables:
-            table = machine.TableInstance(table_spec)
+            table = TableInstance(table_spec)
             self.tableaddrs.append(machine_inst.add_table(table))
 
         # Allocate memories.
@@ -76,7 +77,7 @@ class ModuleInstance:
                 or global_spec.global_type.value_type == values.ValueType.EXTERNREF
             ):
                 default_value = values.RefVal(global_spec.global_type.value_type, None)
-            global_value = machine.GlobalInstance(
+            global_value = GlobalInstance(
                 global_spec.global_type.value_type, global_spec.init, default_value
             )
             self.globaladdrs.append(machine_inst.add_global(global_value))
@@ -139,7 +140,7 @@ class ModuleInstance:
     def instantiate(
         module: binary.Module,
         externvals: list[values.RefVal],
-        machine_inst: machine.Machine,
+        machine: Machine,
     ) -> ModuleInstance:
         """Instantiates the module.
 
@@ -170,13 +171,13 @@ class ModuleInstance:
             addr = externval.addr
             externtype: binary.ExternalType
             if externval.val_type == values.RefValType.EXTERN_FUNC:
-                externtype = machine_inst.get_func(addr).functype
+                externtype = machine.get_func(addr).functype
             elif externval.val_type == values.RefValType.EXTERN_TABLE:
                 externtype = None  # TODO: After defining TableInstance
             elif externval.val_type == values.RefValType.EXTERN_MEMORY:
                 externtype = None  # TODO: Return memory limits
             elif externval.val_type == values.RefValType.EXTERN_GLOBAL:
-                externtype = machine_inst.get_global(addr).global_type
+                externtype = machine.get_global(addr).global_type
 
             import_section: binary.ImportSection = module.sections[binary.ImportSection]
             import_desc_type = import_section.imports[i].desc
@@ -187,35 +188,29 @@ class ModuleInstance:
                 )
 
         instance = ModuleInstance(module)
-        instance.allocate(machine_inst, externvals)
+        instance.allocate(machine, externvals)
 
         # First initialize the globals.
         # Push a frame (the "initial" frame) onto the stack with no local vars.
-        frame = values.Frame(0, [], instance, 0)
-        machine_inst.push(frame)
+        machine.new_frame(values.Frame(0, [], instance, 0))
 
         # Determine the value of each global by running its init code.
         global_section: binary.GlobalSection = module.sections[binary.GlobalSection]
         for i, g in enumerate(global_section.global_vars):
             # Run the init code block.
-            machine_inst.execute_block(g.init)
+            machine.execute_block(g.init)
             # Pop the result off the stack and set the global with it. Strictly
             # speaking, after determining the init values for the globals, we're
             # supposed to allocate  a *new* instance of the module, but this time
             # with the global initialization values. I really don't see the point in
             # doing that, but possibly that's just the standard enforcing that
             # immutable globals can only be initialized, not set.
-            machine_inst.set_global(instance.globaladdrs[i], machine_inst.pop())
+            machine.set_global(instance.globaladdrs[i], machine.pop())
 
         # Next get a list of reference vectors determined by the element sections.
         # TODO: We're skipping this step for now.
 
-        # Pop the frame off the stack.
-        _ = machine_inst.pop()
-
-        # Push a frame (the "auxilliary" frame) onto the stack with no local vars.
-        frame = values.Frame(0, [], instance, 0)
-        machine_inst.push(frame)
+        machine.clear_stack()
 
         # Skip elements again
 
@@ -228,16 +223,22 @@ class ModuleInstance:
                 raise ValueError(
                     f"Only one memory is supported, got data memidx {d.memidx}"
                 )
-            # Run the offset expression. By definition, it is not None.
+            # Run the offset expression. By definition, it is not None. Also by
+            # validation, it returns a value.
             assert d.offset is not None
-            machine_inst.execute_expr(d.offset)
-            machine_inst.push(values.Value(values.ValueType.I32, 0))
-            machine_inst.push(values.Value(values.ValueType.I32, len(d.data)))
-            insn_eval.memory_init(machine_inst, [i, 0])
-            insn_eval.data_drop(machine_inst, [i])
+            machine.new_frame(values.Frame(1, [], instance, 0))
+            machine.push(values.Label(1, len(d.offset)))
+            machine.execute_seq(d.offset)
+            machine.push(values.Value(values.ValueType.I32, 0))
+            machine.push(values.Value(values.ValueType.I32, len(d.data)))
+            insn_eval.memory_init(machine,
+                                  Instruction(InstructionType.MEMORY_INIT, [i, 0], 0, 0))
+            insn_eval.data_drop(machine,
+                                Instruction(InstructionType.DATA_DROP, [i], 0, 0))
+            machine.clear_stack()
 
         # Execute the start function
         # start_section: module.StartSection = module.sections[module.StartSection]
 
-        _ = machine_inst.pop()
+        machine.clear_stack()
         return instance

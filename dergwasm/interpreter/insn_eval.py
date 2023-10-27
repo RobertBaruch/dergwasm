@@ -95,14 +95,12 @@ def else_(machine: Machine, instruction: Instruction) -> None:
         value = machine.pop()
 
     label = value
-    print(f"END, label encountered: {label}")
     # Push the vals back on the stack
     while stack_values:
         machine.push(stack_values.pop())
     machine.get_current_frame().pc = label.continuation
 
 
-# Not really an instruction, but it's used to end blocks.,
 def end(machine: Machine, instruction: Instruction) -> None:
     # End of block reached without jump. Slide the first label out of the
     # stack, and then jump to after its end.
@@ -111,9 +109,6 @@ def end(machine: Machine, instruction: Instruction) -> None:
     while not isinstance(value, values.Label):
         stack_values.append(value)
         value = machine.pop()
-
-    label = value
-    print(f"END, label encountered: {label}")
     # Push the vals back on the stack
     while stack_values:
         machine.push(stack_values.pop())
@@ -211,7 +206,11 @@ def drop(machine: Machine, instruction: Instruction) -> None:
 
 
 def select(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c = int(cast(values.Value, machine.pop()).value)
+    val2 = cast(values.Value, machine.pop())
+    val1 = cast(values.Value, machine.pop())
+    machine.push(val1 if c else val2)
+    machine.get_current_frame().pc += 1
 
 
 def select_vec(machine: Machine, instruction: Instruction) -> None:
@@ -321,13 +320,34 @@ def i32_load(machine: Machine, instruction: Instruction) -> None:
         raise RuntimeError(
             "i32.load: access out of bounds: base {i} offset {operands[1]}"
         )
-    val = struct.unpack("<i", mem[ea : ea + 4])[0]
+    val = struct.unpack("<I", mem[ea : ea + 4])[0]
     machine.push(values.Value(values.ValueType.I32, val))
     f.pc += 1
 
 
 def i64_load(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """Loads a 64-bit integer from memory.
+
+    Expects the base address (i32) to be on the top of the stack.
+
+    Operands:
+      0: alignment (int)
+      1: offset (int)
+    """
+    f = machine.get_current_frame()
+    operands = instruction.operands
+    i = int(cast(values.Value, machine.pop()).value)  # base (i32)
+    # Ignore operand[0], the alignment.
+    a = f.module.memaddrs[0]  # memaddr
+    ea = i + int(operands[1])  # effective address
+    mem = machine.get_mem(a)
+    if ea + 8 > len(mem):
+        raise RuntimeError(
+            "i64.load: access out of bounds: base {i} offset {operands[1]}"
+        )
+    val = struct.unpack("<Q", mem[ea : ea + 8])[0]
+    machine.push(values.Value(values.ValueType.I64, val))
+    f.pc += 1
 
 
 def f32_load(machine: Machine, instruction: Instruction) -> None:
@@ -392,19 +412,40 @@ def i32_store(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
     mem = machine.get_mem(a)
-    c = int(cast(values.Value, machine.pop()).value)  # value to store
+    c = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # value
     i = int(cast(values.Value, machine.pop()).value)  # i32 base
     ea = i + int(operands[1])  # effective address
     if ea + 4 > len(mem):
         raise RuntimeError(
             f"i32.store: access out of bounds: base {i} offset {operands[1]}"
         )
-    mem[ea : ea + 4] = struct.pack("<i", c)
+    mem[ea : ea + 4] = struct.pack("<I", c)
     f.pc += 1
 
 
 def i64_store(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """Stores a 64-bit integer to memory.
+
+    Expects the stack to contain, starting from top: [value (i64), base addr (i32)].
+
+    Operands:
+      0: alignment (int)
+      1: offset (int)
+    """
+    f = machine.get_current_frame()
+    operands = instruction.operands
+    # Ignore operand[0], the alignment.
+    a = f.module.memaddrs[0]  # offset
+    mem = machine.get_mem(a)
+    c = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFFFFFFFFFF  # value
+    i = int(cast(values.Value, machine.pop()).value)  # i32 base
+    ea = i + int(operands[1])  # effective address
+    if ea + 8 > len(mem):
+        raise RuntimeError(
+            f"i64.store: access out of bounds: base {i} offset {operands[1]}"
+        )
+    mem[ea : ea + 8] = struct.pack("<Q", c)
+    f.pc += 1
 
 
 def f32_store(machine: Machine, instruction: Instruction) -> None:
@@ -416,23 +457,128 @@ def f64_store(machine: Machine, instruction: Instruction) -> None:
 
 
 def i32_store8(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """Stores the low 8 bits of a 32-bit integer to memory.
+
+    Expects the stack to contain, starting from top: [value (i32), base addr (i32)].
+
+    Operands:
+      0: alignment (int)
+      1: offset (int)
+    """
+    f = machine.get_current_frame()
+    operands = instruction.operands
+    # Ignore operand[0], the alignment.
+    a = f.module.memaddrs[0]  # offset
+    mem = machine.get_mem(a)
+    c = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # value
+    i = int(cast(values.Value, machine.pop()).value)  # i32 base
+    ea = i + int(operands[1])  # effective address
+    if ea + 1 > len(mem):
+        raise RuntimeError(
+            f"i32.store8: access out of bounds: base {i} offset {operands[1]}"
+        )
+    mem[ea] = c & 0xFF
+    f.pc += 1
 
 
 def i32_store16(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """Stores the low 16 bits of a 32-bit integer to memory.
+
+    Expects the stack to contain, starting from top: [value (i32), base addr (i32)].
+
+    Operands:
+      0: alignment (int)
+      1: offset (int)
+    """
+    f = machine.get_current_frame()
+    operands = instruction.operands
+    # Ignore operand[0], the alignment.
+    a = f.module.memaddrs[0]  # offset
+    mem = machine.get_mem(a)
+    c = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # value
+    i = int(cast(values.Value, machine.pop()).value)  # i32 base
+    ea = i + int(operands[1])  # effective address
+    if ea + 2 > len(mem):
+        raise RuntimeError(
+            f"i32.store16: access out of bounds: base {i} offset {operands[1]}"
+        )
+    mem[ea : ea + 2] = struct.pack("<H", c & 0xFFFF)
+    f.pc += 1
 
 
 def i64_store8(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """Stores the low 8 bits of a 64-bit integer to memory.
+
+    Expects the stack to contain, starting from top: [value (i64), base addr (i32)].
+
+    Operands:
+      0: alignment (int)
+      1: offset (int)
+    """
+    f = machine.get_current_frame()
+    operands = instruction.operands
+    # Ignore operand[0], the alignment.
+    a = f.module.memaddrs[0]  # offset
+    mem = machine.get_mem(a)
+    c = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFFFFFFFFFF  # value
+    i = int(cast(values.Value, machine.pop()).value)  # i32 base
+    ea = i + int(operands[1])  # effective address
+    if ea + 1 > len(mem):
+        raise RuntimeError(
+            f"i64.store8: access out of bounds: base {i} offset {operands[1]}"
+        )
+    mem[ea] = c & 0xFF
+    f.pc += 1
 
 
 def i64_store16(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """Stores the low 16 bits of a 64-bit integer to memory.
+
+    Expects the stack to contain, starting from top: [value (i64), base addr (i32)].
+
+    Operands:
+      0: alignment (int)
+      1: offset (int)
+    """
+    f = machine.get_current_frame()
+    operands = instruction.operands
+    # Ignore operand[0], the alignment.
+    a = f.module.memaddrs[0]  # offset
+    mem = machine.get_mem(a)
+    c = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFFFFFFFFFF  # value
+    i = int(cast(values.Value, machine.pop()).value)  # i32 base
+    ea = i + int(operands[1])  # effective address
+    if ea + 2 > len(mem):
+        raise RuntimeError(
+            f"i64.store16: access out of bounds: base {i} offset {operands[1]}"
+        )
+    mem[ea : ea + 2] = struct.pack("<H", c & 0xFFFF)
+    f.pc += 1
 
 
 def i64_store32(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """Stores the low 32 bits of a 64-bit integer to memory.
+
+    Expects the stack to contain, starting from top: [value (i64), base addr (i32)].
+
+    Operands:
+      0: alignment (int)
+      1: offset (int)
+    """
+    f = machine.get_current_frame()
+    operands = instruction.operands
+    # Ignore operand[0], the alignment.
+    a = f.module.memaddrs[0]  # offset
+    mem = machine.get_mem(a)
+    c = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFFFFFFFFFF  # value
+    i = int(cast(values.Value, machine.pop()).value)  # i32 base
+    ea = i + int(operands[1])  # effective address
+    if ea + 4 > len(mem):
+        raise RuntimeError(
+            f"i64.store32: access out of bounds: base {i} offset {operands[1]}"
+        )
+    mem[ea : ea + 4] = struct.pack("<I", c & 0xFFFFFFFF)
+    f.pc += 1
 
 
 def memory_size(machine: Machine, instruction: Instruction) -> None:
@@ -494,12 +640,17 @@ def i32_const(machine: Machine, instruction: Instruction) -> None:
     operands = instruction.operands
     assert len(operands) == 1
     assert isinstance(operands[0], int)
-    machine.push(values.Value(values.ValueType.I32, operands[0]))
+    machine.push(values.Value(values.ValueType.I32, operands[0] & 0xFFFFFFFF))
     machine.get_current_frame().pc += 1
 
 
 def i64_const(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """Pushes a 64-bit integer constant onto the stack."""
+    operands = instruction.operands
+    assert len(operands) == 1
+    assert isinstance(operands[0], int)
+    machine.push(values.Value(values.ValueType.I64, operands[0] & 0xFFFFFFFFFFFFFFFF))
+    machine.get_current_frame().pc += 1
 
 
 def f32_const(machine: Machine, instruction: Instruction) -> None:
@@ -511,11 +662,16 @@ def f64_const(machine: Machine, instruction: Instruction) -> None:
 
 
 def i32_eqz(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c1 = int(cast(values.Value, machine.pop()).value)
+    machine.push(values.Value(values.ValueType.I32, 0 if c1 else 1))
+    machine.get_current_frame().pc += 1
 
 
 def i32_eq(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    machine.push(values.Value(values.ValueType.I32, int(c1 == c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i32_ne(machine: Machine, instruction: Instruction) -> None:
@@ -703,7 +859,10 @@ def i32_and(machine: Machine, instruction: Instruction) -> None:
 
 
 def i32_or(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    machine.push(values.Value(values.ValueType.I32, (c1 | c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i32_xor(machine: Machine, instruction: Instruction) -> None:
@@ -1554,7 +1713,7 @@ def i8x16_avgr_u(machine: Machine, instruction: Instruction) -> None:
 def eval_insn(machine: Machine, instruction: Instruction) -> None:
     """Evaluates an instruction."""
     try:
-        print(f"{instruction} {instruction.operands}")
+        # print(f"{instruction} {instruction.operands}")
         INSTRUCTION_FUNCS[instruction.instruction_type](machine, instruction)
     except NotImplementedError:
         print("Instruction not implemented:", instruction)

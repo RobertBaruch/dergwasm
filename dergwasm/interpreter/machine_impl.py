@@ -38,12 +38,14 @@ class MachineImpl(machine.Machine):
     def peek(self) -> values.StackValue:
         return self.stack_.data[-1]
 
-    # TODO: How does this now interact with global initializer exprs?
-    def execute_seq(self, expr: list[Instruction]) -> None:
+    def clear_stack(self) -> None:
+        self.stack_.data = []
+
+    def execute_seq(self, seq: list[Instruction]) -> None:
         """Execute the instructions until RETURN or falling off end."""
         self.get_current_frame().pc = 0
-        while self.get_current_frame().pc < len(expr):
-            instruction = expr[self.get_current_frame().pc]
+        while self.get_current_frame().pc < len(seq):
+            instruction = seq[self.get_current_frame().pc]
 
             if instruction.instruction_type == InstructionType.RETURN:
                 insn_eval.eval_insn(self, instruction)
@@ -63,7 +65,18 @@ class MachineImpl(machine.Machine):
             self.push(v)
 
     def execute_expr(self, expr: list[Instruction]) -> list[Instruction]:
-        raise NotImplementedError()
+        """Execute the instructions until RETURN or falling off end."""
+        self.get_current_frame().pc = 0
+        while self.get_current_frame().pc < len(expr):
+            instruction = expr[self.get_current_frame().pc]
+
+            if instruction.instruction_type == InstructionType.RETURN:
+                raise RuntimeError(
+                    "Unexpected RETURN instruction in an initialization expression"
+                )
+
+            else:
+                insn_eval.eval_insn(self, instruction)
 
     def get_current_frame(self) -> values.Frame:
         if self.current_frame is None:

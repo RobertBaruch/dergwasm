@@ -65,8 +65,12 @@ class Machine(abc.ABC):
         """Returns the value on the top of the stack."""
 
     @abc.abstractmethod
-    def execute_expr(self, expr: list[insn.Instruction]) -> None:
-        """Executes an expression (a list of instructions)."""
+    def clear_stack(self) -> None:
+        """Clears the stack."""
+
+    @abc.abstractmethod
+    def execute_seq(self, seq: list[insn.Instruction]) -> None:
+        """Execute the instructions until RETURN or falling off end."""
 
     @abc.abstractmethod
     def get_current_frame(self) -> values.Frame:

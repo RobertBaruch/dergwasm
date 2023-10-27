@@ -360,7 +360,7 @@ def read_expr(f: BytesIO) -> list[insn.Instruction]:
         insns.append(instruction)
         if instruction.instruction_type == insn.InstructionType.END:
             break
-    return insns
+    return flatten_instructions(insns, 0)
 
 
 @dataclasses.dataclass

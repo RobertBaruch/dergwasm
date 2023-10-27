@@ -2,11 +2,11 @@
 
 import math
 
-import binary
-import machine
-from machine_impl import MachineImpl
-import values
-from module_instance import ModuleInstance
+from dergwasm.interpreter import binary
+from dergwasm.interpreter import machine
+from dergwasm.interpreter.machine_impl import MachineImpl
+from dergwasm.interpreter import values
+from dergwasm.interpreter.module_instance import ModuleInstance
 
 
 def Math_atan(x: float) -> float:

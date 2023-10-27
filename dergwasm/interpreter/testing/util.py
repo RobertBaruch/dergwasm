@@ -7,28 +7,8 @@ def i32_const(value: int) -> Instruction:
     return Instruction(InstructionType.I32_CONST, [value], 0, 0)
 
 
-def i32_add() -> Instruction:
-    return Instruction(InstructionType.I32_ADD, [], 0, 0)
-
-
-def i32_sub() -> Instruction:
-    return Instruction(InstructionType.I32_SUB, [], 0, 0)
-
-
-def i32_mul() -> Instruction:
-    return Instruction(InstructionType.I32_MUL, [], 0, 0)
-
-
-def nop() -> Instruction:
-    return Instruction(InstructionType.NOP, [], 0, 0)
-
-
-def ret() -> Instruction:
-    return Instruction(InstructionType.RETURN, [], 0, 0)
-
-
-def drop() -> Instruction:
-    return Instruction(InstructionType.DROP, [], 0, 0)
+def i64_const(value: int) -> Instruction:
+    return Instruction(InstructionType.I64_CONST, [value], 0, 0)
 
 
 def br(labelidx: int) -> Instruction:
@@ -108,16 +88,40 @@ def local_get(localidx: int) -> Instruction:
     return Instruction(InstructionType.LOCAL_GET, [localidx], 0, 0)
 
 
-def i32_lt_u() -> Instruction:
-    return Instruction(InstructionType.I32_LT_U, [], 0, 0)
-
-
 def i32_load(alignment: int, offset: int) -> Instruction:
     return Instruction(InstructionType.I32_LOAD, [alignment, offset], 0, 0)
 
 
 def i32_store(alignment: int, offset: int) -> Instruction:
     return Instruction(InstructionType.I32_STORE, [alignment, offset], 0, 0)
+
+
+def i32_store8(alignment: int, offset: int) -> Instruction:
+    return Instruction(InstructionType.I32_STORE8, [alignment, offset], 0, 0)
+
+
+def i32_store16(alignment: int, offset: int) -> Instruction:
+    return Instruction(InstructionType.I32_STORE16, [alignment, offset], 0, 0)
+
+
+def i64_load(alignment: int, offset: int) -> Instruction:
+    return Instruction(InstructionType.I64_LOAD, [alignment, offset], 0, 0)
+
+
+def i64_store(alignment: int, offset: int) -> Instruction:
+    return Instruction(InstructionType.I64_STORE, [alignment, offset], 0, 0)
+
+
+def i64_store8(alignment: int, offset: int) -> Instruction:
+    return Instruction(InstructionType.I64_STORE8, [alignment, offset], 0, 0)
+
+
+def i64_store16(alignment: int, offset: int) -> Instruction:
+    return Instruction(InstructionType.I64_STORE16, [alignment, offset], 0, 0)
+
+
+def i64_store32(alignment: int, offset: int) -> Instruction:
+    return Instruction(InstructionType.I64_STORE32, [alignment, offset], 0, 0)
 
 
 def memory_init(dataidx: int, memidx: int) -> Instruction:
@@ -130,3 +134,7 @@ def data_drop(dataidx: int) -> Instruction:
 
 def call(funcidx: int) -> Instruction:
     return Instruction(InstructionType.CALL, [funcidx], 0, 0)
+
+
+def noarg(insn_type: InstructionType):
+    return Instruction(insn_type, [], 0, 0)
