@@ -23,10 +23,8 @@ def nop(machine: Machine, instruction: Instruction) -> None:
     machine.get_current_frame().pc += 1
 
 
-def block(machine: Machine, instruction: Instruction) -> None:
+def _block(machine: Machine, block: Block, continuation_pc: int) -> None:
     f = machine.get_current_frame()
-    operands = instruction.operands
-    block: Block = operands[0]
     block_func_type = block.block_type
     if isinstance(block_func_type, int):
         block_func_type = f.module.func_types[block_func_type]
@@ -37,51 +35,150 @@ def block(machine: Machine, instruction: Instruction) -> None:
 
     # Create a label for the block. Its continuation is the end of the
     # block.
-    label = values.Label(len(block_func_type.results), instruction.continuation_pc)
+    label = values.Label(len(block_func_type.results), continuation_pc)
     # Slide the label under the params.
     block_vals = [machine.pop() for _ in block_func_type.parameters]
     machine.push(label)
     for v in reversed(block_vals):
         machine.push(v)
+
+
+def block(machine: Machine, instruction: Instruction) -> None:
+    f = machine.get_current_frame()
+    operands = instruction.operands
+    block: Block = operands[0]
+    _block(machine, block, instruction.continuation_pc)
     f.pc += 1
 
 
 def loop(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    f = machine.get_current_frame()
+    block: Block = instruction.operands[0]
+    block_func_type = block.block_type
+    if isinstance(block_func_type, int):
+        block_func_type = f.module.func_types[block_func_type]
+    elif block_func_type is not None:
+        block_func_type = FuncType([], [block_func_type])
+    else:
+        block_func_type = FuncType([], [])
+
+    label = values.Label(len(block_func_type.parameters), instruction.continuation_pc)
+    # Slide the label under the params.
+    block_vals = [machine.pop() for _ in block_func_type.parameters]
+    machine.push(label)
+    for v in reversed(block_vals):
+        machine.push(v)
+    machine.get_current_frame().pc += 1
 
 
 def if_(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    assert isinstance(instruction.operands[0], Block)
+    block: Block = instruction.operands[0]
+    cond: values.Value = machine.pop()
+    if cond.value:
+        _block(machine, block, instruction.continuation_pc)
+        machine.get_current_frame().pc += 1
+    else:
+        # If there's no else clause, don't start a block.
+        if instruction.else_continuation_pc != instruction.continuation_pc:
+            _block(machine, block, instruction.continuation_pc)
+        machine.get_current_frame().pc = instruction.else_continuation_pc
 
 
-# Not really an instruction, but it's used to end an if-block and start an else-block.,
 def else_(machine: Machine, instruction: Instruction) -> None:
-    raise RuntimeError(
-        "else psuedo-instruction reached! There aren't supposed to be any!"
-    )
+    # End of block reached without jump. Slide the first label out of the
+    # stack, and then jump to after its end.
+    stack_values = []
+    value = machine.pop()
+    while not isinstance(value, values.Label):
+        stack_values.append(value)
+        value = machine.pop()
+
+    label = value
+    print(f"END, label encountered: {label}")
+    # Push the vals back on the stack
+    while stack_values:
+        machine.push(stack_values.pop())
+    machine.get_current_frame().pc = label.continuation
 
 
 # Not really an instruction, but it's used to end blocks.,
 def end(machine: Machine, instruction: Instruction) -> None:
-    raise RuntimeError(
-        "end psuedo-instruction reached! There aren't supposed to be any!"
-    )
+    # End of block reached without jump. Slide the first label out of the
+    # stack, and then jump to after its end.
+    stack_values = []
+    value = machine.pop()
+    while not isinstance(value, values.Label):
+        stack_values.append(value)
+        value = machine.pop()
+
+    label = value
+    print(f"END, label encountered: {label}")
+    # Push the vals back on the stack
+    while stack_values:
+        machine.push(stack_values.pop())
+    machine.get_current_frame().pc += 1
+
+
+def _br(machine: Machine, level: int) -> None:
+    label: values.Label = machine.get_nth_value_of_type(level, values.Label)
+    n = label.arity
+
+    # save the top n values on the stack
+    vals = [machine.pop() for _ in range(n)]
+    # pop everything up to the label
+    while level >= 0:
+        value = machine.pop()
+        if isinstance(value, values.Label):
+            level -= 1
+    # push the saved values back on the stack
+    for v in reversed(vals):
+        machine.push(v)
+    machine.get_current_frame().pc = label.continuation
 
 
 def br(machine: Machine, instruction: Instruction) -> None:
-    raise RuntimeError("br is supposed to be handled in the machine")
+    # Branch out of a nested block. The sole exception is BR 0 when not
+    # in a block. That is the equivalent of a return.
+    # Find the level-th label (0-based) on the stack.
+    assert isinstance(instruction.operands[0], int)
+    level = instruction.operands[0]
+    _br(machine, level)
 
 
 def br_if(machine: Machine, instruction: Instruction) -> None:
-    raise RuntimeError("br_if is supposed to be handled in the machine")
+    assert isinstance(instruction.operands[0], int)
+    level = instruction.operands[0]
+    cond: values.Value = machine.pop()
+    if cond.value:
+        _br(machine, level)
+    else:
+        machine.get_current_frame().pc += 1
 
 
 def br_table(machine: Machine, instruction: Instruction) -> None:
-    raise RuntimeError("br_table is supposed to be handled in the machine")
+    operands = instruction.operands
+    idx_value: values.Value = machine.pop()
+    assert isinstance(idx_value.value, int)
+    idx = idx_value.value
+    if idx < len(operands):
+        _br(machine, operands[idx])
+    else:
+        _br(machine, operands[-1])
 
 
 def return_(machine: Machine, instruction: Instruction) -> None:
-    raise RuntimeError("return is supposed to be handled in the machine")
+    f = machine.get_current_frame()
+    n = f.arity
+    results = [machine.pop() for _ in range(n)]
+    # Pop everything up to and including the frame. This will also include
+    # the function's label. Basically skip all nesting levels.
+    frame = machine.pop()
+    while not isinstance(frame, values.Frame):
+        frame = machine.pop()
+    # Push the results back on the stack
+    for v in reversed(results):
+        machine.push(v)
 
 
 def call(machine: Machine, instruction: Instruction) -> None:

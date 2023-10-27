@@ -143,60 +143,10 @@ class MachineImpl(machine.Machine):
         self.get_current_frame().pc = 0
         while self.get_current_frame().pc < len(expr):
             instruction = expr[self.get_current_frame().pc]
-            operands = instruction.operands
 
-            if instruction.instruction_type == InstructionType.BLOCK:
-                self._block(operands[0], instruction.continuation_pc)
-                self.get_current_frame().pc += 1
-
-            elif instruction.instruction_type == InstructionType.END:
-                self._end()
-                self.get_current_frame().pc += 1
-
-            elif instruction.instruction_type == InstructionType.ELSE:
-                self.get_current_frame().pc = self._else()
-
-            elif instruction.instruction_type == InstructionType.RETURN:
-                self._return()
+            if instruction.instruction_type == InstructionType.RETURN:
+                insn_eval.eval_insn(self, instruction)
                 return
-
-            elif instruction.instruction_type == InstructionType.BR:
-                assert isinstance(operands[0], int)
-                self.get_current_frame().pc = self._br(operands[0])
-
-            elif instruction.instruction_type == InstructionType.BR_IF:
-                assert isinstance(operands[0], int)
-                cond: values.Value = self.pop()
-                if cond.value:
-                    self.get_current_frame().pc = self._br(operands[0])
-                else:
-                    self.get_current_frame().pc += 1
-
-            elif instruction.instruction_type == InstructionType.BR_TABLE:
-                idx_value: values.Value = self.pop()
-                assert isinstance(idx_value.value, int)
-                idx = idx_value.value
-                if idx < len(operands):
-                    self.get_current_frame().pc = self._br(operands[idx])
-                else:
-                    self.get_current_frame().pc = self._br(operands[-1])
-
-            elif instruction.instruction_type == InstructionType.IF:
-                assert isinstance(operands[0], Block)
-                cond: values.Value = self.pop()
-                if cond.value:
-                    self._block(operands[0], instruction.continuation_pc)
-                    self.get_current_frame().pc += 1
-                else:
-                    # If there's no else clause, don't start a block.
-                    if instruction.else_continuation_pc != instruction.continuation_pc:
-                        self._block(operands[0], instruction.continuation_pc)
-                    self.get_current_frame().pc = instruction.else_continuation_pc
-
-            elif instruction.instruction_type == InstructionType.LOOP:
-                assert isinstance(operands[0], Block)
-                self._loop(operands[0], instruction.continuation_pc)
-                self.get_current_frame().pc += 1
 
             else:
                 insn_eval.eval_insn(self, instruction)
