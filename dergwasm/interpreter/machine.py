@@ -53,6 +53,10 @@ class Machine(abc.ABC):
     """Abstract machine interface."""
 
     @abc.abstractmethod
+    def get_max_allowed_memory_pages(self) -> int:
+        """Gets the maximum memory pages you're allowed to have."""
+
+    @abc.abstractmethod
     def push(self, value: values.StackValue) -> None:
         """Pushes a value onto the stack."""
 

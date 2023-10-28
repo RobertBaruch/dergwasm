@@ -233,6 +233,7 @@ class Element:
     @staticmethod
     def read(f: BytesIO) -> Element:
         """Reads and returns an Element."""
+        del f
         return Element()
 
 

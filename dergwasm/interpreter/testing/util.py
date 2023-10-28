@@ -1,4 +1,9 @@
 """Utility functions for testing the interpreter."""
+
+# pylint: disable=missing-function-docstring,missing-class-docstring
+# pylint: disable=unused-argument
+
+import struct
 from dergwasm.interpreter.insn import Instruction, InstructionType, Block
 from dergwasm.interpreter.values import ValueType
 
@@ -9,6 +14,16 @@ def i32_const(value: int) -> Instruction:
 
 def i64_const(value: int) -> Instruction:
     return Instruction(InstructionType.I64_CONST, [value], 0, 0)
+
+
+def f32_const(value: float) -> Instruction:
+    # Necessary because python floats are 64-bit, but wasm F32s are 32-bit.
+    val32 = struct.unpack('f', struct.pack('f', value))[0]
+    return Instruction(InstructionType.F32_CONST, [val32], 0, 0)
+
+
+def f64_const(value: float) -> Instruction:
+    return Instruction(InstructionType.F64_CONST, [value], 0, 0)
 
 
 def br(labelidx: int) -> Instruction:
@@ -88,6 +103,14 @@ def local_get(localidx: int) -> Instruction:
     return Instruction(InstructionType.LOCAL_GET, [localidx], 0, 0)
 
 
+def global_set(globalidx: int) -> Instruction:
+    return Instruction(InstructionType.GLOBAL_SET, [globalidx], 0, 0)
+
+
+def global_get(globalidx: int) -> Instruction:
+    return Instruction(InstructionType.GLOBAL_GET, [globalidx], 0, 0)
+
+
 def i32_load(alignment: int, offset: int) -> Instruction:
     return Instruction(InstructionType.I32_LOAD, [alignment, offset], 0, 0)
 
@@ -126,6 +149,22 @@ def i64_store32(alignment: int, offset: int) -> Instruction:
 
 def memory_init(dataidx: int, memidx: int) -> Instruction:
     return Instruction(InstructionType.MEMORY_INIT, [dataidx, memidx], 0, 0)
+
+
+def memory_size(memidx: int) -> Instruction:
+    return Instruction(InstructionType.MEMORY_SIZE, [memidx], 0, 0)
+
+
+def memory_grow(memidx: int) -> Instruction:
+    return Instruction(InstructionType.MEMORY_GROW, [memidx], 0, 0)
+
+
+def memory_copy(memidx0: int, memidx1: int) -> Instruction:
+    return Instruction(InstructionType.MEMORY_COPY, [memidx0, memidx1], 0, 0)
+
+
+def memory_fill(memidx: int) -> Instruction:
+    return Instruction(InstructionType.MEMORY_FILL, [memidx], 0, 0)
 
 
 def data_drop(dataidx: int) -> Instruction:

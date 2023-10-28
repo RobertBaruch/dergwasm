@@ -29,6 +29,10 @@ class MachineImpl(machine.Machine):
         self.global_vars = []
         self.datas = []
 
+    def get_max_allowed_memory_pages(self) -> int:
+        # Here I'm just allowing 64k x 1k = 64M of memory.
+        return 1024
+
     def push(self, value: values.StackValue) -> None:
         self.stack_.push(value)
 
@@ -135,7 +139,7 @@ class MachineImpl(machine.Machine):
         self.global_vars[globalidx].value = value
 
     def get_global(self, globalidx: int) -> machine.GlobalInstance:
-        return self.global_vars[globalidx]
+        return self.global_vars[globalidx].value
 
     def add_data(self, data: bytes) -> int:
         self.datas.append(data)

@@ -1,5 +1,9 @@
 """Evaluates instructions."""
 
+# pylint: disable=missing-function-docstring,missing-class-docstring
+# pylint: disable=too-many-branches,too-many-statements,too-many-lines
+# pylint: disable=unused-argument
+
 from __future__ import annotations  # For PEP563 - postponed evaluation of annotations
 
 import struct
@@ -33,9 +37,9 @@ def nop(machine: Machine, instruction: Instruction) -> None:
     machine.get_current_frame().pc += 1
 
 
-def _block(machine: Machine, block: Block, continuation_pc: int) -> None:
+def _block(machine: Machine, block_operand: Block, continuation_pc: int) -> None:
     f = machine.get_current_frame()
-    block_func_type = block.block_type
+    block_func_type = block_operand.block_type
     if isinstance(block_func_type, int):
         block_func_type = f.module.func_types[block_func_type]
     elif block_func_type is not None:
@@ -54,17 +58,16 @@ def _block(machine: Machine, block: Block, continuation_pc: int) -> None:
 
 
 def block(machine: Machine, instruction: Instruction) -> None:
-    f = machine.get_current_frame()
     operands = instruction.operands
-    block: Block = operands[0]
-    _block(machine, block, instruction.continuation_pc)
-    f.pc += 1
+    block_operand: Block = operands[0]
+    _block(machine, block_operand, instruction.continuation_pc)
+    machine.get_current_frame().pc += 1
 
 
 def loop(machine: Machine, instruction: Instruction) -> None:
     f = machine.get_current_frame()
-    block: Block = instruction.operands[0]
-    block_func_type = block.block_type
+    block_operand: Block = instruction.operands[0]
+    block_func_type = block_operand.block_type
     if isinstance(block_func_type, int):
         block_func_type = f.module.func_types[block_func_type]
     elif block_func_type is not None:
@@ -83,15 +86,15 @@ def loop(machine: Machine, instruction: Instruction) -> None:
 
 def if_(machine: Machine, instruction: Instruction) -> None:
     assert isinstance(instruction.operands[0], Block)
-    block: Block = instruction.operands[0]
+    block_operand: Block = instruction.operands[0]
     cond: values.Value = machine.pop()
     if cond.value:
-        _block(machine, block, instruction.continuation_pc)
+        _block(machine, block_operand, instruction.continuation_pc)
         machine.get_current_frame().pc += 1
     else:
         # If there's no else clause, don't start a block.
         if instruction.else_continuation_pc != instruction.continuation_pc:
-            _block(machine, block, instruction.continuation_pc)
+            _block(machine, block_operand, instruction.continuation_pc)
         machine.get_current_frame().pc = instruction.else_continuation_pc
 
 
@@ -157,8 +160,8 @@ def br_if(machine: Machine, instruction: Instruction) -> None:
     cond: values.Value = machine.pop()
     if cond.value:
         _br(machine, level)
-    else:
-        machine.get_current_frame().pc += 1
+        return
+    machine.get_current_frame().pc += 1
 
 
 def br_table(machine: Machine, instruction: Instruction) -> None:
@@ -168,8 +171,8 @@ def br_table(machine: Machine, instruction: Instruction) -> None:
     idx = idx_value.value
     if idx < len(operands):
         _br(machine, operands[idx])
-    else:
-        _br(machine, operands[-1])
+        return
+    _br(machine, operands[-1])
 
 
 def return_(machine: Machine, instruction: Instruction) -> None:
@@ -269,11 +272,18 @@ def local_tee(machine: Machine, instruction: Instruction) -> None:
 
 
 def global_get(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    f = machine.get_current_frame()
+    operands = instruction.operands
+    machine.push(machine.get_global(f.module.globaladdrs[operands[0]]))
+    f.pc += 1
 
 
 def global_set(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    f = machine.get_current_frame()
+    operands = instruction.operands
+    val = machine.pop()
+    machine.set_global(f.module.globaladdrs[operands[0]], val)
+    f.pc += 1
 
 
 # Table instructions,
@@ -592,11 +602,28 @@ def i64_store32(machine: Machine, instruction: Instruction) -> None:
 
 
 def memory_size(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    assert isinstance(instruction.operands[0], int)  # memindex = 0
+    f = machine.get_current_frame()
+    ma = f.module.memaddrs[instruction.operands[0]]
+    mem = machine.get_mem(ma)
+    machine.push(values.Value(values.ValueType.I32, len(mem) // 65536))
+    f.pc += 1
 
 
 def memory_grow(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    assert isinstance(instruction.operands[0], int)  # memindex = 0
+    f = machine.get_current_frame()
+    ma = f.module.memaddrs[instruction.operands[0]]
+    mem = machine.get_mem(ma)
+    sz = len(mem) // 65536
+    n = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # page growth amount
+    if sz + n > machine.get_max_allowed_memory_pages():
+        machine.push(values.Value(values.ValueType.I32, 0xFFFFFFFF))
+        f.pc += 1
+        return
+    mem.extend(bytearray(n * 65536))
+    machine.push(values.Value(values.ValueType.I32, sz))
+    f.pc += 1
 
 
 def memory_init(machine: Machine, instruction: Instruction) -> None:
@@ -606,22 +633,21 @@ def memory_init(machine: Machine, instruction: Instruction) -> None:
     assert isinstance(operands[0], int)  # dataindex
     assert isinstance(operands[1], int)  # memindex = 0
 
-    curr_frame = cast(values.Frame, machine.get_current_frame())
+    curr_frame = machine.get_current_frame()
     ma = curr_frame.module.memaddrs[operands[1]]
     mem = machine.get_mem(ma)
     da = curr_frame.module.dataaddrs[operands[0]]
     data = machine.get_data(da)
-    n = int(cast(values.Value, machine.pop()).value)  # data size, i32
-    s = int(cast(values.Value, machine.pop()).value)  # source, i32
-    d = int(cast(values.Value, machine.pop()).value)  # destination, i32
+    n = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # data size, i32
+    s = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # source, i32
+    d = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # destination, i32
 
     if s + n > len(data):
         raise RuntimeError("memory.init: source is out of bounds")
     if d + n > len(mem):
         raise RuntimeError("memory.init: destination is out of bounds")
-    if n == 0:
-        return
-    mem[d : d + n] = data[s : s + n]
+    if n > 0:
+        mem[d : d + n] = data[s : s + n]
     machine.get_current_frame().pc += 1
 
 
@@ -637,11 +663,44 @@ def data_drop(machine: Machine, instruction: Instruction) -> None:
 
 
 def memory_copy(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    operands = instruction.operands
+    assert len(operands) == 2
+    assert isinstance(operands[0], int)  # memindex
+    assert isinstance(operands[1], int)  # memindex
+    n = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # data size, i32
+    s = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # source, i32
+    d = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # destination, i32
+    curr_frame = machine.get_current_frame()
+    # Note: wasm doesn't yet support more than one memory, so it expects all
+    # memindexes to be 0. I'm not quite sure which operand represents the source and
+    # which the destination. But for now, they are both equal to eqch other and equal
+    # to 0.
+    ma = curr_frame.module.memaddrs[operands[1]]
+    mem = machine.get_mem(ma)
+    if s + n > len(mem):
+        raise RuntimeError("memory.copy: source is out of bounds")
+    if d + n > len(mem):
+        raise RuntimeError("memory.copy: destination is out of bounds")
+    if n > 0:
+        mem[d : d + n] = mem[s : s + n]
+    machine.get_current_frame().pc += 1
 
 
 def memory_fill(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    operands = instruction.operands
+    assert len(operands) == 1
+    assert isinstance(operands[0], int)  # memindex
+    n = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # data size, i32
+    v = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # value, i32
+    d = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # destination, i32
+    curr_frame = machine.get_current_frame()
+    ma = curr_frame.module.memaddrs[operands[0]]
+    mem = machine.get_mem(ma)
+    if d + n > len(mem):
+        raise RuntimeError("memory.fill: destination is out of bounds")
+    if n > 0:
+        mem[d : d + n] = bytearray([v & 0xFF] * n)
+    machine.get_current_frame().pc += 1
 
 
 # Numeric instructions,
@@ -664,11 +723,23 @@ def i64_const(machine: Machine, instruction: Instruction) -> None:
 
 
 def f32_const(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """Pushes a 32-bit float constant onto the stack."""
+    operands = instruction.operands
+    assert len(operands) == 1
+    assert isinstance(operands[0], float)
+    # Necessary because python floats are 64-bit, but wasm F32s are 32-bit.
+    val32 = struct.unpack('f', struct.pack('f', operands[0]))[0]
+    machine.push(values.Value(values.ValueType.F32, val32))
+    machine.get_current_frame().pc += 1
 
 
 def f64_const(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """Pushes a 64-bit float constant onto the stack."""
+    operands = instruction.operands
+    assert len(operands) == 1
+    assert isinstance(operands[0], float)
+    machine.push(values.Value(values.ValueType.F64, operands[0]))
+    machine.get_current_frame().pc += 1
 
 
 def i32_eqz(machine: Machine, instruction: Instruction) -> None:
@@ -706,27 +777,45 @@ def i32_lt_u(machine: Machine, instruction: Instruction) -> None:
 
 
 def i32_gt_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _signed_32(int(cast(values.Value, machine.pop()).value))
+    c1 = _signed_32(int(cast(values.Value, machine.pop()).value))
+    machine.push(values.Value(values.ValueType.I32, int(c1 > c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i32_gt_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    machine.push(values.Value(values.ValueType.I32, int(c1 > c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i32_le_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _signed_32(int(cast(values.Value, machine.pop()).value))
+    c1 = _signed_32(int(cast(values.Value, machine.pop()).value))
+    machine.push(values.Value(values.ValueType.I32, int(c1 <= c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i32_le_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    machine.push(values.Value(values.ValueType.I32, int(c1 <= c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i32_ge_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _signed_32(int(cast(values.Value, machine.pop()).value))
+    c1 = _signed_32(int(cast(values.Value, machine.pop()).value))
+    machine.push(values.Value(values.ValueType.I32, int(c1 >= c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i32_ge_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    machine.push(values.Value(values.ValueType.I32, int(c1 >= c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i64_eqz(machine: Machine, instruction: Instruction) -> None:

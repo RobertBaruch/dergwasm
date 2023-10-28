@@ -1,5 +1,9 @@
 """Main entry point for the interpreter."""
 
+# pylint: disable=missing-function-docstring,missing-class-docstring
+# pylint: disable=unused-argument
+# pylint: disable=invalid-name
+
 import math
 
 from dergwasm.interpreter import binary
