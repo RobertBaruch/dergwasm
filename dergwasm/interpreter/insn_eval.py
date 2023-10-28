@@ -232,15 +232,29 @@ def call_indirect(machine: Machine, instruction: Instruction) -> None:
 
 # Reference instructions,
 def ref_null(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """A null reference to the type given by the operand."""
+    assert isinstance(instruction.operands[0], int)  # encoded ref type
+    assert int(instruction.operands[0]) in (0x70, 0x6F)
+    machine.push(values.Value(values.ValueType(int(instruction.operands[0])), None))
+    machine.get_current_frame().pc += 1
 
 
 def ref_is_null(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = machine.pop()
+    assert isinstance(val, values.Value)
+    assert val.value_type in (values.ValueType.FUNCREF, values.ValueType.EXTERNREF)
+    machine.push(values.Value(values.ValueType.I32, 1 if val.value is None else 0))
+    machine.get_current_frame().pc += 1
 
 
 def ref_func(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """A function reference to the store's funcaddr for the module's funcidx given by
+    the operand."""
+    assert isinstance(instruction.operands[0], int)  # funcidx
+    f = machine.get_current_frame()
+    val = f.module.funcaddrs[int(instruction.operands[0])]
+    machine.push(values.Value(values.ValueType.FUNCREF, val))
+    machine.get_current_frame().pc += 1
 
 
 # Parametric instructions,

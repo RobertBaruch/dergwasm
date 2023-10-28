@@ -39,6 +39,7 @@ from dergwasm.interpreter.testing.util import (
     local_get,
     local_set,
     local_tee,
+    op1,
     void_block,
     noarg,
     op2,
@@ -1297,6 +1298,56 @@ class InsnEvalTest(parameterized.TestCase):
         self.assertStackDepth(self.starting_stack_depth)
         self.assertEqual(self.machine.get_current_frame().pc, 1)
         self.assertEqual(self.machine.get_mem(0)[0:10], expected)
+
+    @parameterized.named_parameters(
+        (
+            "ref.null func",
+            InstructionType.REF_NULL,
+            0x70,
+            Value(ValueType.FUNCREF, None),
+        ),
+        (
+            "ref.null externref",
+            InstructionType.REF_NULL,
+            0x6F,
+            Value(ValueType.EXTERNREF, None),
+        ),
+        ("ref.func", InstructionType.REF_FUNC, 1, Value(ValueType.FUNCREF, 2)),
+    )
+    def test_ref(self, insn_type: InstructionType, val: int, expected: Value):
+        self.module_inst.funcaddrs = [3, 2, 1]
+
+        insn_eval.eval_insn(self.machine, op1(insn_type, val))
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
+        self.assertEqual(self.machine.pop(), expected)
+
+    @parameterized.named_parameters(
+        (
+            "ref.is_null null func",
+            Value(ValueType.FUNCREF, None),
+            Value(ValueType.I32, 1),
+        ),
+        (
+            "ref.is_null null externref",
+            Value(ValueType.EXTERNREF, None),
+            Value(ValueType.I32, 1),
+        ),
+        (
+            "ref.is_null func",
+            Value(ValueType.FUNCREF, 2),
+            Value(ValueType.I32, 0),
+        ),
+    )
+    def test_ref_is_null(self, val: Value, expected: Value):
+        self.machine.push(val)
+
+        insn_eval.eval_insn(self.machine, noarg(InstructionType.REF_IS_NULL))
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
+        self.assertEqual(self.machine.pop(), expected)
 
     def test_memory_init(self):
         self.machine.push(Value(ValueType.I32, 2))  # dest offset
