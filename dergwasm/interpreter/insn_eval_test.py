@@ -1,13 +1,11 @@
 """Unit tests for insn_eval.py."""
 
 # pylint: disable=missing-function-docstring,missing-class-docstring
-# pylint: disable=too-many-lines
+# pylint: disable=too-many-lines,too-many-public-methods
 # pylint: disable=invalid-name
 
 import struct
 from absl.testing import absltest, parameterized
-
-# from absl import flags
 
 from dergwasm.interpreter.binary import FuncType, Module, flatten_instructions
 from dergwasm.interpreter.machine import GlobalInstance
@@ -46,6 +44,9 @@ from dergwasm.interpreter.testing.util import (
     i32_load,
     noarg,
 )
+
+MASK64 = 0xFFFFFFFFFFFFFFFF
+MASK32 = 0xFFFFFFFF
 
 
 class InsnEvalTest(parameterized.TestCase):
@@ -195,15 +196,166 @@ class InsnEvalTest(parameterized.TestCase):
     def test_i32_binops(
         self, insn_type: InstructionType, a: int, b: int, expected: int
     ):
-        self.machine.push(Value(ValueType.I32, a & 0xFFFFFFFF))
-        self.machine.push(Value(ValueType.I32, b & 0xFFFFFFFF))
+        self.machine.push(Value(ValueType.I32, a & MASK32))
+        self.machine.push(Value(ValueType.I32, b & MASK32))
 
         insn_eval.eval_insn(self.machine, noarg(insn_type))
 
         self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(
-            self.machine.pop(), Value(ValueType.I32, expected & 0xFFFFFFFF)
-        )
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected & MASK32))
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
+
+    @parameterized.named_parameters(
+        ("i64.add", InstructionType.I64_ADD, 2, 1, 3),
+        (
+            "i64.add mods",
+            InstructionType.I64_ADD,
+            0xFEDC000000000000,
+            0x5678000000000000,
+            0x5554000000000000,
+        ),
+        ("i64.mul", InstructionType.I64_MUL, 2, 3, 6),
+        (
+            "i64.mul mods",
+            InstructionType.I64_MUL,
+            0xFEDC123400000000,
+            0x56789ABC,
+            0x8CF0A63000000000,
+        ),
+        ("i64.sub", InstructionType.I64_SUB, 2, 1, 1),
+        (
+            "i64.sub mods",
+            InstructionType.I64_SUB,
+            0x00001234,
+            0x56789ABC,
+            0xFFFFFFFFA9877778,
+        ),
+        ("i64.div_u", InstructionType.I64_DIV_U, 6, 2, 3),
+        ("i64.div_u 99/100", InstructionType.I64_DIV_U, 99, 100, 0),
+        ("i64.div_u 101/100", InstructionType.I64_DIV_U, 101, 100, 1),
+        ("i64.rem_u", InstructionType.I64_REM_U, 6, 4, 2),
+        ("i64.rem_u 99%100", InstructionType.I64_REM_U, 99, 100, 99),
+        ("i64.rem_u 101%100", InstructionType.I64_REM_U, 101, 100, 1),
+        ("i64.div_s 6/2", InstructionType.I64_DIV_S, 6, 2, 3),
+        ("i64.div_s -6/2", InstructionType.I64_DIV_S, -6, 2, -3),
+        ("i64.div_s 6/-2", InstructionType.I64_DIV_S, 6, -2, -3),
+        ("i64.div_s -6/-2", InstructionType.I64_DIV_S, -6, -2, 3),
+        ("i64.div_s -99/100", InstructionType.I64_DIV_S, -99, 100, -1),
+        ("i64.div_s -101/100", InstructionType.I64_DIV_S, -101, 100, -2),
+        ("i64.rem_s 13%3", InstructionType.I64_REM_S, 13, 3, 1),
+        ("i64.rem_s -13%3", InstructionType.I64_REM_S, -13, 3, -1),
+        ("i64.rem_s 13%-3", InstructionType.I64_REM_S, 13, -3, 1),
+        ("i64.rem_s -13%-3", InstructionType.I64_REM_S, -13, -3, -1),
+        (
+            "i64.and",
+            InstructionType.I64_AND,
+            0xFF00FF0000FF00FF,
+            0x1234567812345678,
+            0x1200560000340078,
+        ),
+        (
+            "i64.or",
+            InstructionType.I64_OR,
+            0xFF00FF0000FF00FF,
+            0x1234567812345678,
+            0xFF34FF7812FF56FF,
+        ),
+        (
+            "i64.xor",
+            InstructionType.I64_XOR,
+            0xFF00FF0000FF00FF,
+            0xFFFF00000000FFFF,
+            0x00FFFF0000FFFF00,
+        ),
+        ("i64.shl", InstructionType.I64_SHL, 0xFF00FF00FF00FF00, 4, 0xF00FF00FF00FF000),
+        (
+            "i64.shl mods",
+            InstructionType.I64_SHL,
+            0xFF00FF00FF00FF00,
+            67,
+            0x7F807F807F807F800,
+        ),
+        (
+            "i64.shr_s",
+            InstructionType.I64_SHR_S,
+            0x0F00FF00FF00FF00,
+            4,
+            0x00F00FF00FF00FF0,
+        ),
+        (
+            "i64.shr_s neg",
+            InstructionType.I64_SHR_S,
+            0xFF00FF00FF00FF00,
+            4,
+            0xFFF00FF00FF00FF0,
+        ),
+        (
+            "i64.shr_s mods",
+            InstructionType.I64_SHR_S,
+            0x0F00FF00FF00FF00,
+            67,
+            0x01E01FE01FE01FE0,
+        ),
+        (
+            "i64.shr_u",
+            InstructionType.I64_SHR_U,
+            0x0F00FF00FF00FF00,
+            4,
+            0x00F00FF00FF00FF0,
+        ),
+        (
+            "i64.shr_u neg",
+            InstructionType.I64_SHR_U,
+            0xFF00FF00FF00FF00,
+            4,
+            0x0FF00FF00FF00FF0,
+        ),
+        (
+            "i64.shr_u mods",
+            InstructionType.I64_SHR_U,
+            0x0F00FF00FF00FF00,
+            67,
+            0x01E01FE01FE01FE0,
+        ),
+        (
+            "i64.rotl hi bit set",
+            InstructionType.I64_ROTL,
+            0xF00000000000000F,
+            1,
+            0xE00000000000001F,
+        ),
+        (
+            "i64.rotl hi bit clr",
+            InstructionType.I64_ROTL,
+            0x700000000000000F,
+            1,
+            0xE00000000000001E,
+        ),
+        (
+            "i64.rotr lo bit set",
+            InstructionType.I64_ROTR,
+            0xF00000000000000F,
+            1,
+            0xF800000000000007,
+        ),
+        (
+            "i64.rotr lo bit clr",
+            InstructionType.I64_ROTR,
+            0xF00000000000000E,
+            1,
+            0x7800000000000007,
+        ),
+    )
+    def test_i64_binops(
+        self, insn_type: InstructionType, a: int, b: int, expected: int
+    ):
+        self.machine.push(Value(ValueType.I64, a & MASK64))
+        self.machine.push(Value(ValueType.I64, b & MASK64))
+
+        insn_eval.eval_insn(self.machine, noarg(insn_type))
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        self.assertEqual(self.machine.pop(), Value(ValueType.I64, expected & MASK64))
         self.assertEqual(self.machine.get_current_frame().pc, 1)
 
     @parameterized.named_parameters(
@@ -271,15 +423,87 @@ class InsnEvalTest(parameterized.TestCase):
     def test_i32_relops(
         self, insn_type: InstructionType, a: int, b: int, expected: int
     ):
-        self.machine.push(Value(ValueType.I32, a & 0xFFFFFFFF))
-        self.machine.push(Value(ValueType.I32, b & 0xFFFFFFFF))
+        self.machine.push(Value(ValueType.I32, a & MASK32))
+        self.machine.push(Value(ValueType.I32, b & MASK32))
 
         insn_eval.eval_insn(self.machine, noarg(insn_type))
 
         self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(
-            self.machine.pop(), Value(ValueType.I32, expected & 0xFFFFFFFF)
-        )
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected & MASK32))
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
+
+    @parameterized.named_parameters(
+        ("i64.eq False", InstructionType.I64_EQ, 2, 1, 0),
+        ("i64.eq True", InstructionType.I64_EQ, 2, 2, 1),
+        ("i64.ne False", InstructionType.I64_NE, 2, 1, 1),
+        ("i64.ne True", InstructionType.I64_NE, 2, 2, 0),
+        ("i64.lt_u 1 < 2 is True", InstructionType.I64_LT_U, 1, 2, 1),
+        ("i64.lt_u 2 < 1 is False", InstructionType.I64_LT_U, 2, 1, 0),
+        ("i64.lt_u 1 < 1 is False", InstructionType.I64_LT_U, 1, 1, 0),
+        ("i64.lt_u -2 < -1 unsigned is True", InstructionType.I64_LT_U, -2, -1, 1),
+        ("i64.lt_u -1 < -2 unsigned is False", InstructionType.I64_LT_U, -1, -2, 0),
+        ("i64.lt_u -1 < 1 unsigned is False", InstructionType.I64_LT_U, -1, 1, 0),
+        ("i64.lt_u 1 < -1 unsigned is True", InstructionType.I64_LT_U, 1, -1, 1),
+        ("i64.lt_s 1 < 2 is True", InstructionType.I64_LT_S, 1, 2, 1),
+        ("i64.lt_s 2 < 1 is False", InstructionType.I64_LT_S, 2, 1, 0),
+        ("i64.lt_s 1 < 1 is False", InstructionType.I64_LT_S, 1, 1, 0),
+        ("i64.lt_s -2 < -1 signed is True", InstructionType.I64_LT_S, -2, -1, 1),
+        ("i64.lt_s -1 < -2 signed is False", InstructionType.I64_LT_S, -1, -2, 0),
+        ("i64.lt_s -1 < 1 signed is True", InstructionType.I64_LT_S, -1, 1, 1),
+        ("i64.lt_s 1 < -1 signed is False", InstructionType.I64_LT_S, 1, -1, 0),
+        ("i64.gt_u 1 > 2 is False", InstructionType.I64_GT_U, 1, 2, 0),
+        ("i64.gt_u 2 > 1 is True", InstructionType.I64_GT_U, 2, 1, 1),
+        ("i64.gt_u 1 > 1 is False", InstructionType.I64_GT_U, 1, 1, 0),
+        ("i64.gt_u -2 > -1 unsigned is False", InstructionType.I64_GT_U, -2, -1, 0),
+        ("i64.gt_u -1 > -2 unsigned is True", InstructionType.I64_GT_U, -1, -2, 1),
+        ("i64.gt_u -1 > 1 unsigned is True", InstructionType.I64_GT_U, -1, 1, 1),
+        ("i64.gt_u 1 > -1 unsigned is False", InstructionType.I64_GT_U, 1, -1, 0),
+        ("i64.gt_s 1 > 2 is False", InstructionType.I64_GT_S, 1, 2, 0),
+        ("i64.gt_s 2 > 1 is True", InstructionType.I64_GT_S, 2, 1, 1),
+        ("i64.gt_s 1 > 1 is False", InstructionType.I64_GT_S, 1, 1, 0),
+        ("i64.gt_s -2 > -1 signed is False", InstructionType.I64_GT_S, -2, -1, 0),
+        ("i64.gt_s -1 > -2 signed is True", InstructionType.I64_GT_S, -1, -2, 1),
+        ("i64.gt_s -1 > 1 signed is False", InstructionType.I64_GT_S, -1, 1, 0),
+        ("i64.gt_s 1 > -1 signed is True", InstructionType.I64_GT_S, 1, -1, 1),
+        ("i64.le_u 1 <= 2 is True", InstructionType.I64_LE_U, 1, 2, 1),
+        ("i64.le_u 2 <= 1 is False", InstructionType.I64_LE_U, 2, 1, 0),
+        ("i64.le_u 1 <= 1 is True", InstructionType.I64_LE_U, 1, 1, 1),
+        ("i64.le_u -2 <= -1 unsigned is True", InstructionType.I64_LE_U, -2, -1, 1),
+        ("i64.le_u -1 <= -2 unsigned is False", InstructionType.I64_LE_U, -1, -2, 0),
+        ("i64.le_u -1 <= 1 unsigned is False", InstructionType.I64_LE_U, -1, 1, 0),
+        ("i64.le_u 1 <= -1 unsigned is True", InstructionType.I64_LE_U, 1, -1, 1),
+        ("i64.le_s 1 <= 2 is True", InstructionType.I64_LE_S, 1, 2, 1),
+        ("i64.le_s 2 <= 1 is False", InstructionType.I64_LE_S, 2, 1, 0),
+        ("i64.le_s 1 <= 1 is True", InstructionType.I64_LE_S, 1, 1, 1),
+        ("i64.le_s -2 <= -1 signed is True", InstructionType.I64_LE_S, -2, -1, 1),
+        ("i64.le_s -1 <= -2 signed is False", InstructionType.I64_LE_S, -1, -2, 0),
+        ("i64.le_s -1 <= 1 signed is True", InstructionType.I64_LE_S, -1, 1, 1),
+        ("i64.le_s 1 <= -1 signed is False", InstructionType.I64_LE_S, 1, -1, 0),
+        ("i64.ge_u 1 >= 2 is False", InstructionType.I64_GE_U, 1, 2, 0),
+        ("i64.ge_u 2 >= 1 is True", InstructionType.I64_GE_U, 2, 1, 1),
+        ("i64.ge_u 1 >= 1 is True", InstructionType.I64_GE_U, 1, 1, 1),
+        ("i64.ge_u -2 >= -1 unsigned is False", InstructionType.I64_GE_U, -2, -1, 0),
+        ("i64.ge_u -1 >= -2 unsigned is True", InstructionType.I64_GE_U, -1, -2, 1),
+        ("i64.ge_u -1 >= 1 unsigned is True", InstructionType.I64_GE_U, -1, 1, 1),
+        ("i64.ge_u 1 >= -1 unsigned is False", InstructionType.I64_GE_U, 1, -1, 0),
+        ("i64.ge_s 1 >= 2 is False", InstructionType.I64_GE_S, 1, 2, 0),
+        ("i64.ge_s 2 >= 1 is True", InstructionType.I64_GE_S, 2, 1, 1),
+        ("i64.ge_s 1 >= 1 is True", InstructionType.I64_GE_S, 1, 1, 1),
+        ("i64.ge_s -2 >= -1 signed is False", InstructionType.I64_GE_S, -2, -1, 0),
+        ("i64.ge_s -1 >= -2 signed is True", InstructionType.I64_GE_S, -1, -2, 1),
+        ("i64.ge_s -1 >= 1 signed is False", InstructionType.I64_GE_S, -1, 1, 0),
+        ("i64.ge_s 1 >= -1 signed is True", InstructionType.I64_GE_S, 1, -1, 1),
+    )
+    def test_i64_relops(
+        self, insn_type: InstructionType, a: int, b: int, expected: int
+    ):
+        self.machine.push(Value(ValueType.I64, a & MASK64))
+        self.machine.push(Value(ValueType.I64, b & MASK64))
+
+        insn_eval.eval_insn(self.machine, noarg(insn_type))
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        self.assertEqual(self.machine.pop(), Value(ValueType.I64, expected & MASK64))
         self.assertEqual(self.machine.get_current_frame().pc, 1)
 
     @parameterized.named_parameters(
@@ -288,20 +512,38 @@ class InsnEvalTest(parameterized.TestCase):
         ("i32.ctz all zeros", InstructionType.I32_CTZ, 0x00000000, 32),
         ("i32.ctz", InstructionType.I32_CTZ, 0x00000100, 8),
         ("i32.popcnt all zeros", InstructionType.I32_POPCNT, 0x00000000, 0),
-        ("i32.popcnt all ones", InstructionType.I32_POPCNT, 0x00000000, 0),
+        ("i32.popcnt all ones", InstructionType.I32_POPCNT, 0xFFFFFFFF, 32),
         ("i32.popcnt", InstructionType.I32_POPCNT, 0x0011110F, 8),
         ("1 i32.eqz is False", InstructionType.I32_EQZ, 1, 0),
         ("0 i32.eqz is True", InstructionType.I32_EQZ, 0, 1),
     )
     def test_i32_unops(self, insn_type: InstructionType, a: int, expected: int):
-        self.machine.push(Value(ValueType.I32, a & 0xFFFFFFFF))
+        self.machine.push(Value(ValueType.I32, a & MASK32))
 
         insn_eval.eval_insn(self.machine, noarg(insn_type))
 
         self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(
-            self.machine.pop(), Value(ValueType.I32, expected & 0xFFFFFFFF)
-        )
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected & MASK32))
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
+
+    @parameterized.named_parameters(
+        ("i64.clz all zeros", InstructionType.I64_CLZ, 0x0000000000000000, 64),
+        ("i64.clz", InstructionType.I64_CLZ, 0x0000000000800000, 40),
+        ("i64.ctz all zeros", InstructionType.I64_CTZ, 0x0000000000000000, 64),
+        ("i64.ctz", InstructionType.I64_CTZ, 0x0000010000000000, 40),
+        ("i64.popcnt all zeros", InstructionType.I64_POPCNT, 0x0000000000000000, 0),
+        ("i64.popcnt all ones", InstructionType.I64_POPCNT, 0xFFFFFFFFFFFFFFFF, 64),
+        ("i64.popcnt", InstructionType.I64_POPCNT, 0x0011110F0011110F, 16),
+        ("1 i64.eqz is False", InstructionType.I64_EQZ, 1, 0),
+        ("0 i64.eqz is True", InstructionType.I64_EQZ, 0, 1),
+    )
+    def test_i64_unops(self, insn_type: InstructionType, a: int, expected: int):
+        self.machine.push(Value(ValueType.I64, a & MASK64))
+
+        insn_eval.eval_insn(self.machine, noarg(insn_type))
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        self.assertEqual(self.machine.pop(), Value(ValueType.I64, expected & MASK64))
         self.assertEqual(self.machine.get_current_frame().pc, 1)
 
     @parameterized.named_parameters(
@@ -310,8 +552,8 @@ class InsnEvalTest(parameterized.TestCase):
         ("i32.div_s -2^31 / -1", InstructionType.I32_DIV_S, -0x80000000, -1),
     )
     def test_i32_binops_trap(self, insn_type: InstructionType, a: int, b: int):
-        self.machine.push(Value(ValueType.I32, a & 0xFFFFFFFF))
-        self.machine.push(Value(ValueType.I32, b & 0xFFFFFFFF))
+        self.machine.push(Value(ValueType.I32, a & MASK32))
+        self.machine.push(Value(ValueType.I32, b & MASK32))
 
         with self.assertRaises(RuntimeError):
             insn_eval.eval_insn(self.machine, noarg(insn_type))
@@ -686,7 +928,7 @@ class InsnEvalTest(parameterized.TestCase):
 
         insn_eval.eval_insn(self.machine, memory_grow(0))
 
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 0xFFFFFFFF))
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, MASK32))
         self.assertEqual(len(self.machine.get_mem(0)), 65536)
         self.assertEqual(
             self.machine.get_mem(0)[0:10], b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"

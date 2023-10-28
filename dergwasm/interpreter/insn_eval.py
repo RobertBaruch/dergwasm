@@ -16,15 +16,45 @@ from dergwasm.interpreter.binary import FuncType
 
 EvalOperands = list[Union[values.ValueType, int, float, Block]]
 EvalFunc = Callable[[Machine, EvalOperands], None]
+MASK64 = 0xFFFFFFFFFFFFFFFF
+MASK32 = 0xFFFFFFFF
 
 
-def _signed_32(n: int) -> int:
-    """Converts a 32-bit unsigned integer to a signed one."""
+def _unsigned_i32(v: values.Value) -> int:
+    """Converts a value to an unsigned 32-bit integer.
+
+    Only necessary because Python ints are bignums.
+    """
+    assert isinstance(v.value, int)
+    assert v.value_type == values.ValueType.I32
+    return int(cast(values.Value, v).value) & MASK32
+
+
+def _unsigned_i64(v: values.Value) -> int:
+    """Converts a value to an unsigned 64-bit integer.
+
+    Only necessary because Python ints are bignums.
+    """
+    assert isinstance(v.value, int)
+    assert v.value_type == values.ValueType.I64
+    return int(cast(values.Value, v).value) & MASK64
+
+
+def _signed_i32(v: values.Value) -> int:
+    """Converts a value to a signed 32-bit integer.
+
+    Only necessary because Python ints are bignums.
+    """
+    n = _unsigned_i32(v)
     return n - 0x100000000 if n & 0x80000000 else n
 
 
-def _signed_64(n: int) -> int:
-    """Converts a 64-bit unsigned integer to a signed one."""
+def _signed_i64(v: values.Value) -> int:
+    """Converts a value to a signed 64-bit integer.
+
+    Only necessary because Python ints are bignums.
+    """
+    n = _unsigned_i64(v)
     return n - 0x10000000000000000 if n & 0x8000000000000000 else n
 
 
@@ -219,7 +249,7 @@ def drop(machine: Machine, instruction: Instruction) -> None:
 
 
 def select(machine: Machine, instruction: Instruction) -> None:
-    c = int(cast(values.Value, machine.pop()).value)
+    c = _unsigned_i32(machine.pop())
     val2 = cast(values.Value, machine.pop())
     val1 = cast(values.Value, machine.pop())
     machine.push(val1 if c else val2)
@@ -331,7 +361,7 @@ def i32_load(machine: Machine, instruction: Instruction) -> None:
     """
     f = machine.get_current_frame()
     operands = instruction.operands
-    i = int(cast(values.Value, machine.pop()).value)  # base (i32)
+    i = _unsigned_i32(machine.pop())  # base
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # memaddr
     ea = i + int(operands[1])  # effective address
@@ -356,7 +386,7 @@ def i64_load(machine: Machine, instruction: Instruction) -> None:
     """
     f = machine.get_current_frame()
     operands = instruction.operands
-    i = int(cast(values.Value, machine.pop()).value)  # base (i32)
+    i = _unsigned_i32(machine.pop())  # base
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # memaddr
     ea = i + int(operands[1])  # effective address
@@ -432,8 +462,8 @@ def i32_store(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
     mem = machine.get_mem(a)
-    c = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # value
-    i = int(cast(values.Value, machine.pop()).value)  # i32 base
+    c = _unsigned_i32(machine.pop())  # value
+    i = _unsigned_i32(machine.pop())  # base
     ea = i + int(operands[1])  # effective address
     if ea + 4 > len(mem):
         raise RuntimeError(
@@ -457,8 +487,8 @@ def i64_store(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
     mem = machine.get_mem(a)
-    c = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFFFFFFFFFF  # value
-    i = int(cast(values.Value, machine.pop()).value)  # i32 base
+    c = _unsigned_i64(machine.pop())  # value
+    i = _unsigned_i32(machine.pop())  # base
     ea = i + int(operands[1])  # effective address
     if ea + 8 > len(mem):
         raise RuntimeError(
@@ -490,8 +520,8 @@ def i32_store8(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
     mem = machine.get_mem(a)
-    c = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # value
-    i = int(cast(values.Value, machine.pop()).value)  # i32 base
+    c = _unsigned_i32(machine.pop())  # value
+    i = _unsigned_i32(machine.pop())  # base
     ea = i + int(operands[1])  # effective address
     if ea + 1 > len(mem):
         raise RuntimeError(
@@ -515,8 +545,8 @@ def i32_store16(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
     mem = machine.get_mem(a)
-    c = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # value
-    i = int(cast(values.Value, machine.pop()).value)  # i32 base
+    c = _unsigned_i32(machine.pop())  # value
+    i = _unsigned_i32(machine.pop())  # base
     ea = i + int(operands[1])  # effective address
     if ea + 2 > len(mem):
         raise RuntimeError(
@@ -540,8 +570,8 @@ def i64_store8(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
     mem = machine.get_mem(a)
-    c = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFFFFFFFFFF  # value
-    i = int(cast(values.Value, machine.pop()).value)  # i32 base
+    c = _unsigned_i64(machine.pop())  # value
+    i = _unsigned_i32(machine.pop())  # base
     ea = i + int(operands[1])  # effective address
     if ea + 1 > len(mem):
         raise RuntimeError(
@@ -565,8 +595,8 @@ def i64_store16(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
     mem = machine.get_mem(a)
-    c = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFFFFFFFFFF  # value
-    i = int(cast(values.Value, machine.pop()).value)  # i32 base
+    c = _unsigned_i64(machine.pop())  # value
+    i = _unsigned_i32(machine.pop())  # base
     ea = i + int(operands[1])  # effective address
     if ea + 2 > len(mem):
         raise RuntimeError(
@@ -590,14 +620,14 @@ def i64_store32(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
     mem = machine.get_mem(a)
-    c = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFFFFFFFFFF  # value
-    i = int(cast(values.Value, machine.pop()).value)  # i32 base
+    c = _unsigned_i64(machine.pop())  # value
+    i = _unsigned_i32(machine.pop())  # base
     ea = i + int(operands[1])  # effective address
     if ea + 4 > len(mem):
         raise RuntimeError(
             f"i64.store32: access out of bounds: base {i} offset {operands[1]}"
         )
-    mem[ea : ea + 4] = struct.pack("<I", c & 0xFFFFFFFF)
+    mem[ea : ea + 4] = struct.pack("<I", c & MASK32)
     f.pc += 1
 
 
@@ -616,7 +646,7 @@ def memory_grow(machine: Machine, instruction: Instruction) -> None:
     ma = f.module.memaddrs[instruction.operands[0]]
     mem = machine.get_mem(ma)
     sz = len(mem) // 65536
-    n = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # page growth amount
+    n = _unsigned_i32(machine.pop())  # page growth amount
     if sz + n > machine.get_max_allowed_memory_pages():
         machine.push(values.Value(values.ValueType.I32, 0xFFFFFFFF))
         f.pc += 1
@@ -638,9 +668,9 @@ def memory_init(machine: Machine, instruction: Instruction) -> None:
     mem = machine.get_mem(ma)
     da = curr_frame.module.dataaddrs[operands[0]]
     data = machine.get_data(da)
-    n = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # data size, i32
-    s = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # source, i32
-    d = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # destination, i32
+    n = _unsigned_i32(machine.pop())  # data size, i32
+    s = _unsigned_i32(machine.pop())  # source, i32
+    d = _unsigned_i32(machine.pop())  # destination, i32
 
     if s + n > len(data):
         raise RuntimeError("memory.init: source is out of bounds")
@@ -667,9 +697,9 @@ def memory_copy(machine: Machine, instruction: Instruction) -> None:
     assert len(operands) == 2
     assert isinstance(operands[0], int)  # memindex
     assert isinstance(operands[1], int)  # memindex
-    n = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # data size, i32
-    s = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # source, i32
-    d = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # destination, i32
+    n = _unsigned_i32(machine.pop())  # data size, i32
+    s = _unsigned_i32(machine.pop())  # source, i32
+    d = _unsigned_i32(machine.pop())  # destination, i32
     curr_frame = machine.get_current_frame()
     # Note: wasm doesn't yet support more than one memory, so it expects all
     # memindexes to be 0. I'm not quite sure which operand represents the source and
@@ -690,9 +720,9 @@ def memory_fill(machine: Machine, instruction: Instruction) -> None:
     operands = instruction.operands
     assert len(operands) == 1
     assert isinstance(operands[0], int)  # memindex
-    n = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # data size, i32
-    v = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # value, i32
-    d = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF  # destination, i32
+    n = _unsigned_i32(machine.pop())  # data size, i32
+    v = _unsigned_i32(machine.pop())  # value, i32
+    d = _unsigned_i32(machine.pop())  # destination, i32
     curr_frame = machine.get_current_frame()
     ma = curr_frame.module.memaddrs[operands[0]]
     mem = machine.get_mem(ma)
@@ -709,7 +739,7 @@ def i32_const(machine: Machine, instruction: Instruction) -> None:
     operands = instruction.operands
     assert len(operands) == 1
     assert isinstance(operands[0], int)
-    machine.push(values.Value(values.ValueType.I32, operands[0] & 0xFFFFFFFF))
+    machine.push(values.Value(values.ValueType.I32, operands[0] & MASK32))
     machine.get_current_frame().pc += 1
 
 
@@ -718,7 +748,7 @@ def i64_const(machine: Machine, instruction: Instruction) -> None:
     operands = instruction.operands
     assert len(operands) == 1
     assert isinstance(operands[0], int)
-    machine.push(values.Value(values.ValueType.I64, operands[0] & 0xFFFFFFFFFFFFFFFF))
+    machine.push(values.Value(values.ValueType.I64, operands[0] & MASK64))
     machine.get_current_frame().pc += 1
 
 
@@ -728,7 +758,7 @@ def f32_const(machine: Machine, instruction: Instruction) -> None:
     assert len(operands) == 1
     assert isinstance(operands[0], float)
     # Necessary because python floats are 64-bit, but wasm F32s are 32-bit.
-    val32 = struct.unpack('f', struct.pack('f', operands[0]))[0]
+    val32 = struct.unpack("f", struct.pack("f", operands[0]))[0]
     machine.push(values.Value(values.ValueType.F32, val32))
     machine.get_current_frame().pc += 1
 
@@ -743,123 +773,155 @@ def f64_const(machine: Machine, instruction: Instruction) -> None:
 
 
 def i32_eqz(machine: Machine, instruction: Instruction) -> None:
-    c1 = int(cast(values.Value, machine.pop()).value)
+    c1 = _unsigned_i32(machine.pop())
     machine.push(values.Value(values.ValueType.I32, 0 if c1 else 1))
     machine.get_current_frame().pc += 1
 
 
 def i32_eq(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c2 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop())
     machine.push(values.Value(values.ValueType.I32, int(c1 == c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_ne(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c2 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop())
     machine.push(values.Value(values.ValueType.I32, int(c1 != c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_lt_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _signed_32(int(cast(values.Value, machine.pop()).value))
-    c1 = _signed_32(int(cast(values.Value, machine.pop()).value))
+    c2 = _signed_i32(machine.pop())
+    c1 = _signed_i32(machine.pop())
     machine.push(values.Value(values.ValueType.I32, int(c1 < c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_lt_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c2 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop())
     machine.push(values.Value(values.ValueType.I32, int(c1 < c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_gt_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _signed_32(int(cast(values.Value, machine.pop()).value))
-    c1 = _signed_32(int(cast(values.Value, machine.pop()).value))
+    c2 = _signed_i32(machine.pop())
+    c1 = _signed_i32(machine.pop())
     machine.push(values.Value(values.ValueType.I32, int(c1 > c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_gt_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c2 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop())
     machine.push(values.Value(values.ValueType.I32, int(c1 > c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_le_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _signed_32(int(cast(values.Value, machine.pop()).value))
-    c1 = _signed_32(int(cast(values.Value, machine.pop()).value))
+    c2 = _signed_i32(machine.pop())
+    c1 = _signed_i32(machine.pop())
     machine.push(values.Value(values.ValueType.I32, int(c1 <= c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_le_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c2 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop())
     machine.push(values.Value(values.ValueType.I32, int(c1 <= c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_ge_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _signed_32(int(cast(values.Value, machine.pop()).value))
-    c1 = _signed_32(int(cast(values.Value, machine.pop()).value))
+    c2 = _signed_i32(machine.pop())
+    c1 = _signed_i32(machine.pop())
     machine.push(values.Value(values.ValueType.I32, int(c1 >= c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_ge_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c2 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop())
     machine.push(values.Value(values.ValueType.I32, int(c1 >= c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_eqz(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c1 = int(cast(values.Value, machine.pop()).value)
+    machine.push(values.Value(values.ValueType.I64, 0 if c1 else 1))
+    machine.get_current_frame().pc += 1
 
 
 def i64_eq(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop())
+    machine.push(values.Value(values.ValueType.I64, int(c1 == c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i64_ne(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop())
+    machine.push(values.Value(values.ValueType.I64, int(c1 != c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i64_lt_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _signed_i64(machine.pop())
+    c1 = _signed_i64(machine.pop())
+    machine.push(values.Value(values.ValueType.I64, int(c1 < c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i64_lt_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop())
+    machine.push(values.Value(values.ValueType.I64, int(c1 < c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i64_gt_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _signed_i64(machine.pop())
+    c1 = _signed_i64(machine.pop())
+    machine.push(values.Value(values.ValueType.I64, int(c1 > c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i64_gt_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop())
+    machine.push(values.Value(values.ValueType.I64, int(c1 > c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i64_le_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _signed_i64(machine.pop())
+    c1 = _signed_i64(machine.pop())
+    machine.push(values.Value(values.ValueType.I64, int(c1 <= c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i64_le_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop())
+    machine.push(values.Value(values.ValueType.I64, int(c1 <= c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i64_ge_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _signed_i64(machine.pop())
+    c1 = _signed_i64(machine.pop())
+    machine.push(values.Value(values.ValueType.I64, int(c1 >= c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i64_ge_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop())
+    machine.push(values.Value(values.ValueType.I64, int(c1 >= c2)))
+    machine.get_current_frame().pc += 1
 
 
 def f32_eq(machine: Machine, instruction: Instruction) -> None:
@@ -912,7 +974,7 @@ def f64_ge(machine: Machine, instruction: Instruction) -> None:
 
 def i32_clz(machine: Machine, instruction: Instruction) -> None:
     """Count leading zero bits."""
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = _unsigned_i32(machine.pop())
     val = 32
     for i in range(32):
         if c1 & 0x80000000:
@@ -925,7 +987,7 @@ def i32_clz(machine: Machine, instruction: Instruction) -> None:
 
 def i32_ctz(machine: Machine, instruction: Instruction) -> None:
     """Count trailing zero bits."""
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = _unsigned_i32(machine.pop())
     val = 32
     for i in range(32):
         if c1 & 1:
@@ -938,7 +1000,7 @@ def i32_ctz(machine: Machine, instruction: Instruction) -> None:
 
 def i32_popcnt(machine: Machine, instruction: Instruction) -> None:
     """Count bits set."""
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = _unsigned_i32(machine.pop())
     val = 0
     for i in range(32):
         if c1 & (1 << i):
@@ -950,49 +1012,49 @@ def i32_popcnt(machine: Machine, instruction: Instruction) -> None:
 # All this bitmasking is necessary because Python ints are always signed
 # and always bignums.
 def i32_add(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    machine.push(values.Value(values.ValueType.I32, (c1 + c2) & 0xFFFFFFFF))
+    c2 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop())
+    machine.push(values.Value(values.ValueType.I32, (c1 + c2) & MASK32))
     machine.get_current_frame().pc += 1
 
 
 def i32_sub(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    machine.push(values.Value(values.ValueType.I32, (c1 - c2) & 0xFFFFFFFF))
+    c2 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop())
+    machine.push(values.Value(values.ValueType.I32, (c1 - c2) & MASK32))
     machine.get_current_frame().pc += 1
 
 
 def i32_mul(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    machine.push(values.Value(values.ValueType.I32, (c1 * c2) & 0xFFFFFFFF))
+    c2 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop())
+    machine.push(values.Value(values.ValueType.I32, (c1 * c2) & MASK32))
     machine.get_current_frame().pc += 1
 
 
 def i32_div_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _signed_32(int(cast(values.Value, machine.pop()).value))
-    c1 = _signed_32(int(cast(values.Value, machine.pop()).value))
+    c2 = _signed_i32(machine.pop())
+    c1 = _signed_i32(machine.pop())
     if c2 == 0:
         raise RuntimeError("i32.div_s: division by zero")
     if c1 // c2 == 0x80000000:  # Unrepresentable: -2^31 // -1
         raise RuntimeError("i32.div_s: overflow")
-    machine.push(values.Value(values.ValueType.I32, (c1 // c2) & 0xFFFFFFFF))
+    machine.push(values.Value(values.ValueType.I32, (c1 // c2) & MASK32))
     machine.get_current_frame().pc += 1
 
 
 def i32_div_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c2 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop())
     if c2 == 0:
         raise RuntimeError("i32.div_u: division by zero")
-    machine.push(values.Value(values.ValueType.I32, (c1 // c2) & 0xFFFFFFFF))
+    machine.push(values.Value(values.ValueType.I32, (c1 // c2) & MASK32))
     machine.get_current_frame().pc += 1
 
 
 def i32_rem_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _signed_32(int(cast(values.Value, machine.pop()).value))
-    c1 = _signed_32(int(cast(values.Value, machine.pop()).value))
+    c2 = _signed_i32(machine.pop())
+    c1 = _signed_i32(machine.pop())
     print(f"i32.rem_s: {c1} % {c2}")
     if c2 == 0:
         raise RuntimeError("i32.rem_s: modulo zero")
@@ -1010,149 +1072,256 @@ def i32_rem_s(machine: Machine, instruction: Instruction) -> None:
     else:
         val = c1 % c2
     print(f"  = {val}")
-    machine.push(values.Value(values.ValueType.I32, val & 0xFFFFFFFF))
+    machine.push(values.Value(values.ValueType.I32, val & MASK32))
     machine.get_current_frame().pc += 1
 
 
 def i32_rem_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value)
-    c1 = int(cast(values.Value, machine.pop()).value)
+    c2 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop())
     if c2 == 0:
         raise RuntimeError("i32.rem_u: modulo zero")
-    machine.push(values.Value(values.ValueType.I32, (c1 % c2) & 0xFFFFFFFF))
+    machine.push(values.Value(values.ValueType.I32, (c1 % c2) & MASK32))
     machine.get_current_frame().pc += 1
 
 
 def i32_and(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c2 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop())
     machine.push(values.Value(values.ValueType.I32, (c1 & c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_or(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c2 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop())
     machine.push(values.Value(values.ValueType.I32, (c1 | c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_xor(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c2 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop())
     machine.push(values.Value(values.ValueType.I32, (c1 ^ c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_shl(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    machine.push(values.Value(values.ValueType.I32, (c1 << (c2 % 32)) & 0xFFFFFFFF))
+    c2 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop())
+    machine.push(values.Value(values.ValueType.I32, (c1 << (c2 % 32)) & MASK32))
     machine.get_current_frame().pc += 1
 
 
 def i32_shr_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    c1 = _signed_32(int(cast(values.Value, machine.pop()).value))
-    machine.push(values.Value(values.ValueType.I32, (c1 >> (c2 % 32)) & 0xFFFFFFFF))
+    c2 = _unsigned_i32(machine.pop())
+    c1 = _signed_i32(machine.pop())
+    machine.push(values.Value(values.ValueType.I32, (c1 >> (c2 % 32)) & MASK32))
     machine.get_current_frame().pc += 1
 
 
 def i32_shr_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    machine.push(values.Value(values.ValueType.I32, (c1 >> (c2 % 32)) & 0xFFFFFFFF))
+    c2 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop())
+    machine.push(values.Value(values.ValueType.I32, (c1 >> (c2 % 32)) & MASK32))
     machine.get_current_frame().pc += 1
 
 
 def i32_rotl(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c2 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop())
     c2 %= 32
-    val = ((c1 << c2) | (c1 >> (32 - c2))) & 0xFFFFFFFF
+    val = ((c1 << c2) | (c1 >> (32 - c2))) & MASK32
     machine.push(values.Value(values.ValueType.I32, val))
     machine.get_current_frame().pc += 1
 
 
 def i32_rotr(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
-    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c2 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop())
     c2 %= 32
-    val = (c1 >> c2) | (c1 << (32 - c2)) & 0xFFFFFFFF
+    val = (c1 >> c2) | (c1 << (32 - c2)) & MASK32
     machine.push(values.Value(values.ValueType.I32, val))
     machine.get_current_frame().pc += 1
 
 
 def i64_clz(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """Count leading zero bits."""
+    c1 = _unsigned_i64(machine.pop())
+    val = 64
+    for i in range(64):
+        if c1 & 0x8000000000000000:
+            val = i
+            break
+        c1 <<= 1
+    machine.push(values.Value(values.ValueType.I64, val))
+    machine.get_current_frame().pc += 1
 
 
 def i64_ctz(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """Count trailing zero bits."""
+    c1 = _unsigned_i64(machine.pop())
+    val = 64
+    for i in range(64):
+        if c1 & 1:
+            val = i
+            break
+        c1 >>= 1
+    machine.push(values.Value(values.ValueType.I64, val))
+    machine.get_current_frame().pc += 1
 
 
 def i64_popcnt(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """Count bits set."""
+    c1 = _unsigned_i64(machine.pop())
+    val = 0
+    for i in range(64):
+        if c1 & (1 << i):
+            val += 1
+    machine.push(values.Value(values.ValueType.I64, val))
+    machine.get_current_frame().pc += 1
 
 
+# All this bitmasking is necessary because Python ints are always signed
+# and always bignums.
 def i64_add(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop())
+    machine.push(values.Value(values.ValueType.I64, (c1 + c2) & MASK64))
+    machine.get_current_frame().pc += 1
 
 
 def i64_sub(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop())
+    machine.push(values.Value(values.ValueType.I64, (c1 - c2) & MASK64))
+    machine.get_current_frame().pc += 1
 
 
 def i64_mul(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop())
+    machine.push(values.Value(values.ValueType.I64, (c1 * c2) & MASK64))
+    machine.get_current_frame().pc += 1
 
 
 def i64_div_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _signed_i64(machine.pop())
+    c1 = _signed_i64(machine.pop())
+    if c2 == 0:
+        raise RuntimeError("i64.div_s: division by zero")
+    if c1 // c2 == 0x8000000000000000:  # Unrepresentable: -2^63 // -1
+        raise RuntimeError("i64.div_s: overflow")
+    machine.push(values.Value(values.ValueType.I64, (c1 // c2) & MASK64))
+    machine.get_current_frame().pc += 1
 
 
 def i64_div_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop())
+    if c2 == 0:
+        raise RuntimeError("i64.div_u: division by zero")
+    machine.push(values.Value(values.ValueType.I64, (c1 // c2) & MASK64))
+    machine.get_current_frame().pc += 1
 
 
 def i64_rem_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _signed_i64(machine.pop())
+    c1 = _signed_i64(machine.pop())
+    print(f"i64.rem_s: {c1} % {c2}")
+    if c2 == 0:
+        raise RuntimeError("i64.rem_s: modulo zero")
+
+    # Note: Python % is not consistent with most languages and not consistent with wasm.
+    # See https://torstencurdt.com/tech/posts/modulo-of-negative-numbers.
+    # Thus, we implement the "correct" version here. C# does it correctly.
+
+    if c1 < 0 and c2 > 0:
+        val = -((-c1) % c2)
+    elif c1 > 0 and c2 < 0:
+        val = c1 % (-c2)
+    elif c1 < 0 and c2 < 0:
+        val = -((-c1) % (-c2))
+    else:
+        val = c1 % c2
+    print(f"  = {val}")
+    machine.push(values.Value(values.ValueType.I64, val & MASK64))
+    machine.get_current_frame().pc += 1
 
 
 def i64_rem_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop())
+    if c2 == 0:
+        raise RuntimeError("i64.rem_u: modulo zero")
+    machine.push(values.Value(values.ValueType.I64, (c1 % c2) & MASK64))
+    machine.get_current_frame().pc += 1
 
 
 def i64_and(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop())
+    machine.push(values.Value(values.ValueType.I64, (c1 & c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i64_or(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop())
+    machine.push(values.Value(values.ValueType.I64, (c1 | c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i64_xor(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop())
+    machine.push(values.Value(values.ValueType.I64, (c1 ^ c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i64_shl(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop())
+    machine.push(
+        values.Value(values.ValueType.I64, (c1 << (c2 % 64)) & MASK64)
+    )
+    machine.get_current_frame().pc += 1
 
 
 def i64_shr_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _unsigned_i64(machine.pop())
+    c1 = _signed_i64(machine.pop())
+    machine.push(
+        values.Value(values.ValueType.I64, (c1 >> (c2 % 64)) & MASK64)
+    )
+    machine.get_current_frame().pc += 1
 
 
 def i64_shr_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop())
+    machine.push(
+        values.Value(values.ValueType.I64, (c1 >> (c2 % 64)) & MASK64)
+    )
+    machine.get_current_frame().pc += 1
 
 
 def i64_rotl(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop())
+    c2 %= 64
+    val = ((c1 << c2) | (c1 >> (64 - c2))) & MASK64
+    machine.push(values.Value(values.ValueType.I64, val))
+    machine.get_current_frame().pc += 1
 
 
 def i64_rotr(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop())
+    c2 %= 64
+    val = (c1 >> c2) | (c1 << (64 - c2)) & MASK64
+    machine.push(values.Value(values.ValueType.I64, val))
+    machine.get_current_frame().pc += 1
 
 
 def f32_abs(machine: Machine, instruction: Instruction) -> None:
