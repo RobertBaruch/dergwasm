@@ -1055,7 +1055,6 @@ def i32_div_u(machine: Machine, instruction: Instruction) -> None:
 def i32_rem_s(machine: Machine, instruction: Instruction) -> None:
     c2 = _signed_i32(machine.pop())
     c1 = _signed_i32(machine.pop())
-    print(f"i32.rem_s: {c1} % {c2}")
     if c2 == 0:
         raise RuntimeError("i32.rem_s: modulo zero")
 
@@ -1071,7 +1070,6 @@ def i32_rem_s(machine: Machine, instruction: Instruction) -> None:
         val = -((-c1) % (-c2))
     else:
         val = c1 % c2
-    print(f"  = {val}")
     machine.push(values.Value(values.ValueType.I32, val & MASK32))
     machine.get_current_frame().pc += 1
 
@@ -1228,7 +1226,6 @@ def i64_div_u(machine: Machine, instruction: Instruction) -> None:
 def i64_rem_s(machine: Machine, instruction: Instruction) -> None:
     c2 = _signed_i64(machine.pop())
     c1 = _signed_i64(machine.pop())
-    print(f"i64.rem_s: {c1} % {c2}")
     if c2 == 0:
         raise RuntimeError("i64.rem_s: modulo zero")
 
@@ -1244,7 +1241,6 @@ def i64_rem_s(machine: Machine, instruction: Instruction) -> None:
         val = -((-c1) % (-c2))
     else:
         val = c1 % c2
-    print(f"  = {val}")
     machine.push(values.Value(values.ValueType.I64, val & MASK64))
     machine.get_current_frame().pc += 1
 
