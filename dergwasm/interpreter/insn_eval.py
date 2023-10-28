@@ -587,11 +587,37 @@ def i64_store(machine: Machine, instruction: Instruction) -> None:
 
 
 def f32_store(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    f = machine.get_current_frame()
+    operands = instruction.operands
+    # Ignore operand[0], the alignment.
+    a = f.module.memaddrs[0]  # offset
+    mem = machine.get_mem(a)
+    c = float(cast(values.Value, machine.pop()).value)  # value
+    i = _unsigned_i32(machine.pop())  # base
+    ea = i + int(operands[1])  # effective address
+    if ea + 4 > len(mem):
+        raise RuntimeError(
+            f"f32.store: access out of bounds: base {i} offset {operands[1]}"
+        )
+    mem[ea : ea + 4] = struct.pack("<f", c)
+    f.pc += 1
 
 
 def f64_store(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    f = machine.get_current_frame()
+    operands = instruction.operands
+    # Ignore operand[0], the alignment.
+    a = f.module.memaddrs[0]  # offset
+    mem = machine.get_mem(a)
+    c = float(cast(values.Value, machine.pop()).value)  # value
+    i = _unsigned_i32(machine.pop())  # base
+    ea = i + int(operands[1])  # effective address
+    if ea + 8 > len(mem):
+        raise RuntimeError(
+            f"f64.store: access out of bounds: base {i} offset {operands[1]}"
+        )
+    mem[ea : ea + 8] = struct.pack("<d", c)
+    f.pc += 1
 
 
 def i32_store8(machine: Machine, instruction: Instruction) -> None:
@@ -2223,15 +2249,15 @@ INSTRUCTION_FUNCS: dict[InstructionType, EvalFunc] = {
     InstructionType.I64_LOAD16_U: i64_load16_u,
     InstructionType.I64_LOAD32_S: i64_load32_s,
     InstructionType.I64_LOAD32_U: i64_load32_u,
-    InstructionType.I32_STORE: i32_store,
-    InstructionType.I64_STORE: i64_store,
-    InstructionType.F32_STORE: f32_store,
-    InstructionType.F64_STORE: f64_store,
     InstructionType.I32_STORE8: i32_store8,
     InstructionType.I32_STORE16: i32_store16,
+    InstructionType.I32_STORE: i32_store,
     InstructionType.I64_STORE8: i64_store8,
     InstructionType.I64_STORE16: i64_store16,
     InstructionType.I64_STORE32: i64_store32,
+    InstructionType.I64_STORE: i64_store,
+    InstructionType.F32_STORE: f32_store,
+    InstructionType.F64_STORE: f64_store,
     InstructionType.MEMORY_SIZE: memory_size,
     InstructionType.MEMORY_GROW: memory_grow,
     InstructionType.MEMORY_INIT: memory_init,

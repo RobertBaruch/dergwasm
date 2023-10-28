@@ -1008,84 +1008,84 @@ class InsnEvalTest(parameterized.TestCase):
 
     @parameterized.named_parameters(
         (
-            "store 0x12345678 to base 0, offset 0",
+            "0 store 0",
             InstructionType.I32_STORE,
             0,
             0,
             b"\x78\x56\x34\x12\x04\x05\x06\x07\x08\x09",
         ),
         (
-            "store 0x12345678 to base 1, offset 0",
+            "1 store 0",
             InstructionType.I32_STORE,
             1,
             0,
             b"\x00\x78\x56\x34\x12\x05\x06\x07\x08\x09",
         ),
         (
-            "store 0x12345678 to base 0, offset 1",
+            "0 store 1",
             InstructionType.I32_STORE,
             0,
             1,
             b"\x00\x78\x56\x34\x12\x05\x06\x07\x08\x09",
         ),
         (
-            "store 0x12345678 to base 1, offset 1",
+            "1 store 1",
             InstructionType.I32_STORE,
             1,
             1,
             b"\x00\x01\x78\x56\x34\x12\x06\x07\x08\x09",
         ),
         (
-            "store16 0x12345678 to base 0, offset 0",
+            "0 store16 0",
             InstructionType.I32_STORE16,
             0,
             0,
             b"\x78\x56\x02\x03\x04\x05\x06\x07\x08\x09",
         ),
         (
-            "store16 0x12345678 to base 1, offset 0",
+            "1 store16 0",
             InstructionType.I32_STORE16,
             1,
             0,
             b"\x00\x78\x56\x03\x04\x05\x06\x07\x08\x09",
         ),
         (
-            "store16 0x12345678 to base 0, offset 1",
+            "0 store16 1",
             InstructionType.I32_STORE16,
             0,
             1,
             b"\x00\x78\x56\x03\x04\x05\x06\x07\x08\x09",
         ),
         (
-            "store16 0x12345678 to base 1, offset 1",
+            "1 store16 1",
             InstructionType.I32_STORE16,
             1,
             1,
             b"\x00\x01\x78\x56\x04\x05\x06\x07\x08\x09",
         ),
         (
-            "store8 0x12345678 to base 0, offset 0",
+            "0 store8 0",
             InstructionType.I32_STORE8,
             0,
             0,
             b"\x78\x01\x02\x03\x04\x05\x06\x07\x08\x09",
         ),
         (
-            "store8 0x12345678 to base 1, offset 0",
+            "1 store8 0",
             InstructionType.I32_STORE8,
             1,
             0,
             b"\x00\x78\x02\x03\x04\x05\x06\x07\x08\x09",
         ),
         (
-            "store8 0x12345678 to base 0, offset 1",
+            "0 store8 1",
             InstructionType.I32_STORE8,
             0,
             1,
             b"\x00\x78\x02\x03\x04\x05\x06\x07\x08\x09",
         ),
         (
-            "store8 0x12345678 to base 1, offset 1",
+            "1 store8 1",
             InstructionType.I32_STORE8,
             1,
             1,
@@ -1098,14 +1098,13 @@ class InsnEvalTest(parameterized.TestCase):
         self.machine.push(Value(ValueType.I32, base))
         self.machine.push(Value(ValueType.I32, 0x12345678))
         self.machine.get_mem(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
-
         instruction = Instruction(insn_type, [4, offset], 0, 0)
 
         insn_eval.eval_insn(self.machine, instruction)
 
-        self.assertEqual(self.machine.get_mem(0)[0:10], expected)
         self.assertStackDepth(self.starting_stack_depth)
         self.assertEqual(self.machine.get_current_frame().pc, 1)
+        self.assertEqual(self.machine.get_mem(0)[0:10], expected)
 
     @parameterized.named_parameters(
         ("store", InstructionType.I32_STORE),
@@ -1264,6 +1263,40 @@ class InsnEvalTest(parameterized.TestCase):
 
         with self.assertRaisesRegex(RuntimeError, "access out of bounds"):
             insn_eval.eval_insn(self.machine, instruction)
+
+    @parameterized.named_parameters(
+        ("0 f32.store 0", 0, 0, b"\xEC\x51\x2E\x42\x04\x05\x06\x07\x08\x09"),
+        ("0 f32.store 1", 0, 1, b"\x00\xEC\x51\x2E\x42\x05\x06\x07\x08\x09"),
+        ("1 f32.store 0", 1, 0, b"\x00\xEC\x51\x2E\x42\x05\x06\x07\x08\x09"),
+        ("1 f32.store 1", 1, 1, b"\x00\x01\xEC\x51\x2E\x42\x06\x07\x08\x09"),
+    )
+    def test_f32_store(self, base: int, offset: int, expected: bytes):
+        self.machine.push(Value(ValueType.I32, base))
+        self.machine.push(Value(ValueType.F32, 43.58))
+        self.machine.get_mem(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
+
+        insn_eval.eval_insn(self.machine, op2(InstructionType.F32_STORE, 4, offset))
+
+        self.assertStackDepth(self.starting_stack_depth)
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
+        self.assertEqual(self.machine.get_mem(0)[0:10], expected)
+
+    @parameterized.named_parameters(
+        ("0 f64.store 0", 0, 0, b"\x0A\xD7\xA3\x70\x3D\xCA\x45\x40\x08\x09"),
+        ("0 f64.store 1", 0, 1, b"\x00\x0A\xD7\xA3\x70\x3D\xCA\x45\x40\x09"),
+        ("1 f64.store 0", 1, 0, b"\x00\x0A\xD7\xA3\x70\x3D\xCA\x45\x40\x09"),
+        ("1 f64.store 1", 1, 1, b"\x00\x01\x0A\xD7\xA3\x70\x3D\xCA\x45\x40"),
+    )
+    def test_f64_store(self, base: int, offset: int, expected: bytes):
+        self.machine.push(Value(ValueType.I32, base))
+        self.machine.push(Value(ValueType.F64, 43.58))
+        self.machine.get_mem(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
+
+        insn_eval.eval_insn(self.machine, op2(InstructionType.F64_STORE, 4, offset))
+
+        self.assertStackDepth(self.starting_stack_depth)
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
+        self.assertEqual(self.machine.get_mem(0)[0:10], expected)
 
     def test_memory_init(self):
         self.machine.push(Value(ValueType.I32, 2))  # dest offset
