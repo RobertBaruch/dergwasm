@@ -14,6 +14,16 @@ EvalOperands = list[Union[values.ValueType, int, float, Block]]
 EvalFunc = Callable[[Machine, EvalOperands], None]
 
 
+def _signed_32(n: int) -> int:
+    """Converts a 32-bit unsigned integer to a signed one."""
+    return n - 0x100000000 if n & 0x80000000 else n
+
+
+def _signed_64(n: int) -> int:
+    """Converts a 64-bit unsigned integer to a signed one."""
+    return n - 0x10000000000000000 if n & 0x8000000000000000 else n
+
+
 # Control instructions
 def unreachable(machine: Machine, instruction: Instruction) -> None:
     raise RuntimeError("unreachable instruction reached!")
@@ -675,11 +685,17 @@ def i32_eq(machine: Machine, instruction: Instruction) -> None:
 
 
 def i32_ne(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    machine.push(values.Value(values.ValueType.I32, int(c1 != c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i32_lt_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _signed_32(int(cast(values.Value, machine.pop()).value))
+    c1 = _signed_32(int(cast(values.Value, machine.pop()).value))
+    machine.push(values.Value(values.ValueType.I32, int(c1 < c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i32_lt_u(machine: Machine, instruction: Instruction) -> None:
@@ -806,56 +822,123 @@ def f64_ge(machine: Machine, instruction: Instruction) -> None:
 
 
 def i32_clz(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """Count leading zero bits."""
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    val = 32
+    for i in range(32):
+        if c1 & 0x80000000:
+            val = i
+            break
+        c1 <<= 1
+    machine.push(values.Value(values.ValueType.I32, val))
+    machine.get_current_frame().pc += 1
 
 
 def i32_ctz(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """Count trailing zero bits."""
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    val = 32
+    for i in range(32):
+        if c1 & 1:
+            val = i
+            break
+        c1 >>= 1
+    machine.push(values.Value(values.ValueType.I32, val))
+    machine.get_current_frame().pc += 1
 
 
 def i32_popcnt(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """Count bits set."""
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    val = 0
+    for i in range(32):
+        if c1 & (1 << i):
+            val += 1
+    machine.push(values.Value(values.ValueType.I32, val))
+    machine.get_current_frame().pc += 1
 
 
+# All this bitmasking is necessary because Python ints are always signed
+# and always bignums.
 def i32_add(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value)
-    c1 = int(cast(values.Value, machine.pop()).value)
-    machine.push(values.Value(values.ValueType.I32, (c1 + c2) % 0x100000000))
+    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    machine.push(values.Value(values.ValueType.I32, (c1 + c2) & 0xFFFFFFFF))
     machine.get_current_frame().pc += 1
 
 
 def i32_sub(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value)
-    c1 = int(cast(values.Value, machine.pop()).value)
-    machine.push(values.Value(values.ValueType.I32, (c1 - c2) % 0x100000000))
+    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    machine.push(values.Value(values.ValueType.I32, (c1 - c2) & 0xFFFFFFFF))
     machine.get_current_frame().pc += 1
 
 
 def i32_mul(machine: Machine, instruction: Instruction) -> None:
-    c2 = int(cast(values.Value, machine.pop()).value)
-    c1 = int(cast(values.Value, machine.pop()).value)
-    machine.push(values.Value(values.ValueType.I32, (c1 * c2) % 0x100000000))
+    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    machine.push(values.Value(values.ValueType.I32, (c1 * c2) & 0xFFFFFFFF))
     machine.get_current_frame().pc += 1
 
 
 def i32_div_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _signed_32(int(cast(values.Value, machine.pop()).value))
+    c1 = _signed_32(int(cast(values.Value, machine.pop()).value))
+    if c2 == 0:
+        raise RuntimeError("i32.div_s: division by zero")
+    if c1 // c2 == 0x80000000:  # Unrepresentable: -2^31 // -1
+        raise RuntimeError("i32.div_s: overflow")
+    machine.push(values.Value(values.ValueType.I32, (c1 // c2) & 0xFFFFFFFF))
+    machine.get_current_frame().pc += 1
 
 
 def i32_div_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    if c2 == 0:
+        raise RuntimeError("i32.div_u: division by zero")
+    machine.push(values.Value(values.ValueType.I32, (c1 // c2) & 0xFFFFFFFF))
+    machine.get_current_frame().pc += 1
 
 
 def i32_rem_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _signed_32(int(cast(values.Value, machine.pop()).value))
+    c1 = _signed_32(int(cast(values.Value, machine.pop()).value))
+    print(f"i32.rem_s: {c1} % {c2}")
+    if c2 == 0:
+        raise RuntimeError("i32.rem_s: modulo zero")
+
+    # Note: Python % is not consistent with most languages and not consistent with wasm.
+    # See https://torstencurdt.com/tech/posts/modulo-of-negative-numbers.
+    # Thus, we implement the "correct" version here. C# does it correctly.
+
+    if c1 < 0 and c2 > 0:
+        val = -((-c1) % c2)
+    elif c1 > 0 and c2 < 0:
+        val = c1 % (-c2)
+    elif c1 < 0 and c2 < 0:
+        val = -((-c1) % (-c2))
+    else:
+        val = c1 % c2
+    print(f"  = {val}")
+    machine.push(values.Value(values.ValueType.I32, val & 0xFFFFFFFF))
+    machine.get_current_frame().pc += 1
 
 
 def i32_rem_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = int(cast(values.Value, machine.pop()).value)
+    c1 = int(cast(values.Value, machine.pop()).value)
+    if c2 == 0:
+        raise RuntimeError("i32.rem_u: modulo zero")
+    machine.push(values.Value(values.ValueType.I32, (c1 % c2) & 0xFFFFFFFF))
+    machine.get_current_frame().pc += 1
 
 
 def i32_and(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    machine.push(values.Value(values.ValueType.I32, (c1 & c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i32_or(machine: Machine, instruction: Instruction) -> None:
@@ -866,27 +949,49 @@ def i32_or(machine: Machine, instruction: Instruction) -> None:
 
 
 def i32_xor(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    machine.push(values.Value(values.ValueType.I32, (c1 ^ c2)))
+    machine.get_current_frame().pc += 1
 
 
 def i32_shl(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    machine.push(values.Value(values.ValueType.I32, (c1 << (c2 % 32)) & 0xFFFFFFFF))
+    machine.get_current_frame().pc += 1
 
 
 def i32_shr_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = _signed_32(int(cast(values.Value, machine.pop()).value))
+    machine.push(values.Value(values.ValueType.I32, (c1 >> (c2 % 32)) & 0xFFFFFFFF))
+    machine.get_current_frame().pc += 1
 
 
 def i32_shr_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    machine.push(values.Value(values.ValueType.I32, (c1 >> (c2 % 32)) & 0xFFFFFFFF))
+    machine.get_current_frame().pc += 1
 
 
 def i32_rotl(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c2 %= 32
+    val = ((c1 << c2) | (c1 >> (32 - c2))) & 0xFFFFFFFF
+    machine.push(values.Value(values.ValueType.I32, val))
+    machine.get_current_frame().pc += 1
 
 
 def i32_rotr(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c1 = int(cast(values.Value, machine.pop()).value) & 0xFFFFFFFF
+    c2 %= 32
+    val = (c1 >> c2) | (c1 << (32 - c2)) & 0xFFFFFFFF
+    machine.push(values.Value(values.ValueType.I32, val))
+    machine.get_current_frame().pc += 1
 
 
 def i64_clz(machine: Machine, instruction: Instruction) -> None:

@@ -117,59 +117,113 @@ class InsnEvalTest(parameterized.TestCase):
         self.assertEqual(self.machine.pop(), Value(ValueType.I64, 42))
         self.assertEqual(self._stack_depth(), self.starting_stack_depth)
 
-    def test_i32_add(self):
-        self.machine.push(Value(ValueType.I32, 2))
-        self.machine.push(Value(ValueType.I32, 1))
+    @parameterized.named_parameters(
+        ("i32.add", InstructionType.I32_ADD, 2, 1, 3),
+        ("i32.add mods", InstructionType.I32_ADD, 0xFEDC0000, 0x56780000, 0x55540000),
+        ("i32.mul", InstructionType.I32_MUL, 2, 3, 6),
+        ("i32.mul mods", InstructionType.I32_MUL, 0xFEDC1234, 0x56789ABC, 0x8CF0A630),
+        ("i32.sub", InstructionType.I32_SUB, 2, 1, 1),
+        ("i32.sub mods", InstructionType.I32_SUB, 0x00001234, 0x56789ABC, 0xA9877778),
+        ("i32.div_u", InstructionType.I32_DIV_U, 6, 2, 3),
+        ("i32.div_u 99/100", InstructionType.I32_DIV_U, 99, 100, 0),
+        ("i32.div_u 101/100", InstructionType.I32_DIV_U, 101, 100, 1),
+        ("i32.rem_u", InstructionType.I32_REM_U, 6, 4, 2),
+        ("i32.rem_u 99%100", InstructionType.I32_REM_U, 99, 100, 99),
+        ("i32.rem_u 101%100", InstructionType.I32_REM_U, 101, 100, 1),
+        ("i32.div_s 6/2", InstructionType.I32_DIV_S, 6, 2, 3),
+        ("i32.div_s -6/2", InstructionType.I32_DIV_S, -6, 2, -3),
+        ("i32.div_s 6/-2", InstructionType.I32_DIV_S, 6, -2, -3),
+        ("i32.div_s -6/-2", InstructionType.I32_DIV_S, -6, -2, 3),
+        ("i32.div_s -99/100", InstructionType.I32_DIV_S, -99, 100, -1),
+        ("i32.div_s -101/100", InstructionType.I32_DIV_S, -101, 100, -2),
+        ("i32.rem_s 13%3", InstructionType.I32_REM_S, 13, 3, 1),
+        ("i32.rem_s -13%3", InstructionType.I32_REM_S, -13, 3, -1),
+        ("i32.rem_s 13%-3", InstructionType.I32_REM_S, 13, -3, 1),
+        ("i32.rem_s -13%-3", InstructionType.I32_REM_S, -13, -3, -1),
+        ("i32.and", InstructionType.I32_AND, 0xFF00FF00, 0x12345678, 0x12005600),
+        ("i32.or", InstructionType.I32_OR, 0xFF00FF00, 0x12345678, 0xFF34FF78),
+        ("i32.xor", InstructionType.I32_XOR, 0xFF00FF00, 0xFFFF0000, 0x00FFFF00),
+        ("i32.shl", InstructionType.I32_SHL, 0xFF00FF00, 4, 0xF00FF000),
+        ("i32.shl mods", InstructionType.I32_SHL, 0xFF00FF00, 35, 0x7F807F800),
+        ("i32.shr_s", InstructionType.I32_SHR_S, 0x0F00FF00, 4, 0x00F00FF0),
+        ("i32.shr_s neg", InstructionType.I32_SHR_S, 0xFF00FF00, 4, 0xFFF00FF0),
+        ("i32.shr_s mods", InstructionType.I32_SHR_S, 0x0F00FF00, 35, 0x01E01FE0),
+        ("i32.shr_u", InstructionType.I32_SHR_U, 0x0F00FF00, 4, 0x00F00FF0),
+        ("i32.shr_u neg", InstructionType.I32_SHR_U, 0xFF00FF00, 4, 0x0FF00FF0),
+        ("i32.shr_u mods", InstructionType.I32_SHR_U, 0x0F00FF00, 35, 0x01E01FE0),
+        ("i32.rotl hi bit set", InstructionType.I32_ROTL, 0xF000000F, 1, 0xE000001F),
+        ("i32.rotl hi bit clr", InstructionType.I32_ROTL, 0x7000000F, 1, 0xE000001E),
+        ("i32.rotr lo bit set", InstructionType.I32_ROTR, 0xF000000F, 1, 0xF8000007),
+        ("i32.rotr lo bit clr", InstructionType.I32_ROTR, 0xF000000E, 1, 0x78000007),
+    )
+    def test_i32_binops(self, insn_type: InstructionType, a: int, b: int, expected: int):
+        self.machine.push(Value(ValueType.I32, a & 0xFFFFFFFF))
+        self.machine.push(Value(ValueType.I32, b & 0xFFFFFFFF))
 
-        insn_eval.i32_add(self.machine, noarg(InstructionType.I32_ADD))
+        insn_eval.eval_insn(self.machine, noarg(insn_type))
 
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 3))
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected & 0xFFFFFFFF))
         self.assertEqual(self._stack_depth(), self.starting_stack_depth)
 
-    def test_i32_add_mod(self):
-        self.machine.push(Value(ValueType.I32, 0xFEDC0000))
-        self.machine.push(Value(ValueType.I32, 0x56780000))
+    @parameterized.named_parameters(
+        ("i32.eq False", InstructionType.I32_EQ, 2, 1, 0),
+        ("i32.eq True", InstructionType.I32_EQ, 2, 2, 1),
+        ("i32.ne False", InstructionType.I32_NE, 2, 1, 1),
+        ("i32.ne True", InstructionType.I32_NE, 2, 2, 0),
+        ("i32.lt_u 1 < 2 is True", InstructionType.I32_LT_U, 1, 2, 1),
+        ("i32.lt_u 2 < 1 is False", InstructionType.I32_LT_U, 2, 1, 0),
+        ("i32.lt_u 1 < 1 is False", InstructionType.I32_LT_U, 1, 1, 0),
+        ("i32.lt_u -2 < -1 unsigned is True", InstructionType.I32_LT_U, -2, -1, 1),
+        ("i32.lt_u -1 < -2 unsigned is False", InstructionType.I32_LT_U, -1, -2, 0),
+        ("i32.lt_u -1 < 1 unsigned is False", InstructionType.I32_LT_U, -1, 1, 0),
+        ("i32.lt_u 1 < -1 unsigned is True", InstructionType.I32_LT_U, 1, -1, 1),
+        ("i32.lt_s 1 < 2 is True", InstructionType.I32_LT_S, 1, 2, 1),
+        ("i32.lt_s 2 < 1 is False", InstructionType.I32_LT_S, 2, 1, 0),
+        ("i32.lt_s 1 < 1 is False", InstructionType.I32_LT_S, 1, 1, 0),
+        ("i32.lt_s -2 < -1 signed is True", InstructionType.I32_LT_S, -2, -1, 1),
+        ("i32.lt_s -1 < -2 signed is False", InstructionType.I32_LT_S, -1, -2, 0),
+        ("i32.lt_s -1 < 1 signed is True", InstructionType.I32_LT_S, -1, 1, 1),
+        ("i32.lt_s 1 < -1 signed is False", InstructionType.I32_LT_S, 1, -1, 0),
+    )
+    def test_i32_relops(self, insn_type: InstructionType, a: int, b: int, expected: int):
+        self.machine.push(Value(ValueType.I32, a & 0xFFFFFFFF))
+        self.machine.push(Value(ValueType.I32, b & 0xFFFFFFFF))
 
-        insn_eval.i32_add(self.machine, noarg(InstructionType.I32_ADD))
+        insn_eval.eval_insn(self.machine, noarg(insn_type))
 
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 0x55540000))
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected & 0xFFFFFFFF))
         self.assertEqual(self._stack_depth(), self.starting_stack_depth)
 
-    def test_i32_mul(self):
-        self.machine.push(Value(ValueType.I32, 2))
-        self.machine.push(Value(ValueType.I32, 3))
+    @parameterized.named_parameters(
+        ("i32.clz all zeros", InstructionType.I32_CLZ, 0x00000000, 32),
+        ("i32.clz", InstructionType.I32_CLZ, 0x00800000, 8),
+        ("i32.ctz all zeros", InstructionType.I32_CTZ, 0x00000000, 32),
+        ("i32.ctz", InstructionType.I32_CTZ, 0x00000100, 8),
+        ("i32.popcnt all zeros", InstructionType.I32_POPCNT, 0x00000000, 0),
+        ("i32.popcnt all ones", InstructionType.I32_POPCNT, 0x00000000, 0),
+        ("i32.popcnt", InstructionType.I32_POPCNT, 0x0011110F, 8),
+        ("1 i32.eqz is False", InstructionType.I32_EQZ, 1, 0),
+        ("0 i32.eqz is True", InstructionType.I32_EQZ, 0, 1),
+    )
+    def test_i32_unops(self, insn_type: InstructionType, a: int, expected: int):
+        self.machine.push(Value(ValueType.I32, a & 0xFFFFFFFF))
 
-        insn_eval.i32_mul(self.machine, noarg(InstructionType.I32_MUL))
+        insn_eval.eval_insn(self.machine, noarg(insn_type))
 
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 6))
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected & 0xFFFFFFFF))
         self.assertEqual(self._stack_depth(), self.starting_stack_depth)
 
-    def test_i32_mul_mod(self):
-        self.machine.push(Value(ValueType.I32, 0xFEDC1234))
-        self.machine.push(Value(ValueType.I32, 0x56789ABC))
+    @parameterized.named_parameters(
+        ("i32.div_u", InstructionType.I32_DIV_U, 6, 0),
+        ("i32.div_s n/0", InstructionType.I32_DIV_S, 6, 0),
+        ("i32.div_s -2^31 / -1", InstructionType.I32_DIV_S, -0x80000000, -1),
+    )
+    def test_i32_binops_trap(self, insn_type: InstructionType, a: int, b: int):
+        self.machine.push(Value(ValueType.I32, a & 0xFFFFFFFF))
+        self.machine.push(Value(ValueType.I32, b & 0xFFFFFFFF))
 
-        insn_eval.i32_mul(self.machine, noarg(InstructionType.I32_MUL))
-
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 0x8CF0A630))
-        self.assertEqual(self._stack_depth(), self.starting_stack_depth)
-
-    def test_i32_sub(self):
-        self.machine.push(Value(ValueType.I32, 2))
-        self.machine.push(Value(ValueType.I32, 1))
-
-        insn_eval.i32_sub(self.machine, noarg(InstructionType.I32_SUB))
-
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
-        self.assertEqual(self._stack_depth(), self.starting_stack_depth)
-
-    def test_i32_sub_mod(self):
-        self.machine.push(Value(ValueType.I32, 0x00001234))
-        self.machine.push(Value(ValueType.I32, 0x56789ABC))
-
-        insn_eval.i32_sub(self.machine, noarg(InstructionType.I32_SUB))
-
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 0xA9877778))
-        self.assertEqual(self._stack_depth(), self.starting_stack_depth)
+        with self.assertRaises(RuntimeError):
+            insn_eval.eval_insn(self.machine, noarg(insn_type))
 
     @parameterized.named_parameters(
         ("i32.const 0, i32.load 0", 0, 0, 0x03020100),
@@ -193,10 +247,10 @@ class InsnEvalTest(parameterized.TestCase):
             insn_eval.i32_load(self.machine, i32_load(4, 0))
 
     @parameterized.named_parameters(
-        ("i32.const 0, i64.load 0", 0, 0, 0x0706050403020100),
-        ("i32.const 1, i64.load 0", 1, 0, 0x0807060504030201),
-        ("i32.const 0, i64.load 1", 0, 1, 0x0807060504030201),
-        ("i32.const 1, i64.load 1", 1, 1, 0x0908070605040302),
+        ("i64.const 0, i64.load 0", 0, 0, 0x0706050403020100),
+        ("i64.const 1, i64.load 0", 1, 0, 0x0807060504030201),
+        ("i64.const 0, i64.load 1", 0, 1, 0x0807060504030201),
+        ("i64.const 1, i64.load 1", 1, 1, 0x0908070605040302),
     )
     def test_i64_load(self, base: int, offset: int, expected: int):
         self.machine.push(Value(ValueType.I32, base))
@@ -644,38 +698,6 @@ class InsnEvalTest(parameterized.TestCase):
         self.assertEqual(self.machine.pop(), expected)
 
     @parameterized.named_parameters(
-        ("1 == 2 is False", 1, 2, Value(ValueType.I32, 0)),
-        ("2 == 1 is False", 2, 1, Value(ValueType.I32, 0)),
-        ("1 == 1 is True", 1, 1, Value(ValueType.I32, 1)),
-    )
-    def test_i32_eq(self, c1: int, c2: int, expected: Value):
-        func_idx = self._add_i32_func(
-            i32_const(c1),
-            i32_const(c2),
-            noarg(InstructionType.I32_EQ),
-        )
-        self.machine.invoke_func(func_idx)
-
-        self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(self.machine.pop(), expected)
-
-    @parameterized.named_parameters(
-        ("1 | 2 is 3", 1, 2, Value(ValueType.I32, 3)),
-        ("2 | 1 is 3", 2, 1, Value(ValueType.I32, 3)),
-        ("1 | 1 is 1", 1, 1, Value(ValueType.I32, 1)),
-    )
-    def test_i32_or(self, c1: int, c2: int, expected: Value):
-        func_idx = self._add_i32_func(
-            i32_const(c1),
-            i32_const(c2),
-            noarg(InstructionType.I32_OR),
-        )
-        self.machine.invoke_func(func_idx)
-
-        self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(self.machine.pop(), expected)
-
-    @parameterized.named_parameters(
         ("[5,6] select 0 = 6", 0, 5, 6, Value(ValueType.I32, 6)),
         ("[5,6] select 1 = 5", 1, 5, 6, Value(ValueType.I32, 5)),
     )
@@ -685,20 +707,6 @@ class InsnEvalTest(parameterized.TestCase):
             i32_const(v2),
             i32_const(c),
             noarg(InstructionType.SELECT),
-        )
-        self.machine.invoke_func(func_idx)
-
-        self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(self.machine.pop(), expected)
-
-    @parameterized.named_parameters(
-        ("1 eqz is False", 1, Value(ValueType.I32, 0)),
-        ("0 eqz is True", 0, Value(ValueType.I32, 1)),
-    )
-    def test_i32_eqz(self, c: int, expected: Value):
-        func_idx = self._add_i32_func(
-            i32_const(c),
-            noarg(InstructionType.I32_EQZ),
         )
         self.machine.invoke_func(func_idx)
 
