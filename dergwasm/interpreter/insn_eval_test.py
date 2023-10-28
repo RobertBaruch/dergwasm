@@ -24,7 +24,6 @@ from dergwasm.interpreter.testing.util import (
     i64_const,
     f32_const,
     f64_const,
-    i64_load,
     memory_grow,
     memory_init,
     memory_copy,
@@ -41,8 +40,8 @@ from dergwasm.interpreter.testing.util import (
     local_set,
     local_tee,
     void_block,
-    i32_load,
     noarg,
+    op2,
 )
 
 MASK64 = 0xFFFFFFFFFFFFFFFF
@@ -571,48 +570,441 @@ class InsnEvalTest(parameterized.TestCase):
             insn_eval.eval_insn(self.machine, noarg(insn_type))
 
     @parameterized.named_parameters(
-        ("0 load 0", 0, 0, 0x03020100),
-        ("1 load 0", 1, 0, 0x04030201),
-        ("0 load 1", 0, 1, 0x04030201),
-        ("1 load 1", 1, 1, 0x05040302),
+        (
+            "0 i32.load 0",
+            InstructionType.I32_LOAD,
+            0,
+            0,
+            Value(ValueType.I32, 0x03020100),
+        ),
+        (
+            "1 i32.load 0",
+            InstructionType.I32_LOAD,
+            1,
+            0,
+            Value(ValueType.I32, 0x04030201),
+        ),
+        (
+            "0 i32.load 1",
+            InstructionType.I32_LOAD,
+            0,
+            1,
+            Value(ValueType.I32, 0x04030201),
+        ),
+        (
+            "1 i32.load 1",
+            InstructionType.I32_LOAD,
+            1,
+            1,
+            Value(ValueType.I32, 0x05040302),
+        ),
+        (
+            "0 i64.load 0",
+            InstructionType.I64_LOAD,
+            0,
+            0,
+            Value(ValueType.I64, 0x0706050403020100),
+        ),
+        (
+            "1 i64.load 0",
+            InstructionType.I64_LOAD,
+            1,
+            0,
+            Value(ValueType.I64, 0x0807060504030201),
+        ),
+        (
+            "0 i64.load 1",
+            InstructionType.I64_LOAD,
+            0,
+            1,
+            Value(ValueType.I64, 0x0807060504030201),
+        ),
+        (
+            "1 i64.load 1",
+            InstructionType.I64_LOAD,
+            1,
+            1,
+            Value(ValueType.I64, 0x0908070605040302),
+        ),
+        (
+            "0 f32.load 0",
+            InstructionType.F32_LOAD,
+            0,
+            0,
+            # Ideally here I'd use the actual float value, but because Python,
+            # it would be a double truncated to a float32. Rather than do that,
+            # I'll just use the C conversions provided by struct.
+            Value(ValueType.F32, struct.unpack("<f", b"\x00\x01\x02\x03")[0]),
+        ),
+        (
+            "1 f32.load 0",
+            InstructionType.F32_LOAD,
+            1,
+            0,
+            Value(ValueType.F32, struct.unpack("<f", b"\x01\x02\x03\x04")[0]),
+        ),
+        (
+            "0 f32.load 1",
+            InstructionType.F32_LOAD,
+            0,
+            1,
+            Value(ValueType.F32, struct.unpack("<f", b"\x01\x02\x03\x04")[0]),
+        ),
+        (
+            "1 f32.load 1",
+            InstructionType.F32_LOAD,
+            1,
+            1,
+            Value(ValueType.F32, struct.unpack("<f", b"\x02\x03\x04\x05")[0]),
+        ),
+        (
+            "0 f64.load 0",
+            InstructionType.F64_LOAD,
+            0,
+            0,
+            Value(ValueType.F64, 7.94992889512736253615566268553e-275),
+        ),
+        (
+            "1 f64.load 0",
+            InstructionType.F64_LOAD,
+            1,
+            0,
+            Value(ValueType.F64, 5.44760372201160503468005645009e-270),
+        ),
+        (
+            "0 f64.load 1",
+            InstructionType.F64_LOAD,
+            0,
+            1,
+            Value(ValueType.F64, 5.44760372201160503468005645009e-270),
+        ),
+        (
+            "1 f64.load 1",
+            InstructionType.F64_LOAD,
+            1,
+            1,
+            Value(ValueType.F64, 3.7258146895053073663034247103e-265),
+        ),
     )
-    def test_i32_load(self, base: int, offset: int, expected: int):
+    def test_load(
+        self, insn_type: InstructionType, base: int, offset: int, expected: Value
+    ):
         self.machine.push(Value(ValueType.I32, base))
         self.machine.get_mem(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
 
-        insn_eval.eval_insn(self.machine, i32_load(4, offset))
+        insn_eval.eval_insn(self.machine, op2(insn_type, 4, offset))
 
         self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected))
+        self.assertEqual(self.machine.pop(), expected)
         self.assertEqual(self.machine.get_current_frame().pc, 1)
-
-    def test_i32_load_raises_on_access_out_of_bounds(self):
-        self.machine.push(Value(ValueType.I32, 65535))
-
-        with self.assertRaisesRegex(RuntimeError, "load: access out of bounds"):
-            insn_eval.eval_insn(self.machine, i32_load(4, 0))
 
     @parameterized.named_parameters(
-        ("0 load 0", 0, 0, 0x0706050403020100),
-        ("1 load 0", 1, 0, 0x0807060504030201),
-        ("0 load 1", 0, 1, 0x0807060504030201),
-        ("1 load 1", 1, 1, 0x0908070605040302),
+        ("i32.load", 4, InstructionType.I32_LOAD),
+        ("i64.load", 8, InstructionType.I64_LOAD),
+        ("f32.load", 4, InstructionType.F32_LOAD),
+        ("f64.load", 8, InstructionType.F64_LOAD),
     )
-    def test_i64_load(self, base: int, offset: int, expected: int):
-        self.machine.push(Value(ValueType.I32, base))
-        self.machine.get_mem(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
+    def test_load_raises_on_access_out_of_bounds(
+        self, sz: int, insn_type: InstructionType
+    ):
+        self.machine.push(Value(ValueType.I32, 65536 - sz + 1))
 
-        insn_eval.eval_insn(self.machine, i64_load(4, offset))
+        with self.assertRaisesRegex(RuntimeError, "load: access out of bounds"):
+            insn_eval.eval_insn(self.machine, op2(insn_type, 4, 0))
+
+    @parameterized.named_parameters(
+        (
+            "0 i32.load8_u 0",
+            0,
+            0,
+            InstructionType.I32_LOAD8_U,
+            Value(ValueType.I32, 0x00000080),
+        ),
+        (
+            "1 i32.load8_u 0",
+            1,
+            0,
+            InstructionType.I32_LOAD8_U,
+            Value(ValueType.I32, 0x00000081),
+        ),
+        (
+            "0 i32.load8_u 1",
+            0,
+            1,
+            InstructionType.I32_LOAD8_U,
+            Value(ValueType.I32, 0x00000081),
+        ),
+        (
+            "1 i32.load8_u",
+            1,
+            1,
+            InstructionType.I32_LOAD8_U,
+            Value(ValueType.I32, 0x00000082),
+        ),
+        (
+            "0 i32.load8_s 0",
+            0,
+            0,
+            InstructionType.I32_LOAD8_S,
+            Value(ValueType.I32, 0xFFFFFF80),
+        ),
+        (
+            "1 i32.load8_s 0",
+            1,
+            0,
+            InstructionType.I32_LOAD8_S,
+            Value(ValueType.I32, 0xFFFFFF81),
+        ),
+        (
+            "0 i32.load8_s 1",
+            0,
+            1,
+            InstructionType.I32_LOAD8_S,
+            Value(ValueType.I32, 0xFFFFFF81),
+        ),
+        (
+            "1 i32.load8_s",
+            1,
+            1,
+            InstructionType.I32_LOAD8_S,
+            Value(ValueType.I32, 0xFFFFFF82),
+        ),
+        (
+            "0 i32.load16_u 0",
+            0,
+            0,
+            InstructionType.I32_LOAD16_U,
+            Value(ValueType.I32, 0x00008180),
+        ),
+        (
+            "1 i32.load16_u 0",
+            1,
+            0,
+            InstructionType.I32_LOAD16_U,
+            Value(ValueType.I32, 0x00008281),
+        ),
+        (
+            "0 i32.load16_u 1",
+            0,
+            1,
+            InstructionType.I32_LOAD16_U,
+            Value(ValueType.I32, 0x00008281),
+        ),
+        (
+            "1 i32.load16_u",
+            1,
+            1,
+            InstructionType.I32_LOAD16_U,
+            Value(ValueType.I32, 0x00008382),
+        ),
+        (
+            "0 i32.load16_s 0",
+            0,
+            0,
+            InstructionType.I32_LOAD16_S,
+            Value(ValueType.I32, 0xFFFF8180),
+        ),
+        (
+            "1 i32.load16_s 0",
+            1,
+            0,
+            InstructionType.I32_LOAD16_S,
+            Value(ValueType.I32, 0xFFFF8281),
+        ),
+        (
+            "0 i32.load16_s 1",
+            0,
+            1,
+            InstructionType.I32_LOAD16_S,
+            Value(ValueType.I32, 0xFFFF8281),
+        ),
+        (
+            "1 i32.load16_s",
+            1,
+            1,
+            InstructionType.I32_LOAD16_S,
+            Value(ValueType.I32, 0xFFFF8382),
+        ),
+        (
+            "0 i64.load8_u 0",
+            0,
+            0,
+            InstructionType.I64_LOAD8_U,
+            Value(ValueType.I64, 0x0000000000000080),
+        ),
+        (
+            "1 i64.load8_u 0",
+            1,
+            0,
+            InstructionType.I64_LOAD8_U,
+            Value(ValueType.I64, 0x0000000000000081),
+        ),
+        (
+            "0 i64.load8_u 1",
+            0,
+            1,
+            InstructionType.I64_LOAD8_U,
+            Value(ValueType.I64, 0x0000000000000081),
+        ),
+        (
+            "1 i64.load8_u",
+            1,
+            1,
+            InstructionType.I64_LOAD8_U,
+            Value(ValueType.I64, 0x0000000000000082),
+        ),
+        (
+            "0 i64.load8_s 0",
+            0,
+            0,
+            InstructionType.I64_LOAD8_S,
+            Value(ValueType.I64, 0xFFFFFFFFFFFFFF80),
+        ),
+        (
+            "1 i64.load8_s 0",
+            1,
+            0,
+            InstructionType.I64_LOAD8_S,
+            Value(ValueType.I64, 0xFFFFFFFFFFFFFF81),
+        ),
+        (
+            "0 i64.load8_s 1",
+            0,
+            1,
+            InstructionType.I64_LOAD8_S,
+            Value(ValueType.I64, 0xFFFFFFFFFFFFFF81),
+        ),
+        (
+            "1 i64.load8_s",
+            1,
+            1,
+            InstructionType.I64_LOAD8_S,
+            Value(ValueType.I64, 0xFFFFFFFFFFFFFF82),
+        ),
+        (
+            "0 i64.load16_u 0",
+            0,
+            0,
+            InstructionType.I64_LOAD16_U,
+            Value(ValueType.I64, 0x0000000000008180),
+        ),
+        (
+            "1 i64.load16_u 0",
+            1,
+            0,
+            InstructionType.I64_LOAD16_U,
+            Value(ValueType.I64, 0x0000000000008281),
+        ),
+        (
+            "0 i64.load16_u 1",
+            0,
+            1,
+            InstructionType.I64_LOAD16_U,
+            Value(ValueType.I64, 0x0000000000008281),
+        ),
+        (
+            "1 i64.load16_u",
+            1,
+            1,
+            InstructionType.I64_LOAD16_U,
+            Value(ValueType.I64, 0x0000000000008382),
+        ),
+        (
+            "0 i64.load16_s 0",
+            0,
+            0,
+            InstructionType.I64_LOAD16_S,
+            Value(ValueType.I64, 0xFFFFFFFFFFFF8180),
+        ),
+        (
+            "1 i64.load16_s 0",
+            1,
+            0,
+            InstructionType.I64_LOAD16_S,
+            Value(ValueType.I64, 0xFFFFFFFFFFFF8281),
+        ),
+        (
+            "0 i64.load16_s 1",
+            0,
+            1,
+            InstructionType.I64_LOAD16_S,
+            Value(ValueType.I64, 0xFFFFFFFFFFFF8281),
+        ),
+        (
+            "1 i64.load16_s",
+            1,
+            1,
+            InstructionType.I64_LOAD16_S,
+            Value(ValueType.I64, 0xFFFFFFFFFFFF8382),
+        ),
+        (
+            "0 i64.load32_u 0",
+            0,
+            0,
+            InstructionType.I64_LOAD32_U,
+            Value(ValueType.I64, 0x0000000083828180),
+        ),
+        (
+            "1 i64.load32_u 0",
+            1,
+            0,
+            InstructionType.I64_LOAD32_U,
+            Value(ValueType.I64, 0x0000000084838281),
+        ),
+        (
+            "0 i64.load32_u 1",
+            0,
+            1,
+            InstructionType.I64_LOAD32_U,
+            Value(ValueType.I64, 0x0000000084838281),
+        ),
+        (
+            "1 i64.load32_u",
+            1,
+            1,
+            InstructionType.I64_LOAD32_U,
+            Value(ValueType.I64, 0x0000000085848382),
+        ),
+        (
+            "0 i64.load32_s 0",
+            0,
+            0,
+            InstructionType.I64_LOAD32_S,
+            Value(ValueType.I64, 0xFFFFFFFF83828180),
+        ),
+        (
+            "1 i64.load32_s 0",
+            1,
+            0,
+            InstructionType.I64_LOAD32_S,
+            Value(ValueType.I64, 0xFFFFFFFF84838281),
+        ),
+        (
+            "0 i64.load32_s 1",
+            0,
+            1,
+            InstructionType.I64_LOAD32_S,
+            Value(ValueType.I64, 0xFFFFFFFF84838281),
+        ),
+        (
+            "1 i64.load32_s",
+            1,
+            1,
+            InstructionType.I64_LOAD32_S,
+            Value(ValueType.I64, 0xFFFFFFFF85848382),
+        ),
+    )
+    def test_loadN(
+        self, base: int, offset: int, insn_type: InstructionType, expected: Value
+    ):
+        self.machine.push(Value(ValueType.I32, base))
+        self.machine.get_mem(0)[0:10] = b"\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89"
+
+        insn_eval.eval_insn(self.machine, op2(insn_type, 4, offset))
 
         self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(self.machine.pop(), Value(ValueType.I64, expected))
+        self.assertEqual(self.machine.pop(), expected)
         self.assertEqual(self.machine.get_current_frame().pc, 1)
-
-    def test_i64_load_raises_on_access_out_of_bounds(self):
-        self.machine.push(Value(ValueType.I32, 65535))
-
-        with self.assertRaisesRegex(RuntimeError, "i64.load: access out of bounds"):
-            insn_eval.eval_insn(self.machine, i64_load(4, 0))
 
     @parameterized.named_parameters(
         (

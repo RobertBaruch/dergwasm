@@ -177,3 +177,7 @@ def call(funcidx: int) -> Instruction:
 
 def noarg(insn_type: InstructionType):
     return Instruction(insn_type, [], 0, 0)
+
+
+def op2(insn_type: InstructionType, operand1: int, operand2: int):
+    return Instruction(insn_type, [operand1, operand2], 0, 0)

@@ -3,6 +3,7 @@
 # pylint: disable=missing-function-docstring,missing-class-docstring
 # pylint: disable=too-many-branches,too-many-statements,too-many-lines
 # pylint: disable=unused-argument
+# pylint: disable=invalid-name
 
 from __future__ import annotations  # For PEP563 - postponed evaluation of annotations
 
@@ -368,7 +369,7 @@ def i32_load(machine: Machine, instruction: Instruction) -> None:
     mem = machine.get_mem(a)
     if ea + 4 > len(mem):
         raise RuntimeError(
-            "i32.load: access out of bounds: base {i} offset {operands[1]}"
+            f"i32.load: access out of bounds: base {i} offset {operands[1]}"
         )
     val = struct.unpack("<I", mem[ea : ea + 4])[0]
     machine.push(values.Value(values.ValueType.I32, val))
@@ -393,7 +394,7 @@ def i64_load(machine: Machine, instruction: Instruction) -> None:
     mem = machine.get_mem(a)
     if ea + 8 > len(mem):
         raise RuntimeError(
-            "i64.load: access out of bounds: base {i} offset {operands[1]}"
+            f"i64.load: access out of bounds: base {i} offset {operands[1]}"
         )
     val = struct.unpack("<Q", mem[ea : ea + 8])[0]
     machine.push(values.Value(values.ValueType.I64, val))
@@ -401,51 +402,138 @@ def i64_load(machine: Machine, instruction: Instruction) -> None:
 
 
 def f32_load(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """Loads a 32-bit float from memory.
+
+    Expects the base address (i32) to be on the top of the stack.
+
+    Operands:
+      0: alignment (int)
+      1: offset (int)
+    """
+    f = machine.get_current_frame()
+    operands = instruction.operands
+    i = _unsigned_i32(machine.pop())  # base
+    # Ignore operand[0], the alignment.
+    a = f.module.memaddrs[0]  # memaddr
+    ea = i + int(operands[1])  # effective address
+    mem = machine.get_mem(a)
+    if ea + 4 > len(mem):
+        raise RuntimeError(
+            f"f32.load: access out of bounds: base {i} offset {operands[1]}"
+        )
+    val = struct.unpack("<f", mem[ea : ea + 4])[0]
+    machine.push(values.Value(values.ValueType.F32, val))
+    f.pc += 1
 
 
 def f64_load(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    """Loads a 64-bit float from memory.
+
+    Expects the base address (i32) to be on the top of the stack.
+
+    Operands:
+      0: alignment (int)
+      1: offset (int)
+    """
+    f = machine.get_current_frame()
+    operands = instruction.operands
+    i = _unsigned_i32(machine.pop())  # base
+    # Ignore operand[0], the alignment.
+    a = f.module.memaddrs[0]  # memaddr
+    ea = i + int(operands[1])  # effective address
+    mem = machine.get_mem(a)
+    if ea + 8 > len(mem):
+        raise RuntimeError(
+            f"f32.load: access out of bounds: base {i} offset {operands[1]}"
+        )
+    val = struct.unpack("<d", mem[ea : ea + 8])[0]
+    machine.push(values.Value(values.ValueType.F64, val))
+    f.pc += 1
+
+
+def _isz_loadN_sx(
+    machine: Machine, instruction: Instruction, sz: int, n: int, sx: bool
+) -> None:
+    f = machine.get_current_frame()
+    operands = instruction.operands
+    i = _unsigned_i32(machine.pop())  # base
+    # Ignore operand[0], the alignment.
+    a = f.module.memaddrs[0]  # memaddr
+    ea = i + int(operands[1])  # effective address
+    mem = machine.get_mem(a)
+
+    numbytes = n // 8
+    if ea + numbytes > len(mem):
+        raise RuntimeError(
+            f"i32.load{n}_{'s' if sx else 'u'}: access out of bounds: "
+            f"base {i} offset {operands[1]}"
+        )
+
+    # Python things
+    val = bytearray(sz // 8)
+    # Put the memory bytes into val, left-justified (because little-endian).
+    #
+    # Examples:
+    #
+    #  sz = 32, n = 8: 12 -> 12 00 00 00
+    #  sz = 32, n = 16: 12 34 -> 12 34 00 00
+    #  sz = 64, n = 16: 12 34 -> 12 34 00 00 00 00 00 00
+    val[:numbytes] = mem[ea : ea + numbytes]
+    if sx and (val[numbytes - 1] & 0x80):
+        # Sign extend.
+        #
+        # Examples:
+        #
+        #  sz = 32, n = 8: 84 -> 84 FF FF FF
+        #  sz = 32, n = 16: 12 82 -> 12 82 FF FF
+        #  sz = 64, n = 16: 12 82 -> 12 82 FF FF FF FF FF FF
+        val[numbytes:] = b"\xFF" * ((sz // 8) - numbytes)
+
+    if sz == 32:
+        machine.push(values.Value(values.ValueType.I32, struct.unpack("<I", val)[0]))
+    else:
+        machine.push(values.Value(values.ValueType.I64, struct.unpack("<Q", val)[0]))
+    f.pc += 1
 
 
 def i32_load8_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    _isz_loadN_sx(machine, instruction, 32, 8, True)
 
 
 def i32_load8_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    _isz_loadN_sx(machine, instruction, 32, 8, False)
 
 
 def i32_load16_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    _isz_loadN_sx(machine, instruction, 32, 16, True)
 
 
 def i32_load16_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    _isz_loadN_sx(machine, instruction, 32, 16, False)
 
 
 def i64_load8_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    _isz_loadN_sx(machine, instruction, 64, 8, True)
 
 
 def i64_load8_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    _isz_loadN_sx(machine, instruction, 64, 8, False)
 
 
 def i64_load16_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    _isz_loadN_sx(machine, instruction, 64, 16, True)
 
 
 def i64_load16_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    _isz_loadN_sx(machine, instruction, 64, 16, False)
 
 
 def i64_load32_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    _isz_loadN_sx(machine, instruction, 64, 32, True)
 
 
 def i64_load32_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    _isz_loadN_sx(machine, instruction, 64, 32, False)
 
 
 def i32_store(machine: Machine, instruction: Instruction) -> None:
@@ -1278,27 +1366,21 @@ def i64_xor(machine: Machine, instruction: Instruction) -> None:
 def i64_shl(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i64(machine.pop())
     c1 = _unsigned_i64(machine.pop())
-    machine.push(
-        values.Value(values.ValueType.I64, (c1 << (c2 % 64)) & MASK64)
-    )
+    machine.push(values.Value(values.ValueType.I64, (c1 << (c2 % 64)) & MASK64))
     machine.get_current_frame().pc += 1
 
 
 def i64_shr_s(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i64(machine.pop())
     c1 = _signed_i64(machine.pop())
-    machine.push(
-        values.Value(values.ValueType.I64, (c1 >> (c2 % 64)) & MASK64)
-    )
+    machine.push(values.Value(values.ValueType.I64, (c1 >> (c2 % 64)) & MASK64))
     machine.get_current_frame().pc += 1
 
 
 def i64_shr_u(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i64(machine.pop())
     c1 = _unsigned_i64(machine.pop())
-    machine.push(
-        values.Value(values.ValueType.I64, (c1 >> (c2 % 64)) & MASK64)
-    )
+    machine.push(values.Value(values.ValueType.I64, (c1 >> (c2 % 64)) & MASK64))
     machine.get_current_frame().pc += 1
 
 
