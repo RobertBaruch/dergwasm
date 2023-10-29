@@ -111,11 +111,6 @@ class Machine(abc.ABC):
         The function must be a module function.
         """
 
-    # Hmmmmmm.
-    # @abc.abstractmethod
-    # def _exit_insn_seq_with_label(self) -> values.Label:
-    #     """Exits the current instruction sequence and returns the label."""
-
     def add_hostfunc(self, hostfunc: Callable) -> int:
         """Adds a host function to the machine and returns its index."""
 
@@ -156,12 +151,20 @@ class Machine(abc.ABC):
         """Returns the data at the given index."""
 
     @abc.abstractmethod
+    def drop_data(self, dataidx: int) -> None:
+        """Drops the data at the given index."""
+
+    @abc.abstractmethod
     def add_element(self, element: ElementSegmentInstance) -> int:
         """Adds an element segment to the machine and returns its index."""
 
     @abc.abstractmethod
     def get_element(self, elementidx: int) -> ElementSegmentInstance:
         """Returns the element segment at the given index."""
+
+    @abc.abstractmethod
+    def drop_element(self, elementidx: int) -> None:
+        """Drops the element segment at the given index."""
 
     @abc.abstractmethod
     def get_nth_value_of_type(

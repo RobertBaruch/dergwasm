@@ -333,23 +333,72 @@ def global_set(machine: Machine, instruction: Instruction) -> None:
 
 # Table instructions,
 def table_get(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    assert isinstance(instruction.operands[0], int)  # tableidx
+    f = machine.get_current_frame()
+    tableidx = int(instruction.operands[0])
+    table = machine.get_table(f.module.tableaddrs[tableidx])
+    i = _unsigned_i32(machine.pop())
+    if i >= len(table.refs):
+        raise RuntimeError("table.set: access out of bounds")
+    machine.push(table[i])
+    f.pc += 1
 
 
 def table_set(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    assert isinstance(instruction.operands[0], int)  # tableidx
+    f = machine.get_current_frame()
+    tableidx = int(instruction.operands[0])
+    table = machine.get_table(f.module.tableaddrs[tableidx])
+    val = machine.pop()
+    i = _unsigned_i32(machine.pop())
+    if i >= len(table.refs):
+        raise RuntimeError("table.set: access out of bounds")
+    table[i] = val
+    f.pc += 1
 
 
 def table_init(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    assert isinstance(instruction.operands[0], int)  # tableidx
+    assert isinstance(instruction.operands[1], int)  # elementidx
+    f = machine.get_current_frame()
+    tableidx = int(instruction.operands[0])
+    elementidx = int(instruction.operands[1])
+    table = machine.get_table(f.module.tableaddrs[tableidx])
+    element = machine.get_element(f.module.elementaddrs[elementidx])
+    n = _unsigned_i32(machine.pop())  # data size, i32
+    s = _unsigned_i32(machine.pop())  # source, i32
+    d = _unsigned_i32(machine.pop())  # destination, i32
+    if s + n > len(element.refs) or d + n > len(table.refs):
+        raise RuntimeError("table.init: access out of bounds")
+    if n > 0:
+        table[d : d + n] = element[s : s + n]
+    f.pc += 1
 
 
 def elem_drop(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    assert isinstance(instruction.operands[0], int)  # elementidx
+    f = machine.get_current_frame()
+    elementidx = int(instruction.operands[0])
+    machine.drop_element(f.module.elementaddrs[elementidx])
+    f.pc += 1
 
 
 def table_copy(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    assert isinstance(instruction.operands[0], int)  # dtableidx
+    assert isinstance(instruction.operands[1], int)  # stableidx
+    f = machine.get_current_frame()
+    dtableidx = int(instruction.operands[0])
+    dtable = machine.get_table(f.module.tableaddrs[dtableidx])
+    stableidx = int(instruction.operands[1])
+    stable = machine.get_table(f.module.tableaddrs[stableidx])
+    n = _unsigned_i32(machine.pop())  # count, i32
+    s = _unsigned_i32(machine.pop())  # source, i32
+    d = _unsigned_i32(machine.pop())  # destination, i32
+    if s + n > len(stable.refs) or d + n > len(dtable.refs):
+        raise RuntimeError("table.copy: access out of bounds")
+    if n > 0:
+        dtable[d : d + n] = stable[s : s + n]
+    f.pc += 1
 
 
 def table_grow(machine: Machine, instruction: Instruction) -> None:
@@ -357,11 +406,27 @@ def table_grow(machine: Machine, instruction: Instruction) -> None:
 
 
 def table_size(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    assert isinstance(instruction.operands[0], int)  # tableidx
+    f = machine.get_current_frame()
+    tableidx = int(instruction.operands[0])
+    table = machine.get_table(f.module.tableaddrs[tableidx])
+    machine.push(values.Value(values.ValueType.I32, len(table.refs)))
+    f.pc += 1
 
 
 def table_fill(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    assert isinstance(instruction.operands[0], int)  # tableidx
+    f = machine.get_current_frame()
+    tableidx = int(instruction.operands[0])
+    table = machine.get_table(f.module.tableaddrs[tableidx])
+    n = _unsigned_i32(machine.pop())  # count, i32
+    v = machine.pop()  # value, ref
+    i = _unsigned_i32(machine.pop())  # idx, i32
+    if i + n > len(table.refs):
+        raise RuntimeError("table.fill: access out of bounds")
+    if n > 0:
+        table[i : i + n] = [v for _ in range(n)]
+    f.pc += 1
 
 
 # Memory instructions,
@@ -811,13 +876,13 @@ def memory_init(machine: Machine, instruction: Instruction) -> None:
 
 def data_drop(machine: Machine, instruction: Instruction) -> None:
     """Drops a data segment."""
+    f = machine.get_current_frame()
     operands = instruction.operands
     assert len(operands) == 1
     assert isinstance(operands[0], int)  # dataindex
 
-    da = machine.get_current_frame().module.dataaddrs[operands[0]]
-    machine.datas[da] = bytearray()
-    machine.get_current_frame().pc += 1
+    machine.drop_data(f.module.dataaddrs[operands[0]])
+    f.pc += 1
 
 
 def memory_copy(machine: Machine, instruction: Instruction) -> None:

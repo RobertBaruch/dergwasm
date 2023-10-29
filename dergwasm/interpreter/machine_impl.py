@@ -18,8 +18,8 @@ class MachineImpl(machine.Machine):
     tables: list[machine.TableInstance]
     mems: list[bytearray]
     global_vars: list[machine.GlobalInstance]
-    datas: list[bytes]
-    element_segments: list[machine.ElementSegmentInstance]
+    datas: list[bytes | None]
+    element_segments: list[machine.ElementSegmentInstance | None]
 
     def __init__(self) -> None:
         self.current_frame = None
@@ -148,12 +148,18 @@ class MachineImpl(machine.Machine):
     def get_data(self, dataidx: int) -> bytes:
         return self.datas[dataidx]
 
+    def drop_data(self, dataidx: int) -> None:
+        self.datas[dataidx] = None
+
     def add_element(self, element: machine.ElementSegmentInstance) -> int:
         self.element_segments.append(element)
         return len(self.element_segments) - 1
 
     def get_element(self, elementidx: int) -> machine.ElementSegmentInstance:
         return self.element_segments[elementidx]
+
+    def drop_element(self, elementidx: int) -> None:
+        self.element_segments[elementidx] = None
 
     def get_nth_value_of_type(
         self, n: int, value_type: Type[values.StackValue]
