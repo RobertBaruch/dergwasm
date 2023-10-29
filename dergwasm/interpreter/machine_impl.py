@@ -19,6 +19,7 @@ class MachineImpl(machine.Machine):
     mems: list[bytearray]
     global_vars: list[machine.GlobalInstance]
     datas: list[bytes]
+    element_segments: list[machine.ElementSegmentInstance]
 
     def __init__(self) -> None:
         self.current_frame = None
@@ -28,6 +29,7 @@ class MachineImpl(machine.Machine):
         self.mems = []
         self.global_vars = []
         self.datas = []
+        self.element_segments = []
 
     def get_max_allowed_memory_pages(self) -> int:
         # Here I'm just allowing 64k x 1k = 64M of memory.
@@ -51,12 +53,10 @@ class MachineImpl(machine.Machine):
         while self.get_current_frame().pc < len(seq):
             instruction = seq[self.get_current_frame().pc]
 
+            print(f"Executing {instruction}")
+            insn_eval.eval_insn(self, instruction)
             if instruction.instruction_type == InstructionType.RETURN:
-                insn_eval.eval_insn(self, instruction)
                 return
-
-            else:
-                insn_eval.eval_insn(self, instruction)
 
         f = self.get_current_frame()
         n = f.arity
@@ -147,6 +147,13 @@ class MachineImpl(machine.Machine):
 
     def get_data(self, dataidx: int) -> bytes:
         return self.datas[dataidx]
+
+    def add_element(self, element: machine.ElementSegmentInstance) -> int:
+        self.element_segments.append(element)
+        return len(self.element_segments) - 1
+
+    def get_element(self, elementidx: int) -> machine.ElementSegmentInstance:
+        return self.element_segments[elementidx]
 
     def get_nth_value_of_type(
         self, n: int, value_type: Type[values.StackValue]

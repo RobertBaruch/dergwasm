@@ -16,13 +16,13 @@ if TYPE_CHECKING:
 
 @dataclasses.dataclass
 class FuncInstance:
-    """The base type for FuncInstances."""
+    """The base type runtime representation of a function."""
     functype: binary.FuncType
 
 
 @dataclasses.dataclass
 class ModuleFuncInstance(FuncInstance):
-    """A function instance in a module."""
+    """The runtime representation of a function in a module."""
 
     module: module_instance.ModuleInstance
     local_vars: list[values.ValueType]
@@ -31,22 +31,30 @@ class ModuleFuncInstance(FuncInstance):
 
 @dataclasses.dataclass
 class HostFuncInstance(FuncInstance):
-    """A function instance on the host."""
+    """The runtime represetnation of a function on the host."""
 
     hostfunc: Callable
 
 
-# TODO: Add elements.
 @dataclasses.dataclass
 class TableInstance(binary.Table):
-    """A table instance."""
+    """The runtime representation of a table."""
+
+    refs: list[values.Value]
 
 
 @dataclasses.dataclass
 class GlobalInstance(binary.Global):
-    """A global instance."""
+    """The runtime representation of a global variable."""
 
     value: values.Value
+
+
+@dataclasses.dataclass
+class ElementSegmentInstance(binary.ElementSegment):
+    """The runtime representation of an element segment."""
+
+    refs: list[values.Value] = dataclasses.field(default_factory=list)
 
 
 class Machine(abc.ABC):
@@ -146,6 +154,14 @@ class Machine(abc.ABC):
     @abc.abstractmethod
     def get_data(self, dataidx: int) -> bytearray:
         """Returns the data at the given index."""
+
+    @abc.abstractmethod
+    def add_element(self, element: ElementSegmentInstance) -> int:
+        """Adds an element segment to the machine and returns its index."""
+
+    @abc.abstractmethod
+    def get_element(self, elementidx: int) -> ElementSegmentInstance:
+        """Returns the element segment at the given index."""
 
     @abc.abstractmethod
     def get_nth_value_of_type(

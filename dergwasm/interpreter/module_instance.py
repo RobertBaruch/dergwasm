@@ -1,10 +1,18 @@
 """An instance of a module."""
 
+# pylint: disable=too-many-branches,too-many-locals
+
 from __future__ import annotations  # For PEP563 - postponed evaluation of annotations
 
 from dergwasm.interpreter import binary
 from dergwasm.interpreter import insn_eval
-from dergwasm.interpreter.machine import Machine, ModuleFuncInstance, TableInstance, GlobalInstance
+from dergwasm.interpreter.machine import (
+    Machine,
+    ModuleFuncInstance,
+    TableInstance,
+    GlobalInstance,
+    ElementSegmentInstance,
+)
 from dergwasm.interpreter import values
 from dergwasm.interpreter.insn import Instruction, InstructionType
 
@@ -22,6 +30,7 @@ class ModuleInstance:
     memaddrs: list[int]
     globaladdrs: list[int]
     dataaddrs: list[int]
+    elementaddrs: list[int]
     exports: dict[str, values.RefVal]
 
     def __init__(self, module: binary.Module) -> None:
@@ -32,11 +41,10 @@ class ModuleInstance:
         self.memaddrs = []
         self.globaladdrs = []
         self.dataaddrs = []
+        self.elementaddrs = []
         self.exports = {}
 
-    def allocate(
-        self, machine_inst: Machine, externvals: list[values.RefVal]
-    ) -> None:
+    def allocate(self, machine_inst: Machine, externvals: list[values.RefVal]) -> None:
         """Allocates the module."""
 
         # Allocate functions.
@@ -55,7 +63,13 @@ class ModuleInstance:
         # Allocate tables.
         table_section: binary.TableSection = self.module.sections[binary.TableSection]
         for table_spec in table_section.tables:
-            table = TableInstance(table_spec)
+            table = TableInstance(
+                table_spec,
+                [
+                    values.Value(table_spec.table_type.reftype, None)
+                    for _ in range(table_spec.table_type.min_limit)
+                ],
+            )
             self.tableaddrs.append(machine_inst.add_table(table))
 
         # Allocate memories.
@@ -71,26 +85,44 @@ class ModuleInstance:
             binary.GlobalSection
         ]
         for global_spec in global_section.global_vars:
-            default_value = 0
+            default_value = 0  # Applies to i32, i64, f32, f64, v128
             if (
                 global_spec.global_type.value_type == values.ValueType.FUNCREF
                 or global_spec.global_type.value_type == values.ValueType.EXTERNREF
             ):
-                default_value = values.RefVal(global_spec.global_type.value_type, None)
+                default_value = None
             global_value = GlobalInstance(
-                global_spec.global_type.value_type, global_spec.init, default_value
+                global_spec.global_type.value_type,
+                global_spec.init,
+                values.Value(global_spec.global_type.value_type, default_value),
             )
             self.globaladdrs.append(machine_inst.add_global(global_value))
 
         # Allocate element segments.
-        # TODO: Skip for now.
+        element_section: binary.ElementSection = self.module.sections[
+            binary.ElementSection
+        ]
+        for element_segment in element_section.elements:
+            segment = ElementSegmentInstance(
+                element_segment.elem_type,
+                element_segment.offset_expr,
+                element_segment.tableidx,
+                element_segment.elem_indexes,
+                element_segment.elem_exprs,
+                [
+                    values.Value(element_segment.elem_type, None)
+                    for _ in range(element_segment.size())
+                ],
+            )
+            self.elementaddrs.append(machine_inst.add_element(segment))
 
         # Allocate data segments.
         data_section: binary.DataSection = self.module.sections[binary.DataSection]
         for data_spec in data_section.data:
             self.dataaddrs.append(machine_inst.add_data(data_spec.data))
 
-        # Prepend the external funcs, tables, mems, and globals.
+        # Prepend the external funcs, tables, mems, and globals. These always come
+        # first.
         prepend_funcaddrs = []
         prepend_tableaddrs = []
         prepend_memaddrs = []
@@ -192,13 +224,14 @@ class ModuleInstance:
 
         # First initialize the globals.
         # Push a frame (the "initial" frame) onto the stack with no local vars.
-        machine.new_frame(values.Frame(0, [], instance, 0))
 
         # Determine the value of each global by running its init code.
         global_section: binary.GlobalSection = module.sections[binary.GlobalSection]
         for i, g in enumerate(global_section.global_vars):
             # Run the init code block.
-            machine.execute_block(g.init)
+            machine.new_frame(values.Frame(1, [], instance, 0))
+            machine.push(values.Label(1, len(g.init)))
+            machine.execute_seq(g.init)
             # Pop the result off the stack and set the global with it. Strictly
             # speaking, after determining the init values for the globals, we're
             # supposed to allocate  a *new* instance of the module, but this time
@@ -206,13 +239,53 @@ class ModuleInstance:
             # doing that, but possibly that's just the standard enforcing that
             # immutable globals can only be initialized, not set.
             machine.set_global(instance.globaladdrs[i], machine.pop())
+            machine.clear_stack()
 
-        # Next get a list of reference vectors determined by the element sections.
-        # TODO: We're skipping this step for now.
+        # Populate the ref lists in each element section.
+        element_section: binary.ElementSection = module.sections[binary.ElementSection]
+        for i, s in enumerate(element_section.elements):
+            segment_instance = machine.get_element(instance.elementaddrs[i])
+            if s.elem_indexes is not None:
+                for j, idx in enumerate(s.elem_indexes):
+                    segment_instance.refs[j].value = idx
+            else:
+                machine.new_frame(values.Frame(1, [], instance, 0))
+                for j, expr in enumerate(s.elem_exprs):
+                    machine.execute_seq(expr)
+                    segment_instance.refs[j] = machine.pop()
+                machine.clear_stack()
 
-        machine.clear_stack()
+        # For each active element segment, copy the segment into its table.
+        for i, s in enumerate(element_section.elements):
+            segment_instance = machine.get_element(instance.elementaddrs[i])
+            if segment_instance.is_active():
+                n = values.Value(values.ValueType.I32, len(segment_instance.refs))
+                machine.new_frame(values.Frame(1, [], instance, 0))
+                machine.push(values.Label(1, len(segment_instance.offset_expr)))
+                machine.execute_seq(segment_instance.offset_expr)
+                offset = machine.pop()
+                machine.clear_stack()
 
-        # Skip elements again
+                machine.push(offset)
+                machine.push(values.Value(values.ValueType.I32, 0))
+                machine.push(n)
+                insn_eval.eval_insn(
+                    machine,
+                    Instruction(
+                        InstructionType.TABLE_INIT, [segment_instance.tableidx, i], 0, 0
+                    ),
+                )
+                insn_eval.eval_insn(
+                    machine, Instruction(InstructionType.ELEM_DROP, [i], 0, 0)
+                )
+
+        # For each declarative element segment, drop it (?).
+        for i, s in enumerate(element_section.elements):
+            segment_instance = machine.get_element(instance.elementaddrs[i])
+            if segment_instance.is_declarative():
+                insn_eval.eval_insn(
+                    machine, Instruction(InstructionType.ELEM_DROP, [i], 0, 0)
+                )
 
         # For each active data segment, copy the data into memory.
         data_section: binary.DataSection = module.sections[binary.DataSection]
@@ -231,10 +304,12 @@ class ModuleInstance:
             machine.execute_seq(d.offset)
             machine.push(values.Value(values.ValueType.I32, 0))
             machine.push(values.Value(values.ValueType.I32, len(d.data)))
-            insn_eval.memory_init(machine,
-                                  Instruction(InstructionType.MEMORY_INIT, [i, 0], 0, 0))
-            insn_eval.data_drop(machine,
-                                Instruction(InstructionType.DATA_DROP, [i], 0, 0))
+            insn_eval.memory_init(
+                machine, Instruction(InstructionType.MEMORY_INIT, [i, 0], 0, 0)
+            )
+            insn_eval.data_drop(
+                machine, Instruction(InstructionType.DATA_DROP, [i], 0, 0)
+            )
             machine.clear_stack()
 
         # Execute the start function

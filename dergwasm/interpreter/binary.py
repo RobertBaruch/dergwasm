@@ -1,5 +1,7 @@
 """Parsing of the binary format of a module."""
 
+# pytype: disable=too-many-return-statements
+
 from __future__ import annotations  # For PEP563 - postponed evaluation of annotations
 
 import abc
@@ -203,7 +205,11 @@ class Export:
 
 @dataclasses.dataclass
 class Table:
-    """A table specification."""
+    """A table specification.
+
+    The initial contents of a table is uninitialized. Element segments can be used to
+    initialize a subrange of a table from a static vector of elements.
+    """
 
     table_type: TableType
 
@@ -226,15 +232,146 @@ class Mem:
 
 
 @dataclasses.dataclass
-class Element:
-    """An element specification."""
+class ElementSegment:
+    """An element segment specification.
 
-    # TODO: Skip this for now.
+    Element segments are used to initialize sections of tables. The elements of tables
+    are always references (either FUNCREF or EXTERNREF).
+    """
+
+    elem_type: values.ValueType
+
+    # The presence of expr indicates this is a "declarative" or "active" element
+    # instead of a "passive" element.
+    offset_expr: list[insn.Instruction] | None = None
+    tableidx: int | None = None  # Only present for active elements.
+
+    # These are mutually exclusive.
+    elem_indexes: list[int] | None = None
+    elem_exprs: list[list[insn.Instruction]] | None = None
+
+    def size(self) -> int:
+        """Returns the size of the element segment."""
+        if self.elem_indexes is not None:
+            return len(self.elem_indexes)
+        if self.elem_exprs is not None:
+            return len(self.elem_exprs)
+        raise ValueError(
+            "Element segment is not defined correctly: no indexes or exprs."
+        )
+
+    def is_active(self) -> bool:
+        """Returns whether this is an active element segment."""
+        return self.tableidx is not None
+
+    def is_declarative(self) -> bool:
+        """Returns whether this is a declarative element segment."""
+        return not self.is_active() and self.offset_expr is not None
+
+    def is_passive(self) -> bool:
+        """Returns whether this is a passive element segment."""
+        return not self.is_active() and self.offset_expr is None
+
     @staticmethod
-    def read(f: BytesIO) -> Element:
-        """Reads and returns an Element."""
-        del f
-        return Element()
+    def read(f: BytesIO) -> ElementSegment:
+        """Reads and returns an ElementSegment."""
+        desc_idx = leb128.u.decode_reader(f)[0]
+
+        if desc_idx == 0x00:
+            # A table of funcrefs at table 0, with an offset.
+            tableidx = 0
+            offset_expr = read_expr(f)
+            elem_type = values.ValueType.FUNCREF
+            elem_indexes = [
+                leb128.u.decode_reader(f)[0]
+                for _ in range(leb128.u.decode_reader(f)[0])
+            ]
+            return ElementSegment(
+                elem_type=elem_type,
+                tableidx=tableidx,
+                offset_expr=offset_expr,
+                elem_indexes=elem_indexes,
+            )
+
+        if desc_idx == 0x01:
+            # A table of indexes of a given type.
+            elem_type = values.ValueType(leb128.u.decode_reader(f)[0])
+            elem_indexes = [
+                leb128.u.decode_reader(f)[0]
+                for _ in range(leb128.u.decode_reader(f)[0])
+            ]
+            return ElementSegment(elem_type=elem_type, elem_indexes=elem_indexes)
+
+        if desc_idx == 0x02:
+            # A table of indexes of a given type at a specific tableidx and offset.
+            tableidx = leb128.u.decode_reader(f)[0]
+            offset_expr = read_expr(f)
+            elem_type = values.ValueType(leb128.u.decode_reader(f)[0])
+            elem_indexes = [
+                leb128.u.decode_reader(f)[0]
+                for _ in range(leb128.u.decode_reader(f)[0])
+            ]
+            return ElementSegment(
+                elem_type=elem_type,
+                tableidx=tableidx,
+                offset_expr=offset_expr,
+                elem_indexes=elem_indexes,
+            )
+
+        if desc_idx == 0x03:
+            # A table of indexes of a given type.
+            elem_type = values.ValueType(leb128.u.decode_reader(f)[0])
+            elem_indexes = [
+                leb128.u.decode_reader(f)[0]
+                for _ in range(leb128.u.decode_reader(f)[0])
+            ]
+            return ElementSegment(elem_type=elem_type, elem_indexes=elem_indexes)
+
+        if desc_idx == 0x04:
+            # A table of funcrefs given by exprs at table 0, with an offset.
+            tableidx = 0
+            offset_expr = read_expr(f)
+            elem_type = values.ValueType.FUNCREF
+            elem_exprs = [read_expr(f) for _ in range(leb128.u.decode_reader(f)[0])]
+            return ElementSegment(
+                elem_type=elem_type,
+                tableidx=tableidx,
+                offset_expr=offset_expr,
+                elem_exprs=elem_exprs,
+            )
+
+        if desc_idx == 0x05:
+            # A table of indexes of a given type, given by exprs.
+            elem_type = values.ValueType(leb128.u.decode_reader(f)[0])
+            elem_exprs = [read_expr(f) for _ in range(leb128.u.decode_reader(f)[0])]
+            return ElementSegment(
+                elem_type=elem_type,
+                elem_exprs=elem_exprs,
+            )
+
+        if desc_idx == 0x06:
+            # A table of funcrefs given by exprs at a specific table, with an offset.
+            tableidx = leb128.u.decode_reader(f)[0]
+            offset_expr = read_expr(f)
+            elem_type = values.ValueType(leb128.u.decode_reader(f)[0])
+            elem_exprs = [read_expr(f) for _ in range(leb128.u.decode_reader(f)[0])]
+            return ElementSegment(
+                elem_type=elem_type,
+                tableidx=tableidx,
+                offset_expr=offset_expr,
+                elem_exprs=elem_exprs,
+            )
+
+        if desc_idx == 0x07:
+            # A table of indexes of a given type, given by exprs.
+            elem_type = values.ValueType(leb128.u.decode_reader(f)[0])
+            elem_exprs = [read_expr(f) for _ in range(leb128.u.decode_reader(f)[0])]
+            return ElementSegment(
+                elem_type=elem_type,
+                elem_exprs=elem_exprs,
+            )
+
+        raise ValueError(f"Unknown table element segment type tag {desc_idx:02X}")
 
 
 def flatten_instructions(
@@ -354,7 +491,10 @@ class Code:
 
 
 def read_expr(f: BytesIO) -> list[insn.Instruction]:
-    """Reads an expression: a list of instructions terminated by an end instruction."""
+    """Reads an expression: a list of instructions terminated by an end instruction.
+
+    The returned list is flattened.
+    """
     insns = []
     while True:
         instruction = insn.Instruction.read(f)
@@ -600,15 +740,15 @@ class StartSection(ModuleSection):
 
 @dataclasses.dataclass
 class ElementSection(ModuleSection):
-    """An element section."""
+    """An element segment section."""
 
-    elements: list[Element]
+    elements: list[ElementSegment]
 
     @staticmethod
     def read(f: BytesIO) -> ModuleSection:
         """Reads and returns an element section."""
         num_elements = leb128.u.decode_reader(f)[0]
-        elements = [Element.read(f) for _ in range(num_elements)]
+        elements = [ElementSegment.read(f) for _ in range(num_elements)]
         print(f"Read elements: {elements}")
         return ElementSection(elements)
 
