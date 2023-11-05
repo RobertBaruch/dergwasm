@@ -261,7 +261,7 @@ class ModuleInstance:
         # For each active element segment, copy the segment into its table.
         for i, s in enumerate(element_section.elements):
             segment_instance = machine.get_element(instance.elementaddrs[i])
-            if segment_instance.is_active():
+            if segment_instance.is_active:
                 n = values.Value(values.ValueType.I32, len(segment_instance.refs))
                 machine.new_frame(values.Frame(1, [], instance, 0))
                 machine.push(values.Label(1, len(segment_instance.offset_expr)))
@@ -285,7 +285,7 @@ class ModuleInstance:
         # For each declarative element segment, drop it (?).
         for i, s in enumerate(element_section.elements):
             segment_instance = machine.get_element(instance.elementaddrs[i])
-            if segment_instance.is_declarative():
+            if segment_instance.is_declarative:
                 insn_eval.eval_insn(
                     machine, Instruction(InstructionType.ELEM_DROP, [i], 0, 0)
                 )

@@ -194,7 +194,7 @@ class Import:
         module = _read_string(f)
         name = _read_string(f)
         tag = _read_byte(f)
-        if tag == 0x00:
+        if tag == 0x00:  # type index, gets resolved later to FuncType.
             desc = _read_unsigned_int(f)
         elif tag == 0x01:
             desc = TableType.read(f)
@@ -272,18 +272,34 @@ class ElementSegment:
 
     Element segments are used to initialize sections of tables. The elements of tables
     are always references (either FUNCREF or EXTERNREF).
+
+    Element segments have a mode that identifies them as either passive, active, or
+    declarative:
+
+    * A passive element segment's elements can be copied to a table using the table.init
+      instruction.
+
+    * An active element segment copies its elements into a table during instantiation,
+      as specified by a table index and a constant expression defining an offset into
+      that table.
+
+    * A declarative element segment is not available at runtime but merely serves to
+      forward-declare references that are formed in code with instructions like
+      ref.func.
     """
 
     elem_type: values.ValueType
 
-    # The presence of expr indicates this is a "declarative" or "active" element
-    # instead of a "passive" element.
     offset_expr: list[insn.Instruction] | None = None
-    tableidx: int | None = None  # Only present for active elements.
+    tableidx: int | None = None
 
     # These are mutually exclusive.
     elem_indexes: list[int] | None = None
     elem_exprs: list[list[insn.Instruction]] | None = None
+
+    is_active: bool = False
+    is_passive: bool = False
+    is_declarative: bool = False
 
     def size(self) -> int:
         """Returns the size of the element segment."""
@@ -295,75 +311,80 @@ class ElementSegment:
             "Element segment is not defined correctly: no indexes or exprs."
         )
 
-    def is_active(self) -> bool:
-        """Returns whether this is an active element segment."""
-        return self.tableidx is not None
-
-    def is_declarative(self) -> bool:
-        """Returns whether this is a declarative element segment."""
-        return not self.is_active() and self.offset_expr is not None
-
-    def is_passive(self) -> bool:
-        """Returns whether this is a passive element segment."""
-        return not self.is_active() and self.offset_expr is None
-
     @staticmethod
     def read(f: BytesIO) -> ElementSegment:
         """Reads and returns an ElementSegment."""
         desc_idx = _read_unsigned_int(f)
 
         if desc_idx == 0x00:
-            # A table of funcrefs at table 0, with an offset.
+            # Active segment with default tableidx (0) and default element kind
+            # (FUNCREF).
             tableidx = 0
             offset_expr = read_expr(f)
             elem_type = values.ValueType.FUNCREF
-            elem_indexes = [
-                _read_unsigned_int(f)
-                for _ in range(_read_unsigned_int(f))
-            ]
+            elem_indexes = [_read_unsigned_int(f) for _ in range(_read_unsigned_int(f))]
             return ElementSegment(
                 elem_type=elem_type,
                 tableidx=tableidx,
                 offset_expr=offset_expr,
                 elem_indexes=elem_indexes,
+                is_active=True,
             )
 
         if desc_idx == 0x01:
-            # A table of indexes of a given type.
-            elem_type = values.ValueType(_read_unsigned_int(f))
-            elem_indexes = [
-                _read_unsigned_int(f)
-                for _ in range(_read_unsigned_int(f))
-            ]
-            return ElementSegment(elem_type=elem_type, elem_indexes=elem_indexes)
+            # Passive segment.
+            elemkind = _read_unsigned_int(f)
+            try:
+                elem_type = [values.ValueType.FUNCREF][elemkind]
+            except IndexError as e:
+                raise ValueError(
+                    f"Unknown table element segment elemkind {elemkind:02X}"
+                ) from e
+            elem_indexes = [_read_unsigned_int(f) for _ in range(_read_unsigned_int(f))]
+            return ElementSegment(
+                elem_type=elem_type,
+                elem_indexes=elem_indexes,
+                is_passive=True,
+            )
 
         if desc_idx == 0x02:
-            # A table of indexes of a given type at a specific tableidx and offset.
+            # Active segment with tableidx and element kind.
             tableidx = _read_unsigned_int(f)
             offset_expr = read_expr(f)
-            elem_type = values.ValueType(_read_unsigned_int(f))
-            elem_indexes = [
-                _read_unsigned_int(f)
-                for _ in range(_read_unsigned_int(f))
-            ]
+            elemkind = _read_unsigned_int(f)
+            try:
+                elem_type = [values.ValueType.FUNCREF][elemkind]
+            except IndexError as e:
+                raise ValueError(
+                    f"Unknown table element segment elemkind {elemkind:02X}"
+                ) from e
+            elem_indexes = [_read_unsigned_int(f) for _ in range(_read_unsigned_int(f))]
             return ElementSegment(
                 elem_type=elem_type,
                 tableidx=tableidx,
                 offset_expr=offset_expr,
                 elem_indexes=elem_indexes,
+                is_active=True,
             )
 
         if desc_idx == 0x03:
-            # A table of indexes of a given type.
-            elem_type = values.ValueType(_read_unsigned_int(f))
-            elem_indexes = [
-                _read_unsigned_int(f)
-                for _ in range(_read_unsigned_int(f))
-            ]
-            return ElementSegment(elem_type=elem_type, elem_indexes=elem_indexes)
+            # Declarative segment.
+            elemkind = _read_unsigned_int(f)
+            try:
+                elem_type = [values.ValueType.FUNCREF][elemkind]
+            except IndexError as e:
+                raise ValueError(
+                    f"Unknown table element segment elemkind {elemkind:02X}"
+                ) from e
+            elem_indexes = [_read_unsigned_int(f) for _ in range(_read_unsigned_int(f))]
+            return ElementSegment(
+                elem_type=elem_type,
+                elem_indexes=elem_indexes,
+                is_declarative=True,
+            )
 
         if desc_idx == 0x04:
-            # A table of funcrefs given by exprs at table 0, with an offset.
+            # Active segment with default tableidx (0) and element expressions.
             tableidx = 0
             offset_expr = read_expr(f)
             elem_type = values.ValueType.FUNCREF
@@ -373,19 +394,21 @@ class ElementSegment:
                 tableidx=tableidx,
                 offset_expr=offset_expr,
                 elem_exprs=elem_exprs,
+                is_active=True,
             )
 
         if desc_idx == 0x05:
-            # A table of indexes of a given type, given by exprs.
+            # Passive segment with element type and element expressions.
             elem_type = values.ValueType(_read_unsigned_int(f))
             elem_exprs = [read_expr(f) for _ in range(_read_unsigned_int(f))]
             return ElementSegment(
                 elem_type=elem_type,
                 elem_exprs=elem_exprs,
+                is_passive=True,
             )
 
         if desc_idx == 0x06:
-            # A table of funcrefs given by exprs at a specific table, with an offset.
+            # Active segment with tableidx, element type, and element expressions.
             tableidx = _read_unsigned_int(f)
             offset_expr = read_expr(f)
             elem_type = values.ValueType(_read_unsigned_int(f))
@@ -395,15 +418,17 @@ class ElementSegment:
                 tableidx=tableidx,
                 offset_expr=offset_expr,
                 elem_exprs=elem_exprs,
+                is_active=True,
             )
 
         if desc_idx == 0x07:
-            # A table of indexes of a given type, given by exprs.
+            # Declarative segment with element type and element expressions.
             elem_type = values.ValueType(_read_unsigned_int(f))
             elem_exprs = [read_expr(f) for _ in range(_read_unsigned_int(f))]
             return ElementSegment(
                 elem_type=elem_type,
                 elem_exprs=elem_exprs,
+                is_declarative=True,
             )
 
         raise ValueError(f"Unknown table element segment type tag {desc_idx:02X}")
