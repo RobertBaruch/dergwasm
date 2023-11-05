@@ -7,8 +7,17 @@
 import struct
 from absl.testing import absltest, parameterized
 
-from dergwasm.interpreter.binary import FuncType, Module, flatten_instructions
-from dergwasm.interpreter.machine import GlobalInstance
+from dergwasm.interpreter.binary import (
+    FuncType,
+    Module,
+    TableType,
+    flatten_instructions,
+)
+from dergwasm.interpreter.machine import (
+    ElementSegmentInstance,
+    GlobalInstance,
+    TableInstance,
+)
 from dergwasm.interpreter import machine_impl
 from dergwasm.interpreter import module_instance
 from dergwasm.interpreter import insn_eval
@@ -109,10 +118,6 @@ class InsnEvalTest(parameterized.TestCase):
         self.machine = machine_impl.MachineImpl()
         self.module = Module()
         self.module_inst = module_instance.ModuleInstance(self.module)
-        self.machine.add_data(b"foo")
-        self.machine.add_data(b"bar")
-        self.machine.add_data(b"baz")
-        self.module_inst.dataaddrs = [2, 1, 0]
         self.machine.add_mem(bytearray(65536))
         self.module_inst.memaddrs = [0]
         self.machine.new_frame(Frame(0, [], self.module_inst, 0))
@@ -1350,6 +1355,11 @@ class InsnEvalTest(parameterized.TestCase):
         self.assertEqual(self.machine.pop(), expected)
 
     def test_memory_init(self):
+        self.machine.add_data(b"foo")
+        self.machine.add_data(b"bar")
+        self.machine.add_data(b"baz")
+        self.module_inst.dataaddrs = [2, 1, 0]
+
         self.machine.push(Value(ValueType.I32, 2))  # dest offset
         self.machine.push(Value(ValueType.I32, 1))  # source offset
         self.machine.push(Value(ValueType.I32, 2))  # data size
@@ -1361,6 +1371,11 @@ class InsnEvalTest(parameterized.TestCase):
         self.assertEqual(self.machine.get_current_frame().pc, 1)
 
     def test_memory_init_zero_size(self):
+        self.machine.add_data(b"foo")
+        self.machine.add_data(b"bar")
+        self.machine.add_data(b"baz")
+        self.module_inst.dataaddrs = [2, 1, 0]
+
         self.machine.push(Value(ValueType.I32, 2))  # dest offset
         self.machine.push(Value(ValueType.I32, 1))  # source offset
         self.machine.push(Value(ValueType.I32, 0))  # data size
@@ -1372,6 +1387,11 @@ class InsnEvalTest(parameterized.TestCase):
         self.assertEqual(self.machine.get_current_frame().pc, 1)
 
     def test_memory_init_traps_source_out_of_bounds(self):
+        self.machine.add_data(b"foo")
+        self.machine.add_data(b"bar")
+        self.machine.add_data(b"baz")
+        self.module_inst.dataaddrs = [2, 1, 0]
+
         self.machine.push(Value(ValueType.I32, 1))  # dest offset
         self.machine.push(Value(ValueType.I32, 60))  # source offset
         self.machine.push(Value(ValueType.I32, 2))  # data size
@@ -1380,6 +1400,11 @@ class InsnEvalTest(parameterized.TestCase):
             insn_eval.eval_insn(self.machine, memory_init(1, 0))
 
     def test_memory_init_traps_dest_out_of_bounds(self):
+        self.machine.add_data(b"foo")
+        self.machine.add_data(b"bar")
+        self.machine.add_data(b"baz")
+        self.module_inst.dataaddrs = [2, 1, 0]
+
         self.machine.push(Value(ValueType.I32, 65535))  # dest offset
         self.machine.push(Value(ValueType.I32, 1))  # source offset
         self.machine.push(Value(ValueType.I32, 2))  # data size
@@ -1481,13 +1506,478 @@ class InsnEvalTest(parameterized.TestCase):
             insn_eval.eval_insn(self.machine, memory_fill(0))
 
     def test_data_drop(self):
+        self.machine.add_data(b"foo")
+        self.machine.add_data(b"bar")
+        self.machine.add_data(b"baz")
+        self.module_inst.dataaddrs = [2, 1, 0]
+
         insn_eval.eval_insn(self.machine, data_drop(2))
 
-        self.assertEqual(self.machine.datas[0], b"")
-        self.assertEqual(self.machine.datas[1], b"bar")
-        self.assertEqual(self.machine.datas[2], b"baz")
+        self.assertIsNone(self.machine.datas[0])
+        self.assertIsNotNone(self.machine.datas[1])
+        self.assertIsNotNone(self.machine.datas[2])
         self.assertStackDepth(self.starting_stack_depth)
         self.assertEqual(self.machine.get_current_frame().pc, 1)
+
+    @parameterized.named_parameters(
+        ("table 0 elem 0", 0, 0, Value(ValueType.FUNCREF, 30)),
+        ("table 0 elem 1", 0, 1, Value(ValueType.FUNCREF, 31)),
+        ("table 1 elem 0", 1, 0, Value(ValueType.FUNCREF, 20)),
+        ("table 1 elem 1", 1, 1, Value(ValueType.FUNCREF, 21)),
+    )
+    def test_table_get(self, tableidx: int, elemidx: int, expected: Value):
+        self.module_inst.tableaddrs = [2, 1, 0]
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, 10 + i) for i in range(3)],
+            )
+        )
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, 20 + i) for i in range(3)],
+            )
+        )
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, 30 + i) for i in range(3)],
+            )
+        )
+
+        self.machine.push(Value(ValueType.I32, elemidx))
+
+        insn_eval.eval_insn(self.machine, op1(InstructionType.TABLE_GET, tableidx))
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        self.assertEqual(self.machine.pop(), expected)
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
+
+    def test_table_get_traps_on_out_of_bounds(self):
+        self.module_inst.tableaddrs = [0]
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, None) for _ in range(3)],
+            )
+        )
+
+        self.machine.push(Value(ValueType.I32, 3))
+
+        with self.assertRaisesRegex(RuntimeError, "out of bounds"):
+            insn_eval.eval_insn(self.machine, op1(InstructionType.TABLE_GET, 0))
+
+    @parameterized.named_parameters(
+        ("table 0 elem 0", 0, 0, 2),
+        ("table 0 elem 1", 0, 1, 2),
+        ("table 1 elem 0", 1, 0, 1),
+        ("table 1 elem 1", 1, 1, 1),
+    )
+    def test_table_set(self, tableidx: int, elemidx: int, expected_tableaddr: int):
+        self.module_inst.tableaddrs = [2, 1, 0]
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, 10 + i) for i in range(3)],
+            )
+        )
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, 20 + i) for i in range(3)],
+            )
+        )
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, 30 + i) for i in range(3)],
+            )
+        )
+
+        self.machine.push(Value(ValueType.I32, elemidx))
+        self.machine.push(Value(ValueType.FUNCREF, None))
+
+        insn_eval.eval_insn(self.machine, op1(InstructionType.TABLE_SET, tableidx))
+
+        self.assertStackDepth(self.starting_stack_depth)
+        self.assertEqual(
+            self.machine.tables[expected_tableaddr].refs[elemidx],
+            Value(ValueType.FUNCREF, None),
+        )
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
+
+    def test_table_set_traps_on_out_of_bounds(self):
+        self.module_inst.tableaddrs = [0]
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, None) for _ in range(3)],
+            )
+        )
+
+        self.machine.push(Value(ValueType.I32, 3))
+        self.machine.push(Value(ValueType.FUNCREF, None))
+
+        with self.assertRaisesRegex(RuntimeError, "out of bounds"):
+            insn_eval.eval_insn(self.machine, op1(InstructionType.TABLE_SET, 0))
+
+    @parameterized.named_parameters(
+        ("elem 0[0] -> table 0[0] n 3", 0, 0, 0, 0, 3, 2, [20, 21, 22, None, None]),
+        ("elem 0[0] -> table 0[1] n 3", 0, 0, 0, 1, 3, 2, [None, 20, 21, 22, None]),
+        ("elem 0[1] -> table 0[0] n 3", 0, 1, 0, 0, 3, 2, [21, 22, 23, None, None]),
+        ("elem 0[1] -> table 0[1] n 3", 0, 1, 0, 1, 3, 2, [None, 21, 22, 23, None]),
+        ("elem 0[0] -> table 1[0] n 3", 0, 0, 1, 0, 3, 1, [20, 21, 22, None, None]),
+        ("elem 0[0] -> table 1[1] n 3", 0, 0, 1, 1, 3, 1, [None, 20, 21, 22, None]),
+        ("elem 0[1] -> table 1[0] n 3", 0, 1, 1, 0, 3, 1, [21, 22, 23, None, None]),
+        ("elem 0[1] -> table 1[1] n 3", 0, 1, 1, 1, 3, 1, [None, 21, 22, 23, None]),
+        ("elem 1[0] -> table 0[0] n 3", 1, 0, 0, 0, 3, 2, [30, 31, 32, None, None]),
+        ("elem 1[0] -> table 0[1] n 3", 1, 0, 0, 1, 3, 2, [None, 30, 31, 32, None]),
+        ("elem 1[1] -> table 0[0] n 3", 1, 1, 0, 0, 3, 2, [31, 32, 33, None, None]),
+        ("elem 1[1] -> table 0[1] n 3", 1, 1, 0, 1, 3, 2, [None, 31, 32, 33, None]),
+        ("elem 1[1] -> table 0[1] n 2", 1, 1, 0, 1, 2, 2, [None, 31, 32, None, None]),
+        (
+            "elem 1[1] -> table 0[1] n 0",
+            1,
+            1,
+            0,
+            1,
+            0,
+            2,
+            [None, None, None, None, None],
+        ),
+    )
+    def test_table_init(
+        self,
+        elemidx: int,
+        s: int,
+        tableidx: int,
+        d: int,
+        n: int,
+        expected_tableaddr: int,
+        expected_content: list[int | None],
+    ):
+        self.module_inst.tableaddrs = [2, 1, 0]
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, None) for _ in range(5)],
+            )
+        )
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, None) for _ in range(5)],
+            )
+        )
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, None) for _ in range(5)],
+            )
+        )
+        self.module_inst.elementaddrs = [1, 2, 0]
+        self.machine.add_element(
+            ElementSegmentInstance(
+                ValueType.FUNCREF,
+                refs=[Value(ValueType.FUNCREF, 10 + i) for i in range(5)],
+            )
+        )
+        self.machine.add_element(
+            ElementSegmentInstance(
+                ValueType.FUNCREF,
+                refs=[Value(ValueType.FUNCREF, 20 + i) for i in range(5)],
+            )
+        )
+        self.machine.add_element(
+            ElementSegmentInstance(
+                ValueType.FUNCREF,
+                refs=[Value(ValueType.FUNCREF, 30 + i) for i in range(5)],
+            )
+        )
+
+        self.machine.push(Value(ValueType.I32, d))
+        self.machine.push(Value(ValueType.I32, s))
+        self.machine.push(Value(ValueType.I32, n))
+
+        insn_eval.eval_insn(
+            self.machine, op2(InstructionType.TABLE_INIT, tableidx, elemidx)
+        )
+
+        self.assertStackDepth(self.starting_stack_depth)
+        expected = [Value(ValueType.FUNCREF, i) for i in expected_content]
+        self.assertEqual(self.machine.tables[expected_tableaddr].refs, expected)
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
+
+    @parameterized.named_parameters(
+        ("elem 0[0] -> table 0[5] n 3", 0, 0, 0, 1, 3),
+        ("elem 0[1] -> table 0[0] n 3", 0, 1, 0, 0, 3),
+    )
+    def test_table_init_traps_on_out_of_bounds(
+        self,
+        elemidx: int,
+        s: int,
+        tableidx: int,
+        d: int,
+        n: int,
+    ):
+        self.module_inst.tableaddrs = [0]
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, None) for _ in range(5)],
+            )
+        )
+        self.module_inst.elementaddrs = [0]
+        self.machine.add_element(
+            ElementSegmentInstance(
+                ValueType.FUNCREF,
+                refs=[Value(ValueType.FUNCREF, 10 + i) for i in range(2)],
+            )
+        )
+
+        self.machine.push(Value(ValueType.I32, d))
+        self.machine.push(Value(ValueType.I32, s))
+        self.machine.push(Value(ValueType.I32, n))
+
+        with self.assertRaisesRegex(RuntimeError, "out of bounds"):
+            insn_eval.eval_insn(
+                self.machine, op2(InstructionType.TABLE_INIT, tableidx, elemidx)
+            )
+
+    def test_elem_drop(self):
+        self.module_inst.elementaddrs = [2, 1, 0]
+        self.machine.add_element(
+            ElementSegmentInstance(
+                ValueType.FUNCREF,
+                refs=[Value(ValueType.FUNCREF, None) for _ in range(3)],
+            )
+        )
+        self.machine.add_element(
+            ElementSegmentInstance(
+                ValueType.FUNCREF,
+                refs=[Value(ValueType.FUNCREF, None) for _ in range(3)],
+            )
+        )
+        self.machine.add_element(
+            ElementSegmentInstance(
+                ValueType.FUNCREF,
+                refs=[Value(ValueType.FUNCREF, None) for _ in range(3)],
+            )
+        )
+
+        insn_eval.eval_insn(self.machine, op1(InstructionType.ELEM_DROP, 2))
+
+        self.assertIsNone(self.machine.element_segments[0])
+        self.assertIsNotNone(self.machine.element_segments[1])
+        self.assertIsNotNone(self.machine.element_segments[2])
+
+    @parameterized.named_parameters(
+        ("0[0] -> 0[1], n 3", 0, 0, 0, 1, 3, 1, [20, 20, 21, 22, 24]),
+        ("0[1] -> 0[0], n 3", 0, 1, 0, 0, 3, 1, [21, 22, 23, 23, 24]),
+        ("0[1] -> 0[0], n 0", 0, 1, 0, 0, 0, 1, [20, 21, 22, 23, 24]),
+        ("0[0] -> 1[1], n 3", 0, 0, 1, 1, 3, 0, [10, 20, 21, 22, 14]),
+        ("1[1] -> 0[0], n 3", 1, 1, 0, 0, 3, 1, [11, 12, 13, 23, 24]),
+    )
+    def test_table_copy(
+        self,
+        stableidx: int,
+        s: int,
+        dtableidx: int,
+        d: int,
+        n: int,
+        expected_tableidx: int,
+        expected_content: list[int],
+    ):
+        self.module_inst.tableaddrs = [1, 0]
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, 10 + i) for i in range(5)],
+            )
+        )
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, 20 + i) for i in range(5)],
+            )
+        )
+
+        self.machine.push(Value(ValueType.I32, d))
+        self.machine.push(Value(ValueType.I32, s))
+        self.machine.push(Value(ValueType.I32, n))
+
+        insn_eval.eval_insn(
+            self.machine, op2(InstructionType.TABLE_COPY, dtableidx, stableidx)
+        )
+
+        self.assertEqual(
+            self.machine.tables[expected_tableidx].refs,
+            [Value(ValueType.FUNCREF, v) for v in expected_content],
+        )
+        self.assertStackDepth(self.starting_stack_depth)
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
+
+    @parameterized.named_parameters(
+        ("0[0] -> 0[3], n 3", 0, 0, 0, 3, 3),
+        ("0[3] -> 0[0], n 3", 0, 3, 0, 0, 3),
+        ("0[0] -> 1[1], n 6", 0, 0, 1, 1, 6),
+        ("1[5] -> 0[0], n 6", 1, 5, 0, 0, 6),
+    )
+    def test_table_copy_traps_on_out_of_bounds(
+        self,
+        stableidx: int,
+        s: int,
+        dtableidx: int,
+        d: int,
+        n: int,
+    ):
+        self.module_inst.tableaddrs = [1, 0]
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, None) for _ in range(10)],
+            )
+        )
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, None) for _ in range(5)],
+            )
+        )
+
+        self.machine.push(Value(ValueType.I32, d))
+        self.machine.push(Value(ValueType.I32, s))
+        self.machine.push(Value(ValueType.I32, n))
+
+        with self.assertRaisesRegex(RuntimeError, "out of bounds"):
+            insn_eval.eval_insn(
+                self.machine, op2(InstructionType.TABLE_COPY, dtableidx, stableidx)
+            )
+
+    @parameterized.named_parameters(
+        ("table 0", 0, 10),
+        ("table 1", 1, 5),
+    )
+    def test_table_size(self, tableidx: int, expected: int):
+        self.module_inst.tableaddrs = [1, 0]
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, None) for _ in range(5)],
+            )
+        )
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, None) for _ in range(10)],
+            )
+        )
+
+        insn_eval.eval_insn(self.machine, op1(InstructionType.TABLE_SIZE, tableidx))
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected))
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
+
+    @parameterized.named_parameters(
+        (
+            "0[0:0+3]",
+            0,
+            0,
+            3,
+            Value(ValueType.FUNCREF, 30),
+            1,
+            [30, 30, 30, None, None],
+        ),
+        (
+            "1[2:2+2]",
+            1,
+            2,
+            2,
+            Value(ValueType.FUNCREF, 40),
+            0,
+            [None, None, 40, 40, None],
+        ),
+        (
+            "zero size",
+            1,
+            2,
+            0,
+            Value(ValueType.FUNCREF, 40),
+            0,
+            [None, None, None, None, None],
+        ),
+    )
+    def test_table_fill(
+        self,
+        tableidx: int,
+        i: int,
+        n: int,
+        v: Value,
+        expected_tableidx: int,
+        expected_content: list[int | None],
+    ):
+        self.module_inst.tableaddrs = [1, 0]
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, None) for _ in range(5)],
+            )
+        )
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, None) for _ in range(5)],
+            )
+        )
+
+        self.machine.push(Value(ValueType.I32, i))
+        self.machine.push(v)
+        self.machine.push(Value(ValueType.I32, n))
+
+        insn_eval.eval_insn(self.machine, op1(InstructionType.TABLE_FILL, tableidx))
+
+        self.assertStackDepth(self.starting_stack_depth)
+        self.assertEqual(
+            self.machine.tables[expected_tableidx].refs,
+            [Value(ValueType.FUNCREF, v) for v in expected_content],
+        )
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
+
+    @parameterized.named_parameters(
+        ("0[3], n 3", 0, 3, 3),
+        ("0[0], n 6", 0, 0, 6),
+        ("1[5], n 6", 1, 5, 6),
+    )
+    def test_table_fill_traps_on_out_of_bounds(
+        self,
+        tableidx: int,
+        i: int,
+        n: int,
+    ):
+        self.module_inst.tableaddrs = [1, 0]
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, None) for _ in range(10)],
+            )
+        )
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, 0, None),
+                [Value(ValueType.FUNCREF, None) for _ in range(5)],
+            )
+        )
+
+        self.machine.push(Value(ValueType.I32, i))
+        self.machine.push(Value(ValueType.FUNCREF, None))
+        self.machine.push(Value(ValueType.I32, n))
+
+        with self.assertRaisesRegex(RuntimeError, "out of bounds"):
+            insn_eval.eval_insn(
+                self.machine, op1(InstructionType.TABLE_FILL, tableidx)
+            )
 
     @parameterized.named_parameters(
         ("global.get 0", 0, Value(ValueType.I32, 1)),

@@ -340,7 +340,7 @@ def table_get(machine: Machine, instruction: Instruction) -> None:
     i = _unsigned_i32(machine.pop())
     if i >= len(table.refs):
         raise RuntimeError("table.set: access out of bounds")
-    machine.push(table[i])
+    machine.push(table.refs[i])
     f.pc += 1
 
 
@@ -353,7 +353,7 @@ def table_set(machine: Machine, instruction: Instruction) -> None:
     i = _unsigned_i32(machine.pop())
     if i >= len(table.refs):
         raise RuntimeError("table.set: access out of bounds")
-    table[i] = val
+    table.refs[i] = val
     f.pc += 1
 
 
@@ -371,7 +371,7 @@ def table_init(machine: Machine, instruction: Instruction) -> None:
     if s + n > len(element.refs) or d + n > len(table.refs):
         raise RuntimeError("table.init: access out of bounds")
     if n > 0:
-        table[d : d + n] = element[s : s + n]
+        table.refs[d : d + n] = element.refs[s : s + n]
     f.pc += 1
 
 
@@ -397,7 +397,7 @@ def table_copy(machine: Machine, instruction: Instruction) -> None:
     if s + n > len(stable.refs) or d + n > len(dtable.refs):
         raise RuntimeError("table.copy: access out of bounds")
     if n > 0:
-        dtable[d : d + n] = stable[s : s + n]
+        dtable.refs[d : d + n] = stable.refs[s : s + n]
     f.pc += 1
 
 
@@ -425,7 +425,7 @@ def table_fill(machine: Machine, instruction: Instruction) -> None:
     if i + n > len(table.refs):
         raise RuntimeError("table.fill: access out of bounds")
     if n > 0:
-        table[i : i + n] = [v for _ in range(n)]
+        table.refs[i : i + n] = [v for _ in range(n)]
     f.pc += 1
 
 
