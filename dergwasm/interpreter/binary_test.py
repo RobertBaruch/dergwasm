@@ -4,18 +4,21 @@
 # pylint: disable=too-many-lines,too-many-public-methods
 # pylint: disable=invalid-name
 
+from __future__ import annotations  # For PEP563 - postponed evaluation of annotations
 from io import BytesIO
 
 from absl.testing import absltest, parameterized
+import leb128
 
 from dergwasm.interpreter import binary
-from dergwasm.interpreter import values
+from dergwasm.interpreter.values import ValueType
 from dergwasm.interpreter.insn import Instruction, InstructionType
 from dergwasm.interpreter.testing import util
 
 
 def nop() -> Instruction:
     return Instruction(InstructionType.NOP, [], 0, 0)
+
 
 # class TestModule(unittest.TestCase):
 #     def test_read(self):
@@ -43,7 +46,7 @@ def nop() -> Instruction:
 #         self.assertEqual(len(function_section.funcs), 1)
 #         self.assertEqual(len(function_section.funcs[0].params), 0)
 #         self.assertEqual(len(function_section.funcs[0].results), 1)
-#         self.assertEqual(function_section.funcs[0].results[0], values.ValueType.i32)
+#         self.assertEqual(function_section.funcs[0].results[0], ValueType.i32)
 
 #         # Test that the code section has the expected code
 #         code_section = module.sections[binary.CodeSection]
@@ -89,99 +92,176 @@ def nop() -> Instruction:
 #         self.assertEqual(code_section.code[0].insns[1], Instruction.opcode("i32.add"))
 
 
+class Buffer:
+    """A byte buffer for easily building binary data."""
+
+    def __init__(self) -> None:
+        self.data = BytesIO()
+
+    def add_byte(self, byte: int) -> Buffer:
+        self.data.write(bytes([byte]))
+        return self
+
+    def add_value_type(self, value_type: ValueType) -> Buffer:
+        self.add_byte(value_type.value)
+        return self
+
+    def add_unsigned_int(self, value: int) -> Buffer:
+        self.data.write(leb128.u.encode(value))
+        return self
+
+    def add_string(self, string: str) -> Buffer:
+        self.add_unsigned_int(len(string))
+        self.data.write(string.encode("utf-8"))
+        return self
+
+    def rewind(self) -> BytesIO:
+        self.data.seek(0)
+        return self.data
+
+
 class FuncTypeTest(absltest.TestCase):
     def test_read_raises_on_bad_tag(self):
-        # Test reading a FuncType from a binary stream
-        data = bytes.fromhex("FF 02 7F 7F 01 7F")
-        f = BytesIO(data)
+        data = Buffer().add_byte(0xFF).rewind()
+
         with self.assertRaises(ValueError):
-            binary.FuncType.read(f)
+            binary.FuncType.read(data)
 
     def test_read(self):
-        # Test reading a FuncType from a binary stream
-        data = bytes.fromhex("60 02 7F 7F 01 7F")
-        f = BytesIO(data)
-        func_type = binary.FuncType.read(f)
+        data = (
+            Buffer()
+            .add_byte(0x60)  # tag
+            .add_unsigned_int(2)  # num parameters
+            .add_value_type(ValueType.I32)
+            .add_value_type(ValueType.F32)
+            .add_unsigned_int(1)  # num results
+            .add_value_type(ValueType.I64)
+            .rewind()
+        )
 
-        # Test that the FuncType has the expected parameters and results
-        self.assertEqual(len(func_type.parameters), 2)
-        self.assertEqual(func_type.parameters[0], values.ValueType.I32)
-        self.assertEqual(func_type.parameters[1], values.ValueType.I32)
-        self.assertEqual(len(func_type.results), 1)
-        self.assertEqual(func_type.results[0], values.ValueType.I32)
+        func_type = binary.FuncType.read(data)
+
+        self.assertEqual(func_type.parameters, [ValueType.I32, ValueType.F32])
+        self.assertEqual(func_type.results, [ValueType.I64])
 
 
 class TableTypeTest(absltest.TestCase):
     def test_read_raises_on_bad_limit_tag(self):
-        data = bytes.fromhex("70 02 01")
-        f = BytesIO(data)
+        data = (
+            Buffer()
+            .add_value_type(ValueType.FUNCREF)
+            .add_byte(2)  # tag: invalid
+            .add_unsigned_int(1)  # min limit
+            .rewind()
+        )
 
         with self.assertRaises(ValueError):
-            binary.TableType.read(f)
+            binary.TableType.read(data)
 
     def test_read_no_max_limit(self):
         # Test reading a table type with no maximum limit
-        data = bytes.fromhex("70 00 01")
-        f = BytesIO(data)
+        data = (
+            Buffer()
+            .add_value_type(ValueType.FUNCREF)
+            .add_byte(0)  # tag: No max limit
+            .add_unsigned_int(1)  # min limit
+            .rewind()
+        )
 
-        table_type = binary.TableType.read(f)
-        self.assertEqual(table_type.reftype, values.ValueType.FUNCREF)
+        table_type = binary.TableType.read(data)
+
+        self.assertEqual(table_type.reftype, ValueType.FUNCREF)
         self.assertEqual(table_type.limits.min, 1)
         self.assertIsNone(table_type.limits.max)
 
     def test_read_with_max_limit(self):
         # Test reading a table type with a maximum limit
-        data = bytes.fromhex("70 01 01 02")
-        f = BytesIO(data)
+        data = (
+            Buffer()
+            .add_value_type(ValueType.FUNCREF)
+            .add_byte(1)  # tag: has max limit
+            .add_unsigned_int(1)  # min limit
+            .add_unsigned_int(2)  # max limit
+            .rewind()
+        )
 
-        table_type = binary.TableType.read(f)
-        self.assertEqual(table_type.reftype, values.ValueType.FUNCREF)
+        table_type = binary.TableType.read(data)
+
+        self.assertEqual(table_type.reftype, ValueType.FUNCREF)
         self.assertEqual(table_type.limits.min, 1)
         self.assertEqual(table_type.limits.max, 2)
 
 
 class MemTypeTest(absltest.TestCase):
     def test_read_raises_on_bad_limit_tag(self):
-        data = bytes.fromhex("02 01")
-        f = BytesIO(data)
+        data = (
+            Buffer()
+            .add_byte(2)  # tag: invalid
+            .add_unsigned_int(1)  # min limit
+            .rewind()
+        )
 
         with self.assertRaises(ValueError):
-            binary.MemType.read(f)
+            binary.MemType.read(data)
 
     def test_read_no_max_limit(self):
         # Test reading a table type with no maximum limit
-        data = bytes.fromhex("00 01")
-        f = BytesIO(data)
+        data = (
+            Buffer()
+            .add_byte(0)  # tag: no max limit
+            .add_unsigned_int(1)  # min limit
+            .rewind()
+        )
 
-        mem_type = binary.MemType.read(f)
+        mem_type = binary.MemType.read(data)
+
         self.assertEqual(mem_type.limits.min, 1)
         self.assertIsNone(mem_type.limits.max)
 
     def test_read_with_max_limit(self):
         # Test reading a table type with a maximum limit
-        data = bytes.fromhex("01 01 02")
-        f = BytesIO(data)
+        data = (
+            Buffer()
+            .add_byte(1)  # tag: with max limit
+            .add_unsigned_int(1)  # min limit
+            .add_unsigned_int(2)  # max limit
+            .rewind()
+        )
 
-        mem_type = binary.MemType.read(f)
+        mem_type = binary.MemType.read(data)
         self.assertEqual(mem_type.limits.min, 1)
         self.assertEqual(mem_type.limits.max, 2)
 
 
 class GlobalTypeTest(parameterized.TestCase):
     @parameterized.named_parameters(
-        ("I32_mutable", "7F 01", values.ValueType.I32, True),
-        ("I64_mutable", "7E 01", values.ValueType.I64, True),
-        ("I64_immutable", "7E 00", values.ValueType.I64, False),
+        (
+            "I32_mutable",
+            Buffer().add_value_type(ValueType.I32).add_byte(1).rewind(),
+            ValueType.I32,
+            True,
+        ),
+        (
+            "I64_mutable",
+            Buffer().add_value_type(ValueType.I64).add_byte(2).rewind(),
+            ValueType.I64,
+            True,
+        ),
+        (
+            "I64_immutable",
+            Buffer().add_value_type(ValueType.I64).add_byte(0).rewind(),
+            ValueType.I64,
+            False,
+        ),
     )
     def test_read(
         self,
-        hexdata: str,
-        expected_value_type: values.ValueType,
+        data: BytesIO,
+        expected_value_type: ValueType,
         expected_mutable: bool,
     ):
-        data = bytes.fromhex(hexdata)
-        f = BytesIO(data)
-        global_type = binary.GlobalType.read(f)
+        global_type = binary.GlobalType.read(data)
+
         self.assertEqual(global_type.value_type, expected_value_type)
         self.assertEqual(global_type.mutable, expected_mutable)
 
