@@ -70,6 +70,8 @@ class InsnEvalTest(parameterized.TestCase):
         """Add an i32 function to the machine that takes no arguments.
 
         There is also one i32 local var.
+
+        Returns the funcaddr.
         """
         func = ModuleFuncInstance(
             FuncType([], [ValueType.I32]),
@@ -78,14 +80,16 @@ class InsnEvalTest(parameterized.TestCase):
             list(instructions),
         )
         func.body = flatten_instructions(func.body, 0)
-        funcidx = self.machine.add_func(func)
-        self.module_inst.funcaddrs.append(funcidx)
-        return funcidx
+        funcaddr = self.machine.add_func(func)
+        self.module_inst.funcaddrs.append(funcaddr)
+        return funcaddr
 
     def _add_i32_i32_func(self, *instructions: Instruction) -> int:
         """Add an i32 function to the machine that takes an i32 argument.
 
         There is also one i32 local var.
+
+        Returns the funcaddr.
         """
         func = ModuleFuncInstance(
             FuncType([ValueType.I32], [ValueType.I32]),
@@ -94,9 +98,9 @@ class InsnEvalTest(parameterized.TestCase):
             list(instructions),
         )
         func.body = flatten_instructions(func.body, 0)
-        funcidx = self.machine.add_func(func)
-        self.module_inst.funcaddrs.append(funcidx)
-        return funcidx
+        funcaddr = self.machine.add_func(func)
+        self.module_inst.funcaddrs.append(funcaddr)
+        return funcaddr
 
     def add_func_type(self, args: list[ValueType], returns: list[ValueType]) -> int:
         self.module_inst.func_types.append(FuncType(args, returns))
@@ -2124,8 +2128,8 @@ class InsnEvalTest(parameterized.TestCase):
             [noarg(InstructionType.NOP)],
         )
         func.body = flatten_instructions(func.body, 0)
-        func_idx = self.machine.add_func(func)
-        self.machine.invoke_func(func_idx)
+        funcaddr = self.machine.add_func(func)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth)
 
@@ -2137,8 +2141,8 @@ class InsnEvalTest(parameterized.TestCase):
             [i32_const(1), i32_const(2)],
         )
         func.body = flatten_instructions(func.body, 0)
-        func_idx = self.machine.add_func(func)
-        self.machine.invoke_func(func_idx)
+        funcaddr = self.machine.add_func(func)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 2)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 2))
@@ -2156,19 +2160,19 @@ class InsnEvalTest(parameterized.TestCase):
             ],
         )
         func.body = flatten_instructions(func.body, 0)
-        func_idx = self.machine.add_func(func)
-        self.machine.invoke_func(func_idx)
+        funcaddr = self.machine.add_func(func)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth)
 
     def test_invoke_func_with_return(self):
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_const(1),
             noarg(InstructionType.RETURN),
             noarg(InstructionType.DROP),
             i32_const(2),
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
@@ -2181,16 +2185,16 @@ class InsnEvalTest(parameterized.TestCase):
             [noarg(InstructionType.NOP), br(0), noarg(InstructionType.NOP)],
         )
         func.body = flatten_instructions(func.body, 0)
-        func_idx = self.machine.add_func(func)
-        self.machine.invoke_func(func_idx)
+        funcaddr = self.machine.add_func(func)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth)
 
     def test_invoke_func_with_return_using_br(self):
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_const(1), br(0), noarg(InstructionType.DROP), i32_const(2)
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
@@ -2205,12 +2209,12 @@ class InsnEvalTest(parameterized.TestCase):
         ("1 < -1 unsigned is True", 1, -1, Value(ValueType.I32, 1)),
     )
     def test_i32_lt_u(self, c1: int, c2: int, expected: Value):
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_const(c1),
             i32_const(c2),
             noarg(InstructionType.I32_LT_U),
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), expected)
@@ -2220,51 +2224,51 @@ class InsnEvalTest(parameterized.TestCase):
         ("[5,6] select 1 = 5", 1, 5, 6, Value(ValueType.I32, 5)),
     )
     def test_select(self, c: int, v1: int, v2: int, expected: Value):
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_const(v1),
             i32_const(v2),
             i32_const(c),
             noarg(InstructionType.SELECT),
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), expected)
 
     def test_block_end(self):
-        func_idx = self._add_i32_func(i32_block(i32_const(1)))
-        self.machine.invoke_func(func_idx)
+        funcaddr = self._add_i32_func(i32_block(i32_const(1)))
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
 
     def test_block_return(self):
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_block(
                 i32_const(1),
                 noarg(InstructionType.RETURN),
             ),
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
 
     def test_nested_block_ends(self):
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_block(
                 i32_block(
                     i32_const(1),
                 ),
             ),
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
 
     def test_nested_block_returns(self):
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_block(
                 i32_block(
                     i32_const(1),
@@ -2272,29 +2276,33 @@ class InsnEvalTest(parameterized.TestCase):
                 ),
                 noarg(InstructionType.DROP),
                 i32_const(2),
-            )
+            ),
+            i32_const(10),
+            noarg(InstructionType.I32_ADD),
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
 
     def test_block_br_0_skips_own_block(self):
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_block(
                 i32_const(1),
                 br(0),
                 noarg(InstructionType.DROP),
                 i32_const(2),
-            )
+            ),
+            i32_const(10),
+            noarg(InstructionType.I32_ADD),
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 11))
 
     def test_block_br_1_skips_parent_block(self):
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_block(
                 i32_block(
                     i32_const(1),
@@ -2302,15 +2310,19 @@ class InsnEvalTest(parameterized.TestCase):
                     noarg(InstructionType.DROP),
                     i32_const(2),
                 ),
-            )
+                i32_const(2),
+                noarg(InstructionType.I32_ADD),
+            ),
+            i32_const(10),
+            noarg(InstructionType.I32_ADD),
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 11))
 
     def test_block_br_0_continues_parent_block(self):
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_block(
                 i32_block(
                     i32_const(1),
@@ -2318,17 +2330,19 @@ class InsnEvalTest(parameterized.TestCase):
                     noarg(InstructionType.DROP),
                     i32_const(2),
                 ),
-                noarg(InstructionType.DROP),
-                i32_const(3),
-            )
+                i32_const(2),
+                noarg(InstructionType.I32_ADD),
+            ),
+            i32_const(10),
+            noarg(InstructionType.I32_ADD),
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 3))
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 13))
 
     def test_br_if_0(self):
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_block(
                 i32_const(1),
                 i32_const(0),
@@ -2337,13 +2351,13 @@ class InsnEvalTest(parameterized.TestCase):
                 i32_const(2),
             )
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 2))
 
     def test_br_if_1(self):
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_block(
                 i32_const(1),
                 i32_const(1),
@@ -2352,7 +2366,7 @@ class InsnEvalTest(parameterized.TestCase):
                 i32_const(2),
             )
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
@@ -2363,7 +2377,7 @@ class InsnEvalTest(parameterized.TestCase):
         ("default", 2, 3),
     )
     def test_br_table(self, idx: int, expected_result: int):
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_block(
                 i32_block(
                     i32_block(
@@ -2379,7 +2393,7 @@ class InsnEvalTest(parameterized.TestCase):
             i32_const(3),
             noarg(InstructionType.RETURN),
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected_result))
@@ -2389,7 +2403,7 @@ class InsnEvalTest(parameterized.TestCase):
         ("True", 2, 2),
     )
     def test_if(self, val: int, expected_result: int):
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_const(val),
             if_(
                 i32_const(2),
@@ -2397,7 +2411,7 @@ class InsnEvalTest(parameterized.TestCase):
             ),
             i32_const(1),
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected_result))
@@ -2407,7 +2421,7 @@ class InsnEvalTest(parameterized.TestCase):
         ("True", 2, 3),
     )
     def test_if_else(self, val: int, expected_result: int):
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_const(val),
             if_else(
                 [i32_const(2)],
@@ -2416,14 +2430,14 @@ class InsnEvalTest(parameterized.TestCase):
             i32_const(1),
             noarg(InstructionType.I32_ADD),
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected_result))
 
     def test_loop_one_iterations(self):
         func_type_idx = self.add_func_type([ValueType.I32], [ValueType.I32])
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_const(1),
             i32_loop(
                 func_type_idx,
@@ -2431,14 +2445,14 @@ class InsnEvalTest(parameterized.TestCase):
                 noarg(InstructionType.I32_ADD),
             ),
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 3))
 
     def test_loop_return(self):
         func_type_idx = self.add_func_type([ValueType.I32], [ValueType.I32])
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_const(1),
             i32_loop(
                 func_type_idx,
@@ -2447,14 +2461,14 @@ class InsnEvalTest(parameterized.TestCase):
                 noarg(InstructionType.RETURN),
             ),
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 3))
 
     def test_loop_br_1(self):
         func_type_idx = self.add_func_type([ValueType.I32], [ValueType.I32])
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_block(
                 i32_const(1),
                 i32_loop(
@@ -2465,14 +2479,14 @@ class InsnEvalTest(parameterized.TestCase):
                 ),
             )
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 3))
 
     def test_loop_continue(self):
         func_type_idx = self.add_func_type([], [])
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_const(1),
             local_set(0),
             i32_loop(
@@ -2487,14 +2501,14 @@ class InsnEvalTest(parameterized.TestCase):
             ),
             local_get(0),
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 11))
 
     def test_loop_continue_from_inner_block(self):
         func_type_idx = self.add_func_type([], [])
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_const(1),
             local_set(0),
             i32_loop(
@@ -2512,45 +2526,90 @@ class InsnEvalTest(parameterized.TestCase):
             ),
             local_get(0),
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 11))
 
     def test_call(self):
-        func_idx1 = self._add_i32_func(i32_const(1))
-        func_idx = self._add_i32_func(
-            call(func_idx1),
+        funcaddr1 = self._add_i32_func(i32_const(1))
+        # Calling in this way ensures that we pick up where we left off even if
+        # we fall off the end of funcaddr1 instead of returning.
+        funcaddr = self._add_i32_func(
+            i32_const(2),
+            call(funcaddr1),
+            noarg(InstructionType.I32_ADD),
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 3))
 
     def test_call_and_return(self):
-        func_idx1 = self._add_i32_func(i32_const(1), noarg(InstructionType.RETURN))
-        func_idx = self._add_i32_func(
-            call(func_idx1),
+        funcaddr1 = self._add_i32_func(i32_const(1), noarg(InstructionType.RETURN))
+        funcaddr = self._add_i32_func(
+            i32_const(2),
+            call(funcaddr1),
+            noarg(InstructionType.I32_ADD),
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 3))
 
     def test_call_args(self):
-        func_idx1 = self._add_i32_i32_func(
+        funcaddr1 = self._add_i32_i32_func(
             local_get(0),
             i32_const(1),
             noarg(InstructionType.I32_ADD),
         )
-        func_idx = self._add_i32_func(
+        funcaddr = self._add_i32_func(
             i32_const(2),
-            call(func_idx1),
+            call(funcaddr1),
         )
-        self.machine.invoke_func(func_idx)
+        self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 3))
+
+    @parameterized.named_parameters(
+        ("#0", 0, 1),
+        ("#1", 1, 2),
+    )
+    def test_call_indirect(self, funcidx: int, expected: int):
+        self.module_inst.func_types = [FuncType([], []), FuncType([], [ValueType.I32])]
+        funcaddr1 = self._add_i32_func(i32_const(1))
+        print(f"Added funcaddr1 = {funcaddr1}")
+        funcaddr2 = self._add_i32_func(i32_const(2))
+        print(f"Added funcaddr2 = {funcaddr2}")
+        self.module_inst.tableaddrs = [1, 0]
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, Limits(2)),
+                [
+                    Value(ValueType.FUNCREF, None),
+                    Value(ValueType.FUNCREF, None),
+                ],
+            )
+        )
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, Limits(2)),
+                [
+                    Value(ValueType.FUNCREF, funcaddr1),
+                    Value(ValueType.FUNCREF, funcaddr2),
+                ],
+            )
+        )
+        funcaddr = self._add_i32_func(
+            i32_const(funcidx),
+            op2(InstructionType.CALL_INDIRECT, 0, 1),  # table 0, functype 1
+        )
+        print(f"Added funcaddr = {funcaddr}, invoking")
+        self.machine.invoke_func(funcaddr)
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected))
 
 
 if __name__ == "__main__":

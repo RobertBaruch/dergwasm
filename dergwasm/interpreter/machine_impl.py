@@ -54,28 +54,31 @@ class MachineImpl(machine.Machine):
         self.get_current_frame().pc = 0
         while self.get_current_frame().pc < len(seq):
             instruction = seq[self.get_current_frame().pc]
-
-            print(f"Executing {instruction}")
-            insn_eval.eval_insn(self, instruction)
             if instruction.instruction_type == InstructionType.RETURN:
-                return
+                break
+            insn_eval.eval_insn(self, instruction)
 
+        # Save any results.
         f = self.get_current_frame()
         n = f.arity
         results = [self.pop() for _ in range(n)]
-        # There might be a label here, depending on whether we fell off the end.
-        # A BR will have slid the label out, but falling off the end will not have.
-        self.pop_to_frame()
+        # Skip over everything up to and including the current frame. This skips over
+        # all nesting labels.
+        while not isinstance(self.peek(), values.Frame):
+            self.pop()
+        # Pop off the current frame.
+        self.pop()
+        # Restore the next frame as the current frame.
+        self.current_frame = self.stack_.get_topmost_value_of_type(values.Frame)
         # Push the results back on the stack
         for v in reversed(results):
             self.push(v)
 
     def execute_expr(self, expr: list[Instruction]) -> list[Instruction]:
-        """Execute the instructions until RETURN or falling off end."""
+        """Execute the instructions until falling off end."""
         self.get_current_frame().pc = 0
         while self.get_current_frame().pc < len(expr):
             instruction = expr[self.get_current_frame().pc]
-
             if instruction.instruction_type == InstructionType.RETURN:
                 raise RuntimeError(
                     "Unexpected RETURN instruction in an initialization expression"
@@ -102,12 +105,12 @@ class MachineImpl(machine.Machine):
         self.funcs.append(func)
         return len(self.funcs) - 1
 
-    def get_func(self, funcidx: int) -> machine.FuncInstance:
-        return self.funcs[funcidx]
+    def get_func(self, funcaddr: int) -> machine.FuncInstance:
+        return self.funcs[funcaddr]
 
-    def invoke_func(self, funcidx: int) -> None:
+    def invoke_func(self, funcaddr: int) -> None:
         """Invokes a function, returning when the function ends/returns/traps."""
-        f = self.funcs[funcidx]
+        f = self.funcs[funcaddr]
         assert isinstance(f, machine.ModuleFuncInstance)
         func_type = f.functype
         local_vars: list[values.Value] = [self.pop() for _ in func_type.parameters]
@@ -121,48 +124,48 @@ class MachineImpl(machine.Machine):
         self.tables.append(table)
         return len(self.tables) - 1
 
-    def get_table(self, tableidx: int) -> machine.TableInstance:
-        return self.tables[tableidx]
+    def get_table(self, tableaddr: int) -> machine.TableInstance:
+        return self.tables[tableaddr]
 
     def add_mem(self, mem: machine.MemInstance) -> int:
         self.mems.append(mem)
         return len(self.mems) - 1
 
-    def get_mem(self, memidx: int) -> machine.MemInstance:
-        return self.mems[memidx]
+    def get_mem(self, memaddr: int) -> machine.MemInstance:
+        return self.mems[memaddr]
 
-    def get_mem_data(self, memidx: int) -> bytearray:
-        return self.mems[memidx].data
+    def get_mem_data(self, memaddr: int) -> bytearray:
+        return self.mems[memaddr].data
 
     def add_global(self, global_: machine.GlobalInstance) -> int:
         self.global_vars.append(global_)
         return len(self.global_vars) - 1
 
-    def set_global(self, globalidx: int, value: values.Value) -> None:
-        self.global_vars[globalidx].value = value
+    def set_global(self, globaladdr: int, value: values.Value) -> None:
+        self.global_vars[globaladdr].value = value
 
-    def get_global(self, globalidx: int) -> machine.GlobalInstance:
-        return self.global_vars[globalidx].value
+    def get_global(self, globaladdr: int) -> machine.GlobalInstance:
+        return self.global_vars[globaladdr].value
 
     def add_data(self, data: bytes) -> int:
         self.datas.append(data)
         return len(self.datas) - 1
 
-    def get_data(self, dataidx: int) -> bytes:
-        return self.datas[dataidx]
+    def get_data(self, dataaddr: int) -> bytes:
+        return self.datas[dataaddr]
 
-    def drop_data(self, dataidx: int) -> None:
-        self.datas[dataidx] = None
+    def drop_data(self, dataaddr: int) -> None:
+        self.datas[dataaddr] = None
 
     def add_element(self, element: machine.ElementSegmentInstance) -> int:
         self.element_segments.append(element)
         return len(self.element_segments) - 1
 
-    def get_element(self, elementidx: int) -> machine.ElementSegmentInstance:
-        return self.element_segments[elementidx]
+    def get_element(self, elementaddr: int) -> machine.ElementSegmentInstance:
+        return self.element_segments[elementaddr]
 
-    def drop_element(self, elementidx: int) -> None:
-        self.element_segments[elementidx] = None
+    def drop_element(self, elementaddr: int) -> None:
+        self.element_segments[elementaddr] = None
 
     def get_nth_value_of_type(
         self, n: int, value_type: Type[values.StackValue]

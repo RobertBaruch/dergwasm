@@ -207,15 +207,7 @@ def br_table(machine: Machine, instruction: Instruction) -> None:
 
 
 def return_(machine: Machine, instruction: Instruction) -> None:
-    f = machine.get_current_frame()
-    n = f.arity
-    results = [machine.pop() for _ in range(n)]
-    # Pop everything up to and including the frame. This will also include
-    # the function's label. Basically skip all nesting levels.
-    machine.pop_to_frame()
-    # Push the results back on the stack
-    for v in reversed(results):
-        machine.push(v)
+    raise RuntimeError("RETURN instructions should never be executed.")
 
 
 def call(machine: Machine, instruction: Instruction) -> None:
@@ -227,7 +219,31 @@ def call(machine: Machine, instruction: Instruction) -> None:
 
 
 def call_indirect(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    f = machine.get_current_frame()
+    print(f"call_indirect at pc {f.pc}")
+    f.pc += 1
+    print(f"   return pc {f.pc}")
+    assert isinstance(instruction.operands[0], int)  # tableidx
+    assert isinstance(instruction.operands[1], int)  # typeidx
+    tableidx = int(instruction.operands[0])
+    typeidx = int(instruction.operands[1])
+    table = machine.get_table(f.module.tableaddrs[tableidx])
+    functype = f.module.func_types[typeidx]
+    i = _unsigned_i32(machine.pop())  # index
+    print(f"Calling indirect table element {i}")
+    if i >= len(table.refs):
+        raise RuntimeError(
+            f"call_indirect: access out of bounds (index {i}, "
+            f"table len {len(table.refs)})"
+        )
+    funcaddr = table.refs[i]
+    print(f"  Calling indirect table element {i} -> funcaddr {funcaddr}")
+    if funcaddr.value is None:
+        raise RuntimeError("call_indirect: null reference")
+    func = machine.get_func(funcaddr.value)
+    if func.functype != functype:
+        raise RuntimeError("call_indirect: type mismatch")
+    machine.invoke_func(funcaddr.value)
 
 
 # Reference instructions,
@@ -249,7 +265,10 @@ def ref_is_null(machine: Machine, instruction: Instruction) -> None:
 
 def ref_func(machine: Machine, instruction: Instruction) -> None:
     """A function reference to the store's funcaddr for the module's funcidx given by
-    the operand."""
+    the operand.
+
+    Note that the value on the stack is a funcaddr, not a funcidx.
+    """
     assert isinstance(instruction.operands[0], int)  # funcidx
     f = machine.get_current_frame()
     val = f.module.funcaddrs[int(instruction.operands[0])]

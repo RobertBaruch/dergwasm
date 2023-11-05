@@ -86,7 +86,7 @@ class Value(StackValue):
 
     This is one of:
     * int (i32, i64, v128)
-    * int (FUNC reference = funcaddr)
+    * int (FUNC reference = funcaddr in the store)
     * float (f32, f64)
     * None (null FUNC or EXTERNREF reference)
     * RefVal (EXTERNREF reference)

@@ -105,77 +105,77 @@ class Machine(abc.ABC):
 
     @abc.abstractmethod
     def add_func(self, func: FuncInstance) -> int:
-        """Adds a function to the machine and returns its index."""
+        """Adds a function to the machine and returns its address."""
 
     @abc.abstractmethod
-    def get_func(self, funcidx: int) -> FuncInstance:
-        """Returns the func at the given index."""
+    def get_func(self, funcaddr: int) -> FuncInstance:
+        """Returns the func at the given address."""
 
     @abc.abstractmethod
-    def invoke_func(self, funcidx: int) -> None:
-        """Invokes the func at the given index (address).
+    def invoke_func(self, funcaddr: int) -> None:
+        """Invokes the func at the given address.
 
         The function must be a module function.
         """
 
     def add_hostfunc(self, hostfunc: Callable) -> int:
-        """Adds a host function to the machine and returns its index."""
+        """Adds a host function to the machine and returns its address."""
 
     @abc.abstractmethod
     def add_table(self, table: TableInstance) -> int:
-        """Adds a table to the machine and returns its index."""
+        """Adds a table to the machine and returns its address."""
 
     @abc.abstractmethod
-    def get_table(self, tableidx: int) -> TableInstance:
-        """Returns the table at the given index."""
+    def get_table(self, tableaddr: int) -> TableInstance:
+        """Returns the table at the given address."""
 
     @abc.abstractmethod
-    def add_mem(self, mem: bytearray) -> int:
-        """Adds a memory to the machine and returns its index."""
+    def add_mem(self, mem: MemInstance) -> int:
+        """Adds a memory to the machine and returns its address."""
 
     @abc.abstractmethod
-    def get_mem(self, memidx: int) -> MemInstance:
-        """Returns the memory at the given index."""
+    def get_mem(self, memaddr: int) -> MemInstance:
+        """Returns the memory at the given address."""
 
     @abc.abstractmethod
-    def get_mem_data(self, memidx: int) -> bytearray:
-        """Returns the memory at the given index."""
+    def get_mem_data(self, memaddr: int) -> bytearray:
+        """Returns the memory at the given address."""
 
     @abc.abstractmethod
     def add_global(self, global_: GlobalInstance) -> int:
-        """Adds a global var to the machine and returns its index."""
+        """Adds a global var to the machine and returns its address."""
 
     @abc.abstractmethod
-    def set_global(self, globalidx: int, value: values.Value) -> None:
-        """Sets the value of the global at the given index."""
+    def set_global(self, globaladdr: int, value: values.Value) -> None:
+        """Sets the value of the global at the given address."""
 
     @abc.abstractmethod
-    def get_global(self, globalidx: int) -> GlobalInstance:
-        """Returns the global at the given index."""
+    def get_global(self, globaladdr: int) -> GlobalInstance:
+        """Returns the global at the given address."""
 
     @abc.abstractmethod
     def add_data(self, data: bytearray) -> int:
-        """Adds data to the machine and returns its index."""
+        """Adds data to the machine and returns its address."""
 
     @abc.abstractmethod
-    def get_data(self, dataidx: int) -> bytearray:
-        """Returns the data at the given index."""
+    def get_data(self, dataaddr: int) -> bytearray:
+        """Returns the data at the given address."""
 
     @abc.abstractmethod
-    def drop_data(self, dataidx: int) -> None:
-        """Drops the data at the given index."""
+    def drop_data(self, dataaddr: int) -> None:
+        """Drops the data at the given address."""
 
     @abc.abstractmethod
     def add_element(self, element: ElementSegmentInstance) -> int:
-        """Adds an element segment to the machine and returns its index."""
+        """Adds an element segment to the machine and returns its address."""
 
     @abc.abstractmethod
-    def get_element(self, elementidx: int) -> ElementSegmentInstance:
-        """Returns the element segment at the given index."""
+    def get_element(self, elementaddr: int) -> ElementSegmentInstance:
+        """Returns the element segment at the given address."""
 
     @abc.abstractmethod
-    def drop_element(self, elementidx: int) -> None:
-        """Drops the element segment at the given index."""
+    def drop_element(self, elementaddr: int) -> None:
+        """Drops the element segment at the given address."""
 
     @abc.abstractmethod
     def get_nth_value_of_type(
