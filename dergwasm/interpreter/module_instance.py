@@ -68,7 +68,7 @@ class ModuleInstance:
                 table_spec,
                 [
                     values.Value(table_spec.table_type.reftype, None)
-                    for _ in range(table_spec.table_type.min_limit)
+                    for _ in range(table_spec.table_type.limits.min)
                 ],
             )
             self.tableaddrs.append(machine_inst.add_table(table))
@@ -79,7 +79,7 @@ class ModuleInstance:
         ]
         for memory_spec in memory_section.memories:
             mem = MemInstance(
-                memory_spec.mem_type, bytearray(memory_spec.mem_type.min_limit * 65536)
+                memory_spec.mem_type, bytearray(memory_spec.mem_type.limits.min * 65536)
             )  # zero filled
             self.memaddrs.append(machine_inst.add_mem(mem))
 
@@ -234,7 +234,7 @@ class ModuleInstance:
             # Run the init code block.
             machine.new_frame(values.Frame(1, [], instance, 0))
             machine.push(values.Label(1, len(g.init)))
-            machine.execute_seq(g.init)
+            machine.execute_expr(g.init)
             # Pop the result off the stack and set the global with it. Strictly
             # speaking, after determining the init values for the globals, we're
             # supposed to allocate  a *new* instance of the module, but this time
@@ -254,7 +254,7 @@ class ModuleInstance:
             else:
                 machine.new_frame(values.Frame(1, [], instance, 0))
                 for j, expr in enumerate(s.elem_exprs):
-                    machine.execute_seq(expr)
+                    machine.execute_expr(expr)
                     segment_instance.refs[j] = machine.pop()
                 machine.clear_stack()
 
@@ -265,7 +265,7 @@ class ModuleInstance:
                 n = values.Value(values.ValueType.I32, len(segment_instance.refs))
                 machine.new_frame(values.Frame(1, [], instance, 0))
                 machine.push(values.Label(1, len(segment_instance.offset_expr)))
-                machine.execute_seq(segment_instance.offset_expr)
+                machine.execute_expr(segment_instance.offset_expr)
                 offset = machine.pop()
                 machine.clear_stack()
 
@@ -304,7 +304,7 @@ class ModuleInstance:
             assert d.offset is not None
             machine.new_frame(values.Frame(1, [], instance, 0))
             machine.push(values.Label(1, len(d.offset)))
-            machine.execute_seq(d.offset)
+            machine.execute_expr(d.offset)
             machine.push(values.Value(values.ValueType.I32, 0))
             machine.push(values.Value(values.ValueType.I32, len(d.data)))
             insn_eval.memory_init(

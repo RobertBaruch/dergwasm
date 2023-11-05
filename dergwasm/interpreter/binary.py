@@ -16,6 +16,49 @@ from dergwasm.interpreter import insn
 from dergwasm.interpreter import values
 
 
+def _read_byte(f: BytesIO) -> int:
+    """Reads a byte from the data stream.
+
+    Raises:
+        EOFError: upon reaching end of stream.
+    """
+    try:
+        return f.read(1)[0]
+    except IndexError as e:
+        raise EOFError from e
+
+
+def _read_value_type(f: BytesIO) -> values.ValueType:
+    """Reads a value type from the data stream.
+
+    Raises:
+        EOFError: upon reaching end of stream.
+    """
+    return values.ValueType(_read_byte(f))
+
+
+def _read_unsigned_int(f: BytesIO) -> int:
+    """Reads an LEB128-encoded int from the data stream.
+
+    Raises:
+        EOFError: upon reaching end of stream.
+    """
+    try:
+        return leb128.u.decode_reader(f)[0]
+    except IndexError as e:
+        raise EOFError from e
+
+
+def _read_string(f: BytesIO) -> str:
+    """Reads a string from the data stream.
+
+    Raises:
+        EOFError: upon reaching end of stream.
+    """
+    name_size = _read_unsigned_int(f)
+    return f.read(name_size).decode("utf-8")
+
+
 @dataclasses.dataclass
 class ExternalType:
     """The base class for external types."""
@@ -38,16 +81,13 @@ class FuncType(ExternalType):
         Raises:
             EOFError: upon reaching end of file.
         """
-        try:
-            tag = f.read(1)[0]
-        except IndexError as e:
-            raise EOFError from e
+        tag = _read_byte(f)
         if tag != 0x60:
             raise ValueError(f"Expected 0x60 tag for functype, but got {tag:02X}")
-        num_parameters = leb128.u.decode_reader(f)[0]
-        parameters = [values.ValueType(f.read(1)[0]) for _ in range(num_parameters)]
-        num_results = leb128.u.decode_reader(f)[0]
-        results = [values.ValueType(f.read(1)[0]) for _ in range(num_results)]
+        num_parameters = _read_unsigned_int(f)
+        parameters = [_read_value_type(f) for _ in range(num_parameters)]
+        num_results = _read_unsigned_int(f)
+        results = [_read_value_type(f) for _ in range(num_results)]
         return FuncType(parameters, results)
 
     def __repr__(self) -> str:
@@ -64,13 +104,13 @@ class TableType(ExternalType):
     @staticmethod
     def read(f: BytesIO) -> TableType:
         """Reads and returns a TableType."""
-        reftype = values.ValueType(f.read(1)[0])
-        tag = f.read(1)[0]
-        min_limit = leb128.u.decode_reader(f)[0]
+        reftype = values.ValueType(_read_byte(f))
+        tag = _read_byte(f)
+        min_limit = _read_unsigned_int(f)
         if tag == 0x00:
             max_limit = None
         elif tag == 0x01:
-            max_limit = leb128.u.decode_reader(f)[0]
+            max_limit = _read_unsigned_int(f)
         else:
             raise ValueError(f"Unknown tabletype limit tag {tag:02X}")
         return TableType(reftype, values.Limits(min_limit, max_limit))
@@ -88,12 +128,12 @@ class MemType(ExternalType):
     @staticmethod
     def read(f: BytesIO) -> MemType:
         """Reads and returns a MemType."""
-        tag = f.read(1)[0]
-        min_limit = leb128.u.decode_reader(f)[0]
+        tag = _read_byte(f)
+        min_limit = _read_unsigned_int(f)
         if tag == 0x00:
             max_limit = None
         elif tag == 0x01:
-            max_limit = leb128.u.decode_reader(f)[0]
+            max_limit = _read_unsigned_int(f)
         else:
             raise ValueError(f"Unknown memtype limit tag {tag:02X}")
         return MemType(values.Limits(min_limit, max_limit))
@@ -112,8 +152,8 @@ class GlobalType(ExternalType):
     @staticmethod
     def read(f: BytesIO) -> GlobalType:
         """Reads and returns a GlobalType."""
-        value_type = values.ValueType(f.read(1)[0])
-        mutable = bool(f.read(1)[0])
+        value_type = values.ValueType(_read_byte(f))
+        mutable = bool(_read_byte(f))
         return GlobalType(value_type, mutable)
 
 
@@ -151,13 +191,11 @@ class Import:
         Raises:
             ValueError: upon encountering a bad import desc tag.
         """
-        name_size = leb128.u.decode_reader(f)[0]
-        module = f.read(name_size).decode("utf-8")
-        name_size = leb128.u.decode_reader(f)[0]
-        name = f.read(name_size).decode("utf-8")
-        tag = f.read(1)[0]
+        module = _read_string(f)
+        name = _read_string(f)
+        tag = _read_byte(f)
         if tag == 0x00:
-            desc = leb128.u.decode_reader(f)[0]
+            desc = _read_unsigned_int(f)
         elif tag == 0x01:
             desc = TableType.read(f)
         elif tag == 0x02:
@@ -191,13 +229,12 @@ class Export:
         Raises:
             ValueError: upon encountering a bad export desc tag.
         """
-        name_size = leb128.u.decode_reader(f)[0]
-        name = f.read(name_size).decode("utf-8")
-        tag = f.read(1)[0]
+        name = _read_string(f)
+        tag = _read_byte(f)
         if tag > 3:
             raise ValueError(f"Unknown import desc tag {tag:02X}")
         desc_type = [FuncType, TableType, MemType, GlobalType][tag]
-        desc_idx = leb128.u.decode_reader(f)[0]
+        desc_idx = _read_unsigned_int(f)
         return Export(name, desc_type, desc_idx)
 
 
@@ -273,7 +310,7 @@ class ElementSegment:
     @staticmethod
     def read(f: BytesIO) -> ElementSegment:
         """Reads and returns an ElementSegment."""
-        desc_idx = leb128.u.decode_reader(f)[0]
+        desc_idx = _read_unsigned_int(f)
 
         if desc_idx == 0x00:
             # A table of funcrefs at table 0, with an offset.
@@ -281,8 +318,8 @@ class ElementSegment:
             offset_expr = read_expr(f)
             elem_type = values.ValueType.FUNCREF
             elem_indexes = [
-                leb128.u.decode_reader(f)[0]
-                for _ in range(leb128.u.decode_reader(f)[0])
+                _read_unsigned_int(f)
+                for _ in range(_read_unsigned_int(f))
             ]
             return ElementSegment(
                 elem_type=elem_type,
@@ -293,21 +330,21 @@ class ElementSegment:
 
         if desc_idx == 0x01:
             # A table of indexes of a given type.
-            elem_type = values.ValueType(leb128.u.decode_reader(f)[0])
+            elem_type = values.ValueType(_read_unsigned_int(f))
             elem_indexes = [
-                leb128.u.decode_reader(f)[0]
-                for _ in range(leb128.u.decode_reader(f)[0])
+                _read_unsigned_int(f)
+                for _ in range(_read_unsigned_int(f))
             ]
             return ElementSegment(elem_type=elem_type, elem_indexes=elem_indexes)
 
         if desc_idx == 0x02:
             # A table of indexes of a given type at a specific tableidx and offset.
-            tableidx = leb128.u.decode_reader(f)[0]
+            tableidx = _read_unsigned_int(f)
             offset_expr = read_expr(f)
-            elem_type = values.ValueType(leb128.u.decode_reader(f)[0])
+            elem_type = values.ValueType(_read_unsigned_int(f))
             elem_indexes = [
-                leb128.u.decode_reader(f)[0]
-                for _ in range(leb128.u.decode_reader(f)[0])
+                _read_unsigned_int(f)
+                for _ in range(_read_unsigned_int(f))
             ]
             return ElementSegment(
                 elem_type=elem_type,
@@ -318,10 +355,10 @@ class ElementSegment:
 
         if desc_idx == 0x03:
             # A table of indexes of a given type.
-            elem_type = values.ValueType(leb128.u.decode_reader(f)[0])
+            elem_type = values.ValueType(_read_unsigned_int(f))
             elem_indexes = [
-                leb128.u.decode_reader(f)[0]
-                for _ in range(leb128.u.decode_reader(f)[0])
+                _read_unsigned_int(f)
+                for _ in range(_read_unsigned_int(f))
             ]
             return ElementSegment(elem_type=elem_type, elem_indexes=elem_indexes)
 
@@ -330,7 +367,7 @@ class ElementSegment:
             tableidx = 0
             offset_expr = read_expr(f)
             elem_type = values.ValueType.FUNCREF
-            elem_exprs = [read_expr(f) for _ in range(leb128.u.decode_reader(f)[0])]
+            elem_exprs = [read_expr(f) for _ in range(_read_unsigned_int(f))]
             return ElementSegment(
                 elem_type=elem_type,
                 tableidx=tableidx,
@@ -340,8 +377,8 @@ class ElementSegment:
 
         if desc_idx == 0x05:
             # A table of indexes of a given type, given by exprs.
-            elem_type = values.ValueType(leb128.u.decode_reader(f)[0])
-            elem_exprs = [read_expr(f) for _ in range(leb128.u.decode_reader(f)[0])]
+            elem_type = values.ValueType(_read_unsigned_int(f))
+            elem_exprs = [read_expr(f) for _ in range(_read_unsigned_int(f))]
             return ElementSegment(
                 elem_type=elem_type,
                 elem_exprs=elem_exprs,
@@ -349,10 +386,10 @@ class ElementSegment:
 
         if desc_idx == 0x06:
             # A table of funcrefs given by exprs at a specific table, with an offset.
-            tableidx = leb128.u.decode_reader(f)[0]
+            tableidx = _read_unsigned_int(f)
             offset_expr = read_expr(f)
-            elem_type = values.ValueType(leb128.u.decode_reader(f)[0])
-            elem_exprs = [read_expr(f) for _ in range(leb128.u.decode_reader(f)[0])]
+            elem_type = values.ValueType(_read_unsigned_int(f))
+            elem_exprs = [read_expr(f) for _ in range(_read_unsigned_int(f))]
             return ElementSegment(
                 elem_type=elem_type,
                 tableidx=tableidx,
@@ -362,8 +399,8 @@ class ElementSegment:
 
         if desc_idx == 0x07:
             # A table of indexes of a given type, given by exprs.
-            elem_type = values.ValueType(leb128.u.decode_reader(f)[0])
-            elem_exprs = [read_expr(f) for _ in range(leb128.u.decode_reader(f)[0])]
+            elem_type = values.ValueType(_read_unsigned_int(f))
+            elem_exprs = [read_expr(f) for _ in range(_read_unsigned_int(f))]
             return ElementSegment(
                 elem_type=elem_type,
                 elem_exprs=elem_exprs,
@@ -466,10 +503,10 @@ class Code:
     def read(f: BytesIO) -> Code:
         """Reads and returns a Code."""
         # code size is used only for validation.
-        _ = leb128.u.decode_reader(f)[0]
-        num_locals = leb128.u.decode_reader(f)[0]
+        _ = _read_unsigned_int(f)
+        num_locals = _read_unsigned_int(f)
         local_vars = [
-            (leb128.u.decode_reader(f)[0], values.ValueType(f.read(1)[0]))
+            (_read_unsigned_int(f), values.ValueType(_read_byte(f)))
             for _ in range(num_locals)
         ]
         insns = []
@@ -534,7 +571,7 @@ class Data:
     @staticmethod
     def read(f: BytesIO) -> Data:
         """Reads and returns a Data."""
-        tag = leb128.u.decode_reader(f)[0]
+        tag = _read_unsigned_int(f)
         memidx = 0
         offset = None
         is_active = False
@@ -544,10 +581,10 @@ class Data:
             offset = read_expr(f)
         elif tag == 0x02:
             is_active = True
-            memidx = leb128.u.decode_reader(f)[0]
+            memidx = _read_unsigned_int(f)
             offset = read_expr(f)
 
-        data_size = leb128.u.decode_reader(f)[0]
+        data_size = _read_unsigned_int(f)
         data = f.read(data_size)
         return Data(is_active, memidx, offset, data)
 
@@ -595,9 +632,9 @@ class CustomSection(ModuleSection):
 
     @staticmethod
     def read(f: BytesIO) -> ModuleSection:
-        name_len = leb128.u.decode_reader(f)[0]
+        name_len = _read_unsigned_int(f)
         name = f.read(name_len).decode("utf-8")
-        data_len = leb128.u.decode_reader(f)[0]
+        data_len = _read_unsigned_int(f)
         data = f.read(data_len)
         print(f"Read custom section {name}: {data}")
         return CustomSection(name, data)
@@ -617,7 +654,7 @@ class TypeSection(ModuleSection):
     @staticmethod
     def read(f: BytesIO) -> ModuleSection:
         """Reads and returns a type section."""
-        num_types = leb128.u.decode_reader(f)[0]
+        num_types = _read_unsigned_int(f)
         types = [FuncType.read(f) for _ in range(num_types)]
         print(f"Read types: {types}")
         return TypeSection(types)
@@ -639,7 +676,7 @@ class ImportSection(ModuleSection):
     @staticmethod
     def read(f: BytesIO) -> ModuleSection:
         """Reads and returns an imports section."""
-        num_imports = leb128.u.decode_reader(f)[0]
+        num_imports = _read_unsigned_int(f)
         imports = [Import.read(f) for _ in range(num_imports)]
         print(f"Read imports: {imports}")
         return ImportSection(imports)
@@ -654,8 +691,8 @@ class FunctionSection(ModuleSection):
     @staticmethod
     def read(f: BytesIO) -> ModuleSection:
         """Reads and returns a function section."""
-        num_funcs = leb128.u.decode_reader(f)[0]
-        functype_indices = [leb128.u.decode_reader(f)[0] for _ in range(num_funcs)]
+        num_funcs = _read_unsigned_int(f)
+        functype_indices = [_read_unsigned_int(f) for _ in range(num_funcs)]
         print(
             f"Read function types (length {len(functype_indices)}): {functype_indices}"
         )
@@ -671,7 +708,7 @@ class TableSection(ModuleSection):
     @staticmethod
     def read(f: BytesIO) -> ModuleSection:
         """Reads and returns a table section."""
-        num_tables = leb128.u.decode_reader(f)[0]
+        num_tables = _read_unsigned_int(f)
         tables = [Table.read(f) for _ in range(num_tables)]
         print(f"Read tables: {tables}")
         return TableSection(tables)
@@ -686,7 +723,7 @@ class MemorySection(ModuleSection):
     @staticmethod
     def read(f: BytesIO) -> ModuleSection:
         """Reads and returns a memory section."""
-        num_memories = leb128.u.decode_reader(f)[0]
+        num_memories = _read_unsigned_int(f)
         memories = [Mem.read(f) for _ in range(num_memories)]
         print(f"Read memories: {memories}")
         return MemorySection(memories)
@@ -701,7 +738,7 @@ class GlobalSection(ModuleSection):
     @staticmethod
     def read(f: BytesIO) -> ModuleSection:
         """Reads and returns a global section."""
-        num_globals = leb128.u.decode_reader(f)[0]
+        num_globals = _read_unsigned_int(f)
         global_vars = [Global.read(f) for _ in range(num_globals)]
         print(f"Read globals: {global_vars}")
         return GlobalSection(global_vars)
@@ -716,7 +753,7 @@ class ExportSection(ModuleSection):
     @staticmethod
     def read(f: BytesIO) -> ModuleSection:
         """Reads and returns an export section."""
-        num_exports = leb128.u.decode_reader(f)[0]
+        num_exports = _read_unsigned_int(f)
         exports = [Export.read(f) for _ in range(num_exports)]
         print(f"Read exports: {exports}")
         return ExportSection(exports)
@@ -731,7 +768,7 @@ class StartSection(ModuleSection):
     @staticmethod
     def read(f: BytesIO) -> ModuleSection:
         """Reads and returns a start section."""
-        start_idx = leb128.u.decode_reader(f)[0]
+        start_idx = _read_unsigned_int(f)
         print(f"Read start: {start_idx}")
         return StartSection(start_idx)
 
@@ -745,7 +782,7 @@ class ElementSection(ModuleSection):
     @staticmethod
     def read(f: BytesIO) -> ModuleSection:
         """Reads and returns an element section."""
-        num_elements = leb128.u.decode_reader(f)[0]
+        num_elements = _read_unsigned_int(f)
         elements = [ElementSegment.read(f) for _ in range(num_elements)]
         print(f"Read elements: {elements}")
         return ElementSection(elements)
@@ -760,7 +797,7 @@ class CodeSection(ModuleSection):
     @staticmethod
     def read(f: BytesIO) -> ModuleSection:
         """Reads and returns a code section."""
-        num_code = leb128.u.decode_reader(f)[0]
+        num_code = _read_unsigned_int(f)
         code = [Code.read(f) for _ in range(num_code)]
         print(f"Read code (len {len(code)})")
         return CodeSection(code)
@@ -775,7 +812,7 @@ class DataSection(ModuleSection):
     @staticmethod
     def read(f: BytesIO) -> ModuleSection:
         """Reads and returns a data section."""
-        num_data = leb128.u.decode_reader(f)[0]
+        num_data = _read_unsigned_int(f)
         data = [Data.read(f) for _ in range(num_data)]
         print(f"Read data: {data}")
         return DataSection(data)
@@ -790,7 +827,7 @@ class DataCountSection(ModuleSection):
     @staticmethod
     def read(f: BytesIO) -> ModuleSection:
         """Reads and returns a data count section."""
-        data_count = leb128.u.decode_reader(f)[0]
+        data_count = _read_unsigned_int(f)
         print(f"Read data count: {data_count}")
         return DataCountSection(data_count)
 
@@ -897,14 +934,14 @@ class Module:
         ]
 
         try:
-            section_id = f.read(1)[0]
+            section_id = _read_byte(f)
         except IndexError as e:
             raise EOFError from e
 
         if section_id > len(section_types):
             raise ValueError(f"Unknown section ID {section_id}")
 
-        section_len = leb128.u.decode_reader(f)[0]
+        section_len = _read_unsigned_int(f)
         print(f"Reading section {section_types[section_id]} length {section_len}")
         section_data = BytesIO(f.read(section_len))
 

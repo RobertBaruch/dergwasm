@@ -1,5 +1,9 @@
 """Unit tests for binary.py."""
 
+# pylint: disable=missing-function-docstring,missing-class-docstring
+# pylint: disable=too-many-lines,too-many-public-methods
+# pylint: disable=invalid-name
+
 from io import BytesIO
 
 from absl.testing import absltest, parameterized
@@ -9,6 +13,9 @@ from dergwasm.interpreter import values
 from dergwasm.interpreter.insn import Instruction, InstructionType
 from dergwasm.interpreter.testing import util
 
+
+def nop() -> Instruction:
+    return Instruction(InstructionType.NOP, [], 0, 0)
 
 # class TestModule(unittest.TestCase):
 #     def test_read(self):
@@ -119,8 +126,8 @@ class TableTypeTest(absltest.TestCase):
 
         table_type = binary.TableType.read(f)
         self.assertEqual(table_type.reftype, values.ValueType.FUNCREF)
-        self.assertEqual(table_type.min_limit, 1)
-        self.assertIsNone(table_type.max_limit)
+        self.assertEqual(table_type.limits.min, 1)
+        self.assertIsNone(table_type.limits.max)
 
     def test_read_with_max_limit(self):
         # Test reading a table type with a maximum limit
@@ -129,8 +136,8 @@ class TableTypeTest(absltest.TestCase):
 
         table_type = binary.TableType.read(f)
         self.assertEqual(table_type.reftype, values.ValueType.FUNCREF)
-        self.assertEqual(table_type.min_limit, 1)
-        self.assertEqual(table_type.max_limit, 2)
+        self.assertEqual(table_type.limits.min, 1)
+        self.assertEqual(table_type.limits.max, 2)
 
 
 class MemTypeTest(absltest.TestCase):
@@ -147,8 +154,8 @@ class MemTypeTest(absltest.TestCase):
         f = BytesIO(data)
 
         mem_type = binary.MemType.read(f)
-        self.assertEqual(mem_type.min_limit, 1)
-        self.assertIsNone(mem_type.max_limit)
+        self.assertEqual(mem_type.limits.min, 1)
+        self.assertIsNone(mem_type.limits.max)
 
     def test_read_with_max_limit(self):
         # Test reading a table type with a maximum limit
@@ -156,8 +163,8 @@ class MemTypeTest(absltest.TestCase):
         f = BytesIO(data)
 
         mem_type = binary.MemType.read(f)
-        self.assertEqual(mem_type.min_limit, 1)
-        self.assertEqual(mem_type.max_limit, 2)
+        self.assertEqual(mem_type.limits.min, 1)
+        self.assertEqual(mem_type.limits.max, 2)
 
 
 class GlobalTypeTest(parameterized.TestCase):
@@ -181,10 +188,10 @@ class GlobalTypeTest(parameterized.TestCase):
 
 class FlattenInstructionsTest(parameterized.TestCase):
     @parameterized.named_parameters(
-        ("simple_insn", [util.nop()], [InstructionType.NOP], [1], [0]),
+        ("simple_insn", [nop()], [InstructionType.NOP], [1], [0]),
         (
             "simple_block",
-            [util.i32_block(util.nop(), util.nop())],
+            [util.i32_block(nop(), nop())],
             [
                 InstructionType.BLOCK,
                 InstructionType.NOP,
@@ -196,7 +203,7 @@ class FlattenInstructionsTest(parameterized.TestCase):
         ),
         (
             "nested_block",
-            [util.i32_block(util.nop(), util.i32_block(util.nop()), util.nop())],
+            [util.i32_block(nop(), util.i32_block(nop()), nop())],
             [
                 InstructionType.BLOCK,
                 InstructionType.NOP,
@@ -211,7 +218,7 @@ class FlattenInstructionsTest(parameterized.TestCase):
         ),
         (
             "loop",
-            [util.i32_loop(0, util.nop(), util.nop())],
+            [util.i32_loop(0, nop(), nop())],
             [
                 InstructionType.LOOP,
                 InstructionType.NOP,
@@ -223,7 +230,7 @@ class FlattenInstructionsTest(parameterized.TestCase):
         ),
         (
             "if",
-            [util.if_(util.nop(), util.nop())],
+            [util.if_(nop(), nop())],
             [
                 InstructionType.IF,
                 InstructionType.NOP,
@@ -235,7 +242,7 @@ class FlattenInstructionsTest(parameterized.TestCase):
         ),
         (
             "if_else",
-            [util.if_else([util.nop(), util.nop()], [util.nop(), util.nop()])],
+            [util.if_else([nop(), nop()], [nop(), nop()])],
             [
                 InstructionType.IF,
                 InstructionType.NOP,
