@@ -220,9 +220,7 @@ def call(machine: Machine, instruction: Instruction) -> None:
 
 def call_indirect(machine: Machine, instruction: Instruction) -> None:
     f = machine.get_current_frame()
-    print(f"call_indirect at pc {f.pc}")
     f.pc += 1
-    print(f"   return pc {f.pc}")
     assert isinstance(instruction.operands[0], int)  # tableidx
     assert isinstance(instruction.operands[1], int)  # typeidx
     tableidx = int(instruction.operands[0])
@@ -230,14 +228,12 @@ def call_indirect(machine: Machine, instruction: Instruction) -> None:
     table = machine.get_table(f.module.tableaddrs[tableidx])
     functype = f.module.func_types[typeidx]
     i = _unsigned_i32(machine.pop())  # index
-    print(f"Calling indirect table element {i}")
     if i >= len(table.refs):
         raise RuntimeError(
             f"call_indirect: access out of bounds (index {i}, "
             f"table len {len(table.refs)})"
         )
     funcaddr = table.refs[i]
-    print(f"  Calling indirect table element {i} -> funcaddr {funcaddr}")
     if funcaddr.value is None:
         raise RuntimeError("call_indirect: null reference")
     func = machine.get_func(funcaddr.value)

@@ -2573,15 +2573,13 @@ class InsnEvalTest(parameterized.TestCase):
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 3))
 
     @parameterized.named_parameters(
-        ("#0", 0, 1),
-        ("#1", 1, 2),
+        ("#0", 0, 11),
+        ("#1", 1, 12),
     )
     def test_call_indirect(self, funcidx: int, expected: int):
         self.module_inst.func_types = [FuncType([], []), FuncType([], [ValueType.I32])]
         funcaddr1 = self._add_i32_func(i32_const(1))
-        print(f"Added funcaddr1 = {funcaddr1}")
         funcaddr2 = self._add_i32_func(i32_const(2))
-        print(f"Added funcaddr2 = {funcaddr2}")
         self.module_inst.tableaddrs = [1, 0]
         self.machine.add_table(
             TableInstance(
@@ -2604,12 +2602,80 @@ class InsnEvalTest(parameterized.TestCase):
         funcaddr = self._add_i32_func(
             i32_const(funcidx),
             op2(InstructionType.CALL_INDIRECT, 0, 1),  # table 0, functype 1
+            i32_const(10),
+            noarg(InstructionType.I32_ADD),
         )
-        print(f"Added funcaddr = {funcaddr}, invoking")
         self.machine.invoke_func(funcaddr)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected))
+
+    def test_call_indirect_traps_on_index_out_of_bounds(self):
+        self.module_inst.func_types = [FuncType([], []), FuncType([], [ValueType.I32])]
+        self.module_inst.tableaddrs = [0]
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, Limits(2)),
+                [
+                    Value(ValueType.FUNCREF, None),
+                    Value(ValueType.FUNCREF, None),
+                ],
+            )
+        )
+        funcaddr = self._add_i32_func(
+            i32_const(2),
+            op2(InstructionType.CALL_INDIRECT, 0, 1),  # table 0, functype 1
+            i32_const(10),
+            noarg(InstructionType.I32_ADD),
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "out of bounds"):
+            self.machine.invoke_func(funcaddr)
+
+    def test_call_indirect_traps_on_null_ref(self):
+        self.module_inst.func_types = [FuncType([], []), FuncType([], [ValueType.I32])]
+        self.module_inst.tableaddrs = [0]
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, Limits(2)),
+                [
+                    Value(ValueType.FUNCREF, None),
+                    Value(ValueType.FUNCREF, None),
+                ],
+            )
+        )
+        funcaddr = self._add_i32_func(
+            i32_const(1),
+            op2(InstructionType.CALL_INDIRECT, 0, 1),  # table 0, functype 1
+            i32_const(10),
+            noarg(InstructionType.I32_ADD),
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "null reference"):
+            self.machine.invoke_func(funcaddr)
+
+    def test_call_indirect_traps_on_type_mismatch(self):
+        self.module_inst.func_types = [FuncType([], []), FuncType([], [ValueType.I32])]
+        funcaddr1 = self._add_i32_func(i32_const(1))
+        self.module_inst.tableaddrs = [0]
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, Limits(2)),
+                [
+                    Value(ValueType.FUNCREF, funcaddr1),
+                    Value(ValueType.FUNCREF, funcaddr1),
+                ],
+            )
+        )
+        funcaddr = self._add_i32_func(
+            i32_const(1),
+            op2(InstructionType.CALL_INDIRECT, 0, 0),  # table 0, functype 0
+            i32_const(10),
+            noarg(InstructionType.I32_ADD),
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "type mismatch"):
+            self.machine.invoke_func(funcaddr)
 
 
 if __name__ == "__main__":
