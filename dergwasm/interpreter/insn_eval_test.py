@@ -9,6 +9,7 @@ from absl.testing import absltest, parameterized
 
 from dergwasm.interpreter.binary import (
     FuncType,
+    MemType,
     Module,
     TableType,
     flatten_instructions,
@@ -16,13 +17,14 @@ from dergwasm.interpreter.binary import (
 from dergwasm.interpreter.machine import (
     ElementSegmentInstance,
     GlobalInstance,
+    MemInstance,
     TableInstance,
 )
 from dergwasm.interpreter import machine_impl
 from dergwasm.interpreter import module_instance
 from dergwasm.interpreter import insn_eval
 from dergwasm.interpreter.insn import Instruction, InstructionType
-from dergwasm.interpreter.values import Value, Frame, ValueType
+from dergwasm.interpreter.values import Limits, Value, Frame, ValueType
 from dergwasm.interpreter.machine import ModuleFuncInstance
 from dergwasm.interpreter.testing.util import (
     call,
@@ -118,7 +120,7 @@ class InsnEvalTest(parameterized.TestCase):
         self.machine = machine_impl.MachineImpl()
         self.module = Module()
         self.module_inst = module_instance.ModuleInstance(self.module)
-        self.machine.add_mem(bytearray(65536))
+        self.machine.add_mem(MemInstance(MemType(Limits(1, 10)), bytearray(65536)))
         self.module_inst.memaddrs = [0]
         self.machine.new_frame(Frame(0, [], self.module_inst, 0))
         self.starting_stack_depth = self._stack_depth()
@@ -696,7 +698,7 @@ class InsnEvalTest(parameterized.TestCase):
         self, insn_type: InstructionType, base: int, offset: int, expected: Value
     ):
         self.machine.push(Value(ValueType.I32, base))
-        self.machine.get_mem(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
+        self.machine.get_mem_data(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
 
         insn_eval.eval_insn(self.machine, op2(insn_type, 4, offset))
 
@@ -1004,7 +1006,7 @@ class InsnEvalTest(parameterized.TestCase):
         self, base: int, offset: int, insn_type: InstructionType, expected: Value
     ):
         self.machine.push(Value(ValueType.I32, base))
-        self.machine.get_mem(0)[0:10] = b"\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89"
+        self.machine.get_mem_data(0)[0:10] = b"\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89"
 
         insn_eval.eval_insn(self.machine, op2(insn_type, 4, offset))
 
@@ -1103,14 +1105,14 @@ class InsnEvalTest(parameterized.TestCase):
     ):
         self.machine.push(Value(ValueType.I32, base))
         self.machine.push(Value(ValueType.I32, 0x12345678))
-        self.machine.get_mem(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
+        self.machine.get_mem_data(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
         instruction = Instruction(insn_type, [4, offset], 0, 0)
 
         insn_eval.eval_insn(self.machine, instruction)
 
         self.assertStackDepth(self.starting_stack_depth)
         self.assertEqual(self.machine.get_current_frame().pc, 1)
-        self.assertEqual(self.machine.get_mem(0)[0:10], expected)
+        self.assertEqual(self.machine.get_mem_data(0)[0:10], expected)
 
     @parameterized.named_parameters(
         ("store", InstructionType.I32_STORE),
@@ -1245,13 +1247,13 @@ class InsnEvalTest(parameterized.TestCase):
     ):
         self.machine.push(Value(ValueType.I32, base))
         self.machine.push(Value(ValueType.I64, 0xDDCCBBAA12345678))
-        self.machine.get_mem(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
+        self.machine.get_mem_data(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
 
         instruction = Instruction(insn_type, [4, offset], 0, 0)
 
         insn_eval.eval_insn(self.machine, instruction)
 
-        self.assertEqual(self.machine.get_mem(0)[0:10], expected)
+        self.assertEqual(self.machine.get_mem_data(0)[0:10], expected)
         self.assertStackDepth(self.starting_stack_depth)
         self.assertEqual(self.machine.get_current_frame().pc, 1)
 
@@ -1279,13 +1281,13 @@ class InsnEvalTest(parameterized.TestCase):
     def test_f32_store(self, base: int, offset: int, expected: bytes):
         self.machine.push(Value(ValueType.I32, base))
         self.machine.push(Value(ValueType.F32, 43.58))
-        self.machine.get_mem(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
+        self.machine.get_mem_data(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
 
         insn_eval.eval_insn(self.machine, op2(InstructionType.F32_STORE, 4, offset))
 
         self.assertStackDepth(self.starting_stack_depth)
         self.assertEqual(self.machine.get_current_frame().pc, 1)
-        self.assertEqual(self.machine.get_mem(0)[0:10], expected)
+        self.assertEqual(self.machine.get_mem_data(0)[0:10], expected)
 
     @parameterized.named_parameters(
         ("0 f64.store 0", 0, 0, b"\x0A\xD7\xA3\x70\x3D\xCA\x45\x40\x08\x09"),
@@ -1296,13 +1298,13 @@ class InsnEvalTest(parameterized.TestCase):
     def test_f64_store(self, base: int, offset: int, expected: bytes):
         self.machine.push(Value(ValueType.I32, base))
         self.machine.push(Value(ValueType.F64, 43.58))
-        self.machine.get_mem(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
+        self.machine.get_mem_data(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
 
         insn_eval.eval_insn(self.machine, op2(InstructionType.F64_STORE, 4, offset))
 
         self.assertStackDepth(self.starting_stack_depth)
         self.assertEqual(self.machine.get_current_frame().pc, 1)
-        self.assertEqual(self.machine.get_mem(0)[0:10], expected)
+        self.assertEqual(self.machine.get_mem_data(0)[0:10], expected)
 
     @parameterized.named_parameters(
         (
@@ -1366,7 +1368,7 @@ class InsnEvalTest(parameterized.TestCase):
 
         insn_eval.eval_insn(self.machine, memory_init(1, 0))
 
-        self.assertEqual(self.machine.get_mem(0)[0:5], b"\x00\x00ar\x00")
+        self.assertEqual(self.machine.get_mem_data(0)[0:5], b"\x00\x00ar\x00")
         self.assertStackDepth(self.starting_stack_depth)
         self.assertEqual(self.machine.get_current_frame().pc, 1)
 
@@ -1382,7 +1384,7 @@ class InsnEvalTest(parameterized.TestCase):
 
         insn_eval.eval_insn(self.machine, memory_init(1, 0))
 
-        self.assertEqual(self.machine.get_mem(0)[0:5], b"\x00\x00\x00\x00\x00")
+        self.assertEqual(self.machine.get_mem_data(0)[0:5], b"\x00\x00\x00\x00\x00")
         self.assertStackDepth(self.starting_stack_depth)
         self.assertEqual(self.machine.get_current_frame().pc, 1)
 
@@ -1413,7 +1415,7 @@ class InsnEvalTest(parameterized.TestCase):
             insn_eval.eval_insn(self.machine, memory_init(1, 0))
 
     def test_memory_size(self):
-        self.machine.mems[0] = bytearray(3 * 65536)
+        self.machine.mems[0].data = bytearray(3 * 65536)
 
         insn_eval.eval_insn(self.machine, memory_size(0))
 
@@ -1421,32 +1423,27 @@ class InsnEvalTest(parameterized.TestCase):
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 3))
         self.assertEqual(self.machine.get_current_frame().pc, 1)
 
-    def test_memory_grow(self):
-        self.machine.mems[0][0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
-        self.machine.push(Value(ValueType.I32, 1))
+    @parameterized.named_parameters(
+        ("grow by 1", 1, 1, 2),
+        ("grow by 0", 0, 1, 1),
+        ("grow by 0xFFFF", 0xFFFF, 0xFFFFFFFF, 1),
+        ("grow by 1024", 1024, 0xFFFFFFFF, 1),  # tests max allowed size
+        ("grow by 10", 10, 0xFFFFFFFF, 1),  # tests max limit
+    )
+    def test_memory_grow(self, n: int, expected_orig_size: int, expected_size: int):
+        self.machine.get_mem_data(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
+        self.machine.push(Value(ValueType.I32, n))
 
         insn_eval.eval_insn(self.machine, memory_grow(0))
 
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
-        self.assertEqual(len(self.machine.get_mem(0)), 2 * 65536)
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected_orig_size))
+        self.assertEqual(len(self.machine.get_mem_data(0)), expected_size * 65536)
         self.assertEqual(
-            self.machine.get_mem(0)[0:10], b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
+            self.machine.get_mem_data(0)[0:10],
+            b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09",
         )
-        self.assertStackDepth(self.starting_stack_depth)
-        self.assertEqual(self.machine.get_current_frame().pc, 1)
-
-    def test_memory_grow_fails(self):
-        self.machine.mems[0][0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
-        self.machine.push(Value(ValueType.I32, 1000000))
-
-        insn_eval.eval_insn(self.machine, memory_grow(0))
-
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, MASK32))
-        self.assertEqual(len(self.machine.get_mem(0)), 65536)
-        self.assertEqual(
-            self.machine.get_mem(0)[0:10], b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
-        )
-        self.assertStackDepth(self.starting_stack_depth)
+        self.assertEqual(self.machine.get_mem(0).mem_type.limits.min, expected_size)
         self.assertEqual(self.machine.get_current_frame().pc, 1)
 
     @parameterized.named_parameters(
@@ -1455,14 +1452,14 @@ class InsnEvalTest(parameterized.TestCase):
         ("size zero", 1, 3, 0, b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"),
     )
     def test_memory_copy_with_overlap(self, s: int, d: int, sz: int, expected: bytes):
-        self.machine.mems[0][0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
+        self.machine.get_mem_data(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
         self.machine.push(Value(ValueType.I32, d))
         self.machine.push(Value(ValueType.I32, s))
         self.machine.push(Value(ValueType.I32, sz))
 
         insn_eval.eval_insn(self.machine, memory_copy(0, 0))
 
-        self.assertEqual(self.machine.get_mem(0)[0:10], expected)
+        self.assertEqual(self.machine.get_mem_data(0)[0:10], expected)
         self.assertStackDepth(self.starting_stack_depth)
         self.assertEqual(self.machine.get_current_frame().pc, 1)
 
@@ -1480,7 +1477,7 @@ class InsnEvalTest(parameterized.TestCase):
             insn_eval.eval_insn(self.machine, memory_copy(0, 0))
 
     def test_memory_fill(self):
-        self.machine.mems[0][0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
+        self.machine.get_mem_data(0)[0:10] = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
         self.machine.push(Value(ValueType.I32, 1))  # dest
         self.machine.push(Value(ValueType.I32, 0x12FF))  # value
         self.machine.push(Value(ValueType.I32, 4))  # size
@@ -1488,7 +1485,8 @@ class InsnEvalTest(parameterized.TestCase):
         insn_eval.eval_insn(self.machine, memory_fill(0))
 
         self.assertEqual(
-            self.machine.get_mem(0)[0:10], b"\x00\xFF\xFF\xFF\xFF\x05\x06\x07\x08\x09"
+            self.machine.get_mem_data(0)[0:10],
+            b"\x00\xFF\xFF\xFF\xFF\x05\x06\x07\x08\x09",
         )
         self.assertStackDepth(self.starting_stack_depth)
         self.assertEqual(self.machine.get_current_frame().pc, 1)
@@ -1529,19 +1527,19 @@ class InsnEvalTest(parameterized.TestCase):
         self.module_inst.tableaddrs = [2, 1, 0]
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, 10 + i) for i in range(3)],
             )
         )
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, 20 + i) for i in range(3)],
             )
         )
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, 30 + i) for i in range(3)],
             )
         )
@@ -1558,7 +1556,7 @@ class InsnEvalTest(parameterized.TestCase):
         self.module_inst.tableaddrs = [0]
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, None) for _ in range(3)],
             )
         )
@@ -1578,19 +1576,19 @@ class InsnEvalTest(parameterized.TestCase):
         self.module_inst.tableaddrs = [2, 1, 0]
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, 10 + i) for i in range(3)],
             )
         )
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, 20 + i) for i in range(3)],
             )
         )
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, 30 + i) for i in range(3)],
             )
         )
@@ -1611,7 +1609,7 @@ class InsnEvalTest(parameterized.TestCase):
         self.module_inst.tableaddrs = [0]
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, None) for _ in range(3)],
             )
         )
@@ -1660,19 +1658,19 @@ class InsnEvalTest(parameterized.TestCase):
         self.module_inst.tableaddrs = [2, 1, 0]
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, None) for _ in range(5)],
             )
         )
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, None) for _ in range(5)],
             )
         )
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, None) for _ in range(5)],
             )
         )
@@ -1724,7 +1722,7 @@ class InsnEvalTest(parameterized.TestCase):
         self.module_inst.tableaddrs = [0]
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, None) for _ in range(5)],
             )
         )
@@ -1792,13 +1790,13 @@ class InsnEvalTest(parameterized.TestCase):
         self.module_inst.tableaddrs = [1, 0]
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, 10 + i) for i in range(5)],
             )
         )
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, 20 + i) for i in range(5)],
             )
         )
@@ -1835,13 +1833,13 @@ class InsnEvalTest(parameterized.TestCase):
         self.module_inst.tableaddrs = [1, 0]
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, None) for _ in range(10)],
             )
         )
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, None) for _ in range(5)],
             )
         )
@@ -1863,13 +1861,13 @@ class InsnEvalTest(parameterized.TestCase):
         self.module_inst.tableaddrs = [1, 0]
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, None) for _ in range(5)],
             )
         )
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, None) for _ in range(10)],
             )
         )
@@ -1921,13 +1919,13 @@ class InsnEvalTest(parameterized.TestCase):
         self.module_inst.tableaddrs = [1, 0]
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, None) for _ in range(5)],
             )
         )
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, None) for _ in range(5)],
             )
         )
@@ -1959,13 +1957,13 @@ class InsnEvalTest(parameterized.TestCase):
         self.module_inst.tableaddrs = [1, 0]
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, None) for _ in range(10)],
             )
         )
         self.machine.add_table(
             TableInstance(
-                TableType(ValueType.FUNCREF, 0, None),
+                TableType(ValueType.FUNCREF, Limits(0)),
                 [Value(ValueType.FUNCREF, None) for _ in range(5)],
             )
         )
@@ -1975,9 +1973,61 @@ class InsnEvalTest(parameterized.TestCase):
         self.machine.push(Value(ValueType.I32, n))
 
         with self.assertRaisesRegex(RuntimeError, "out of bounds"):
-            insn_eval.eval_insn(
-                self.machine, op1(InstructionType.TABLE_FILL, tableidx)
+            insn_eval.eval_insn(self.machine, op1(InstructionType.TABLE_FILL, tableidx))
+
+    @parameterized.named_parameters(
+        (
+            "grow 0 by 2",
+            0,
+            2,
+            Value(ValueType.FUNCREF, 1),
+            1,
+            3,
+            [None, None, None, 1, 1],
+        ),
+        ("grow 1 by 2", 1, 2, Value(ValueType.FUNCREF, 1), 0, 1, [None, 1, 1]),
+        ("grow 1 by 0", 1, 0, Value(ValueType.FUNCREF, 1), 0, 1, [None]),
+        ("grow 1 by 20", 1, 20, Value(ValueType.FUNCREF, 1), 0, 0xFFFFFFFF, [None]),
+    )
+    def test_table_grow(
+        self,
+        tableidx: int,
+        n: int,
+        v: Value,
+        expected_tableidx: int,
+        expected_old_size: int,
+        expected_content: list[int | None],
+    ):
+        self.module_inst.tableaddrs = [1, 0]
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, Limits(1, 10)),
+                [Value(ValueType.FUNCREF, None) for _ in range(1)],
             )
+        )
+        self.machine.add_table(
+            TableInstance(
+                TableType(ValueType.FUNCREF, Limits(3, 20)),
+                [Value(ValueType.FUNCREF, None) for _ in range(3)],
+            )
+        )
+
+        self.machine.push(v)
+        self.machine.push(Value(ValueType.I32, n))
+
+        insn_eval.eval_insn(self.machine, op1(InstructionType.TABLE_GROW, tableidx))
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected_old_size))
+        self.assertEqual(
+            self.machine.tables[expected_tableidx].refs,
+            [Value(ValueType.FUNCREF, v) for v in expected_content],
+        )
+        self.assertEqual(
+            self.machine.tables[expected_tableidx].table_type.limits.min,
+            len(expected_content),
+        )
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
 
     @parameterized.named_parameters(
         ("global.get 0", 0, Value(ValueType.I32, 1)),

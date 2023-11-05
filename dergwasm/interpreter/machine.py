@@ -44,6 +44,13 @@ class TableInstance(binary.Table):
 
 
 @dataclasses.dataclass
+class MemInstance(binary.Mem):
+    """The runtime representation of a memory."""
+
+    data: bytearray
+
+
+@dataclasses.dataclass
 class GlobalInstance(binary.Global):
     """The runtime representation of a global variable."""
 
@@ -127,7 +134,11 @@ class Machine(abc.ABC):
         """Adds a memory to the machine and returns its index."""
 
     @abc.abstractmethod
-    def get_mem(self, memidx: int) -> bytearray:
+    def get_mem(self, memidx: int) -> MemInstance:
+        """Returns the memory at the given index."""
+
+    @abc.abstractmethod
+    def get_mem_data(self, memidx: int) -> bytearray:
         """Returns the memory at the given index."""
 
     @abc.abstractmethod

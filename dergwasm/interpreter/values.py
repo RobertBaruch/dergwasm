@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 @enum.unique
 class ValueType(enum.Enum):
     """Value types."""
+
     I32 = 0x7F  # value = int
     I64 = 0x7E  # value = int
     F32 = 0x7D  # value = float
@@ -54,6 +55,7 @@ class RefVal:
 
     If the addr is None, then the reference is null.
     """
+
     val_type: RefValType
     addr: int | None
 
@@ -113,3 +115,19 @@ class Label(StackValue):
 
     arity: int
     continuation: int  # offset into the function's body to run next.
+
+
+@dataclasses.dataclass
+class Limits:
+    """Limits on a table or memory."""
+
+    min: int
+    max: int | None = None
+
+    def is_valid(self, value: int) -> bool:
+        """Returns True if the value is valid for this limit."""
+        return (
+            self.min <= value <= self.max and self.max >= self.min
+            if self.max is not None
+            else self.min <= value
+        )

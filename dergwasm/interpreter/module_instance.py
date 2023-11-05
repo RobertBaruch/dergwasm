@@ -8,6 +8,7 @@ from dergwasm.interpreter import binary
 from dergwasm.interpreter import insn_eval
 from dergwasm.interpreter.machine import (
     Machine,
+    MemInstance,
     ModuleFuncInstance,
     TableInstance,
     GlobalInstance,
@@ -77,7 +78,9 @@ class ModuleInstance:
             binary.MemorySection
         ]
         for memory_spec in memory_section.memories:
-            mem = bytearray(memory_spec.mem_type.min_limit * 65536)
+            mem = MemInstance(
+                memory_spec.mem_type, bytearray(memory_spec.mem_type.min_limit * 65536)
+            )  # zero filled
             self.memaddrs.append(machine_inst.add_mem(mem))
 
         # Allocate globals.

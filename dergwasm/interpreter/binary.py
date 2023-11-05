@@ -59,8 +59,7 @@ class TableType(ExternalType):
     """The type of a table."""
 
     reftype: values.ValueType  # can only be FUNCREF or EXTERNREF
-    min_limit: int
-    max_limit: int | None
+    limits: values.Limits
 
     @staticmethod
     def read(f: BytesIO) -> TableType:
@@ -74,18 +73,17 @@ class TableType(ExternalType):
             max_limit = leb128.u.decode_reader(f)[0]
         else:
             raise ValueError(f"Unknown tabletype limit tag {tag:02X}")
-        return TableType(reftype, min_limit, max_limit)
+        return TableType(reftype, values.Limits(min_limit, max_limit))
 
     def __repr__(self) -> str:
-        return f"TableType({self.reftype}, {self.min_limit}, {self.max_limit})"
+        return f"TableType({self.reftype}, {self.limits.min}, {self.limits.max})"
 
 
 @dataclasses.dataclass
 class MemType(ExternalType):
     """The type of a memory."""
 
-    min_limit: int
-    max_limit: int | None
+    limits: values.Limits
 
     @staticmethod
     def read(f: BytesIO) -> MemType:
@@ -98,10 +96,10 @@ class MemType(ExternalType):
             max_limit = leb128.u.decode_reader(f)[0]
         else:
             raise ValueError(f"Unknown memtype limit tag {tag:02X}")
-        return MemType(min_limit, max_limit)
+        return MemType(values.Limits(min_limit, max_limit))
 
     def __repr__(self) -> str:
-        return f"MemType({self.min_limit}, {self.max_limit})"
+        return f"MemType({self.limits.min}, {self.limits.max})"
 
 
 @dataclasses.dataclass

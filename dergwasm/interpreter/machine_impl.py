@@ -16,9 +16,10 @@ class MachineImpl(machine.Machine):
     stack_: stack.Stack
     funcs: list[machine.FuncInstance]
     tables: list[machine.TableInstance]
-    mems: list[bytearray]
+    mems: list[machine.MemInstance]
     global_vars: list[machine.GlobalInstance]
-    datas: list[bytes | None]
+    datas: list[bytes | None]  # None is for dropped data
+    # None is for dropped element segments
     element_segments: list[machine.ElementSegmentInstance | None]
 
     def __init__(self) -> None:
@@ -32,7 +33,8 @@ class MachineImpl(machine.Machine):
         self.element_segments = []
 
     def get_max_allowed_memory_pages(self) -> int:
-        # Here I'm just allowing 64k x 1k = 64M of memory.
+        # Here I'm just allowing 64k x 1k = 64M of memory. The WASM spec allows more,
+        # 64k x 64k = 4G, but that's a lot of memory to allocate.
         return 1024
 
     def push(self, value: values.StackValue) -> None:
@@ -78,9 +80,7 @@ class MachineImpl(machine.Machine):
                 raise RuntimeError(
                     "Unexpected RETURN instruction in an initialization expression"
                 )
-
-            else:
-                insn_eval.eval_insn(self, instruction)
+            insn_eval.eval_insn(self, instruction)
 
     def get_current_frame(self) -> values.Frame:
         if self.current_frame is None:
@@ -124,12 +124,15 @@ class MachineImpl(machine.Machine):
     def get_table(self, tableidx: int) -> machine.TableInstance:
         return self.tables[tableidx]
 
-    def add_mem(self, mem: bytearray) -> int:
+    def add_mem(self, mem: machine.MemInstance) -> int:
         self.mems.append(mem)
         return len(self.mems) - 1
 
-    def get_mem(self, memidx: int) -> bytearray:
+    def get_mem(self, memidx: int) -> machine.MemInstance:
         return self.mems[memidx]
+
+    def get_mem_data(self, memidx: int) -> bytearray:
+        return self.mems[memidx].data
 
     def add_global(self, global_: machine.GlobalInstance) -> int:
         self.global_vars.append(global_)

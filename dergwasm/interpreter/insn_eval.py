@@ -402,7 +402,22 @@ def table_copy(machine: Machine, instruction: Instruction) -> None:
 
 
 def table_grow(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    assert isinstance(instruction.operands[0], int)  # tableidx
+    f = machine.get_current_frame()
+    tableidx = int(instruction.operands[0])
+    table = machine.get_table(f.module.tableaddrs[tableidx])
+    sz = len(table.refs)
+    n = _unsigned_i32(machine.pop())  # amount to grow by
+    val = machine.pop()
+    new_limits = values.Limits(sz + n, table.table_type.limits.max)
+    if sz + n > 0xFFFFFFFF or not new_limits.is_valid(sz + n):
+        machine.push(values.Value(values.ValueType.I32, 0xFFFFFFFF))
+        f.pc += 1
+        return
+    table.refs.extend([val] * n)
+    table.table_type.limits = new_limits
+    machine.push(values.Value(values.ValueType.I32, sz))  # original size
+    f.pc += 1
 
 
 def table_size(machine: Machine, instruction: Instruction) -> None:
@@ -445,7 +460,7 @@ def i32_load(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # memaddr
     ea = i + int(operands[1])  # effective address
-    mem = machine.get_mem(a)
+    mem = machine.get_mem_data(a)
     if ea + 4 > len(mem):
         raise RuntimeError(
             f"i32.load: access out of bounds: base {i} offset {operands[1]}"
@@ -470,7 +485,7 @@ def i64_load(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # memaddr
     ea = i + int(operands[1])  # effective address
-    mem = machine.get_mem(a)
+    mem = machine.get_mem_data(a)
     if ea + 8 > len(mem):
         raise RuntimeError(
             f"i64.load: access out of bounds: base {i} offset {operands[1]}"
@@ -495,7 +510,7 @@ def f32_load(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # memaddr
     ea = i + int(operands[1])  # effective address
-    mem = machine.get_mem(a)
+    mem = machine.get_mem_data(a)
     if ea + 4 > len(mem):
         raise RuntimeError(
             f"f32.load: access out of bounds: base {i} offset {operands[1]}"
@@ -520,7 +535,7 @@ def f64_load(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # memaddr
     ea = i + int(operands[1])  # effective address
-    mem = machine.get_mem(a)
+    mem = machine.get_mem_data(a)
     if ea + 8 > len(mem):
         raise RuntimeError(
             f"f32.load: access out of bounds: base {i} offset {operands[1]}"
@@ -539,7 +554,7 @@ def _isz_loadN_sx(
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # memaddr
     ea = i + int(operands[1])  # effective address
-    mem = machine.get_mem(a)
+    mem = machine.get_mem_data(a)
 
     numbytes = n // 8
     if ea + numbytes > len(mem):
@@ -628,7 +643,7 @@ def i32_store(machine: Machine, instruction: Instruction) -> None:
     operands = instruction.operands
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
-    mem = machine.get_mem(a)
+    mem = machine.get_mem_data(a)
     c = _unsigned_i32(machine.pop())  # value
     i = _unsigned_i32(machine.pop())  # base
     ea = i + int(operands[1])  # effective address
@@ -653,7 +668,7 @@ def i64_store(machine: Machine, instruction: Instruction) -> None:
     operands = instruction.operands
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
-    mem = machine.get_mem(a)
+    mem = machine.get_mem_data(a)
     c = _unsigned_i64(machine.pop())  # value
     i = _unsigned_i32(machine.pop())  # base
     ea = i + int(operands[1])  # effective address
@@ -670,7 +685,7 @@ def f32_store(machine: Machine, instruction: Instruction) -> None:
     operands = instruction.operands
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
-    mem = machine.get_mem(a)
+    mem = machine.get_mem_data(a)
     c = float(cast(values.Value, machine.pop()).value)  # value
     i = _unsigned_i32(machine.pop())  # base
     ea = i + int(operands[1])  # effective address
@@ -687,7 +702,7 @@ def f64_store(machine: Machine, instruction: Instruction) -> None:
     operands = instruction.operands
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
-    mem = machine.get_mem(a)
+    mem = machine.get_mem_data(a)
     c = float(cast(values.Value, machine.pop()).value)  # value
     i = _unsigned_i32(machine.pop())  # base
     ea = i + int(operands[1])  # effective address
@@ -712,7 +727,7 @@ def i32_store8(machine: Machine, instruction: Instruction) -> None:
     operands = instruction.operands
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
-    mem = machine.get_mem(a)
+    mem = machine.get_mem_data(a)
     c = _unsigned_i32(machine.pop())  # value
     i = _unsigned_i32(machine.pop())  # base
     ea = i + int(operands[1])  # effective address
@@ -737,7 +752,7 @@ def i32_store16(machine: Machine, instruction: Instruction) -> None:
     operands = instruction.operands
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
-    mem = machine.get_mem(a)
+    mem = machine.get_mem_data(a)
     c = _unsigned_i32(machine.pop())  # value
     i = _unsigned_i32(machine.pop())  # base
     ea = i + int(operands[1])  # effective address
@@ -762,7 +777,7 @@ def i64_store8(machine: Machine, instruction: Instruction) -> None:
     operands = instruction.operands
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
-    mem = machine.get_mem(a)
+    mem = machine.get_mem_data(a)
     c = _unsigned_i64(machine.pop())  # value
     i = _unsigned_i32(machine.pop())  # base
     ea = i + int(operands[1])  # effective address
@@ -787,7 +802,7 @@ def i64_store16(machine: Machine, instruction: Instruction) -> None:
     operands = instruction.operands
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
-    mem = machine.get_mem(a)
+    mem = machine.get_mem_data(a)
     c = _unsigned_i64(machine.pop())  # value
     i = _unsigned_i32(machine.pop())  # base
     ea = i + int(operands[1])  # effective address
@@ -812,7 +827,7 @@ def i64_store32(machine: Machine, instruction: Instruction) -> None:
     operands = instruction.operands
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
-    mem = machine.get_mem(a)
+    mem = machine.get_mem_data(a)
     c = _unsigned_i64(machine.pop())  # value
     i = _unsigned_i32(machine.pop())  # base
     ea = i + int(operands[1])  # effective address
@@ -828,7 +843,7 @@ def memory_size(machine: Machine, instruction: Instruction) -> None:
     assert isinstance(instruction.operands[0], int)  # memindex = 0
     f = machine.get_current_frame()
     ma = f.module.memaddrs[instruction.operands[0]]
-    mem = machine.get_mem(ma)
+    mem = machine.get_mem_data(ma)
     machine.push(values.Value(values.ValueType.I32, len(mem) // 65536))
     f.pc += 1
 
@@ -838,14 +853,21 @@ def memory_grow(machine: Machine, instruction: Instruction) -> None:
     f = machine.get_current_frame()
     ma = f.module.memaddrs[instruction.operands[0]]
     mem = machine.get_mem(ma)
-    sz = len(mem) // 65536
+    sz = len(mem.data) // 65536
     n = _unsigned_i32(machine.pop())  # page growth amount
-    if sz + n > machine.get_max_allowed_memory_pages():
+    new_limits = values.Limits(sz + n, mem.mem_type.limits.max)
+    if (
+        sz + n > 0xFFFF
+        or sz + n > machine.get_max_allowed_memory_pages()
+        or not new_limits.is_valid(sz + n)
+    ):
         machine.push(values.Value(values.ValueType.I32, 0xFFFFFFFF))
         f.pc += 1
         return
-    mem.extend(bytearray(n * 65536))
-    machine.push(values.Value(values.ValueType.I32, sz))
+
+    mem.mem_type.limits = new_limits
+    mem.data.extend(bytearray(n * 65536))  # extend with zeros
+    machine.push(values.Value(values.ValueType.I32, sz))  # original size
     f.pc += 1
 
 
@@ -858,7 +880,7 @@ def memory_init(machine: Machine, instruction: Instruction) -> None:
 
     curr_frame = machine.get_current_frame()
     ma = curr_frame.module.memaddrs[operands[1]]
-    mem = machine.get_mem(ma)
+    mem = machine.get_mem_data(ma)
     da = curr_frame.module.dataaddrs[operands[0]]
     data = machine.get_data(da)
     n = _unsigned_i32(machine.pop())  # data size, i32
@@ -899,7 +921,7 @@ def memory_copy(machine: Machine, instruction: Instruction) -> None:
     # which the destination. But for now, they are both equal to eqch other and equal
     # to 0.
     ma = curr_frame.module.memaddrs[operands[1]]
-    mem = machine.get_mem(ma)
+    mem = machine.get_mem_data(ma)
     if s + n > len(mem):
         raise RuntimeError("memory.copy: source is out of bounds")
     if d + n > len(mem):
@@ -918,7 +940,7 @@ def memory_fill(machine: Machine, instruction: Instruction) -> None:
     d = _unsigned_i32(machine.pop())  # destination, i32
     curr_frame = machine.get_current_frame()
     ma = curr_frame.module.memaddrs[operands[0]]
-    mem = machine.get_mem(ma)
+    mem = machine.get_mem_data(ma)
     if d + n > len(mem):
         raise RuntimeError("memory.fill: destination is out of bounds")
     if n > 0:
