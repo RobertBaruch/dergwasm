@@ -5,6 +5,7 @@
 # pylint: disable=invalid-name
 
 import math
+from typing import cast
 
 from dergwasm.interpreter import binary
 from dergwasm.interpreter import machine
@@ -106,10 +107,10 @@ def run() -> None:
         )
     )
 
-    module = binary.Module.from_file("C:/Users/rober/Downloads/program.wasm")
+    module = binary.Module.from_file("F:/dergwasm/index.wasm")
     print("Required imports to the module:")
-    import_section: binary.ImportSection = module.sections[binary.ImportSection]
-    types_section: binary.TypeSection = module.sections[binary.TypeSection]
+    import_section = cast(binary.ImportSection, module.sections[binary.ImportSection])
+    types_section = cast(binary.TypeSection, module.sections[binary.TypeSection])
     for import_ in import_section.imports:
         t = (
             types_section.types[import_.desc]
@@ -143,7 +144,10 @@ def run() -> None:
     for export, val in module_inst.exports.items():
         print(f"{export}: {val}")
         if val.val_type == values.RefValType.EXTERN_FUNC:
-            print(f"  = {machine_impl.get_func(val.addr).functype}")
+            if val.addr is None:
+                print("  = null ref")
+            else:
+                print(f"  = {machine_impl.get_func(val.addr).functype}")
 
     # print("Functions in the machine:")
     # for i, f in enumerate(machine_impl.funcs):
@@ -153,11 +157,13 @@ def run() -> None:
     #     ff = machine_impl.get_func(f)
     #     print(f"{i}: {f} = {type(ff)}: {ff.functype}")
 
-    draw_addr = module_inst.exports["draw"].addr
+    draw_addr = module_inst.exports["update"].addr
     print(f"Invoking function at machine funcaddr {draw_addr}")
+    assert draw_addr is not None
     draw = machine_impl.get_func(draw_addr)
     assert isinstance(draw, machine.ModuleFuncInstance)
 
+    machine_impl.push(values.Value(values.ValueType.F64, 1000))
     machine_impl.invoke_func(draw_addr)
 
 

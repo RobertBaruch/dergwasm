@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING, Callable, Type
 from dergwasm.interpreter import binary
 
 if TYPE_CHECKING:
-    import module_instance
-    import values
-    import insn
+    from dergwasm.interpreter import module_instance
+    from dergwasm.interpreter import values
+    from dergwasm.interpreter import insn
 
 
 @dataclasses.dataclass
@@ -92,7 +92,7 @@ class Machine(abc.ABC):
         """Execute the instructions until RETURN or falling off end."""
 
     @abc.abstractmethod
-    def execute_expr(self, seq: list[insn.Instruction]) -> None:
+    def execute_expr(self, expr: list[insn.Instruction]) -> None:
         """Execute the instructions until falling off end. Requires a frame."""
 
     @abc.abstractmethod
@@ -122,6 +122,7 @@ class Machine(abc.ABC):
         The function must be a module function.
         """
 
+    @abc.abstractmethod
     def add_hostfunc(self, hostfunc: Callable) -> int:
         """Adds a host function to the machine and returns its address."""
 
@@ -162,7 +163,7 @@ class Machine(abc.ABC):
         """Adds data to the machine and returns its address."""
 
     @abc.abstractmethod
-    def get_data(self, dataaddr: int) -> bytearray:
+    def get_data(self, dataaddr: int) -> bytes | None:
         """Returns the data at the given address."""
 
     @abc.abstractmethod
@@ -174,7 +175,7 @@ class Machine(abc.ABC):
         """Adds an element segment to the machine and returns its address."""
 
     @abc.abstractmethod
-    def get_element(self, elementaddr: int) -> ElementSegmentInstance:
+    def get_element(self, elementaddr: int) -> ElementSegmentInstance | None:
         """Returns the element segment at the given address."""
 
     @abc.abstractmethod

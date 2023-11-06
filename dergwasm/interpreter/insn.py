@@ -920,8 +920,11 @@ class Instruction:
                 operands.append(str(operand))
         return (
             f"{'  '*indents}{INSTRUCTION_TYPE_STRINGS[self.instruction_type]} "
-            f"({', '.join(operands)})\n"
+            f"({', '.join(operands)})"
         )
+
+    def __repr__(self) -> str:
+        return self.to_str(0)
 
 
 @dataclasses.dataclass

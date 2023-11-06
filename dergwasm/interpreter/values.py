@@ -4,7 +4,7 @@ from __future__ import annotations  # For PEP563 - postponed evaluation of annot
 
 import dataclasses
 import enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from dergwasm.interpreter import module_instance
@@ -94,6 +94,11 @@ class Value(StackValue):
 
     value_type: ValueType
     value: int | float | None | RefVal
+
+    def intval(self) -> int:
+        """Returns the value's int value. Must be an int."""
+        assert isinstance(self.value, int)
+        return cast(int, self.value)
 
 
 @dataclasses.dataclass

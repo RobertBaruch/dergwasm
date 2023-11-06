@@ -26,7 +26,7 @@ class ModuleInstance:
     # (the "machine").
     module: binary.Module
     func_types: list[binary.FuncType]
-    funcaddrs: list[int]  # Module's func idx -> Machine's func "addr" (idx)
+    funcaddrs: list[int]  # Module's func idx -> Machine's func addr
     tableaddrs: list[int]
     memaddrs: list[int]
     globaladdrs: list[int]
@@ -47,6 +47,10 @@ class ModuleInstance:
 
     def allocate(self, machine_inst: Machine, externvals: list[values.RefVal]) -> None:
         """Allocates the module."""
+
+        # Copy over the func_types.
+        type_section: binary.TypeSection = self.module.sections[binary.TypeSection]
+        self.func_types = type_section.types
 
         # Allocate functions.
         function_section: binary.FunctionSection = self.module.sections[

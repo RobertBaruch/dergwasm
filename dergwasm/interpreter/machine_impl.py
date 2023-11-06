@@ -1,6 +1,6 @@
 """Concrete implementation of the machine interface."""
 
-from typing import Type
+from typing import Callable, Type, cast
 
 from dergwasm.interpreter import stack
 from dergwasm.interpreter import machine
@@ -69,12 +69,14 @@ class MachineImpl(machine.Machine):
         # Pop off the current frame.
         self.pop()
         # Restore the next frame as the current frame.
-        self.current_frame = self.stack_.get_topmost_value_of_type(values.Frame)
+        self.current_frame = cast(
+            values.Frame, self.stack_.get_topmost_value_of_type(values.Frame)
+        )
         # Push the results back on the stack
         for v in reversed(results):
             self.push(v)
 
-    def execute_expr(self, expr: list[Instruction]) -> list[Instruction]:
+    def execute_expr(self, expr: list[Instruction]) -> None:
         """Execute the instructions until falling off end."""
         self.get_current_frame().pc = 0
         while self.get_current_frame().pc < len(expr):
@@ -85,9 +87,14 @@ class MachineImpl(machine.Machine):
                 )
             insn_eval.eval_insn(self, instruction)
 
+    def add_hostfunc(self, hostfunc: Callable) -> int:
+        raise NotImplementedError()
+
     def get_current_frame(self) -> values.Frame:
         if self.current_frame is None:
-            self.current_frame = self.stack_.get_topmost_value_of_type(values.Frame)
+            self.current_frame = cast(
+                values.Frame, self.stack_.get_topmost_value_of_type(values.Frame)
+            )
         return self.current_frame
 
     def new_frame(self, frame: values.Frame) -> None:
@@ -113,7 +120,9 @@ class MachineImpl(machine.Machine):
         f = self.funcs[funcaddr]
         assert isinstance(f, machine.ModuleFuncInstance)
         func_type = f.functype
-        local_vars: list[values.Value] = [self.pop() for _ in func_type.parameters]
+        local_vars: list[values.Value] = [
+            cast(values.Value, self.pop()) for _ in func_type.parameters
+        ]
         local_vars.extend([values.StackValue.default(v) for v in f.local_var_types])
         self.new_frame(values.Frame(len(func_type.results), local_vars, f.module, 0))
         self.push(values.Label(len(func_type.results), len(f.body)))
@@ -145,13 +154,13 @@ class MachineImpl(machine.Machine):
         self.global_vars[globaladdr].value = value
 
     def get_global(self, globaladdr: int) -> machine.GlobalInstance:
-        return self.global_vars[globaladdr].value
+        return self.global_vars[globaladdr]
 
     def add_data(self, data: bytes) -> int:
         self.datas.append(data)
         return len(self.datas) - 1
 
-    def get_data(self, dataaddr: int) -> bytes:
+    def get_data(self, dataaddr: int) -> bytes | None:
         return self.datas[dataaddr]
 
     def drop_data(self, dataaddr: int) -> None:
@@ -161,7 +170,7 @@ class MachineImpl(machine.Machine):
         self.element_segments.append(element)
         return len(self.element_segments) - 1
 
-    def get_element(self, elementaddr: int) -> machine.ElementSegmentInstance:
+    def get_element(self, elementaddr: int) -> machine.ElementSegmentInstance | None:
         return self.element_segments[elementaddr]
 
     def drop_element(self, elementaddr: int) -> None:

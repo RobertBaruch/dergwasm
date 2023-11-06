@@ -26,9 +26,8 @@ def _unsigned_i32(v: values.Value) -> int:
 
     Only necessary because Python ints are bignums.
     """
-    assert isinstance(v.value, int)
     assert v.value_type == values.ValueType.I32
-    return int(cast(values.Value, v).value) & MASK32
+    return v.intval() & MASK32
 
 
 def _unsigned_i64(v: values.Value) -> int:
@@ -36,9 +35,8 @@ def _unsigned_i64(v: values.Value) -> int:
 
     Only necessary because Python ints are bignums.
     """
-    assert isinstance(v.value, int)
     assert v.value_type == values.ValueType.I64
-    return int(cast(values.Value, v).value) & MASK64
+    return v.intval() & MASK64
 
 
 def _signed_i32(v: values.Value) -> int:
@@ -70,11 +68,10 @@ def nop(machine: Machine, instruction: Instruction) -> None:
 
 def _block(machine: Machine, block_operand: Block, continuation_pc: int) -> None:
     f = machine.get_current_frame()
-    block_func_type = block_operand.block_type
-    if isinstance(block_func_type, int):
-        block_func_type = f.module.func_types[block_func_type]
-    elif block_func_type is not None:
-        block_func_type = FuncType([], [block_func_type])
+    if isinstance(block_operand.block_type, int):
+        block_func_type = f.module.func_types[block_operand.block_type]
+    elif block_operand.block_type is not None:
+        block_func_type = FuncType([], [block_operand.block_type])
     else:
         block_func_type = FuncType([], [])
 
@@ -226,9 +223,11 @@ def call_indirect(machine: Machine, instruction: Instruction) -> None:
     assert isinstance(instruction.operands[0], int)  # typeidx
     tableidx = int(instruction.operands[1])
     typeidx = int(instruction.operands[0])
+    print(f"call_indirect: tableidx={tableidx}, typeidx={typeidx}")
     table = machine.get_table(f.module.tableaddrs[tableidx])
     functype = f.module.func_types[typeidx]
     i = _unsigned_i32(machine.pop())  # index
+    print(f"    index={i}")
     if i >= len(table.refs):
         raise RuntimeError(
             f"call_indirect: access out of bounds (index {i}, "
@@ -871,6 +870,7 @@ def memory_grow(machine: Machine, instruction: Instruction) -> None:
     mem = machine.get_mem(ma)
     sz = len(mem.data) // 65536
     n = _unsigned_i32(machine.pop())  # page growth amount
+    print(f"memory.grow requested from {sz} by {n} pages to {sz+n}")
     new_limits = values.Limits(sz + n, mem.mem_type.limits.max)
     if (
         sz + n > 0xFFFF
@@ -2297,7 +2297,7 @@ def i8x16_avgr_u(machine: Machine, instruction: Instruction) -> None:
 def eval_insn(machine: Machine, instruction: Instruction) -> None:
     """Evaluates an instruction."""
     try:
-        # print(f"{instruction} {instruction.operands}")
+        print(f"[{machine.get_current_frame().pc}] {instruction}")
         INSTRUCTION_FUNCS[instruction.instruction_type](machine, instruction)
     except NotImplementedError:
         print("Instruction not implemented:", instruction)
