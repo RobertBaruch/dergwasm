@@ -87,19 +87,21 @@ def _block(machine: Machine, block_operand: Block, continuation_pc: int) -> None
 
 def block(machine: Machine, instruction: Instruction) -> None:
     operands = instruction.operands
-    block_operand: Block = operands[0]
+    assert isinstance(operands[0], Block)
+    block_operand = operands[0]
     _block(machine, block_operand, instruction.continuation_pc)
     machine.get_current_frame().pc += 1
 
 
 def loop(machine: Machine, instruction: Instruction) -> None:
     f = machine.get_current_frame()
-    block_operand: Block = instruction.operands[0]
-    block_func_type = block_operand.block_type
-    if isinstance(block_func_type, int):
-        block_func_type = f.module.func_types[block_func_type]
-    elif block_func_type is not None:
-        block_func_type = FuncType([], [block_func_type])
+    operands = instruction.operands
+    assert isinstance(operands[0], Block)
+    block_operand = operands[0]
+    if isinstance(block_operand.block_type, int):
+        block_func_type = f.module.func_types[block_operand.block_type]
+    elif block_operand.block_type is not None:
+        block_func_type = FuncType([], [block_operand.block_type])
     else:
         block_func_type = FuncType([], [])
 
@@ -114,8 +116,8 @@ def loop(machine: Machine, instruction: Instruction) -> None:
 
 def if_(machine: Machine, instruction: Instruction) -> None:
     assert isinstance(instruction.operands[0], Block)
-    block_operand: Block = instruction.operands[0]
-    cond: values.Value = machine.pop()
+    block_operand = instruction.operands[0]
+    cond = machine.pop_value()
     if cond.value:
         _block(machine, block_operand, instruction.continuation_pc)
         machine.get_current_frame().pc += 1
@@ -157,11 +159,11 @@ def end(machine: Machine, instruction: Instruction) -> None:
 
 
 def _br(machine: Machine, level: int) -> None:
-    label: values.Label = machine.get_nth_value_of_type(level, values.Label)
+    label = machine.get_nth_value_of_type(level, values.Label)
     n = label.arity
 
     # save the top n values on the stack
-    vals = [machine.pop() for _ in range(n)]
+    vals = [machine.pop_value() for _ in range(n)]
     # pop everything up to the label
     while level >= 0:
         value = machine.pop()
@@ -185,7 +187,7 @@ def br(machine: Machine, instruction: Instruction) -> None:
 def br_if(machine: Machine, instruction: Instruction) -> None:
     assert isinstance(instruction.operands[0], int)
     level = instruction.operands[0]
-    cond: values.Value = machine.pop()
+    cond = machine.pop_value()
     if cond.value:
         _br(machine, level)
         return
@@ -194,13 +196,15 @@ def br_if(machine: Machine, instruction: Instruction) -> None:
 
 def br_table(machine: Machine, instruction: Instruction) -> None:
     operands = instruction.operands
-    idx_value: values.Value = machine.pop()
-    assert isinstance(idx_value.value, int)
-    idx = idx_value.value
+    idx = machine.pop_value().intval()
     if idx < len(operands):
-        _br(machine, operands[idx])
+        operand = operands[idx]
+        assert isinstance(operand, int)
+        _br(machine, operand)
         return
-    _br(machine, operands[-1])
+    default_operand = operands[-1]
+    assert isinstance(default_operand, int)
+    _br(machine, default_operand)
 
 
 def return_(machine: Machine, instruction: Instruction) -> None:
@@ -211,6 +215,7 @@ def call(machine: Machine, instruction: Instruction) -> None:
     f = machine.get_current_frame()
     f.pc += 1
     operands = instruction.operands
+    assert isinstance(operands[0], int)
     a = f.module.funcaddrs[operands[0]]
     machine.invoke_func(a)
 
@@ -226,7 +231,7 @@ def call_indirect(machine: Machine, instruction: Instruction) -> None:
     print(f"call_indirect: tableidx={tableidx}, typeidx={typeidx}")
     table = machine.get_table(f.module.tableaddrs[tableidx])
     functype = f.module.func_types[typeidx]
-    i = _unsigned_i32(machine.pop())  # index
+    i = _unsigned_i32(machine.pop_value())  # index
     print(f"    index={i}")
     if i >= len(table.refs):
         raise RuntimeError(
@@ -236,6 +241,7 @@ def call_indirect(machine: Machine, instruction: Instruction) -> None:
     funcaddr = table.refs[i]
     if funcaddr.value is None:
         raise RuntimeError("call_indirect: null reference")
+    assert isinstance(funcaddr.value, int)
     func = machine.get_func(funcaddr.value)
     if func.functype != functype:
         raise RuntimeError("call_indirect: type mismatch")
@@ -252,8 +258,7 @@ def ref_null(machine: Machine, instruction: Instruction) -> None:
 
 
 def ref_is_null(machine: Machine, instruction: Instruction) -> None:
-    val = machine.pop()
-    assert isinstance(val, values.Value)
+    val = machine.pop_value()
     assert val.value_type in (values.ValueType.FUNCREF, values.ValueType.EXTERNREF)
     machine.push(values.Value(values.ValueType.I32, 1 if val.value is None else 0))
     machine.get_current_frame().pc += 1
@@ -279,9 +284,9 @@ def drop(machine: Machine, instruction: Instruction) -> None:
 
 
 def select(machine: Machine, instruction: Instruction) -> None:
-    c = _unsigned_i32(machine.pop())
-    val2 = cast(values.Value, machine.pop())
-    val1 = cast(values.Value, machine.pop())
+    c = _unsigned_i32(machine.pop_value())
+    val2 = machine.pop_value()
+    val1 = machine.pop_value()
     machine.push(val1 if c else val2)
     machine.get_current_frame().pc += 1
 
@@ -299,6 +304,7 @@ def local_get(machine: Machine, instruction: Instruction) -> None:
     """
     f = machine.get_current_frame()
     operands = instruction.operands
+    assert isinstance(operands[0], int)
     machine.push(f.local_vars[operands[0]])
     f.pc += 1
 
@@ -313,7 +319,8 @@ def local_set(machine: Machine, instruction: Instruction) -> None:
     """
     f = machine.get_current_frame()
     operands = instruction.operands
-    f.local_vars[operands[0]] = machine.pop()
+    assert isinstance(operands[0], int)
+    f.local_vars[operands[0]] = machine.pop_value()
     f.pc += 1
 
 
@@ -327,21 +334,26 @@ def local_tee(machine: Machine, instruction: Instruction) -> None:
     """
     f = machine.get_current_frame()
     operands = instruction.operands
-    f.local_vars[operands[0]] = machine.peek()
+    assert isinstance(operands[0], int)
+    top_of_stack = machine.peek()
+    assert isinstance(top_of_stack, values.Value)
+    f.local_vars[operands[0]] = top_of_stack
     f.pc += 1
 
 
 def global_get(machine: Machine, instruction: Instruction) -> None:
     f = machine.get_current_frame()
     operands = instruction.operands
-    machine.push(machine.get_global(f.module.globaladdrs[operands[0]]))
+    assert isinstance(operands[0], int)
+    machine.push(machine.get_global(f.module.globaladdrs[operands[0]]).value)
     f.pc += 1
 
 
 def global_set(machine: Machine, instruction: Instruction) -> None:
     f = machine.get_current_frame()
     operands = instruction.operands
-    val = machine.pop()
+    val = machine.pop_value()
+    assert isinstance(operands[0], int)
     machine.set_global(f.module.globaladdrs[operands[0]], val)
     f.pc += 1
 
@@ -352,7 +364,7 @@ def table_get(machine: Machine, instruction: Instruction) -> None:
     f = machine.get_current_frame()
     tableidx = int(instruction.operands[0])
     table = machine.get_table(f.module.tableaddrs[tableidx])
-    i = _unsigned_i32(machine.pop())
+    i = _unsigned_i32(machine.pop_value())
     if i >= len(table.refs):
         raise RuntimeError("table.set: access out of bounds")
     machine.push(table.refs[i])
@@ -364,8 +376,8 @@ def table_set(machine: Machine, instruction: Instruction) -> None:
     f = machine.get_current_frame()
     tableidx = int(instruction.operands[0])
     table = machine.get_table(f.module.tableaddrs[tableidx])
-    val = machine.pop()
-    i = _unsigned_i32(machine.pop())
+    val = machine.pop_value()
+    i = _unsigned_i32(machine.pop_value())
     if i >= len(table.refs):
         raise RuntimeError("table.set: access out of bounds")
     table.refs[i] = val
@@ -380,9 +392,10 @@ def table_init(machine: Machine, instruction: Instruction) -> None:
     elementidx = int(instruction.operands[1])
     table = machine.get_table(f.module.tableaddrs[tableidx])
     element = machine.get_element(f.module.elementaddrs[elementidx])
-    n = _unsigned_i32(machine.pop())  # data size, i32
-    s = _unsigned_i32(machine.pop())  # source, i32
-    d = _unsigned_i32(machine.pop())  # destination, i32
+    assert element is not None
+    n = _unsigned_i32(machine.pop_value())  # data size, i32
+    s = _unsigned_i32(machine.pop_value())  # source, i32
+    d = _unsigned_i32(machine.pop_value())  # destination, i32
     if s + n > len(element.refs) or d + n > len(table.refs):
         raise RuntimeError("table.init: access out of bounds")
     if n > 0:
@@ -406,9 +419,9 @@ def table_copy(machine: Machine, instruction: Instruction) -> None:
     dtable = machine.get_table(f.module.tableaddrs[dtableidx])
     stableidx = int(instruction.operands[1])
     stable = machine.get_table(f.module.tableaddrs[stableidx])
-    n = _unsigned_i32(machine.pop())  # count, i32
-    s = _unsigned_i32(machine.pop())  # source, i32
-    d = _unsigned_i32(machine.pop())  # destination, i32
+    n = _unsigned_i32(machine.pop_value())  # count, i32
+    s = _unsigned_i32(machine.pop_value())  # source, i32
+    d = _unsigned_i32(machine.pop_value())  # destination, i32
     if s + n > len(stable.refs) or d + n > len(dtable.refs):
         raise RuntimeError("table.copy: access out of bounds")
     if n > 0:
@@ -422,8 +435,8 @@ def table_grow(machine: Machine, instruction: Instruction) -> None:
     tableidx = int(instruction.operands[0])
     table = machine.get_table(f.module.tableaddrs[tableidx])
     sz = len(table.refs)
-    n = _unsigned_i32(machine.pop())  # amount to grow by
-    val = machine.pop()
+    n = _unsigned_i32(machine.pop_value())  # amount to grow by
+    val = machine.pop_value()
     new_limits = values.Limits(sz + n, table.table_type.limits.max)
     if sz + n > 0xFFFFFFFF or not new_limits.is_valid(sz + n):
         machine.push(values.Value(values.ValueType.I32, 0xFFFFFFFF))
@@ -449,9 +462,9 @@ def table_fill(machine: Machine, instruction: Instruction) -> None:
     f = machine.get_current_frame()
     tableidx = int(instruction.operands[0])
     table = machine.get_table(f.module.tableaddrs[tableidx])
-    n = _unsigned_i32(machine.pop())  # count, i32
-    v = machine.pop()  # value, ref
-    i = _unsigned_i32(machine.pop())  # idx, i32
+    n = _unsigned_i32(machine.pop_value())  # count, i32
+    v = machine.pop_value()  # value, ref
+    i = _unsigned_i32(machine.pop_value())  # idx, i32
     if i + n > len(table.refs):
         raise RuntimeError("table.fill: access out of bounds")
     if n > 0:
@@ -471,7 +484,7 @@ def i32_load(machine: Machine, instruction: Instruction) -> None:
     """
     f = machine.get_current_frame()
     operands = instruction.operands
-    i = _unsigned_i32(machine.pop())  # base
+    i = _unsigned_i32(machine.pop_value())  # base
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # memaddr
     ea = i + int(operands[1])  # effective address
@@ -496,7 +509,7 @@ def i64_load(machine: Machine, instruction: Instruction) -> None:
     """
     f = machine.get_current_frame()
     operands = instruction.operands
-    i = _unsigned_i32(machine.pop())  # base
+    i = _unsigned_i32(machine.pop_value())  # base
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # memaddr
     ea = i + int(operands[1])  # effective address
@@ -521,7 +534,7 @@ def f32_load(machine: Machine, instruction: Instruction) -> None:
     """
     f = machine.get_current_frame()
     operands = instruction.operands
-    i = _unsigned_i32(machine.pop())  # base
+    i = _unsigned_i32(machine.pop_value())  # base
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # memaddr
     ea = i + int(operands[1])  # effective address
@@ -546,7 +559,7 @@ def f64_load(machine: Machine, instruction: Instruction) -> None:
     """
     f = machine.get_current_frame()
     operands = instruction.operands
-    i = _unsigned_i32(machine.pop())  # base
+    i = _unsigned_i32(machine.pop_value())  # base
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # memaddr
     ea = i + int(operands[1])  # effective address
@@ -565,7 +578,7 @@ def _isz_loadN_sx(
 ) -> None:
     f = machine.get_current_frame()
     operands = instruction.operands
-    i = _unsigned_i32(machine.pop())  # base
+    i = _unsigned_i32(machine.pop_value())  # base
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # memaddr
     ea = i + int(operands[1])  # effective address
@@ -659,8 +672,8 @@ def i32_store(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
     mem = machine.get_mem_data(a)
-    c = _unsigned_i32(machine.pop())  # value
-    i = _unsigned_i32(machine.pop())  # base
+    c = _unsigned_i32(machine.pop_value())  # value
+    i = _unsigned_i32(machine.pop_value())  # base
     ea = i + int(operands[1])  # effective address
     if ea + 4 > len(mem):
         raise RuntimeError(
@@ -684,8 +697,9 @@ def i64_store(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
     mem = machine.get_mem_data(a)
-    c = _unsigned_i64(machine.pop())  # value
-    i = _unsigned_i32(machine.pop())  # base
+    c = _unsigned_i64(machine.pop_value())  # value
+    i = _unsigned_i32(machine.pop_value())  # base
+    assert isinstance(operands[1], int)
     ea = i + int(operands[1])  # effective address
     if ea + 8 > len(mem):
         raise RuntimeError(
@@ -701,8 +715,9 @@ def f32_store(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
     mem = machine.get_mem_data(a)
-    c = float(cast(values.Value, machine.pop()).value)  # value
-    i = _unsigned_i32(machine.pop())  # base
+    c = machine.pop_value().floatval()  # value
+    i = _unsigned_i32(machine.pop_value())  # base
+    assert isinstance(operands[1], int)
     ea = i + int(operands[1])  # effective address
     if ea + 4 > len(mem):
         raise RuntimeError(
@@ -718,8 +733,9 @@ def f64_store(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
     mem = machine.get_mem_data(a)
-    c = float(cast(values.Value, machine.pop()).value)  # value
-    i = _unsigned_i32(machine.pop())  # base
+    c = machine.pop_value().floatval()  # value
+    i = _unsigned_i32(machine.pop_value())  # base
+    assert isinstance(operands[1], int)
     ea = i + int(operands[1])  # effective address
     if ea + 8 > len(mem):
         raise RuntimeError(
@@ -743,8 +759,9 @@ def i32_store8(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
     mem = machine.get_mem_data(a)
-    c = _unsigned_i32(machine.pop())  # value
-    i = _unsigned_i32(machine.pop())  # base
+    c = _unsigned_i32(machine.pop_value())  # value
+    i = _unsigned_i32(machine.pop_value())  # base
+    assert isinstance(operands[1], int)
     ea = i + int(operands[1])  # effective address
     if ea + 1 > len(mem):
         raise RuntimeError(
@@ -768,8 +785,9 @@ def i32_store16(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
     mem = machine.get_mem_data(a)
-    c = _unsigned_i32(machine.pop())  # value
-    i = _unsigned_i32(machine.pop())  # base
+    c = _unsigned_i32(machine.pop_value())  # value
+    i = _unsigned_i32(machine.pop_value())  # base
+    assert isinstance(operands[1], int)
     ea = i + int(operands[1])  # effective address
     if ea + 2 > len(mem):
         raise RuntimeError(
@@ -793,8 +811,9 @@ def i64_store8(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
     mem = machine.get_mem_data(a)
-    c = _unsigned_i64(machine.pop())  # value
-    i = _unsigned_i32(machine.pop())  # base
+    c = _unsigned_i64(machine.pop_value())  # value
+    i = _unsigned_i32(machine.pop_value())  # base
+    assert isinstance(operands[1], int)
     ea = i + int(operands[1])  # effective address
     if ea + 1 > len(mem):
         raise RuntimeError(
@@ -818,8 +837,9 @@ def i64_store16(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
     mem = machine.get_mem_data(a)
-    c = _unsigned_i64(machine.pop())  # value
-    i = _unsigned_i32(machine.pop())  # base
+    c = _unsigned_i64(machine.pop_value())  # value
+    i = _unsigned_i32(machine.pop_value())  # base
+    assert isinstance(operands[1], int)
     ea = i + int(operands[1])  # effective address
     if ea + 2 > len(mem):
         raise RuntimeError(
@@ -843,8 +863,9 @@ def i64_store32(machine: Machine, instruction: Instruction) -> None:
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # offset
     mem = machine.get_mem_data(a)
-    c = _unsigned_i64(machine.pop())  # value
-    i = _unsigned_i32(machine.pop())  # base
+    c = _unsigned_i64(machine.pop_value())  # value
+    i = _unsigned_i32(machine.pop_value())  # base
+    assert isinstance(operands[1], int)
     ea = i + int(operands[1])  # effective address
     if ea + 4 > len(mem):
         raise RuntimeError(
@@ -869,7 +890,7 @@ def memory_grow(machine: Machine, instruction: Instruction) -> None:
     ma = f.module.memaddrs[instruction.operands[0]]
     mem = machine.get_mem(ma)
     sz = len(mem.data) // 65536
-    n = _unsigned_i32(machine.pop())  # page growth amount
+    n = _unsigned_i32(machine.pop_value())  # page growth amount
     print(f"memory.grow requested from {sz} by {n} pages to {sz+n}")
     new_limits = values.Limits(sz + n, mem.mem_type.limits.max)
     if (
@@ -899,9 +920,9 @@ def memory_init(machine: Machine, instruction: Instruction) -> None:
     mem = machine.get_mem_data(ma)
     da = curr_frame.module.dataaddrs[operands[0]]
     data = machine.get_data(da)
-    n = _unsigned_i32(machine.pop())  # data size, i32
-    s = _unsigned_i32(machine.pop())  # source, i32
-    d = _unsigned_i32(machine.pop())  # destination, i32
+    n = _unsigned_i32(machine.pop_value())  # data size, i32
+    s = _unsigned_i32(machine.pop_value())  # source, i32
+    d = _unsigned_i32(machine.pop_value())  # destination, i32
 
     if s + n > len(data):
         raise RuntimeError("memory.init: source is out of bounds")
@@ -928,9 +949,9 @@ def memory_copy(machine: Machine, instruction: Instruction) -> None:
     assert len(operands) == 2
     assert isinstance(operands[0], int)  # memindex
     assert isinstance(operands[1], int)  # memindex
-    n = _unsigned_i32(machine.pop())  # data size, i32
-    s = _unsigned_i32(machine.pop())  # source, i32
-    d = _unsigned_i32(machine.pop())  # destination, i32
+    n = _unsigned_i32(machine.pop_value())  # data size, i32
+    s = _unsigned_i32(machine.pop_value())  # source, i32
+    d = _unsigned_i32(machine.pop_value())  # destination, i32
     curr_frame = machine.get_current_frame()
     # Note: wasm doesn't yet support more than one memory, so it expects all
     # memindexes to be 0. I'm not quite sure which operand represents the source and
@@ -951,9 +972,9 @@ def memory_fill(machine: Machine, instruction: Instruction) -> None:
     operands = instruction.operands
     assert len(operands) == 1
     assert isinstance(operands[0], int)  # memindex
-    n = _unsigned_i32(machine.pop())  # data size, i32
-    v = _unsigned_i32(machine.pop())  # value, i32
-    d = _unsigned_i32(machine.pop())  # destination, i32
+    n = _unsigned_i32(machine.pop_value())  # data size, i32
+    v = _unsigned_i32(machine.pop_value())  # value, i32
+    d = _unsigned_i32(machine.pop_value())  # destination, i32
     curr_frame = machine.get_current_frame()
     ma = curr_frame.module.memaddrs[operands[0]]
     mem = machine.get_mem_data(ma)
@@ -1004,77 +1025,77 @@ def f64_const(machine: Machine, instruction: Instruction) -> None:
 
 
 def i32_eqz(machine: Machine, instruction: Instruction) -> None:
-    c1 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, 0 if c1 else 1))
     machine.get_current_frame().pc += 1
 
 
 def i32_eq(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i32(machine.pop())
-    c1 = _unsigned_i32(machine.pop())
+    c2 = _unsigned_i32(machine.pop_value())
+    c1 = _unsigned_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, int(c1 == c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_ne(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i32(machine.pop())
-    c1 = _unsigned_i32(machine.pop())
+    c2 = _unsigned_i32(machine.pop_value())
+    c1 = _unsigned_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, int(c1 != c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_lt_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _signed_i32(machine.pop())
-    c1 = _signed_i32(machine.pop())
+    c2 = _signed_i32(machine.pop_value())
+    c1 = _signed_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, int(c1 < c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_lt_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i32(machine.pop())
-    c1 = _unsigned_i32(machine.pop())
+    c2 = _unsigned_i32(machine.pop_value())
+    c1 = _unsigned_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, int(c1 < c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_gt_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _signed_i32(machine.pop())
-    c1 = _signed_i32(machine.pop())
+    c2 = _signed_i32(machine.pop_value())
+    c1 = _signed_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, int(c1 > c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_gt_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i32(machine.pop())
-    c1 = _unsigned_i32(machine.pop())
+    c2 = _unsigned_i32(machine.pop_value())
+    c1 = _unsigned_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, int(c1 > c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_le_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _signed_i32(machine.pop())
-    c1 = _signed_i32(machine.pop())
+    c2 = _signed_i32(machine.pop_value())
+    c1 = _signed_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, int(c1 <= c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_le_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i32(machine.pop())
-    c1 = _unsigned_i32(machine.pop())
+    c2 = _unsigned_i32(machine.pop_value())
+    c1 = _unsigned_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, int(c1 <= c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_ge_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _signed_i32(machine.pop())
-    c1 = _signed_i32(machine.pop())
+    c2 = _signed_i32(machine.pop_value())
+    c1 = _signed_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, int(c1 >= c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_ge_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i32(machine.pop())
-    c1 = _unsigned_i32(machine.pop())
+    c2 = _unsigned_i32(machine.pop_value())
+    c1 = _unsigned_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, int(c1 >= c2)))
     machine.get_current_frame().pc += 1
 
@@ -1086,71 +1107,71 @@ def i64_eqz(machine: Machine, instruction: Instruction) -> None:
 
 
 def i64_eq(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i64(machine.pop())
-    c1 = _unsigned_i64(machine.pop())
+    c2 = _unsigned_i64(machine.pop_value())
+    c1 = _unsigned_i64(machine.pop_value())
     machine.push(values.Value(values.ValueType.I64, int(c1 == c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_ne(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i64(machine.pop())
-    c1 = _unsigned_i64(machine.pop())
+    c2 = _unsigned_i64(machine.pop_value())
+    c1 = _unsigned_i64(machine.pop_value())
     machine.push(values.Value(values.ValueType.I64, int(c1 != c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_lt_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _signed_i64(machine.pop())
-    c1 = _signed_i64(machine.pop())
+    c2 = _signed_i64(machine.pop_value())
+    c1 = _signed_i64(machine.pop_value())
     machine.push(values.Value(values.ValueType.I64, int(c1 < c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_lt_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i64(machine.pop())
-    c1 = _unsigned_i64(machine.pop())
+    c2 = _unsigned_i64(machine.pop_value())
+    c1 = _unsigned_i64(machine.pop_value())
     machine.push(values.Value(values.ValueType.I64, int(c1 < c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_gt_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _signed_i64(machine.pop())
-    c1 = _signed_i64(machine.pop())
+    c2 = _signed_i64(machine.pop_value())
+    c1 = _signed_i64(machine.pop_value())
     machine.push(values.Value(values.ValueType.I64, int(c1 > c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_gt_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i64(machine.pop())
-    c1 = _unsigned_i64(machine.pop())
+    c2 = _unsigned_i64(machine.pop_value())
+    c1 = _unsigned_i64(machine.pop_value())
     machine.push(values.Value(values.ValueType.I64, int(c1 > c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_le_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _signed_i64(machine.pop())
-    c1 = _signed_i64(machine.pop())
+    c2 = _signed_i64(machine.pop_value())
+    c1 = _signed_i64(machine.pop_value())
     machine.push(values.Value(values.ValueType.I64, int(c1 <= c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_le_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i64(machine.pop())
-    c1 = _unsigned_i64(machine.pop())
+    c2 = _unsigned_i64(machine.pop_value())
+    c1 = _unsigned_i64(machine.pop_value())
     machine.push(values.Value(values.ValueType.I64, int(c1 <= c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_ge_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _signed_i64(machine.pop())
-    c1 = _signed_i64(machine.pop())
+    c2 = _signed_i64(machine.pop_value())
+    c1 = _signed_i64(machine.pop_value())
     machine.push(values.Value(values.ValueType.I64, int(c1 >= c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_ge_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i64(machine.pop())
-    c1 = _unsigned_i64(machine.pop())
+    c2 = _unsigned_i64(machine.pop_value())
+    c1 = _unsigned_i64(machine.pop_value())
     machine.push(values.Value(values.ValueType.I64, int(c1 >= c2)))
     machine.get_current_frame().pc += 1
 
@@ -1205,7 +1226,7 @@ def f64_ge(machine: Machine, instruction: Instruction) -> None:
 
 def i32_clz(machine: Machine, instruction: Instruction) -> None:
     """Count leading zero bits."""
-    c1 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop_value())
     val = 32
     for i in range(32):
         if c1 & 0x80000000:
@@ -1218,7 +1239,7 @@ def i32_clz(machine: Machine, instruction: Instruction) -> None:
 
 def i32_ctz(machine: Machine, instruction: Instruction) -> None:
     """Count trailing zero bits."""
-    c1 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop_value())
     val = 32
     for i in range(32):
         if c1 & 1:
@@ -1231,7 +1252,7 @@ def i32_ctz(machine: Machine, instruction: Instruction) -> None:
 
 def i32_popcnt(machine: Machine, instruction: Instruction) -> None:
     """Count bits set."""
-    c1 = _unsigned_i32(machine.pop())
+    c1 = _unsigned_i32(machine.pop_value())
     val = 0
     for i in range(32):
         if c1 & (1 << i):
@@ -1243,29 +1264,29 @@ def i32_popcnt(machine: Machine, instruction: Instruction) -> None:
 # All this bitmasking is necessary because Python ints are always signed
 # and always bignums.
 def i32_add(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i32(machine.pop())
-    c1 = _unsigned_i32(machine.pop())
+    c2 = _unsigned_i32(machine.pop_value())
+    c1 = _unsigned_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, (c1 + c2) & MASK32))
     machine.get_current_frame().pc += 1
 
 
 def i32_sub(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i32(machine.pop())
-    c1 = _unsigned_i32(machine.pop())
+    c2 = _unsigned_i32(machine.pop_value())
+    c1 = _unsigned_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, (c1 - c2) & MASK32))
     machine.get_current_frame().pc += 1
 
 
 def i32_mul(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i32(machine.pop())
-    c1 = _unsigned_i32(machine.pop())
+    c2 = _unsigned_i32(machine.pop_value())
+    c1 = _unsigned_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, (c1 * c2) & MASK32))
     machine.get_current_frame().pc += 1
 
 
 def i32_div_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _signed_i32(machine.pop())
-    c1 = _signed_i32(machine.pop())
+    c2 = _signed_i32(machine.pop_value())
+    c1 = _signed_i32(machine.pop_value())
     if c2 == 0:
         raise RuntimeError("i32.div_s: division by zero")
     if c1 // c2 == 0x80000000:  # Unrepresentable: -2^31 // -1
@@ -1275,8 +1296,8 @@ def i32_div_s(machine: Machine, instruction: Instruction) -> None:
 
 
 def i32_div_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i32(machine.pop())
-    c1 = _unsigned_i32(machine.pop())
+    c2 = _unsigned_i32(machine.pop_value())
+    c1 = _unsigned_i32(machine.pop_value())
     if c2 == 0:
         raise RuntimeError("i32.div_u: division by zero")
     machine.push(values.Value(values.ValueType.I32, (c1 // c2) & MASK32))
@@ -1284,8 +1305,8 @@ def i32_div_u(machine: Machine, instruction: Instruction) -> None:
 
 
 def i32_rem_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _signed_i32(machine.pop())
-    c1 = _signed_i32(machine.pop())
+    c2 = _signed_i32(machine.pop_value())
+    c1 = _signed_i32(machine.pop_value())
     if c2 == 0:
         raise RuntimeError("i32.rem_s: modulo zero")
 
@@ -1306,8 +1327,8 @@ def i32_rem_s(machine: Machine, instruction: Instruction) -> None:
 
 
 def i32_rem_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i32(machine.pop())
-    c1 = _unsigned_i32(machine.pop())
+    c2 = _unsigned_i32(machine.pop_value())
+    c1 = _unsigned_i32(machine.pop_value())
     if c2 == 0:
         raise RuntimeError("i32.rem_u: modulo zero")
     machine.push(values.Value(values.ValueType.I32, (c1 % c2) & MASK32))
@@ -1315,50 +1336,50 @@ def i32_rem_u(machine: Machine, instruction: Instruction) -> None:
 
 
 def i32_and(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i32(machine.pop())
-    c1 = _unsigned_i32(machine.pop())
+    c2 = _unsigned_i32(machine.pop_value())
+    c1 = _unsigned_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, (c1 & c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_or(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i32(machine.pop())
-    c1 = _unsigned_i32(machine.pop())
+    c2 = _unsigned_i32(machine.pop_value())
+    c1 = _unsigned_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, (c1 | c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_xor(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i32(machine.pop())
-    c1 = _unsigned_i32(machine.pop())
+    c2 = _unsigned_i32(machine.pop_value())
+    c1 = _unsigned_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, (c1 ^ c2)))
     machine.get_current_frame().pc += 1
 
 
 def i32_shl(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i32(machine.pop())
-    c1 = _unsigned_i32(machine.pop())
+    c2 = _unsigned_i32(machine.pop_value())
+    c1 = _unsigned_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, (c1 << (c2 % 32)) & MASK32))
     machine.get_current_frame().pc += 1
 
 
 def i32_shr_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i32(machine.pop())
-    c1 = _signed_i32(machine.pop())
+    c2 = _unsigned_i32(machine.pop_value())
+    c1 = _signed_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, (c1 >> (c2 % 32)) & MASK32))
     machine.get_current_frame().pc += 1
 
 
 def i32_shr_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i32(machine.pop())
-    c1 = _unsigned_i32(machine.pop())
+    c2 = _unsigned_i32(machine.pop_value())
+    c1 = _unsigned_i32(machine.pop_value())
     machine.push(values.Value(values.ValueType.I32, (c1 >> (c2 % 32)) & MASK32))
     machine.get_current_frame().pc += 1
 
 
 def i32_rotl(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i32(machine.pop())
-    c1 = _unsigned_i32(machine.pop())
+    c2 = _unsigned_i32(machine.pop_value())
+    c1 = _unsigned_i32(machine.pop_value())
     c2 %= 32
     val = ((c1 << c2) | (c1 >> (32 - c2))) & MASK32
     machine.push(values.Value(values.ValueType.I32, val))
@@ -1366,8 +1387,8 @@ def i32_rotl(machine: Machine, instruction: Instruction) -> None:
 
 
 def i32_rotr(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i32(machine.pop())
-    c1 = _unsigned_i32(machine.pop())
+    c2 = _unsigned_i32(machine.pop_value())
+    c1 = _unsigned_i32(machine.pop_value())
     c2 %= 32
     val = (c1 >> c2) | (c1 << (32 - c2)) & MASK32
     machine.push(values.Value(values.ValueType.I32, val))
@@ -1376,7 +1397,7 @@ def i32_rotr(machine: Machine, instruction: Instruction) -> None:
 
 def i64_clz(machine: Machine, instruction: Instruction) -> None:
     """Count leading zero bits."""
-    c1 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop_value())
     val = 64
     for i in range(64):
         if c1 & 0x8000000000000000:
@@ -1389,7 +1410,7 @@ def i64_clz(machine: Machine, instruction: Instruction) -> None:
 
 def i64_ctz(machine: Machine, instruction: Instruction) -> None:
     """Count trailing zero bits."""
-    c1 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop_value())
     val = 64
     for i in range(64):
         if c1 & 1:
@@ -1402,7 +1423,7 @@ def i64_ctz(machine: Machine, instruction: Instruction) -> None:
 
 def i64_popcnt(machine: Machine, instruction: Instruction) -> None:
     """Count bits set."""
-    c1 = _unsigned_i64(machine.pop())
+    c1 = _unsigned_i64(machine.pop_value())
     val = 0
     for i in range(64):
         if c1 & (1 << i):
@@ -1414,29 +1435,29 @@ def i64_popcnt(machine: Machine, instruction: Instruction) -> None:
 # All this bitmasking is necessary because Python ints are always signed
 # and always bignums.
 def i64_add(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i64(machine.pop())
-    c1 = _unsigned_i64(machine.pop())
+    c2 = _unsigned_i64(machine.pop_value())
+    c1 = _unsigned_i64(machine.pop_value())
     machine.push(values.Value(values.ValueType.I64, (c1 + c2) & MASK64))
     machine.get_current_frame().pc += 1
 
 
 def i64_sub(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i64(machine.pop())
-    c1 = _unsigned_i64(machine.pop())
+    c2 = _unsigned_i64(machine.pop_value())
+    c1 = _unsigned_i64(machine.pop_value())
     machine.push(values.Value(values.ValueType.I64, (c1 - c2) & MASK64))
     machine.get_current_frame().pc += 1
 
 
 def i64_mul(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i64(machine.pop())
-    c1 = _unsigned_i64(machine.pop())
+    c2 = _unsigned_i64(machine.pop_value())
+    c1 = _unsigned_i64(machine.pop_value())
     machine.push(values.Value(values.ValueType.I64, (c1 * c2) & MASK64))
     machine.get_current_frame().pc += 1
 
 
 def i64_div_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _signed_i64(machine.pop())
-    c1 = _signed_i64(machine.pop())
+    c2 = _signed_i64(machine.pop_value())
+    c1 = _signed_i64(machine.pop_value())
     if c2 == 0:
         raise RuntimeError("i64.div_s: division by zero")
     if c1 // c2 == 0x8000000000000000:  # Unrepresentable: -2^63 // -1
@@ -1446,8 +1467,8 @@ def i64_div_s(machine: Machine, instruction: Instruction) -> None:
 
 
 def i64_div_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i64(machine.pop())
-    c1 = _unsigned_i64(machine.pop())
+    c2 = _unsigned_i64(machine.pop_value())
+    c1 = _unsigned_i64(machine.pop_value())
     if c2 == 0:
         raise RuntimeError("i64.div_u: division by zero")
     machine.push(values.Value(values.ValueType.I64, (c1 // c2) & MASK64))
@@ -1455,8 +1476,8 @@ def i64_div_u(machine: Machine, instruction: Instruction) -> None:
 
 
 def i64_rem_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _signed_i64(machine.pop())
-    c1 = _signed_i64(machine.pop())
+    c2 = _signed_i64(machine.pop_value())
+    c1 = _signed_i64(machine.pop_value())
     if c2 == 0:
         raise RuntimeError("i64.rem_s: modulo zero")
 
@@ -1477,8 +1498,8 @@ def i64_rem_s(machine: Machine, instruction: Instruction) -> None:
 
 
 def i64_rem_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i64(machine.pop())
-    c1 = _unsigned_i64(machine.pop())
+    c2 = _unsigned_i64(machine.pop_value())
+    c1 = _unsigned_i64(machine.pop_value())
     if c2 == 0:
         raise RuntimeError("i64.rem_u: modulo zero")
     machine.push(values.Value(values.ValueType.I64, (c1 % c2) & MASK64))
@@ -1486,50 +1507,50 @@ def i64_rem_u(machine: Machine, instruction: Instruction) -> None:
 
 
 def i64_and(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i64(machine.pop())
-    c1 = _unsigned_i64(machine.pop())
+    c2 = _unsigned_i64(machine.pop_value())
+    c1 = _unsigned_i64(machine.pop_value())
     machine.push(values.Value(values.ValueType.I64, (c1 & c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_or(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i64(machine.pop())
-    c1 = _unsigned_i64(machine.pop())
+    c2 = _unsigned_i64(machine.pop_value())
+    c1 = _unsigned_i64(machine.pop_value())
     machine.push(values.Value(values.ValueType.I64, (c1 | c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_xor(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i64(machine.pop())
-    c1 = _unsigned_i64(machine.pop())
+    c2 = _unsigned_i64(machine.pop_value())
+    c1 = _unsigned_i64(machine.pop_value())
     machine.push(values.Value(values.ValueType.I64, (c1 ^ c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_shl(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i64(machine.pop())
-    c1 = _unsigned_i64(machine.pop())
+    c2 = _unsigned_i64(machine.pop_value())
+    c1 = _unsigned_i64(machine.pop_value())
     machine.push(values.Value(values.ValueType.I64, (c1 << (c2 % 64)) & MASK64))
     machine.get_current_frame().pc += 1
 
 
 def i64_shr_s(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i64(machine.pop())
-    c1 = _signed_i64(machine.pop())
+    c2 = _unsigned_i64(machine.pop_value())
+    c1 = _signed_i64(machine.pop_value())
     machine.push(values.Value(values.ValueType.I64, (c1 >> (c2 % 64)) & MASK64))
     machine.get_current_frame().pc += 1
 
 
 def i64_shr_u(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i64(machine.pop())
-    c1 = _unsigned_i64(machine.pop())
+    c2 = _unsigned_i64(machine.pop_value())
+    c1 = _unsigned_i64(machine.pop_value())
     machine.push(values.Value(values.ValueType.I64, (c1 >> (c2 % 64)) & MASK64))
     machine.get_current_frame().pc += 1
 
 
 def i64_rotl(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i64(machine.pop())
-    c1 = _unsigned_i64(machine.pop())
+    c2 = _unsigned_i64(machine.pop_value())
+    c1 = _unsigned_i64(machine.pop_value())
     c2 %= 64
     val = ((c1 << c2) | (c1 >> (64 - c2))) & MASK64
     machine.push(values.Value(values.ValueType.I64, val))
@@ -1537,8 +1558,8 @@ def i64_rotl(machine: Machine, instruction: Instruction) -> None:
 
 
 def i64_rotr(machine: Machine, instruction: Instruction) -> None:
-    c2 = _unsigned_i64(machine.pop())
-    c1 = _unsigned_i64(machine.pop())
+    c2 = _unsigned_i64(machine.pop_value())
+    c1 = _unsigned_i64(machine.pop_value())
     c2 %= 64
     val = (c1 >> c2) | (c1 << (64 - c2)) & MASK64
     machine.push(values.Value(values.ValueType.I64, val))

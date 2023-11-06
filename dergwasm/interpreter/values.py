@@ -100,6 +100,11 @@ class Value(StackValue):
         assert isinstance(self.value, int)
         return cast(int, self.value)
 
+    def floatval(self) -> float:
+        """Returns the value's float value. Must be a float."""
+        assert isinstance(self.value, float)
+        return cast(float, self.value)
+
 
 @dataclasses.dataclass
 class Frame(StackValue):

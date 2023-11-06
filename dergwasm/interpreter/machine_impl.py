@@ -1,12 +1,15 @@
 """Concrete implementation of the machine interface."""
 
-from typing import Callable, Type, cast
+from typing import Callable, Type, cast, TypeVar
 
 from dergwasm.interpreter import stack
 from dergwasm.interpreter import machine
 from dergwasm.interpreter import values
 from dergwasm.interpreter.insn import Instruction, InstructionType
 from dergwasm.interpreter import insn_eval
+
+
+T = TypeVar("T")
 
 
 class MachineImpl(machine.Machine):
@@ -42,6 +45,12 @@ class MachineImpl(machine.Machine):
 
     def pop(self) -> values.StackValue:
         return self.stack_.pop()
+
+    def pop_value(self) -> values.Value:
+        val = self.stack_.pop()
+        if not isinstance(val, values.Value):
+            raise RuntimeError(f"Expected a value, got {val}")
+        return val
 
     def peek(self) -> values.StackValue:
         return self.stack_.data[-1]
@@ -176,7 +185,5 @@ class MachineImpl(machine.Machine):
     def drop_element(self, elementaddr: int) -> None:
         self.element_segments[elementaddr] = None
 
-    def get_nth_value_of_type(
-        self, n: int, value_type: Type[values.StackValue]
-    ) -> values.StackValue:
+    def get_nth_value_of_type(self, n: int, value_type: Type[T]) -> T:
         return self.stack_.get_nth_value_of_type(n, value_type)

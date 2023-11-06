@@ -2381,6 +2381,7 @@ class InsnEvalTest(parameterized.TestCase):
             i32_block(
                 i32_block(
                     i32_block(
+                        i32_const(0),
                         i32_const(idx),
                         br_table(0, 1, 2),
                     ),

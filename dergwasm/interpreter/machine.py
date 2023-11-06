@@ -4,7 +4,7 @@ from __future__ import annotations  # For PEP563 - postponed evaluation of annot
 
 import abc
 import dataclasses
-from typing import TYPE_CHECKING, Callable, Type
+from typing import TYPE_CHECKING, Callable, Type, TypeVar
 
 from dergwasm.interpreter import binary
 
@@ -14,9 +14,13 @@ if TYPE_CHECKING:
     from dergwasm.interpreter import insn
 
 
+T = TypeVar("T")
+
+
 @dataclasses.dataclass
 class FuncInstance:
     """The base type runtime representation of a function."""
+
     functype: binary.FuncType
 
 
@@ -78,6 +82,10 @@ class Machine(abc.ABC):
     @abc.abstractmethod
     def pop(self) -> values.StackValue:
         """Pops a value off the stack."""
+
+    @abc.abstractmethod
+    def pop_value(self) -> values.Value:
+        """Pops a value off the stack and asserts it's a Value."""
 
     @abc.abstractmethod
     def peek(self) -> values.StackValue:
@@ -183,7 +191,5 @@ class Machine(abc.ABC):
         """Drops the element segment at the given address."""
 
     @abc.abstractmethod
-    def get_nth_value_of_type(
-        self, n: int, value_type: Type[values.StackValue]
-    ) -> values.StackValue:
+    def get_nth_value_of_type(self, n: int, value_type: Type[T]) -> T:
         """Gets the n-th value of the given type from the top of the stack (0-based)."""

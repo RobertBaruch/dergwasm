@@ -1,8 +1,11 @@
 """The stack."""
 
-from typing import Type
+from typing import Type, TypeVar, cast
 
 from dergwasm.interpreter import values
+
+
+T = TypeVar("T")
 
 
 class Stack:
@@ -22,19 +25,15 @@ class Stack:
     def depth(self) -> int:
         return len(self.data)
 
-    def get_topmost_value_of_type(
-        self, value_type: Type[values.StackValue]
-    ) -> values.StackValue:
+    def get_topmost_value_of_type(self, value_type: Type[T]) -> T:
         return self.get_nth_value_of_type(0, value_type)
 
-    def get_nth_value_of_type(
-        self, n: int, value_type: Type[values.StackValue]
-    ) -> values.StackValue:
+    def get_nth_value_of_type(self, n: int, value_type: Type[T]) -> T:
         """Gets the n-th value of the given type from the top of the stack (0-based)."""
         for i in range(len(self.data) - 1, -1, -1):
             if isinstance(self.data[i], value_type):
                 if n == 0:
-                    return self.data[i]
+                    return cast(T, self.data[i])
                 n -= 1
         raise ValueError(
             f"Could not find the {n}-th value of type {value_type.__name__} on the stack"
