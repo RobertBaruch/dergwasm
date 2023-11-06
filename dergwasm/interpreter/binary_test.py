@@ -7,8 +7,8 @@
 from __future__ import annotations  # For PEP563 - postponed evaluation of annotations
 from io import BytesIO
 
-from absl.testing import absltest, parameterized
-import leb128
+from absl.testing import absltest, parameterized  # type: ignore
+import leb128  # type: ignore
 
 from dergwasm.interpreter.binary import (
     Code,
@@ -36,78 +36,6 @@ def nop() -> Instruction:
 
 def end() -> Instruction:
     return Instruction(InstructionType.END, [], 0, 0)
-
-
-# class TestModule(unittest.TestCase):
-#     def test_read(self):
-#         # Test reading a module from a binary stream
-#         wasm_bytes = b"\x00\x61\x73\x6D\x01\x00\x00\x00\x01\x0A\x02\x60\x00\x00\x02\x7F\x7F\x01\x7F\x03\x02\x01\x00\x07\x07\x01\x03\x66\x6F\x6F\x00\x01\x03\x62\x61\x72\x00\x00\x0A\x09\x01\x07\x00\x20\x00\x41\x00\x6A\x0B"
-#         wasm_stream = BytesIO(wasm_bytes)
-#         module = binary.Module.read(wasm_stream)
-
-#         # Test that the module has the expected sections
-#         self.assertIsInstance(module.sections[binary.TypeSection], binary.TypeSection)
-#         self.assertIsInstance(module.sections[binary.ImportSection], binary.ImportSection)
-#         self.assertIsInstance(module.sections[binary.FunctionSection], binary.FunctionSection)
-#         self.assertIsInstance(module.sections[binary.TableSection], binary.TableSection)
-#         self.assertIsInstance(module.sections[binary.MemorySection], binary.MemorySection)
-#         self.assertIsInstance(module.sections[binary.GlobalSection], binary.GlobalSection)
-#         self.assertIsInstance(module.sections[binary.ExportSection], binary.ExportSection)
-#         self.assertIsInstance(module.sections[binary.StartSection], binary.StartSection)
-#         self.assertIsInstance(module.sections[binary.ElementSection], binary.ElementSection)
-#         self.assertIsInstance(module.sections[binary.CodeSection], binary.CodeSection)
-#         self.assertIsInstance(module.sections[binary.DataSection], binary.DataSection)
-#         self.assertIsInstance(module.sections[binary.DataCountSection], binary.DataCountSection)
-
-#         # Test that the function section has the expected functions
-#         function_section = module.sections[binary.FunctionSection]
-#         self.assertEqual(len(function_section.funcs), 1)
-#         self.assertEqual(len(function_section.funcs[0].params), 0)
-#         self.assertEqual(len(function_section.funcs[0].results), 1)
-#         self.assertEqual(function_section.funcs[0].results[0], ValueType.i32)
-
-#         # Test that the code section has the expected code
-#         code_section = module.sections[binary.CodeSection]
-#         self.assertEqual(len(code_section.code), 1)
-#         self.assertEqual(len(code_section.code[0].local_vars), 1)
-#         self.assertEqual(code_section.code[0].local_vars[0], (1, ValueType.i32))
-#         self.assertEqual(len(code_section.code[0].insns), 2)
-#         self.assertEqual(code_section.code[0].insns[0], Instruction.opcode("i32.const"))
-#         self.assertEqual(code_section.code[0].insns[1], Instruction.opcode("i32.add"))
-
-#     def test_from_file(self):
-#         # Test reading a module from a file
-#         module = binary.Module.from_file("test.wasm")
-
-#         # Test that the module has the expected sections
-#         self.assertIsInstance(module.sections[binary.TypeSection], binary.TypeSection)
-#         self.assertIsInstance(module.sections[binary.ImportSection], binary.ImportSection)
-#         self.assertIsInstance(module.sections[binary.FunctionSection], binary.FunctionSection)
-#         self.assertIsInstance(module.sections[binary.TableSection], binary.TableSection)
-#         self.assertIsInstance(module.sections[binary.MemorySection], binary.MemorySection)
-#         self.assertIsInstance(module.sections[binary.GlobalSection], binary.GlobalSection)
-#         self.assertIsInstance(module.sections[binary.ExportSection], binary.ExportSection)
-#         self.assertIsInstance(module.sections[binary.StartSection], binary.StartSection)
-#         self.assertIsInstance(module.sections[binary.ElementSection], binary.ElementSection)
-#         self.assertIsInstance(module.sections[binary.CodeSection], binary.CodeSection)
-#         self.assertIsInstance(module.sections[binary.DataSection], binary.DataSection)
-#         self.assertIsInstance(module.sections[binary.DataCountSection], binary.DataCountSection)
-
-#         # Test that the function section has the expected functions
-#         function_section = module.sections[binary.FunctionSection]
-#         self.assertEqual(len(function_section.funcs), 1)
-#         self.assertEqual(len(function_section.funcs[0].params), 0)
-#         self.assertEqual(len(function_section.funcs[0].results), 1)
-#         self.assertEqual(function_section.funcs[0].results[0], ValueType.i32)
-
-#         # Test that the code section has the expected code
-#         code_section = module.sections[binary.CodeSection]
-#         self.assertEqual(len(code_section.code), 1)
-#         self.assertEqual(len(code_section.code[0].local_vars), 1)
-#         self.assertEqual(code_section.code[0].local_vars[0], (1, ValueType.i32))
-#         self.assertEqual(len(code_section.code[0].insns), 2)
-#         self.assertEqual(code_section.code[0].insns[0], Instruction.opcode("i32.const"))
-#         self.assertEqual(code_section.code[0].insns[1], Instruction.opcode("i32.add"))
 
 
 class Buffer:

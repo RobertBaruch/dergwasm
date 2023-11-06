@@ -5,10 +5,11 @@
 # pylint: disable=invalid-name
 
 import struct
-from absl.testing import absltest, parameterized
+from absl.testing import absltest, parameterized  # type: ignore
 
 from dergwasm.interpreter.binary import (
     FuncType,
+    GlobalType,
     MemType,
     Module,
     TableType,
@@ -2040,9 +2041,15 @@ class InsnEvalTest(parameterized.TestCase):
     def test_global_get(self, globalidx: int, expected: Value):
         self.module_inst.globaladdrs = [2, 1, 0]
         self.machine.global_vars = [
-            GlobalInstance(ValueType.I32, [], Value(ValueType.I32, 0)),
-            GlobalInstance(ValueType.F32, [], Value(ValueType.F32, 2.2)),
-            GlobalInstance(ValueType.I32, [], Value(ValueType.I32, 1)),
+            GlobalInstance(
+                GlobalType(ValueType.I32, mutable=True), [], Value(ValueType.I32, 0)
+            ),
+            GlobalInstance(
+                GlobalType(ValueType.F32, mutable=True), [], Value(ValueType.F32, 2.2)
+            ),
+            GlobalInstance(
+                GlobalType(ValueType.I32, mutable=True), [], Value(ValueType.I32, 1)
+            ),
         ]
         insn_eval.eval_insn(self.machine, global_get(globalidx))
 
@@ -2057,9 +2064,15 @@ class InsnEvalTest(parameterized.TestCase):
     def test_global_set(self, globalidx: int, expected: Value):
         self.module_inst.globaladdrs = [2, 1, 0]
         self.machine.global_vars = [
-            GlobalInstance(ValueType.I32, [], Value(ValueType.I32, 0)),
-            GlobalInstance(ValueType.I32, [], Value(ValueType.I32, 0)),
-            GlobalInstance(ValueType.I32, [], Value(ValueType.I32, 0)),
+            GlobalInstance(
+                GlobalType(ValueType.I32, mutable=True), [], Value(ValueType.I32, 0)
+            ),
+            GlobalInstance(
+                GlobalType(ValueType.I32, mutable=True), [], Value(ValueType.I32, 0)
+            ),
+            GlobalInstance(
+                GlobalType(ValueType.I32, mutable=True), [], Value(ValueType.I32, 0)
+            ),
         ]
         self.machine.push(expected)
 

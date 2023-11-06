@@ -4,11 +4,11 @@ from __future__ import annotations  # For PEP563 - postponed evaluation of annot
 
 import dataclasses
 import enum
-from io import BytesIO
+from io import BufferedIOBase
 import struct
 from typing import Union
 
-import leb128
+import leb128  # type: ignore
 
 from dergwasm.interpreter import values
 
@@ -840,12 +840,13 @@ class Instruction:
     operands: list[Union[values.ValueType, int, float, "Block"]]
     # For structured control instructions, where does ending it go? For all other
     # instructions, where is the next instruction to execute?
-    continuation_pc: int
-    # Only for the IF instruction, where is the next instruction to execute if the condition is false?
-    else_continuation_pc: int
+    continuation_pc: int = 0
+    # Only for the IF instruction, where is the next instruction to execute if the
+    # condition is false?
+    else_continuation_pc: int = 0
 
     @staticmethod
-    def read(f: BytesIO) -> Instruction:
+    def read(f: BufferedIOBase) -> Instruction:
         """Reads and returns an Instruction.
 
         Returns:
@@ -873,40 +874,50 @@ class Instruction:
         instruction_type = InstructionType(opcode)
 
         if instruction_type in BYTE_INSNS:
-            operands = [values.ValueType(f.read(1)[0])]
-        elif instruction_type in BYTE8_INSNS:
-            operands = [struct.unpack("<Q", f.read(8))[0]]
-        elif instruction_type in U32_INSNS or instruction_type in LANE_INSNS:
-            operands = [leb128.u.decode_reader(f)[0]]
-        elif instruction_type in U32X2_INSNS or instruction_type in MEMARG_INSNS:
-            operands = [leb128.u.decode_reader(f)[0] for _ in range(2)]
-        elif instruction_type in MEMARG_LANE_INSNS:
-            operands = [leb128.u.decode_reader(f)[0] for _ in range(3)]
-        elif instruction_type in LANE8_INSNS:
-            operands = [leb128.u.decode_reader(f)[0] for _ in range(16)]
-        elif instruction_type in VALTYPE_VECTOR_INSNS:
-            operands = [
-                values.ValueType(f.read(1)[0])
-                for _ in range(leb128.u.decode_reader(f)[0])
-            ]
-        elif instruction_type in I32_INSNS or instruction_type in I64_INSNS:
-            operands = [leb128.i.decode_reader(f)[0]]
-        elif instruction_type in F32_INSNS:
+            return Instruction(instruction_type, [values.ValueType(f.read(1)[0])])
+        if instruction_type in BYTE8_INSNS:
+            return Instruction(instruction_type, [struct.unpack("<Q", f.read(8))[0]])
+        if instruction_type in U32_INSNS or instruction_type in LANE_INSNS:
+            return Instruction(instruction_type, [leb128.u.decode_reader(f)[0]])
+        if instruction_type in U32X2_INSNS or instruction_type in MEMARG_INSNS:
+            return Instruction(
+                instruction_type, [leb128.u.decode_reader(f)[0] for _ in range(2)]
+            )
+        if instruction_type in MEMARG_LANE_INSNS:
+            return Instruction(
+                instruction_type, [leb128.u.decode_reader(f)[0] for _ in range(3)]
+            )
+        if instruction_type in LANE8_INSNS:
+            return Instruction(
+                instruction_type, [leb128.u.decode_reader(f)[0] for _ in range(16)]
+            )
+        if instruction_type in VALTYPE_VECTOR_INSNS:
+            return Instruction(
+                instruction_type,
+                [
+                    values.ValueType(f.read(1)[0])
+                    for _ in range(leb128.u.decode_reader(f)[0])
+                ],
+            )
+        if instruction_type in I32_INSNS or instruction_type in I64_INSNS:
+            return Instruction(instruction_type, [leb128.i.decode_reader(f)[0]])
+        if instruction_type in F32_INSNS:
             # Little-endian IEEE 754 float
-            operands = [struct.unpack("<f", f.read(4))[0]]
-        elif instruction_type in F64_INSNS:
+            return Instruction(instruction_type, [struct.unpack("<f", f.read(4))[0]])
+        if instruction_type in F64_INSNS:
             # Little-endian IEEE 754 double
-            operands = [struct.unpack("<d", f.read(8))[0]]
-        elif instruction_type in BLOCK_INSNS:
-            operands = [Block.read(f)]
-        elif instruction_type in SWITCH_INSNS:
+            return Instruction(instruction_type, [struct.unpack("<d", f.read(8))[0]])
+        if instruction_type in BLOCK_INSNS:
+            return Instruction(instruction_type, [Block.read(f)])
+        if instruction_type in SWITCH_INSNS:
             table_size = leb128.u.decode_reader(f)[0]
             # The last label index is the default.
-            operands = [leb128.u.decode_reader(f)[0] for _ in range(table_size + 1)]
+            return Instruction(
+                instruction_type,
+                [leb128.u.decode_reader(f)[0] for _ in range(table_size + 1)],
+            )
         else:
-            operands = []
-
-        return Instruction(instruction_type, operands, 0, 0)
+            return Instruction(instruction_type, [])
 
     def to_str(self, indents: int) -> str:
         """Returns a string representation of the instruction."""
@@ -940,7 +951,7 @@ class Block:
     else_instructions: list[Instruction]
 
     @staticmethod
-    def read(f: BytesIO) -> Block:
+    def read(f: BufferedIOBase) -> Block:
         """Reads and returns a Block from a binary stream."""
         # The secret here is that if the first byte is >= 0x40, then the signed
         # LEB128 decode is a negative number -- specifically, a 7-bit signed negative

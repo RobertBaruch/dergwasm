@@ -8,7 +8,7 @@
 from __future__ import annotations  # For PEP563 - postponed evaluation of annotations
 
 import struct
-from typing import Callable, Union, cast
+from typing import Callable, Union
 
 from dergwasm.interpreter.insn import Instruction, InstructionType, Block
 from dergwasm.interpreter import values
@@ -16,7 +16,7 @@ from dergwasm.interpreter.machine import Machine
 from dergwasm.interpreter.binary import FuncType
 
 EvalOperands = list[Union[values.ValueType, int, float, Block]]
-EvalFunc = Callable[[Machine, EvalOperands], None]
+EvalFunc = Callable[[Machine, Instruction], None]
 MASK64 = 0xFFFFFFFFFFFFFFFF
 MASK32 = 0xFFFFFFFF
 
@@ -487,6 +487,7 @@ def i32_load(machine: Machine, instruction: Instruction) -> None:
     i = _unsigned_i32(machine.pop_value())  # base
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # memaddr
+    assert isinstance(operands[1], int)
     ea = i + int(operands[1])  # effective address
     mem = machine.get_mem_data(a)
     if ea + 4 > len(mem):
@@ -512,6 +513,7 @@ def i64_load(machine: Machine, instruction: Instruction) -> None:
     i = _unsigned_i32(machine.pop_value())  # base
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # memaddr
+    assert isinstance(operands[1], int)
     ea = i + int(operands[1])  # effective address
     mem = machine.get_mem_data(a)
     if ea + 8 > len(mem):
@@ -537,6 +539,7 @@ def f32_load(machine: Machine, instruction: Instruction) -> None:
     i = _unsigned_i32(machine.pop_value())  # base
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # memaddr
+    assert isinstance(operands[1], int)
     ea = i + int(operands[1])  # effective address
     mem = machine.get_mem_data(a)
     if ea + 4 > len(mem):
@@ -562,6 +565,7 @@ def f64_load(machine: Machine, instruction: Instruction) -> None:
     i = _unsigned_i32(machine.pop_value())  # base
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # memaddr
+    assert isinstance(operands[1], int)
     ea = i + int(operands[1])  # effective address
     mem = machine.get_mem_data(a)
     if ea + 8 > len(mem):
@@ -581,6 +585,7 @@ def _isz_loadN_sx(
     i = _unsigned_i32(machine.pop_value())  # base
     # Ignore operand[0], the alignment.
     a = f.module.memaddrs[0]  # memaddr
+    assert isinstance(operands[1], int)
     ea = i + int(operands[1])  # effective address
     mem = machine.get_mem_data(a)
 
@@ -674,6 +679,7 @@ def i32_store(machine: Machine, instruction: Instruction) -> None:
     mem = machine.get_mem_data(a)
     c = _unsigned_i32(machine.pop_value())  # value
     i = _unsigned_i32(machine.pop_value())  # base
+    assert isinstance(operands[1], int)
     ea = i + int(operands[1])  # effective address
     if ea + 4 > len(mem):
         raise RuntimeError(
@@ -920,6 +926,9 @@ def memory_init(machine: Machine, instruction: Instruction) -> None:
     mem = machine.get_mem_data(ma)
     da = curr_frame.module.dataaddrs[operands[0]]
     data = machine.get_data(da)
+    if data is None:
+        raise RuntimeError("memory.init: dropped data segment accessed "
+                           f"(index {operands[0]}, address {da})")
     n = _unsigned_i32(machine.pop_value())  # data size, i32
     s = _unsigned_i32(machine.pop_value())  # source, i32
     d = _unsigned_i32(machine.pop_value())  # destination, i32
@@ -1101,7 +1110,7 @@ def i32_ge_u(machine: Machine, instruction: Instruction) -> None:
 
 
 def i64_eqz(machine: Machine, instruction: Instruction) -> None:
-    c1 = int(cast(values.Value, machine.pop()).value)
+    c1 = machine.pop_value().intval()
     machine.push(values.Value(values.ValueType.I64, 0 if c1 else 1))
     machine.get_current_frame().pc += 1
 

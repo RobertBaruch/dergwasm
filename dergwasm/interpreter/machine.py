@@ -167,7 +167,7 @@ class Machine(abc.ABC):
         """Returns the global at the given address."""
 
     @abc.abstractmethod
-    def add_data(self, data: bytearray) -> int:
+    def add_data(self, data: bytes) -> int:
         """Adds data to the machine and returns its address."""
 
     @abc.abstractmethod

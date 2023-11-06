@@ -7,16 +7,19 @@ from __future__ import annotations  # For PEP563 - postponed evaluation of annot
 import abc
 import binascii
 import dataclasses
-from io import BytesIO
-from typing import BinaryIO, Type
+from io import BufferedIOBase, BytesIO
+from typing import Type, TypeVar, cast
 
-import leb128
+import leb128  # type: ignore
 
 from dergwasm.interpreter import insn
 from dergwasm.interpreter import values
 
 
-def _read_byte(f: BytesIO) -> int:
+ModuleSectionT = TypeVar("ModuleSectionT", bound="ModuleSection")
+
+
+def _read_byte(f: BufferedIOBase) -> int:
     """Reads a byte from the data stream.
 
     Raises:
@@ -28,7 +31,7 @@ def _read_byte(f: BytesIO) -> int:
         raise EOFError from e
 
 
-def _read_value_type(f: BytesIO) -> values.ValueType:
+def _read_value_type(f: BufferedIOBase) -> values.ValueType:
     """Reads a value type from the data stream.
 
     Raises:
@@ -37,7 +40,7 @@ def _read_value_type(f: BytesIO) -> values.ValueType:
     return values.ValueType(_read_byte(f))
 
 
-def _read_unsigned_int(f: BytesIO) -> int:
+def _read_unsigned_int(f: BufferedIOBase) -> int:
     """Reads an LEB128-encoded int from the data stream.
 
     Raises:
@@ -49,7 +52,7 @@ def _read_unsigned_int(f: BytesIO) -> int:
         raise EOFError from e
 
 
-def _read_string(f: BytesIO) -> str:
+def _read_string(f: BufferedIOBase) -> str:
     """Reads a string from the data stream.
 
     Raises:
@@ -72,7 +75,7 @@ class FuncType(ExternalType):
     results: list[values.ValueType]
 
     @staticmethod
-    def read(f: BytesIO) -> FuncType:
+    def read(f: BufferedIOBase) -> FuncType:
         """Reads and returns a FuncType.
 
         Returns:
@@ -102,7 +105,7 @@ class TableType(ExternalType):
     limits: values.Limits
 
     @staticmethod
-    def read(f: BytesIO) -> TableType:
+    def read(f: BufferedIOBase) -> TableType:
         """Reads and returns a TableType."""
         reftype = values.ValueType(_read_byte(f))
         tag = _read_byte(f)
@@ -126,7 +129,7 @@ class MemType(ExternalType):
     limits: values.Limits
 
     @staticmethod
-    def read(f: BytesIO) -> MemType:
+    def read(f: BufferedIOBase) -> MemType:
         """Reads and returns a MemType."""
         tag = _read_byte(f)
         min_limit = _read_unsigned_int(f)
@@ -150,7 +153,7 @@ class GlobalType(ExternalType):
     mutable: bool
 
     @staticmethod
-    def read(f: BytesIO) -> GlobalType:
+    def read(f: BufferedIOBase) -> GlobalType:
         """Reads and returns a GlobalType."""
         value_type = values.ValueType(_read_byte(f))
         mutable = bool(_read_byte(f))
@@ -179,7 +182,7 @@ class Import:
     desc: int | FuncType | TableType | MemType | GlobalType
 
     @staticmethod
-    def read(f: BytesIO) -> Import:
+    def read(f: BufferedIOBase) -> Import:
         """Reads and returns an Import.
 
         `desc` is the descriptor. If it's an int, it's an index into the FuncSection
@@ -195,17 +198,14 @@ class Import:
         name = _read_string(f)
         tag = _read_byte(f)
         if tag == 0x00:  # type index, gets resolved later to FuncType.
-            desc = _read_unsigned_int(f)
-        elif tag == 0x01:
-            desc = TableType.read(f)
-        elif tag == 0x02:
-            desc = MemType.read(f)
-        elif tag == 0x03:
-            desc = GlobalType.read(f)
-        else:
-            raise ValueError(f"Unknown import desc tag {tag:02X}")
-
-        return Import(module, name, desc)
+            return Import(module, name, _read_unsigned_int(f))
+        if tag == 0x01:
+            return Import(module, name, TableType.read(f))
+        if tag == 0x02:
+            return Import(module, name, MemType.read(f))
+        if tag == 0x03:
+            return Import(module, name, GlobalType.read(f))
+        raise ValueError(f"Unknown import desc tag {tag:02X}")
 
     def __repr__(self) -> str:
         return f"Import({self.module}:{self.name}, {self.desc})"
@@ -220,7 +220,7 @@ class Export:
     desc_idx: int  # The index into the respective section of the given type.
 
     @staticmethod
-    def read(f: BytesIO) -> Export:
+    def read(f: BufferedIOBase) -> Export:
         """Reads and returns an Export.
 
         Returns:
@@ -249,7 +249,7 @@ class Table:
     table_type: TableType
 
     @staticmethod
-    def read(f: BytesIO) -> Table:
+    def read(f: BufferedIOBase) -> Table:
         """Reads and returns a Table."""
         return Table(TableType.read(f))
 
@@ -261,7 +261,7 @@ class Mem:
     mem_type: MemType
 
     @staticmethod
-    def read(f: BytesIO) -> Mem:
+    def read(f: BufferedIOBase) -> Mem:
         """Reads and returns a Mem."""
         return Mem(MemType.read(f))
 
@@ -312,7 +312,7 @@ class ElementSegment:
         )
 
     @staticmethod
-    def read(f: BytesIO) -> ElementSegment:
+    def read(f: BufferedIOBase) -> ElementSegment:
         """Reads and returns an ElementSegment."""
         desc_idx = _read_unsigned_int(f)
 
@@ -530,7 +530,7 @@ class Code:
     insns: list[insn.Instruction]
 
     @staticmethod
-    def read(f: BytesIO) -> Code:
+    def read(f: BufferedIOBase) -> Code:
         """Reads and returns a Code."""
         _ = _read_unsigned_int(f)  # Code size, not needed.
         num_locals = _read_unsigned_int(f)
@@ -549,7 +549,7 @@ class Code:
         return "".join([i.to_str(0) for i in self.insns])
 
 
-def read_expr(f: BytesIO) -> list[insn.Instruction]:
+def read_expr(f: BufferedIOBase) -> list[insn.Instruction]:
     """Reads an expression: a list of instructions terminated by an end instruction.
 
     The returned list is flattened.
@@ -593,7 +593,7 @@ class Data:
     data: bytes
 
     @staticmethod
-    def read(f: BytesIO) -> Data:
+    def read(f: BufferedIOBase) -> Data:
         """Reads and returns a Data."""
         tag = _read_unsigned_int(f)
         memidx = 0
@@ -621,7 +621,7 @@ class Global:
     init: list[insn.Instruction]
 
     @staticmethod
-    def read(f: BytesIO) -> Global:
+    def read(f: BufferedIOBase) -> Global:
         """Reads and returns a Global."""
         global_type = GlobalType.read(f)
         init = read_expr(f)
@@ -633,7 +633,7 @@ class ModuleSection(abc.ABC):
 
     @staticmethod
     @abc.abstractmethod
-    def read(f: BytesIO) -> ModuleSection:
+    def read(f: BufferedIOBase) -> ModuleSection:
         """Reads and returns a module section.
 
         Returns:
@@ -655,12 +655,12 @@ class CustomSection(ModuleSection):
     data: bytes
 
     @staticmethod
-    def read(f: BytesIO) -> ModuleSection:
+    def read(f: BufferedIOBase) -> ModuleSection:
         name_len = _read_unsigned_int(f)
         name = f.read(name_len).decode("utf-8")
         data_len = _read_unsigned_int(f)
         data = f.read(data_len)
-        print(f"Read custom section {name}: {data}")
+        print(f"Read custom section {name}: {data!r}")
         return CustomSection(name, data)
 
 
@@ -676,7 +676,7 @@ class TypeSection(ModuleSection):
     types: list[FuncType]
 
     @staticmethod
-    def read(f: BytesIO) -> ModuleSection:
+    def read(f: BufferedIOBase) -> ModuleSection:
         """Reads and returns a type section."""
         num_types = _read_unsigned_int(f)
         types = [FuncType.read(f) for _ in range(num_types)]
@@ -698,7 +698,7 @@ class ImportSection(ModuleSection):
     imports: list[Import]
 
     @staticmethod
-    def read(f: BytesIO) -> ModuleSection:
+    def read(f: BufferedIOBase) -> ModuleSection:
         """Reads and returns an imports section."""
         num_imports = _read_unsigned_int(f)
         imports = [Import.read(f) for _ in range(num_imports)]
@@ -713,7 +713,7 @@ class FunctionSection(ModuleSection):
     funcs: list[Func]
 
     @staticmethod
-    def read(f: BytesIO) -> ModuleSection:
+    def read(f: BufferedIOBase) -> ModuleSection:
         """Reads and returns a function section."""
         num_funcs = _read_unsigned_int(f)
         functype_indices = [_read_unsigned_int(f) for _ in range(num_funcs)]
@@ -730,7 +730,7 @@ class TableSection(ModuleSection):
     tables: list[Table]
 
     @staticmethod
-    def read(f: BytesIO) -> ModuleSection:
+    def read(f: BufferedIOBase) -> ModuleSection:
         """Reads and returns a table section."""
         num_tables = _read_unsigned_int(f)
         tables = [Table.read(f) for _ in range(num_tables)]
@@ -745,7 +745,7 @@ class MemorySection(ModuleSection):
     memories: list[Mem]
 
     @staticmethod
-    def read(f: BytesIO) -> ModuleSection:
+    def read(f: BufferedIOBase) -> ModuleSection:
         """Reads and returns a memory section."""
         num_memories = _read_unsigned_int(f)
         memories = [Mem.read(f) for _ in range(num_memories)]
@@ -760,7 +760,7 @@ class GlobalSection(ModuleSection):
     global_vars: list[Global]
 
     @staticmethod
-    def read(f: BytesIO) -> ModuleSection:
+    def read(f: BufferedIOBase) -> ModuleSection:
         """Reads and returns a global section."""
         num_globals = _read_unsigned_int(f)
         global_vars = [Global.read(f) for _ in range(num_globals)]
@@ -775,7 +775,7 @@ class ExportSection(ModuleSection):
     exports: list[Export]
 
     @staticmethod
-    def read(f: BytesIO) -> ModuleSection:
+    def read(f: BufferedIOBase) -> ModuleSection:
         """Reads and returns an export section."""
         num_exports = _read_unsigned_int(f)
         exports = [Export.read(f) for _ in range(num_exports)]
@@ -790,7 +790,7 @@ class StartSection(ModuleSection):
     start_idx: int
 
     @staticmethod
-    def read(f: BytesIO) -> ModuleSection:
+    def read(f: BufferedIOBase) -> ModuleSection:
         """Reads and returns a start section."""
         start_idx = _read_unsigned_int(f)
         print(f"Read start: {start_idx}")
@@ -804,7 +804,7 @@ class ElementSection(ModuleSection):
     elements: list[ElementSegment]
 
     @staticmethod
-    def read(f: BytesIO) -> ModuleSection:
+    def read(f: BufferedIOBase) -> ModuleSection:
         """Reads and returns an element section."""
         num_elements = _read_unsigned_int(f)
         elements = [ElementSegment.read(f) for _ in range(num_elements)]
@@ -819,7 +819,7 @@ class CodeSection(ModuleSection):
     code: list[Code]
 
     @staticmethod
-    def read(f: BytesIO) -> ModuleSection:
+    def read(f: BufferedIOBase) -> ModuleSection:
         """Reads and returns a code section."""
         num_code = _read_unsigned_int(f)
         code = [Code.read(f) for _ in range(num_code)]
@@ -834,7 +834,7 @@ class DataSection(ModuleSection):
     data: list[Data]
 
     @staticmethod
-    def read(f: BytesIO) -> ModuleSection:
+    def read(f: BufferedIOBase) -> ModuleSection:
         """Reads and returns a data section."""
         num_data = _read_unsigned_int(f)
         data = [Data.read(f) for _ in range(num_data)]
@@ -849,7 +849,7 @@ class DataCountSection(ModuleSection):
     data_count: int
 
     @staticmethod
-    def read(f: BytesIO) -> ModuleSection:
+    def read(f: BufferedIOBase) -> ModuleSection:
         """Reads and returns a data count section."""
         data_count = _read_unsigned_int(f)
         print(f"Read data count: {data_count}")
@@ -888,13 +888,13 @@ class Module:
             return Module.read(data)
 
     @staticmethod
-    def read(f: BinaryIO) -> Module:
+    def read(f: BufferedIOBase) -> Module:
         """Reads a module from a binary stream."""
         if f.read(4) != b"\x00\x61\x73\x6D":
             raise ValueError("Magic number (0061736D) not found.")
         version = f.read(4)
         if version != b"\x01\x00\x00\x00":
-            raise ValueError(f"Unsupported version {binascii.hexlify(version)}.")
+            raise ValueError(f"Unsupported version {binascii.hexlify(version)!r}.")
 
         module = Module()
         while True:
@@ -909,15 +909,15 @@ class Module:
         # Fixups
 
         # Replace import func type indices with actual FuncTypes.
-        type_section: TypeSection = module.sections[TypeSection]
-        import_section: ImportSection = module.sections[ImportSection]
+        type_section = module.get_section(TypeSection)
+        import_section = module.get_section(ImportSection)
         for import_ in import_section.imports:
             if isinstance(import_.desc, int):
                 import_.desc = type_section.types[import_.desc]
 
         # Expand func section with code section
-        func_section: FunctionSection = module.sections[FunctionSection]
-        code_section: CodeSection = module.sections[CodeSection]
+        func_section = module.get_section(FunctionSection)
+        code_section = module.get_section(CodeSection)
         assert len(func_section.funcs) == len(code_section.code)
         for i, func in enumerate(func_section.funcs):
             func.local_var_types = code_section.code[i].local_var_types
@@ -927,7 +927,7 @@ class Module:
         return module
 
     @staticmethod
-    def read_section(f: BinaryIO) -> ModuleSection:
+    def read_section(f: BufferedIOBase) -> ModuleSection:
         """Reads a section.
 
         Returns:
@@ -965,3 +965,7 @@ class Module:
         section_data = BytesIO(f.read(section_len))
 
         return section_types[section_id].read(section_data)
+
+    def get_section(self, t: Type[ModuleSectionT]) -> ModuleSectionT:
+        """Gets a section of the given type."""
+        return cast(ModuleSectionT, self.sections[t])
