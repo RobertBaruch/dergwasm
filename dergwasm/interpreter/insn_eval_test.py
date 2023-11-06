@@ -2601,7 +2601,7 @@ class InsnEvalTest(parameterized.TestCase):
         )
         funcaddr = self._add_i32_func(
             i32_const(funcidx),
-            op2(InstructionType.CALL_INDIRECT, 0, 1),  # table 0, functype 1
+            op2(InstructionType.CALL_INDIRECT, 1, 0),  # table 0, functype 1
             i32_const(10),
             noarg(InstructionType.I32_ADD),
         )
@@ -2624,7 +2624,7 @@ class InsnEvalTest(parameterized.TestCase):
         )
         funcaddr = self._add_i32_func(
             i32_const(2),
-            op2(InstructionType.CALL_INDIRECT, 0, 1),  # table 0, functype 1
+            op2(InstructionType.CALL_INDIRECT, 1, 0),  # table 0, functype 1
             i32_const(10),
             noarg(InstructionType.I32_ADD),
         )
@@ -2646,7 +2646,7 @@ class InsnEvalTest(parameterized.TestCase):
         )
         funcaddr = self._add_i32_func(
             i32_const(1),
-            op2(InstructionType.CALL_INDIRECT, 0, 1),  # table 0, functype 1
+            op2(InstructionType.CALL_INDIRECT, 1, 0),  # table 0, functype 1
             i32_const(10),
             noarg(InstructionType.I32_ADD),
         )

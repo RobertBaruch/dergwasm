@@ -145,13 +145,13 @@ def run() -> None:
         if val.val_type == values.RefValType.EXTERN_FUNC:
             print(f"  = {machine_impl.get_func(val.addr).functype}")
 
-    print("Functions in the machine:")
-    for i, f in enumerate(machine_impl.funcs):
-        print(f"{i}: {type(f)}: {f.functype}")
-    print("Function indexes in the module:")
-    for i, f in enumerate(module_inst.funcaddrs):
-        ff = machine_impl.get_func(f)
-        print(f"{i}: {f} = {type(ff)}: {ff.functype}")
+    # print("Functions in the machine:")
+    # for i, f in enumerate(machine_impl.funcs):
+    #     print(f"{i}: {type(f)}: {f.functype}")
+    # print("Function indexes in the module:")
+    # for i, f in enumerate(module_inst.funcaddrs):
+    #     ff = machine_impl.get_func(f)
+    #     print(f"{i}: {f} = {type(ff)}: {ff.functype}")
 
     draw_addr = module_inst.exports["draw"].addr
     print(f"Invoking function at machine funcaddr {draw_addr}")

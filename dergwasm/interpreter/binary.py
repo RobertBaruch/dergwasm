@@ -519,32 +519,31 @@ def flatten_instructions(
 
 @dataclasses.dataclass
 class Code:
-    """A code specification."""
+    """A code specification.
 
-    local_vars: list[tuple[int, values.ValueType]]  # How many of each type of local.
+    This is a pair of value type vectors and expressions. They represent the locals and
+    body field of the functions in the funcs component of a module. The fields of the
+    respective functions are encoded separately in the function section.
+    """
+
+    local_var_types: list[values.ValueType]
     insns: list[insn.Instruction]
 
     @staticmethod
     def read(f: BytesIO) -> Code:
         """Reads and returns a Code."""
-        # code size is used only for validation.
-        _ = _read_unsigned_int(f)
+        _ = _read_unsigned_int(f)  # Code size, not needed.
         num_locals = _read_unsigned_int(f)
-        local_vars = [
-            (_read_unsigned_int(f), values.ValueType(_read_byte(f)))
+        local_vars_encoded = [
+            (_read_unsigned_int(f), _read_value_type(f))
             for _ in range(num_locals)
         ]
-        insns = []
-        while True:
-            instruction = insn.Instruction.read(f)
-            insns.append(instruction)
-            if instruction.instruction_type == insn.InstructionType.END:
-                break
+        local_var_types = []
+        for (num, value_type) in local_vars_encoded:
+            local_var_types.extend([value_type] * num)
+        insns = read_expr(f)
 
-        # Now we need to flatten out the instructions so we can compute instruction
-        # program counter labels.
-
-        return Code(local_vars, flatten_instructions(insns, 0))
+        return Code(local_var_types, insns)
 
     def __repr__(self) -> str:
         return "".join([i.to_str(0) for i in self.insns])
@@ -569,8 +568,8 @@ class Func:
     """A function specification."""
 
     typeidx: int
-    local_vars: list[values.ValueType]
-    body: list[insn.Instruction]
+    local_var_types: list[values.ValueType]  # Populated after module is read
+    body: list[insn.Instruction]  # Populated after module is read
 
 
 @dataclasses.dataclass
@@ -921,12 +920,7 @@ class Module:
         code_section: CodeSection = module.sections[CodeSection]
         assert len(func_section.funcs) == len(code_section.code)
         for i, func in enumerate(func_section.funcs):
-            # "Unpack" the local var types.
-            func.local_vars = []
-            print(f"Fixup func {i}, local vars {code_section.code[i].local_vars}")
-            for local in code_section.code[i].local_vars:
-                func.local_vars.extend([local[1]] * local[0])
-            print(f"  local_vars now {func.local_vars}")
+            func.local_var_types = code_section.code[i].local_var_types
             func.body = code_section.code[i].insns
         del module.sections[CodeSection]
 

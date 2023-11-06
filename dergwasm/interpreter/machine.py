@@ -25,7 +25,7 @@ class ModuleFuncInstance(FuncInstance):
     """The runtime representation of a function in a module."""
 
     module: module_instance.ModuleInstance
-    local_vars: list[values.ValueType]
+    local_var_types: list[values.ValueType]
     body: list[insn.Instruction]
 
 
@@ -90,6 +90,10 @@ class Machine(abc.ABC):
     @abc.abstractmethod
     def execute_seq(self, seq: list[insn.Instruction]) -> None:
         """Execute the instructions until RETURN or falling off end."""
+
+    @abc.abstractmethod
+    def execute_expr(self, seq: list[insn.Instruction]) -> None:
+        """Execute the instructions until falling off end. Requires a frame."""
 
     @abc.abstractmethod
     def get_current_frame(self) -> values.Frame:

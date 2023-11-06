@@ -114,7 +114,7 @@ class MachineImpl(machine.Machine):
         assert isinstance(f, machine.ModuleFuncInstance)
         func_type = f.functype
         local_vars: list[values.Value] = [self.pop() for _ in func_type.parameters]
-        local_vars.extend([values.StackValue.default(v) for v in f.local_vars])
+        local_vars.extend([values.StackValue.default(v) for v in f.local_var_types])
         self.new_frame(values.Frame(len(func_type.results), local_vars, f.module, 0))
         self.push(values.Label(len(func_type.results), len(f.body)))
 

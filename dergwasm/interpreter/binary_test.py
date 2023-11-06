@@ -11,9 +11,12 @@ from absl.testing import absltest, parameterized
 import leb128
 
 from dergwasm.interpreter.binary import (
+    Code,
+    Data,
     ElementSegment,
     Export,
     FuncType,
+    Global,
     GlobalType,
     Import,
     Mem,
@@ -324,6 +327,24 @@ class GlobalTypeTest(parameterized.TestCase):
 
         self.assertEqual(global_type.value_type, expected_value_type)
         self.assertEqual(global_type.mutable, expected_mutable)
+
+
+class GlobalTest(parameterized.TestCase):
+    def test_read(self):
+        data = (
+            Buffer()
+            .add_value_type(ValueType.I32)  # GlobalType
+            .add_byte(1)
+            .add_nop2_expr()  # init
+            .rewind()
+        )
+
+        global_spec = Global.read(data)
+
+        self.assertEqual(global_spec.global_type, GlobalType(ValueType.I32, True))
+        self.assertEqual(
+            global_spec.init, flatten_instructions([nop(), nop(), end()], 0)
+        )
 
 
 class ImportTest(parameterized.TestCase):
@@ -733,6 +754,93 @@ class FlattenInstructionsTest(parameterized.TestCase):
         self.assertSequenceEqual(
             [i.else_continuation_pc for i in flattened], expected_else_continuation_pcs
         )
+
+
+class CodeTest(parameterized.TestCase):
+    def test_read(self):
+        data = (
+            Buffer()
+            .add_unsigned_int(3)  # code size
+            .add_unsigned_int(2)  # vec(local)
+            .add_unsigned_int(1)  # num local vars
+            .add_value_type(ValueType.I32)  # local var type
+            .add_unsigned_int(2)  # num local vars
+            .add_value_type(ValueType.I64)  # local var type
+            .add_nop2_expr()  # func body
+            .rewind()
+        )
+
+        code_spec = Code.read(data)
+
+        self.assertEqual(
+            code_spec.local_var_types, [ValueType.I32, ValueType.I64, ValueType.I64]
+        )
+        self.assertEqual(
+            code_spec.insns, flatten_instructions([nop(), nop(), end()], 0)
+        )
+
+
+class DataTest(parameterized.TestCase):
+    def test_read_type_0(self):
+        data = (
+            Buffer()
+            .add_unsigned_int(0)  # tag
+            .add_nop2_expr()  # offset expr
+            .add_unsigned_int(3)  # data size
+            .add_byte(0x01)
+            .add_byte(0x02)
+            .add_byte(0x03)
+            .rewind()
+        )
+
+        data_segment = Data.read(data)
+
+        self.assertEqual(data_segment.memidx, 0)
+        self.assertEqual(
+            data_segment.offset, flatten_instructions([nop(), nop(), end()], 0)
+        )
+        self.assertEqual(data_segment.data, b"\x01\x02\x03")
+        self.assertTrue(data_segment.is_active)
+
+    def test_read_type_1(self):
+        data = (
+            Buffer()
+            .add_unsigned_int(1)  # tag
+            .add_unsigned_int(3)  # data size
+            .add_byte(0x01)
+            .add_byte(0x02)
+            .add_byte(0x03)
+            .rewind()
+        )
+
+        data_segment = Data.read(data)
+
+        self.assertEqual(data_segment.memidx, 0)
+        self.assertIsNone(data_segment.offset)
+        self.assertEqual(data_segment.data, b"\x01\x02\x03")
+        self.assertFalse(data_segment.is_active)
+
+    def test_read_type_2(self):
+        data = (
+            Buffer()
+            .add_unsigned_int(2)  # tag
+            .add_unsigned_int(200)  # memidx
+            .add_nop2_expr()  # offset expr
+            .add_unsigned_int(3)  # data size
+            .add_byte(0x01)
+            .add_byte(0x02)
+            .add_byte(0x03)
+            .rewind()
+        )
+
+        data_segment = Data.read(data)
+
+        self.assertEqual(data_segment.memidx, 200)
+        self.assertEqual(
+            data_segment.offset, flatten_instructions([nop(), nop(), end()], 0)
+        )
+        self.assertEqual(data_segment.data, b"\x01\x02\x03")
+        self.assertTrue(data_segment.is_active)
 
 
 if __name__ == "__main__":

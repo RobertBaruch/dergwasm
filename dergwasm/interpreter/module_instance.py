@@ -57,9 +57,10 @@ class ModuleInstance:
         for func_spec in function_section.funcs:
             func_type = type_section.types[func_spec.typeidx]
             func = ModuleFuncInstance(
-                func_type, self, func_spec.local_vars, func_spec.body
+                func_type, self, func_spec.local_var_types, func_spec.body
             )
             self.funcaddrs.append(machine_inst.add_func(func))
+        print(f"Allocated {len(self.funcaddrs)} functions")
 
         # Allocate tables.
         table_section: binary.TableSection = self.module.sections[binary.TableSection]
@@ -72,6 +73,7 @@ class ModuleInstance:
                 ],
             )
             self.tableaddrs.append(machine_inst.add_table(table))
+        print(f"Allocated {len(self.tableaddrs)} tables")
 
         # Allocate memories.
         memory_section: binary.MemorySection = self.module.sections[
@@ -82,6 +84,7 @@ class ModuleInstance:
                 memory_spec.mem_type, bytearray(memory_spec.mem_type.limits.min * 65536)
             )  # zero filled
             self.memaddrs.append(machine_inst.add_mem(mem))
+        print(f"Allocated {len(self.memaddrs)} memories")
 
         # Allocate globals.
         global_section: binary.GlobalSection = self.module.sections[
@@ -100,6 +103,7 @@ class ModuleInstance:
                 values.Value(global_spec.global_type.value_type, default_value),
             )
             self.globaladdrs.append(machine_inst.add_global(global_value))
+        print(f"Allocated {len(self.globaladdrs)} globals")
 
         # Allocate element segments.
         element_section: binary.ElementSection = self.module.sections[
@@ -112,17 +116,22 @@ class ModuleInstance:
                 element_segment.tableidx,
                 element_segment.elem_indexes,
                 element_segment.elem_exprs,
+                element_segment.is_active,
+                element_segment.is_passive,
+                element_segment.is_declarative,
                 [
                     values.Value(element_segment.elem_type, None)
                     for _ in range(element_segment.size())
                 ],
             )
             self.elementaddrs.append(machine_inst.add_element(segment))
+        print(f"Allocated {len(self.elementaddrs)} element segments")
 
         # Allocate data segments.
         data_section: binary.DataSection = self.module.sections[binary.DataSection]
         for data_spec in data_section.data:
             self.dataaddrs.append(machine_inst.add_data(data_spec.data))
+        print(f"Allocated {len(self.dataaddrs)} data segments")
 
         # Prepend the external funcs, tables, mems, and globals. These always come
         # first.
@@ -146,6 +155,10 @@ class ModuleInstance:
         self.tableaddrs = prepend_tableaddrs + self.tableaddrs
         self.memaddrs = prepend_memaddrs + self.memaddrs
         self.globaladdrs = prepend_globaladdrs + self.globaladdrs
+        print(f"With externvals, allocated {len(self.funcaddrs)} functions")
+        print(f"With externvals, allocated {len(self.tableaddrs)} tables")
+        print(f"With externvals, allocated {len(self.memaddrs)} memories")
+        print(f"With externvals, allocated {len(self.globaladdrs)} globals")
 
         # Add the exports.
         export_section: binary.ExportSection = self.module.sections[
@@ -243,6 +256,7 @@ class ModuleInstance:
             # immutable globals can only be initialized, not set.
             machine.set_global(instance.globaladdrs[i], machine.pop())
             machine.clear_stack()
+            print(f"Initialized global idx {i} (addr {instance.globaladdrs[i]})")
 
         # Populate the ref lists in each element section.
         element_section: binary.ElementSection = module.sections[binary.ElementSection]
@@ -251,12 +265,15 @@ class ModuleInstance:
             if s.elem_indexes is not None:
                 for j, idx in enumerate(s.elem_indexes):
                     segment_instance.refs[j].value = idx
+                print(f"Initialized element segment {i} with {len(s.elem_indexes)} "
+                      "indices")
             else:
                 machine.new_frame(values.Frame(1, [], instance, 0))
                 for j, expr in enumerate(s.elem_exprs):
                     machine.execute_expr(expr)
                     segment_instance.refs[j] = machine.pop()
                 machine.clear_stack()
+                print(f"Initialized element segment {i} with {len(s.elem_exprs)} exprs")
 
         # For each active element segment, copy the segment into its table.
         for i, s in enumerate(element_section.elements):
@@ -281,14 +298,17 @@ class ModuleInstance:
                 insn_eval.eval_insn(
                     machine, Instruction(InstructionType.ELEM_DROP, [i], 0, 0)
                 )
+                print(f"Copied active element segment {i} into table "
+                      f"{segment_instance.tableidx} (offset {offset}, length {n})")
 
         # For each declarative element segment, drop it (?).
         for i, s in enumerate(element_section.elements):
             segment_instance = machine.get_element(instance.elementaddrs[i])
-            if segment_instance.is_declarative:
+            if segment_instance is not None and segment_instance.is_declarative:
                 insn_eval.eval_insn(
                     machine, Instruction(InstructionType.ELEM_DROP, [i], 0, 0)
                 )
+                print(f"Dropped declarative element segment {i}")
 
         # For each active data segment, copy the data into memory.
         data_section: binary.DataSection = module.sections[binary.DataSection]
@@ -305,6 +325,7 @@ class ModuleInstance:
             machine.new_frame(values.Frame(1, [], instance, 0))
             machine.push(values.Label(1, len(d.offset)))
             machine.execute_expr(d.offset)
+            offset = machine.peek()
             machine.push(values.Value(values.ValueType.I32, 0))
             machine.push(values.Value(values.ValueType.I32, len(d.data)))
             insn_eval.memory_init(
@@ -314,6 +335,8 @@ class ModuleInstance:
                 machine, Instruction(InstructionType.DATA_DROP, [i], 0, 0)
             )
             machine.clear_stack()
+            print(f"Copied active data {i} into memory (offset {offset} len "
+                  f"{len(d.data)})")
 
         # Execute the start function
         # start_section: module.StartSection = module.sections[module.StartSection]

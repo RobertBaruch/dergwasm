@@ -221,10 +221,11 @@ def call(machine: Machine, instruction: Instruction) -> None:
 def call_indirect(machine: Machine, instruction: Instruction) -> None:
     f = machine.get_current_frame()
     f.pc += 1
-    assert isinstance(instruction.operands[0], int)  # tableidx
-    assert isinstance(instruction.operands[1], int)  # typeidx
-    tableidx = int(instruction.operands[0])
-    typeidx = int(instruction.operands[1])
+    # call.indirect x y is encoded as y x in the spec :<
+    assert isinstance(instruction.operands[1], int)  # tableidx
+    assert isinstance(instruction.operands[0], int)  # typeidx
+    tableidx = int(instruction.operands[1])
+    typeidx = int(instruction.operands[0])
     table = machine.get_table(f.module.tableaddrs[tableidx])
     functype = f.module.func_types[typeidx]
     i = _unsigned_i32(machine.pop())  # index
