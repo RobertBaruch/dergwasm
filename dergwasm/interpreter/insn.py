@@ -969,16 +969,16 @@ class Block:
         else_instructions = []
         while True:
             insn = Instruction.read(f)
+            instructions.append(insn)
             if insn.instruction_type == InstructionType.END:
                 break
             if insn.instruction_type == InstructionType.ELSE:
                 while True:
                     insn = Instruction.read(f)
+                    else_instructions.append(insn)
                     if insn.instruction_type == InstructionType.END:
                         break
-                    else_instructions.append(insn)
                 break
-            instructions.append(insn)
 
         return Block(block_type, instructions, else_instructions)
 

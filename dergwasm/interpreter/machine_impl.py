@@ -131,7 +131,8 @@ class MachineImpl(machine.Machine):
     def invoke_func(self, funcaddr: int) -> None:
         """Invokes a function, returning when the function ends/returns/traps."""
         f = self.funcs[funcaddr]
-        assert isinstance(f, machine.ModuleFuncInstance)
+        if not isinstance(f, machine.ModuleFuncInstance):
+            raise RuntimeError(f"Cannot invoke a non-module function: {f}")
         func_type = f.functype
         local_vars: list[values.Value] = [
             cast(values.Value, self.pop()) for _ in func_type.parameters
