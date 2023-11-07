@@ -118,19 +118,17 @@ def if_(machine: Machine, instruction: Instruction) -> None:
     assert isinstance(instruction.operands[0], Block)
     block_operand = instruction.operands[0]
     cond = machine.pop_value()
+    print(f">>> if_ {cond=}, {instruction.continuation_pc=}, {instruction.else_continuation_pc=}")
+    _block(machine, block_operand, instruction.continuation_pc)
     if cond.value:
-        _block(machine, block_operand, instruction.continuation_pc)
         machine.get_current_frame().pc += 1
     else:
-        # If there's no else clause, don't start a block.
-        if instruction.else_continuation_pc != instruction.continuation_pc:
-            _block(machine, block_operand, instruction.continuation_pc)
         machine.get_current_frame().pc = instruction.else_continuation_pc
 
 
 def else_(machine: Machine, instruction: Instruction) -> None:
-    # End of block reached without jump. Slide the first label out of the
-    # stack, and then jump to after its end.
+    # End of block reached without BR/RETURN. Slide the first label out of the
+    # stack, and then jump to its continuation.
     stack_values = []
     value = machine.pop()
     while not isinstance(value, values.Label):
@@ -145,8 +143,8 @@ def else_(machine: Machine, instruction: Instruction) -> None:
 
 
 def end(machine: Machine, instruction: Instruction) -> None:
-    # End of block reached without jump. Slide the first label out of the
-    # stack, and then jump to after its end.
+    # End of block reached without BR/RETURN. Slide the first label out of the
+    # stack, and then jump to its continuation (which should always be END+1).
     print("=== END === Stack before:")
     machine._debug_stack()
     stack_values = []

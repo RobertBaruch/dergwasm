@@ -515,22 +515,15 @@ def flatten_instructions(
             #   with continuation END+1, which will be resolved upon hitting END. This
             #   is the instruction's continuation_pc.
             # In either case, we have a label which is branchable, and exits the IF.
-            #
-            # continuation_pc = END + 1
-            # If END, else_continuation_pc = END + 1.
-            # IF ELSE, else_continuation_pc = ELSE + 1.
             true_insns = flatten_instructions(i.operands[0].instructions, pc + 1)
             i.operands[0].instructions = []
             pc += len(true_insns) + 1
-            i.else_continuation_pc = pc
+            i.else_continuation_pc = pc  # Either END+1 or ELSE+1.
 
             false_insns = flatten_instructions(i.operands[0].else_instructions, pc)
             i.operands[0].else_instructions = []
             pc += len(false_insns)
-            i.continuation_pc = pc
-
-            if true_insns[-1].instruction_type == insn.InstructionType.ELSE:
-                true_insns[-1].continuation_pc = pc
+            i.continuation_pc = pc  # END+1
 
             block_insns.extend(true_insns)
             block_insns.extend(false_insns)
