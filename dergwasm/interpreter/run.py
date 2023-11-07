@@ -4,7 +4,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=invalid-name
 
-import math
 from typing import cast
 
 from dergwasm.interpreter import binary
@@ -14,40 +13,35 @@ from dergwasm.interpreter import values
 from dergwasm.interpreter.module_instance import ModuleInstance
 
 
-def Math_atan(x: float) -> float:
-    return math.atan(x)
+# env.emscripten_memcpy_js
+# (type (;4;) (func (param i32 i32 i32)))
+def emscripten_memcpy_js(dest: int, src: int, n: int) -> None:
+    print(f"Called emscripten_memcpy_js({dest}, {src}, {n})")
 
 
-def clear_screen() -> None:
-    pass
-
-
-def cos(x: float) -> float:
-    return math.cos(x)
-
-
-def draw_bullet(x: float, y: float) -> None:
-    pass
-
-
-def draw_enemy(x: float, y: float) -> None:
-    pass
-
-
-def draw_particle(x: float, y: float, r: float) -> None:
-    pass
-
-
-def draw_player(x: float, y: float, angle: float) -> None:
-    pass
-
-
-def draw_score(score: float) -> None:
-    pass
-
-
-def sin(x: float) -> float:
-    return math.sin(x)
+# wasi_snapshot_preview1.fd_write
+# (type (;5;) (func (param i32 i32 i32 i32) (result i32)))
+# __wasi_errno_t __wasi_fd_write(
+# __wasi_fd_t fd,
+#
+# /**
+#  * List of scatter/gather vectors from which to retrieve data.
+#  */
+# const __wasi_ciovec_t *iovs,
+#
+# /**
+#  * The length of the array pointed to by `iovs`.
+#  */
+# size_t iovs_len,
+#
+# /**
+#  * The number of bytes written.
+#  */
+# __wasi_size_t *nwritten
+# )
+def fd_write(fd: int, iovs: int, iovs_len: int, nwritten_ptr: int) -> int:
+    print(f"Called fd_write({fd}, {iovs}, {iovs_len}, {nwritten_ptr})")
+    return 0
 
 
 def run() -> None:
@@ -55,59 +49,19 @@ def run() -> None:
     machine_impl = MachineImpl()
 
     # Add all host functions to the machine.
-    Math_atan_idx = machine_impl.add_func(
+    emscripten_memcpy_js_idx = machine_impl.add_func(
         machine.HostFuncInstance(
-            binary.FuncType([values.ValueType.F64], [values.ValueType.F64]), Math_atan
+            binary.FuncType([values.ValueType.I32] * 3, []), emscripten_memcpy_js
         )
     )
-    clear_screen_idx = machine_impl.add_func(
-        machine.HostFuncInstance(binary.FuncType([], []), clear_screen)
-    )
-    cos_idx = machine_impl.add_func(
+    fd_write_idx = machine_impl.add_func(
         machine.HostFuncInstance(
-            binary.FuncType([values.ValueType.F64], [values.ValueType.F64]), cos
-        )
-    )
-    draw_bullet_idx = machine_impl.add_func(
-        machine.HostFuncInstance(
-            binary.FuncType([values.ValueType.F64, values.ValueType.F64], []),
-            draw_bullet,
-        )
-    )
-    draw_enemy_idx = machine_impl.add_func(
-        machine.HostFuncInstance(
-            binary.FuncType([values.ValueType.F64, values.ValueType.F64], []),
-            draw_enemy,
-        )
-    )
-    draw_particle_idx = machine_impl.add_func(
-        machine.HostFuncInstance(
-            binary.FuncType(
-                [values.ValueType.F64, values.ValueType.F64, values.ValueType.F64], []
-            ),
-            draw_particle,
-        )
-    )
-    draw_player_idx = machine_impl.add_func(
-        machine.HostFuncInstance(
-            binary.FuncType(
-                [values.ValueType.F64, values.ValueType.F64, values.ValueType.F64], []
-            ),
-            draw_player,
-        )
-    )
-    draw_score_idx = machine_impl.add_func(
-        machine.HostFuncInstance(
-            binary.FuncType([values.ValueType.F64], []), draw_score
-        )
-    )
-    sin_idx = machine_impl.add_func(
-        machine.HostFuncInstance(
-            binary.FuncType([values.ValueType.F64], [values.ValueType.F64]), sin
+            binary.FuncType([values.ValueType.I32] * 4, [values.ValueType.I32]),
+            fd_write,
         )
     )
 
-    module = binary.Module.from_file("F:/dergwasm/index.wasm")
+    module = binary.Module.from_file("F:/dergwasm/hello_world.wasm")
     print("Required imports to the module:")
     import_section = cast(binary.ImportSection, module.sections[binary.ImportSection])
     types_section = cast(binary.TypeSection, module.sections[binary.TypeSection])
@@ -128,15 +82,8 @@ def run() -> None:
             # Since this is an ordered list, and we wouldn't actually know beforehand
             # what the order of imports are, ideally we would key our host functions
             # off of the name, and match them up to the import names.
-            values.RefVal(values.RefValType.EXTERN_FUNC, Math_atan_idx),
-            values.RefVal(values.RefValType.EXTERN_FUNC, clear_screen_idx),
-            values.RefVal(values.RefValType.EXTERN_FUNC, cos_idx),
-            values.RefVal(values.RefValType.EXTERN_FUNC, draw_bullet_idx),
-            values.RefVal(values.RefValType.EXTERN_FUNC, draw_enemy_idx),
-            values.RefVal(values.RefValType.EXTERN_FUNC, draw_particle_idx),
-            values.RefVal(values.RefValType.EXTERN_FUNC, draw_player_idx),
-            values.RefVal(values.RefValType.EXTERN_FUNC, draw_score_idx),
-            values.RefVal(values.RefValType.EXTERN_FUNC, sin_idx),
+            values.RefVal(values.RefValType.EXTERN_FUNC, emscripten_memcpy_js_idx),
+            values.RefVal(values.RefValType.EXTERN_FUNC, fd_write_idx),
         ],
         machine_impl,
     )
@@ -157,14 +104,20 @@ def run() -> None:
     #     ff = machine_impl.get_func(f)
     #     print(f"{i}: {f} = {type(ff)}: {ff.functype}")
 
-    draw_addr = module_inst.exports["update"].addr
-    print(f"Invoking function at machine funcaddr {draw_addr}")
-    assert draw_addr is not None
-    draw = machine_impl.get_func(draw_addr)
+    # main is (func (;3;) (type 7) (param i32 i32) (result i32)
+    # Presumably int main(int argc, char *argv[]).
+
+    addr = module_inst.exports["main"].addr
+    print(f"Invoking function at machine funcaddr {addr}")
+    assert addr is not None
+    draw = machine_impl.get_func(addr)
     assert isinstance(draw, machine.ModuleFuncInstance)
 
-    machine_impl.push(values.Value(values.ValueType.F64, 1000))
-    machine_impl.invoke_func(draw_addr)
+    machine_impl.push(values.Value(values.ValueType.I32, 0))
+    machine_impl.push(values.Value(values.ValueType.I32, 0))
+    machine_impl.invoke_func(addr)
+    return_code = machine_impl.pop_value().intval()
+    print(f"Return code: {return_code}")
 
 
 if __name__ == "__main__":

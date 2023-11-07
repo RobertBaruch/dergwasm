@@ -1,11 +1,11 @@
 class Slot:
-    def AddSlot(self) -> None:
+    def add_slot(self) -> None:
         ...
 
 
-def GetRootSlot() -> Slot:
+def get_root_slot() -> Slot:
     ...
 
 
-def NewSlot() -> Slot:
+def new_slot() -> Slot:
     ...

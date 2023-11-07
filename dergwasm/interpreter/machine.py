@@ -193,3 +193,7 @@ class Machine(abc.ABC):
     @abc.abstractmethod
     def get_nth_value_of_type(self, n: int, value_type: Type[T]) -> T:
         """Gets the n-th value of the given type from the top of the stack (0-based)."""
+
+    @abc.abstractmethod
+    def _debug_stack(self) -> None:
+        """Prints the stack."""

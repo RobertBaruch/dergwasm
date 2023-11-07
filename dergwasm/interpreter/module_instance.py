@@ -261,7 +261,7 @@ class ModuleInstance:
         global_section = module.get_section(GlobalSection)
         for i, g in enumerate(global_section.global_vars):
             # Run the init code block.
-            machine.new_frame(values.Frame(1, [], instance, 0))
+            machine.new_frame(values.Frame(1, [], instance, -1))
             machine.push(values.Label(1, len(g.init)))
             machine.execute_expr(g.init)
             # Pop the result off the stack and set the global with it. Strictly
@@ -292,7 +292,7 @@ class ModuleInstance:
                     raise ValueError(
                         f"Element segment {i} has neither elem_indexes nor elem_exprs"
                     )
-                machine.new_frame(values.Frame(1, [], instance, 0))
+                machine.new_frame(values.Frame(1, [], instance, -1))
                 for j, expr in enumerate(s.elem_exprs):
                     machine.execute_expr(expr)
                     segment_instance.refs[j] = machine.pop_value()
@@ -314,7 +314,7 @@ class ModuleInstance:
                         f"Element segment {i} is active but has no tableidx"
                     )
                 n = values.Value(values.ValueType.I32, len(segment_instance.refs))
-                machine.new_frame(values.Frame(1, [], instance, 0))
+                machine.new_frame(values.Frame(1, [], instance, -1))
                 machine.push(values.Label(1, len(segment_instance.offset_expr)))
                 machine.execute_expr(segment_instance.offset_expr)
                 offset = machine.pop()
@@ -358,7 +358,7 @@ class ModuleInstance:
             # Run the offset expression. By definition, it is not None. Also by
             # validation, it returns a value.
             assert d.offset is not None
-            machine.new_frame(values.Frame(1, [], instance, 0))
+            machine.new_frame(values.Frame(1, [], instance, -1))
             machine.push(values.Label(1, len(d.offset)))
             machine.execute_expr(d.offset)
             offset = machine.peek()

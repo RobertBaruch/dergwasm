@@ -113,10 +113,19 @@ class Frame(StackValue):
     arity: int
     local_vars: list[Value]
     module: module_instance.ModuleInstance
+    # The current funcidx.
+    funcidx: int
     # The current PC.
-    pc: int
+    pc: int = 0
     # The previous frame, if any
     prev_frame: Frame | None = None
+
+    def __repr__(self) -> str:
+        return (
+            f"Frame ({id(self):X}): arity {self.arity} locals {self.local_vars} "
+            f"module {id(self.module):X} pc {self.pc} in funcidx {self.funcidx} "
+            f"prev_frame {id(self.prev_frame):X}"
+        )
 
 
 @dataclasses.dataclass

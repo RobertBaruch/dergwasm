@@ -127,7 +127,7 @@ class InsnEvalTest(parameterized.TestCase):
         self.module_inst = module_instance.ModuleInstance(self.module)
         self.machine.add_mem(MemInstance(MemType(Limits(1, 10)), bytearray(65536)))
         self.module_inst.memaddrs = [0]
-        self.machine.new_frame(Frame(0, [], self.module_inst, 0))
+        self.machine.new_frame(Frame(0, [], self.module_inst, -1))
         self.starting_stack_depth = self._stack_depth()
 
     def test_nop(self):
@@ -2091,7 +2091,7 @@ class InsnEvalTest(parameterized.TestCase):
     )
     def test_local_get(self, localidx: int, expected: Value):
         local_vars = [Value(ValueType.I32, 1), Value(ValueType.F32, 2.2)]
-        self.machine.new_frame(Frame(0, local_vars, self.module_inst, 0))
+        self.machine.new_frame(Frame(0, local_vars, self.module_inst, -1))
 
         insn_eval.eval_insn(self.machine, local_get(localidx))
 
@@ -2106,7 +2106,7 @@ class InsnEvalTest(parameterized.TestCase):
     )
     def test_local_set(self, localidx: int, expected: Value):
         local_vars = [Value(ValueType.I32, 0), Value(ValueType.F32, 0)]
-        self.machine.new_frame(Frame(0, local_vars, self.module_inst, 0))
+        self.machine.new_frame(Frame(0, local_vars, self.module_inst, -1))
         self.machine.push(expected)
 
         insn_eval.eval_insn(self.machine, local_set(localidx))
@@ -2122,7 +2122,7 @@ class InsnEvalTest(parameterized.TestCase):
     )
     def test_local_tee(self, localidx: int, expected: Value):
         local_vars = [Value(ValueType.I32, 0), Value(ValueType.F32, 0)]
-        self.machine.new_frame(Frame(0, local_vars, self.module_inst, 0))
+        self.machine.new_frame(Frame(0, local_vars, self.module_inst, -1))
         self.machine.push(expected)
 
         insn_eval.eval_insn(self.machine, local_tee(localidx))

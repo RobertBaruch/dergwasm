@@ -147,6 +147,8 @@ def else_(machine: Machine, instruction: Instruction) -> None:
 def end(machine: Machine, instruction: Instruction) -> None:
     # End of block reached without jump. Slide the first label out of the
     # stack, and then jump to after its end.
+    print("=== END === Stack before:")
+    machine._debug_stack()
     stack_values = []
     value = machine.pop()
     while not isinstance(value, values.Label):
@@ -156,6 +158,8 @@ def end(machine: Machine, instruction: Instruction) -> None:
     while stack_values:
         machine.push(stack_values.pop())
     machine.get_current_frame().pc += 1
+    print("=== END === Stack after:")
+    machine._debug_stack()
 
 
 def _br(machine: Machine, level: int) -> None:
@@ -2329,15 +2333,10 @@ def eval_insn(machine: Machine, instruction: Instruction) -> None:
     try:
         print(f"[{machine.get_current_frame().pc}] {instruction}")
         INSTRUCTION_FUNCS[instruction.instruction_type](machine, instruction)
+        machine._debug_stack()
     except NotImplementedError:
         print("Instruction not implemented:", instruction)
-        print("Current stack:")
-        try:
-            while True:
-                v = machine.pop()
-                print(v)
-        except IndexError:
-            pass
+        machine._debug_stack()
         raise
 
 

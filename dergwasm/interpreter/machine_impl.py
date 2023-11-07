@@ -59,13 +59,16 @@ class MachineImpl(machine.Machine):
         self.stack_.data = []
 
     def execute_seq(self, seq: list[Instruction]) -> None:
-        """Execute the instructions until RETURN or falling off end."""
+        """Execute the body of a function until RETURN or falling off end."""
         self.get_current_frame().pc = 0
         while self.get_current_frame().pc < len(seq):
             instruction = seq[self.get_current_frame().pc]
             if instruction.instruction_type == InstructionType.RETURN:
                 break
             insn_eval.eval_insn(self, instruction)
+
+        print("FELL OFF END, Stack before:")
+        self._debug_stack()
 
         # Save any results.
         f = self.get_current_frame()
@@ -78,12 +81,13 @@ class MachineImpl(machine.Machine):
         # Pop off the current frame.
         self.pop()
         # Restore the next frame as the current frame.
-        self.current_frame = cast(
-            values.Frame, self.stack_.get_topmost_value_of_type(values.Frame)
-        )
+        self.current_frame = self.stack_.get_topmost_value_of_type(values.Frame)
         # Push the results back on the stack
         for v in reversed(results):
             self.push(v)
+
+        print("FELL OFF END, Stack after:")
+        self._debug_stack()
 
     def execute_expr(self, expr: list[Instruction]) -> None:
         """Execute the instructions until falling off end."""
@@ -133,7 +137,9 @@ class MachineImpl(machine.Machine):
             cast(values.Value, self.pop()) for _ in func_type.parameters
         ]
         local_vars.extend([values.StackValue.default(v) for v in f.local_var_types])
-        self.new_frame(values.Frame(len(func_type.results), local_vars, f.module, 0))
+        self.new_frame(
+            values.Frame(len(func_type.results), local_vars, f.module, funcaddr)
+        )
         self.push(values.Label(len(func_type.results), len(f.body)))
 
         self.execute_seq(f.body)
@@ -187,3 +193,9 @@ class MachineImpl(machine.Machine):
 
     def get_nth_value_of_type(self, n: int, value_type: Type[T]) -> T:
         return self.stack_.get_nth_value_of_type(n, value_type)
+
+    def _debug_stack(self) -> None:
+        print("Top of stack:")
+        for v in reversed(self.stack_.data):
+            print(f"  {v}")
+        print("Bottom of stack")
