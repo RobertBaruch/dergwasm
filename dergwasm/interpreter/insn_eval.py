@@ -118,7 +118,6 @@ def if_(machine: Machine, instruction: Instruction) -> None:
     assert isinstance(instruction.operands[0], Block)
     block_operand = instruction.operands[0]
     cond = machine.pop_value()
-    print(f">>> if_ {cond=}, {instruction.continuation_pc=}, {instruction.else_continuation_pc=}")
     _block(machine, block_operand, instruction.continuation_pc)
     if cond.value:
         machine.get_current_frame().pc += 1
@@ -145,8 +144,6 @@ def else_(machine: Machine, instruction: Instruction) -> None:
 def end(machine: Machine, instruction: Instruction) -> None:
     # End of block reached without BR/RETURN. Slide the first label out of the
     # stack, and then jump to its continuation (which should always be END+1).
-    print("=== END === Stack before:")
-    machine._debug_stack()
     stack_values = []
     value = machine.pop()
     while not isinstance(value, values.Label):
@@ -156,8 +153,6 @@ def end(machine: Machine, instruction: Instruction) -> None:
     while stack_values:
         machine.push(stack_values.pop())
     machine.get_current_frame().pc += 1
-    print("=== END === Stack after:")
-    machine._debug_stack()
 
 
 def _br(machine: Machine, level: int) -> None:
@@ -929,8 +924,10 @@ def memory_init(machine: Machine, instruction: Instruction) -> None:
     da = curr_frame.module.dataaddrs[operands[0]]
     data = machine.get_data(da)
     if data is None:
-        raise RuntimeError("memory.init: dropped data segment accessed "
-                           f"(index {operands[0]}, address {da})")
+        raise RuntimeError(
+            "memory.init: dropped data segment accessed "
+            f"(index {operands[0]}, address {da})"
+        )
     n = _unsigned_i32(machine.pop_value())  # data size, i32
     s = _unsigned_i32(machine.pop_value())  # source, i32
     d = _unsigned_i32(machine.pop_value())  # destination, i32
@@ -2329,9 +2326,16 @@ def i8x16_avgr_u(machine: Machine, instruction: Instruction) -> None:
 def eval_insn(machine: Machine, instruction: Instruction) -> None:
     """Evaluates an instruction."""
     try:
-        print(f"[{machine.get_current_frame().pc}] {instruction}")
+        print(
+            f"[{machine.get_current_frame().funcidx}:{machine.get_current_frame().pc}] "
+            f"{instruction}", end=""
+        )
         INSTRUCTION_FUNCS[instruction.instruction_type](machine, instruction)
-        machine._debug_stack()
+        try:
+            print(f"  top: {machine.peek()}")
+        except IndexError:
+            print("")
+        # machine._debug_stack()
     except NotImplementedError:
         print("Instruction not implemented:", instruction)
         machine._debug_stack()

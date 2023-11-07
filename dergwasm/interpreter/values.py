@@ -105,6 +105,17 @@ class Value(StackValue):
         assert isinstance(self.value, float)
         return cast(float, self.value)
 
+    def __repr__(self) -> str:
+        if self.value_type == ValueType.FUNCREF:
+            return f"<FUNCREF:{self.intval()}>"
+        if self.value_type == ValueType.EXTERNREF:
+            return f"<EXTERNREF:{self.value}>"
+        if self.value_type == ValueType.I32:
+            return f"<I32: {self.intval()} (0x{self.intval():08X})>"
+        if self.value_type == ValueType.I64:
+            return f"<I64: {self.intval()} (0x{self.intval():16X})>"
+        return f"<{self.value_type} {self.value}>"
+
 
 @dataclasses.dataclass
 class Frame(StackValue):

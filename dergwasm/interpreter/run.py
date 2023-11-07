@@ -4,10 +4,12 @@
 # pylint: disable=unused-argument
 # pylint: disable=invalid-name
 
+import struct
+import sys
 from typing import cast
 
 from dergwasm.interpreter import binary
-from dergwasm.interpreter import machine
+from dergwasm.interpreter.machine import Machine, HostFuncInstance, ModuleFuncInstance
 from dergwasm.interpreter.machine_impl import MachineImpl
 from dergwasm.interpreter import values
 from dergwasm.interpreter.module_instance import ModuleInstance
@@ -15,8 +17,10 @@ from dergwasm.interpreter.module_instance import ModuleInstance
 
 # env.emscripten_memcpy_js
 # (type (;4;) (func (param i32 i32 i32)))
-def emscripten_memcpy_js(dest: int, src: int, n: int) -> None:
+def emscripten_memcpy_js(machine: Machine, dest: int, src: int, n: int) -> None:
     print(f"Called emscripten_memcpy_js({dest}, {src}, {n})")
+    machine_data = machine.get_mem_data(0)
+    machine_data[dest: dest + n] = machine_data[src: src + n]
 
 
 # wasi_snapshot_preview1.fd_write
@@ -39,8 +43,41 @@ def emscripten_memcpy_js(dest: int, src: int, n: int) -> None:
 #  */
 # __wasi_size_t *nwritten
 # )
-def fd_write(fd: int, iovs: int, iovs_len: int, nwritten_ptr: int) -> int:
+#
+# /**
+#  * A region of memory for scatter/gather writes.
+#  */
+# typedef struct __wasi_ciovec_t {
+#     /**
+#      * The address of the buffer to be written.
+#      */
+#     const uint8_t * buf;
+#
+#     /**
+#      * The length of the buffer to be written.
+#      */
+#     __wasi_size_t buf_len;
+#
+# } __wasi_ciovec_t;
+# See: https://wasix.org/docs/api-reference/wasi/fd_write
+def fd_write(machine: Machine, fd: int, iovs: int, iovs_len: int, nwritten_ptr: int) -> int:
     print(f"Called fd_write({fd}, {iovs}, {iovs_len}, {nwritten_ptr})")
+    machine_data = machine.get_mem_data(0)
+    ptr = iovs
+    nwritten = 0
+    for i in range(iovs_len):
+        buf = struct.unpack("<I", machine_data[ptr : ptr + 4])[0]
+        buf_len = struct.unpack("<I", machine_data[ptr + 4 : ptr + 8])[0]
+        print(f"  iovs[{i}]: buf={buf}, buf_len={buf_len}")
+        if buf_len > 0:
+            buf_data = machine_data[buf : buf + buf_len]
+            print(f"    buf_data={buf_data}")
+            s = buf_data.decode('utf-8')
+            print(s)
+            nwritten += buf_len
+        ptr += 8
+    print(f"  nwritten={nwritten}")
+    struct.pack_into("<I", machine_data, nwritten_ptr, nwritten)
     return 0
 
 
@@ -50,12 +87,12 @@ def run() -> None:
 
     # Add all host functions to the machine.
     emscripten_memcpy_js_idx = machine_impl.add_func(
-        machine.HostFuncInstance(
+        HostFuncInstance(
             binary.FuncType([values.ValueType.I32] * 3, []), emscripten_memcpy_js
         )
     )
     fd_write_idx = machine_impl.add_func(
-        machine.HostFuncInstance(
+        HostFuncInstance(
             binary.FuncType([values.ValueType.I32] * 4, [values.ValueType.I32]),
             fd_write,
         )
@@ -111,7 +148,7 @@ def run() -> None:
     print(f"Invoking function at machine funcaddr {addr}")
     assert addr is not None
     draw = machine_impl.get_func(addr)
-    assert isinstance(draw, machine.ModuleFuncInstance)
+    assert isinstance(draw, ModuleFuncInstance)
 
     machine_impl.push(values.Value(values.ValueType.I32, 0))
     machine_impl.push(values.Value(values.ValueType.I32, 0))

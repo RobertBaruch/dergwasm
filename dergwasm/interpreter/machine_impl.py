@@ -67,9 +67,6 @@ class MachineImpl(machine.Machine):
                 break
             insn_eval.eval_insn(self, instruction)
 
-        print("FELL OFF END, Stack before:")
-        self._debug_stack()
-
         # Save any results.
         f = self.get_current_frame()
         n = f.arity
@@ -85,9 +82,6 @@ class MachineImpl(machine.Machine):
         # Push the results back on the stack
         for v in reversed(results):
             self.push(v)
-
-        print("FELL OFF END, Stack after:")
-        self._debug_stack()
 
     def execute_expr(self, expr: list[Instruction]) -> None:
         """Execute the instructions until falling off end."""
@@ -131,9 +125,27 @@ class MachineImpl(machine.Machine):
     def invoke_func(self, funcaddr: int) -> None:
         """Invokes a function, returning when the function ends/returns/traps."""
         f = self.funcs[funcaddr]
-        if not isinstance(f, machine.ModuleFuncInstance):
-            raise RuntimeError(f"Cannot invoke a non-module function: {f}")
         func_type = f.functype
+
+        if not isinstance(f, machine.FuncInstance):
+            raise RuntimeError(f"Cannot invoke a non-function: {f}")
+
+        if isinstance(f, machine.HostFuncInstance):
+            params = reversed([self.pop_value().value for _ in func_type.parameters])
+            ret_vals = f.hostfunc(self, *params)
+            if len(func_type.results) == 0:
+                return
+            if len(func_type.results) == 1:
+                assert not isinstance(ret_vals, (list, tuple))
+                self.push(values.Value(func_type.results[0], ret_vals))
+                return
+            assert isinstance(ret_vals, (list, tuple))
+            for i, v in enumerate(reversed(ret_vals)):  # TODO: reversed?
+                self.push(values.Value(func_type.results[i], v))
+            return
+
+        assert isinstance(f, machine.ModuleFuncInstance)
+
         local_vars: list[values.Value] = [
             cast(values.Value, self.pop()) for _ in func_type.parameters
         ]
