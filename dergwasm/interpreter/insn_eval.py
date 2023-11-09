@@ -161,7 +161,6 @@ def end(machine: Machine, instruction: Instruction) -> None:
 def _br(machine: Machine, level: int) -> None:
     label = machine.get_nth_value_of_type(level, values.Label)
     n = label.arity
-    print(f"  ==> Branching to PC {label.continuation} with {n} values (levels {level})")
 
     # save the top n values on the stack
     vals = [machine.pop_value() for _ in range(n)]
@@ -229,22 +228,18 @@ def call_indirect(machine: Machine, instruction: Instruction) -> None:
     assert isinstance(instruction.operands[0], int)  # typeidx
     tableidx = int(instruction.operands[1])
     typeidx = int(instruction.operands[0])
-    print(f"call_indirect: tableidx={tableidx}, typeidx={typeidx}")
     table = machine.get_table(f.module.tableaddrs[tableidx])
     functype = f.module.func_types[typeidx]
     i = _unsigned_i32(machine.pop_value())  # index
-    print(f"    index={i}")
     if i >= len(table.refs):
         raise RuntimeError(
             f"call_indirect: access out of bounds (index {i}, "
             f"table len {len(table.refs)})"
         )
-    print(f"    table.refs={table.refs}")
     funcaddr = table.refs[i]
     if funcaddr.value is None:
         raise RuntimeError("call_indirect: null reference")
     assert isinstance(funcaddr.value, int)
-    print(f"    funcaddr={funcaddr.value}")
     func = machine.get_func(funcaddr.value)
     if func.functype != functype:
         raise RuntimeError("call_indirect: type mismatch")
@@ -497,7 +492,6 @@ def i32_load(machine: Machine, instruction: Instruction) -> None:
         raise RuntimeError(
             f"i32.load: access out of bounds: base {i} offset {operands[1]}"
         )
-    print(f"    <- 0x{ea:08X}")
     val = struct.unpack("<I", mem[ea : ea + 4])[0]
     machine.push(values.Value(values.ValueType.I32, val))
     f.pc += 1
@@ -690,7 +684,6 @@ def i32_store(machine: Machine, instruction: Instruction) -> None:
             f"i32.store: access out of bounds: base {i} offset {operands[1]}"
         )
     mem[ea : ea + 4] = struct.pack("<I", c)
-    print(f"   i32.store: 0x{c:08X} -> 0x{ea:08X}")
     f.pc += 1
 
 
@@ -778,7 +771,6 @@ def i32_store8(machine: Machine, instruction: Instruction) -> None:
         raise RuntimeError(
             f"i32.store8: access out of bounds: base {i} offset {operands[1]}"
         )
-    print(f"   i32.store8: 0x{c:02X} -> 0x{ea:08X}")
     mem[ea] = c & 0xFF
     f.pc += 1
 
@@ -1718,7 +1710,11 @@ def i32_trunc_f64_u(machine: Machine, instruction: Instruction) -> None:
 
 
 def i64_extend_i32_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _unsigned_i32(machine.pop_value())
+    if val & 0x80000000:
+        val |= 0xFFFFFFFF00000000
+    machine.push(values.Value(values.ValueType.I64, val))
+    machine.get_current_frame().pc += 1
 
 
 def i64_extend_i32_u(machine: Machine, instruction: Instruction) -> None:
@@ -1800,23 +1796,43 @@ def f64_reinterpret_i64(machine: Machine, instruction: Instruction) -> None:
 
 
 def i32_extend8_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _unsigned_i32(machine.pop_value())
+    if val & 0x80:
+        val |= 0xFFFFFF00
+    machine.push(values.Value(values.ValueType.I32, val))
+    machine.get_current_frame().pc += 1
 
 
 def i32_extend16_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _unsigned_i32(machine.pop_value())
+    if val & 0x8000:
+        val |= 0xFFFF0000
+    machine.push(values.Value(values.ValueType.I32, val))
+    machine.get_current_frame().pc += 1
 
 
 def i64_extend8_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _unsigned_i64(machine.pop_value())
+    if val & 0x80:
+        val |= 0xFFFFFFFFFFFFFF00
+    machine.push(values.Value(values.ValueType.I64, val))
+    machine.get_current_frame().pc += 1
 
 
 def i64_extend16_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _unsigned_i64(machine.pop_value())
+    if val & 0x8000:
+        val |= 0xFFFFFFFFFFFF0000
+    machine.push(values.Value(values.ValueType.I64, val))
+    machine.get_current_frame().pc += 1
 
 
 def i64_extend32_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _unsigned_i64(machine.pop_value())
+    if val & 0x80000000:
+        val |= 0xFFFFFFFF00000000
+    machine.push(values.Value(values.ValueType.I64, val))
+    machine.get_current_frame().pc += 1
 
 
 def i32_trunc_sat_f32_s(machine: Machine, instruction: Instruction) -> None:
@@ -2339,16 +2355,12 @@ def i8x16_avgr_u(machine: Machine, instruction: Instruction) -> None:
 def eval_insn(machine: Machine, instruction: Instruction) -> None:
     """Evaluates an instruction."""
     try:
-        print(
-            f"[{machine.get_current_frame().funcidx}:{machine.get_current_frame().pc}] "
-            f"{instruction}"
-        )
+        # print(
+        #     f"[{machine.get_current_frame().funcidx}:{machine.get_current_frame().pc}] "
+        #     f"{instruction}"
+        # )
         INSTRUCTION_FUNCS[instruction.instruction_type](machine, instruction)
-        # try:
-        #     print(f"  top: {machine.peek()}")
-        # except IndexError:
-        #     print("")
-        machine._debug_stack()
+        # machine._debug_stack()
     except NotImplementedError:
         print("Instruction not implemented:", instruction)
         machine._debug_stack()

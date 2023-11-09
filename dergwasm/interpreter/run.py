@@ -83,6 +83,36 @@ def fd_write(
     return 0
 
 
+# wasi_snapshot_preview1.fd_seek
+def fd_seek(
+    machine: Machine, fd: int, offset: int, whence: int, newoffset_ptr: int
+) -> int:
+    print(f"Called fd_seek({fd=}, {offset=}, {whence=}, 0x{newoffset_ptr:08X})")
+    return 0
+
+
+# wasi_snapshot_preview1.fd_read
+def fd_read(machine: Machine, fd: int, iovs: int, iovs_len: int, nread_ptr: int) -> int:
+    print(f"Called fd_read({fd}, 0x{iovs:08X}, {iovs_len}, 0x{nread_ptr:08X})")
+    return 0
+
+
+# wasi_snapshot_preview1.fd_close
+def fd_close(machine: Machine, fd: int) -> int:
+    print(f"Called fd_close({fd})")
+    return 0
+
+
+def environ_get(machine: Machine, environ_ptr_ptr: int, environ_buf: int) -> int:
+    print(f"Called environ_get(0x{environ_ptr_ptr:08X}, 0x{environ_buf:08X})")
+    return 0
+
+
+def environ_sizes_get(machine: Machine, argc_ptr: int, argv_bug_size_ptr: int) -> int:
+    print(f"Called environ_sizes_get(0x{argc_ptr:08X}, 0x{argv_bug_size_ptr:08X})")
+    return 0
+
+
 # wasi_snapshot_preview1.proc_exit
 def proc_exit(machine: Machine, exit_code: int) -> None:
     print("Called proc_exit()")
@@ -100,6 +130,33 @@ def run() -> None:
             binary.FuncType([values.ValueType.I32] * 4, [values.ValueType.I32]),
             fd_write,
         ),
+        "wasi_snapshot_preview1.fd_read": HostFuncInstance(
+            binary.FuncType([values.ValueType.I32] * 4, [values.ValueType.I32]),
+            fd_read,
+        ),
+        "wasi_snapshot_preview1.fd_seek": HostFuncInstance(
+            binary.FuncType(
+                [
+                    values.ValueType.I32,
+                    values.ValueType.I64,
+                    values.ValueType.I32,
+                    values.ValueType.I32,
+                ],
+                [values.ValueType.I32],
+            ),
+            fd_seek,
+        ),
+        "wasi_snapshot_preview1.fd_close": HostFuncInstance(
+            binary.FuncType([values.ValueType.I32], [values.ValueType.I32]), fd_close
+        ),
+        "wasi_snapshot_preview1.environ_get": HostFuncInstance(
+            binary.FuncType([values.ValueType.I32] * 2, [values.ValueType.I32]),
+            environ_get,
+        ),
+        "wasi_snapshot_preview1.environ_sizes_get": HostFuncInstance(
+            binary.FuncType([values.ValueType.I32] * 2, [values.ValueType.I32]),
+            environ_sizes_get,
+        ),
         "wasi_snapshot_preview1.proc_exit": HostFuncInstance(
             binary.FuncType([values.ValueType.I32], []), proc_exit
         ),
@@ -107,11 +164,16 @@ def run() -> None:
 
     machine_impl = MachineImpl()
 
-    module = binary.Module.from_file("F:/dergwasm/hello_world.wasm")
-    print("Required imports to the module:")
-    import_section = cast(binary.ImportSection, module.sections[binary.ImportSection])
+    module = binary.Module.from_file("F:/dergwasm/hello_world_cpp.wasm")
     types_section = cast(binary.TypeSection, module.sections[binary.TypeSection])
     func_indexes = []
+    print("Exports from the module:")
+    export_section = cast(binary.ExportSection, module.sections[binary.ExportSection])
+    for export in export_section.exports:
+        print(f"{export.name}: {export.desc_type} {export.desc_idx}")
+
+    print("Required imports to the module:")
+    import_section = cast(binary.ImportSection, module.sections[binary.ImportSection])
     for import_ in import_section.imports:
         t = (
             types_section.types[import_.desc]
@@ -138,7 +200,7 @@ def run() -> None:
         ],
         machine_impl,
     )
-    print("Exports from the module:")
+
     for export, val in module_inst.exports.items():
         print(f"{export}: {val}")
         if val.val_type == values.RefValType.EXTERN_FUNC:

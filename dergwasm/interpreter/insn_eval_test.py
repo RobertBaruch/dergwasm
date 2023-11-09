@@ -1336,6 +1336,18 @@ class InsnEvalTest(parameterized.TestCase):
             Value(ValueType.I64, 0xFFFFFFFF),
         ),
         (
+            "i64.extend_i32_s positive",
+            InstructionType.I64_EXTEND_I32_S,
+            Value(ValueType.I32, 0x7FFFFFFF),
+            Value(ValueType.I64, 0x7FFFFFFF),
+        ),
+        (
+            "i64.extend_i32_s negative",
+            InstructionType.I64_EXTEND_I32_S,
+            Value(ValueType.I32, 0xFFFFFFFF),
+            Value(ValueType.I64, 0xFFFFFFFFFFFFFFFF),
+        ),
+        (
             "i64.wrap_i32",
             InstructionType.I32_WRAP_I64,
             Value(ValueType.I64, 0x12345678FFFFFFFF),
@@ -1364,6 +1376,66 @@ class InsnEvalTest(parameterized.TestCase):
             InstructionType.I32_EQZ,
             Value(ValueType.I32, 0),
             Value(ValueType.I32, 1),
+        ),
+        (
+            "i32.extend8_s positive",
+            InstructionType.I32_EXTEND8_S,
+            Value(ValueType.I32, 0x7F),
+            Value(ValueType.I32, 0x7F),
+        ),
+        (
+            "i32.extend8_s negative",
+            InstructionType.I32_EXTEND8_S,
+            Value(ValueType.I32, 0x80),
+            Value(ValueType.I32, 0xFFFFFF80),
+        ),
+        (
+            "i32.extend16_s positive",
+            InstructionType.I32_EXTEND16_S,
+            Value(ValueType.I32, 0x7FFF),
+            Value(ValueType.I32, 0x7FFF),
+        ),
+        (
+            "i32.extend16_s negative",
+            InstructionType.I32_EXTEND16_S,
+            Value(ValueType.I32, 0x8000),
+            Value(ValueType.I32, 0xFFFF8000),
+        ),
+        (
+            "i64.extend8_s positive",
+            InstructionType.I64_EXTEND8_S,
+            Value(ValueType.I64, 0x7F),
+            Value(ValueType.I64, 0x7F),
+        ),
+        (
+            "i64.extend8_s negative",
+            InstructionType.I64_EXTEND8_S,
+            Value(ValueType.I64, 0x80),
+            Value(ValueType.I64, 0xFFFFFFFFFFFFFF80),
+        ),
+        (
+            "i64.extend16_s positive",
+            InstructionType.I64_EXTEND16_S,
+            Value(ValueType.I64, 0x7FFF),
+            Value(ValueType.I64, 0x7FFF),
+        ),
+        (
+            "i64.extend16_s negative",
+            InstructionType.I64_EXTEND16_S,
+            Value(ValueType.I64, 0x8000),
+            Value(ValueType.I64, 0xFFFFFFFFFFFF8000),
+        ),
+        (
+            "i64.extend32_s positive",
+            InstructionType.I64_EXTEND32_S,
+            Value(ValueType.I64, 0x7FFFFFFF),
+            Value(ValueType.I64, 0x7FFFFFFF),
+        ),
+        (
+            "i64.extend32_s negative",
+            InstructionType.I64_EXTEND32_S,
+            Value(ValueType.I64, 0x80000000),
+            Value(ValueType.I64, 0xFFFFFFFF80000000),
         ),
     )
     def test_cvtops(self, insn_type: InstructionType, v: Value, expected: Value):
