@@ -18,12 +18,16 @@ def i64_const(value: int) -> Instruction:
 
 def f32_const(value: float) -> Instruction:
     # Necessary because python floats are 64-bit, but wasm F32s are 32-bit.
-    val32 = struct.unpack('f', struct.pack('f', value))[0]
+    val32 = struct.unpack("f", struct.pack("f", value))[0]
     return Instruction(InstructionType.F32_CONST, [val32], 0, 0)
 
 
 def f64_const(value: float) -> Instruction:
     return Instruction(InstructionType.F64_CONST, [value], 0, 0)
+
+
+def nop() -> Instruction:
+    return Instruction(InstructionType.NOP, [], 0, 0)
 
 
 def br(labelidx: int) -> Instruction:
@@ -65,16 +69,36 @@ def if_(*instructions: Instruction) -> Instruction:
     )
 
 
+def if_void(*instructions: Instruction) -> Instruction:
+    ended_instructions = list(instructions) + [end()]
+    return Instruction(InstructionType.IF, [Block(None, ended_instructions, [])], 0, 0)
+
+
 def else_() -> Instruction:
     return Instruction(InstructionType.ELSE, [], 0, 0)
 
 
-def if_else(if_insns: list[Instruction], else_insns: list[Instruction]) -> Instruction:
+def if_else_i32(
+    if_insns: list[Instruction], else_insns: list[Instruction]
+) -> Instruction:
     ended_if_insns = list(if_insns) + [else_()]
     ended_else_insns = list(else_insns) + [end()]
     return Instruction(
         InstructionType.IF,
         [Block(ValueType.I32, ended_if_insns, ended_else_insns)],
+        0,
+        0,
+    )
+
+
+def if_else_void(
+    if_insns: list[Instruction], else_insns: list[Instruction]
+) -> Instruction:
+    ended_if_insns = list(if_insns) + [else_()]
+    ended_else_insns = list(else_insns) + [end()]
+    return Instruction(
+        InstructionType.IF,
+        [Block(None, ended_if_insns, ended_else_insns)],
         0,
         0,
     )

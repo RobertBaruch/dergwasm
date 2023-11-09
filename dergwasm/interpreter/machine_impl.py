@@ -76,9 +76,13 @@ class MachineImpl(machine.Machine):
         while not isinstance(self.peek(), values.Frame):
             self.pop()
         # Pop off the current frame.
-        self.pop()
-        # Restore the next frame as the current frame.
-        self.current_frame = self.stack_.get_topmost_value_of_type(values.Frame)
+        frame = self.pop()
+        assert isinstance(frame, values.Frame)
+        # Restore the next frame as the current frame, if there is one.
+        try:
+            self.current_frame = self.stack_.get_topmost_value_of_type(values.Frame)
+        except ValueError:
+            pass
         # Push the results back on the stack
         for v in reversed(results):
             self.push(v)
@@ -123,7 +127,6 @@ class MachineImpl(machine.Machine):
         return self.funcs[funcaddr]
 
     def invoke_func(self, funcaddr: int) -> None:
-        """Invokes a function, returning when the function ends/returns/traps."""
         f = self.funcs[funcaddr]
         func_type = f.functype
 
@@ -146,9 +149,9 @@ class MachineImpl(machine.Machine):
 
         assert isinstance(f, machine.ModuleFuncInstance)
 
-        local_vars: list[values.Value] = [
-            cast(values.Value, self.pop()) for _ in func_type.parameters
-        ]
+        local_vars = list(reversed([
+            self.pop_value() for _ in func_type.parameters
+        ]))
         local_vars.extend([values.StackValue.default(v) for v in f.local_var_types])
         self.new_frame(
             values.Frame(len(func_type.results), local_vars, f.module, funcaddr)
@@ -156,6 +159,18 @@ class MachineImpl(machine.Machine):
         self.push(values.Label(len(func_type.results), len(f.body)))
 
         self.execute_seq(f.body)
+
+    def invoke_func_from_host(self, funcaddr: int) -> None:
+        f = self.funcs[funcaddr]
+        func_type = f.functype
+
+        if not isinstance(f, machine.ModuleFuncInstance):
+            raise RuntimeError(f"Cannot invoke a non-module function: {f}")
+
+        self.new_frame(
+            values.Frame(len(func_type.results), [], f.module, 0)
+        )
+        self.invoke_func(funcaddr)
 
     def add_table(self, table: machine.TableInstance) -> int:
         self.tables.append(table)
@@ -208,7 +223,11 @@ class MachineImpl(machine.Machine):
         return self.stack_.get_nth_value_of_type(n, value_type)
 
     def _debug_stack(self) -> None:
-        print("Top of stack:")
+        print("  Top of stack (to frame):")
         for v in reversed(self.stack_.data):
-            print(f"  {v}")
-        print("Bottom of stack")
+            if isinstance(v, values.Frame):
+                print("  -- Locals")
+                for i, v in enumerate(v.local_vars):
+                    print(f"    {i}: {v}")
+                return
+            print(f"    {v}")

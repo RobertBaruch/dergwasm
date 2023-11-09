@@ -131,6 +131,18 @@ class Machine(abc.ABC):
         """
 
     @abc.abstractmethod
+    def invoke_func_from_host(self, funcaddr: int) -> None:
+        """Invokes the func at the given address, from the host.
+
+        The function must be a module function.
+
+        The difference between this method and invoke_func() is that this method
+        first pushes a Frame onto the stack with a prev_frame of None. That way, when
+        the function ends, popping the frame off will tell us that there are no more
+        frames, and to return control to the host.
+        """
+
+    @abc.abstractmethod
     def add_hostfunc(self, hostfunc: Callable) -> int:
         """Adds a host function to the machine and returns its address."""
 

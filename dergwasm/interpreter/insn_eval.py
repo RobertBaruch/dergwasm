@@ -118,10 +118,13 @@ def if_(machine: Machine, instruction: Instruction) -> None:
     assert isinstance(instruction.operands[0], Block)
     block_operand = instruction.operands[0]
     cond = machine.pop_value()
-    _block(machine, block_operand, instruction.continuation_pc)
     if cond.value:
+        _block(machine, block_operand, instruction.continuation_pc)
         machine.get_current_frame().pc += 1
     else:
+        # Start a new block if and only if there was an else clause.
+        if instruction.else_continuation_pc != instruction.continuation_pc:
+            _block(machine, block_operand, instruction.continuation_pc)
         machine.get_current_frame().pc = instruction.else_continuation_pc
 
 
@@ -158,6 +161,7 @@ def end(machine: Machine, instruction: Instruction) -> None:
 def _br(machine: Machine, level: int) -> None:
     label = machine.get_nth_value_of_type(level, values.Label)
     n = label.arity
+    print(f"  ==> Branching to PC {label.continuation} with {n} values (levels {level})")
 
     # save the top n values on the stack
     vals = [machine.pop_value() for _ in range(n)]
@@ -235,10 +239,12 @@ def call_indirect(machine: Machine, instruction: Instruction) -> None:
             f"call_indirect: access out of bounds (index {i}, "
             f"table len {len(table.refs)})"
         )
+    print(f"    table.refs={table.refs}")
     funcaddr = table.refs[i]
     if funcaddr.value is None:
         raise RuntimeError("call_indirect: null reference")
     assert isinstance(funcaddr.value, int)
+    print(f"    funcaddr={funcaddr.value}")
     func = machine.get_func(funcaddr.value)
     if func.functype != functype:
         raise RuntimeError("call_indirect: type mismatch")
@@ -491,6 +497,7 @@ def i32_load(machine: Machine, instruction: Instruction) -> None:
         raise RuntimeError(
             f"i32.load: access out of bounds: base {i} offset {operands[1]}"
         )
+    print(f"    <- 0x{ea:08X}")
     val = struct.unpack("<I", mem[ea : ea + 4])[0]
     machine.push(values.Value(values.ValueType.I32, val))
     f.pc += 1
@@ -683,6 +690,7 @@ def i32_store(machine: Machine, instruction: Instruction) -> None:
             f"i32.store: access out of bounds: base {i} offset {operands[1]}"
         )
     mem[ea : ea + 4] = struct.pack("<I", c)
+    print(f"   i32.store: 0x{c:08X} -> 0x{ea:08X}")
     f.pc += 1
 
 
@@ -770,6 +778,7 @@ def i32_store8(machine: Machine, instruction: Instruction) -> None:
         raise RuntimeError(
             f"i32.store8: access out of bounds: base {i} offset {operands[1]}"
         )
+    print(f"   i32.store8: 0x{c:02X} -> 0x{ea:08X}")
     mem[ea] = c & 0xFF
     f.pc += 1
 
@@ -1110,77 +1119,77 @@ def i32_ge_u(machine: Machine, instruction: Instruction) -> None:
 
 def i64_eqz(machine: Machine, instruction: Instruction) -> None:
     c1 = machine.pop_value().intval()
-    machine.push(values.Value(values.ValueType.I64, 0 if c1 else 1))
+    machine.push(values.Value(values.ValueType.I32, 0 if c1 else 1))
     machine.get_current_frame().pc += 1
 
 
 def i64_eq(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i64(machine.pop_value())
     c1 = _unsigned_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I64, int(c1 == c2)))
+    machine.push(values.Value(values.ValueType.I32, int(c1 == c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_ne(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i64(machine.pop_value())
     c1 = _unsigned_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I64, int(c1 != c2)))
+    machine.push(values.Value(values.ValueType.I32, int(c1 != c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_lt_s(machine: Machine, instruction: Instruction) -> None:
     c2 = _signed_i64(machine.pop_value())
     c1 = _signed_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I64, int(c1 < c2)))
+    machine.push(values.Value(values.ValueType.I32, int(c1 < c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_lt_u(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i64(machine.pop_value())
     c1 = _unsigned_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I64, int(c1 < c2)))
+    machine.push(values.Value(values.ValueType.I32, int(c1 < c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_gt_s(machine: Machine, instruction: Instruction) -> None:
     c2 = _signed_i64(machine.pop_value())
     c1 = _signed_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I64, int(c1 > c2)))
+    machine.push(values.Value(values.ValueType.I32, int(c1 > c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_gt_u(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i64(machine.pop_value())
     c1 = _unsigned_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I64, int(c1 > c2)))
+    machine.push(values.Value(values.ValueType.I32, int(c1 > c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_le_s(machine: Machine, instruction: Instruction) -> None:
     c2 = _signed_i64(machine.pop_value())
     c1 = _signed_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I64, int(c1 <= c2)))
+    machine.push(values.Value(values.ValueType.I32, int(c1 <= c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_le_u(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i64(machine.pop_value())
     c1 = _unsigned_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I64, int(c1 <= c2)))
+    machine.push(values.Value(values.ValueType.I32, int(c1 <= c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_ge_s(machine: Machine, instruction: Instruction) -> None:
     c2 = _signed_i64(machine.pop_value())
     c1 = _signed_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I64, int(c1 >= c2)))
+    machine.push(values.Value(values.ValueType.I32, int(c1 >= c2)))
     machine.get_current_frame().pc += 1
 
 
 def i64_ge_u(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i64(machine.pop_value())
     c1 = _unsigned_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I64, int(c1 >= c2)))
+    machine.push(values.Value(values.ValueType.I32, int(c1 >= c2)))
     machine.get_current_frame().pc += 1
 
 
@@ -1686,8 +1695,10 @@ def f64_copysign(machine: Machine, instruction: Instruction) -> None:
     raise NotImplementedError
 
 
-def i64_i32_wrap(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+def i32_wrap_i64(machine: Machine, instruction: Instruction) -> None:
+    val = _unsigned_i64(machine.pop_value())
+    machine.push(values.Value(values.ValueType.I32, val & 0xFFFFFFFF))
+    machine.get_current_frame().pc += 1
 
 
 def i32_trunc_f32_s(machine: Machine, instruction: Instruction) -> None:
@@ -1711,7 +1722,9 @@ def i64_extend_i32_s(machine: Machine, instruction: Instruction) -> None:
 
 
 def i64_extend_i32_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _unsigned_i32(machine.pop_value())
+    machine.push(values.Value(values.ValueType.I64, val))
+    machine.get_current_frame().pc += 1
 
 
 def i64_trunc_f32_s(machine: Machine, instruction: Instruction) -> None:
@@ -2328,14 +2341,14 @@ def eval_insn(machine: Machine, instruction: Instruction) -> None:
     try:
         print(
             f"[{machine.get_current_frame().funcidx}:{machine.get_current_frame().pc}] "
-            f"{instruction}", end=""
+            f"{instruction}"
         )
         INSTRUCTION_FUNCS[instruction.instruction_type](machine, instruction)
-        try:
-            print(f"  top: {machine.peek()}")
-        except IndexError:
-            print("")
-        # machine._debug_stack()
+        # try:
+        #     print(f"  top: {machine.peek()}")
+        # except IndexError:
+        #     print("")
+        machine._debug_stack()
     except NotImplementedError:
         print("Instruction not implemented:", instruction)
         machine._debug_stack()
@@ -2515,7 +2528,7 @@ INSTRUCTION_FUNCS: dict[InstructionType, EvalFunc] = {
     InstructionType.F64_MIN: f64_min,
     InstructionType.F64_MAX: f64_max,
     InstructionType.F64_COPYSIGN: f64_copysign,
-    InstructionType.I64_I32_WRAP: i64_i32_wrap,
+    InstructionType.I32_WRAP_I64: i32_wrap_i64,
     InstructionType.I32_TRUNC_F32_S: i32_trunc_f32_s,
     InstructionType.I32_TRUNC_F32_U: i32_trunc_f32_u,
     InstructionType.I32_TRUNC_F64_S: i32_trunc_f64_s,

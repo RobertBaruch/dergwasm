@@ -203,7 +203,7 @@ class InstructionType(enum.Enum):
     F64_MAX = 0xA5
     F64_COPYSIGN = 0xA6
 
-    I64_I32_WRAP = 0xA7
+    I32_WRAP_I64 = 0xA7
     I32_TRUNC_F32_S = 0xA8
     I32_TRUNC_F32_U = 0xA9
     I32_TRUNC_F64_S = 0xAA
@@ -668,7 +668,7 @@ INSTRUCTION_TYPE_STRINGS: dict[InstructionType, str] = {
     InstructionType.F64_MIN: "f64.min",
     InstructionType.F64_MAX: "f64.max",
     InstructionType.F64_COPYSIGN: "f64.copysign",
-    InstructionType.I64_I32_WRAP: "i64.i32_wrap",
+    InstructionType.I32_WRAP_I64: "i32.wrap_i64",
     InstructionType.I32_TRUNC_F32_S: "i32.trunc_f32_s",
     InstructionType.I32_TRUNC_F32_U: "i32.trunc_f32_u",
     InstructionType.I32_TRUNC_F64_S: "i32.trunc_f64_s",

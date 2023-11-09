@@ -488,20 +488,21 @@ def flatten_instructions(
             assert isinstance(i.operands[0], insn.Block)
             block_insns = [i]
 
-            # The IF instruction contains a continuation_pc and an else_continuation_pc.
-            # The continuation_pc is END+1. The else_continuation_pc is ELSE+1, if
-            # there is an ELSE clause, otherwise END+1.
+            # The IF instruction is surprisingly complex.
             #
-            # Blocks end in END or ELSE:
+            # The IF instruction contains a continuation_pc and an else_continuation_pc.
+            #
+            # With an else:
             #  IF instr1 ELSE instr2 END
             #
             # If the condition is true, we continue with IF+1, then hit ELSE which
             #   causes us to jump to END+1. So this needs to make a label with
-            #   continuation END+1, which will be resolved on ELSE. This is the
+            #   continuation END+1, which will be resolved (meaning the label is popped
+            #   and then the label target is jumped to) on ELSE. END+1 is the
             #   instruction's continuation_pc.
             # If the condition is false, we jump to ELSE+1 (the instruction's
             #   else_continuation_pc), and hit END. So this needs to make a label with
-            #   continuation END+1, which will be resolved on END. This is the
+            #   continuation END+1, which will be resolved on END. END+1 is the
             #   instruction's continuation_pc.
             # In either case, we have a label which is branchable, and exits the IF.
             #
@@ -510,10 +511,11 @@ def flatten_instructions(
             #
             # If the condition is true, we continue with IF+1, then hit END. So this
             #   needs to make a label with continuation END+1, which will be resolved
-            #   upon hitting END. This is the instruction's continuation_pc.
-            # If the condition is false, we jump to END. So this neeeds to make a label
-            #   with continuation END+1, which will be resolved upon hitting END. This
-            #   is the instruction's continuation_pc.
+            #   upon hitting END. END+1 is the instruction's continuation_pc.
+            # If the condition is false, we jump to END. So this needs to make a label
+            #   with continuation END, which will be resolved upon hitting END. END+1
+            #   is the instruction's continuation_pc. IMPORTANT: thus the instruction's
+            #   else_continuation_pc must be END, not END+1.
             # In either case, we have a label which is branchable, and exits the IF.
             true_insns = flatten_instructions(i.operands[0].instructions, pc + 1)
             i.operands[0].instructions = []
