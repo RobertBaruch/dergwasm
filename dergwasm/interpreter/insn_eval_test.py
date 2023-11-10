@@ -69,6 +69,8 @@ class InsnEvalTest(parameterized.TestCase):
     module: Module
     module_inst: module_instance.ModuleInstance
     starting_stack_depth: int
+    starting_pc: int
+    test_code: list[Instruction]
 
     def _add_i32_func(self, *instructions: Instruction) -> int:
         """Add an i32 function to the machine that takes no arguments.
@@ -124,6 +126,27 @@ class InsnEvalTest(parameterized.TestCase):
         self.module_inst.funcaddrs.append(funcaddr)
         return funcaddr
 
+    def _start_code_at(self, pc: int, test_code: list[Instruction]) -> None:
+        """Sets the current PC to start executing the test code.
+
+        The first instruction in the list is treated as the instruction at the given pc.
+        """
+        self.machine.get_current_frame().pc = pc
+        self.starting_pc = pc
+        self.test_code = flatten_instructions(test_code, pc)
+
+    def _step(self, n: int = 1) -> None:
+        """Steps the machine n times.
+
+        The instruction executed is in the test code at the current PC, minus the
+        starting PC.
+        """
+        for _ in range(n):
+            insn_eval.eval_insn(
+                self.machine,
+                self.test_code[self.machine.get_current_frame().pc - self.starting_pc],
+            )
+
     def add_func_type(self, args: list[ValueType], returns: list[ValueType]) -> int:
         self.module_inst.func_types.append(FuncType(args, returns))
         return len(self.module_inst.func_types) - 1
@@ -150,6 +173,8 @@ class InsnEvalTest(parameterized.TestCase):
         self.module_inst.memaddrs = [0]
         self.machine.new_frame(Frame(0, [], self.module_inst, -1))
         self.starting_stack_depth = self._stack_depth()
+        self.starting_pc = 0
+        self.test_code = []
 
     def test_nop(self):
         insn_eval.eval_insn(self.machine, noarg(InstructionType.NOP))
@@ -1447,6 +1472,20 @@ class InsnEvalTest(parameterized.TestCase):
         self.assertEqual(self.machine.get_current_frame().pc, 1)
 
     @parameterized.named_parameters(
+        ("[5,6] select 0 = 6", 0, 5, 6, Value(ValueType.I32, 6)),
+        ("[5,6] select 1 = 5", 1, 5, 6, Value(ValueType.I32, 5)),
+    )
+    def test_select(self, c: int, v1: int, v2: int, expected: Value):
+        self.machine.push(Value(ValueType.I32, v1))
+        self.machine.push(Value(ValueType.I32, v2))
+        self.machine.push(Value(ValueType.I32, c))
+        insn_eval.eval_insn(self.machine, noarg(InstructionType.SELECT))
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        self.assertEqual(self.machine.pop(), expected)
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
+
+    @parameterized.named_parameters(
         (
             "ref.null func",
             InstructionType.REF_NULL,
@@ -2347,48 +2386,56 @@ class InsnEvalTest(parameterized.TestCase):
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
 
-    @parameterized.named_parameters(
-        ("1 < 2 is True", 1, 2, Value(ValueType.I32, 1)),
-        ("2 < 1 is False", 2, 1, Value(ValueType.I32, 0)),
-        ("1 < 1 is False", 1, 1, Value(ValueType.I32, 0)),
-        ("-2 < -1 unsigned is True", -2, -1, Value(ValueType.I32, 1)),
-        ("-1 < -2 unsigned is False", -1, -2, Value(ValueType.I32, 0)),
-        ("-1 < 1 unsigned is False", -1, 1, Value(ValueType.I32, 0)),
-        ("1 < -1 unsigned is True", 1, -1, Value(ValueType.I32, 1)),
-    )
-    def test_i32_lt_u(self, c1: int, c2: int, expected: Value):
-        funcaddr = self._add_i32_func(
-            i32_const(c1),
-            i32_const(c2),
-            noarg(InstructionType.I32_LT_U),
-        )
-        self.machine.invoke_func(funcaddr)
+    def test_block(self):
+        self._start_code_at(100, [void_block(nop())])
+        # Flattens out to:
+        #  100: block
+        #  101:   nop
+        #  102: end
+
+        self._step()
 
         self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(self.machine.pop(), expected)
+        self.assertEqual(self.machine.pop(), Label(0, 103))
+        self.assertEqual(self.machine.get_current_frame().pc, 101)
 
-    @parameterized.named_parameters(
-        ("[5,6] select 0 = 6", 0, 5, 6, Value(ValueType.I32, 6)),
-        ("[5,6] select 1 = 5", 1, 5, 6, Value(ValueType.I32, 5)),
-    )
-    def test_select(self, c: int, v1: int, v2: int, expected: Value):
-        funcaddr = self._add_i32_func(
-            i32_const(v1),
-            i32_const(v2),
-            i32_const(c),
-            noarg(InstructionType.SELECT),
-        )
-        self.machine.invoke_func(funcaddr)
+    def test_i32_block(self):
+        self._start_code_at(100, [i32_block(nop())])
+        # Flattens out to:
+        #  100: block [i32]
+        #  101:   nop
+        #  102: end
+
+        self._step()
 
         self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(self.machine.pop(), expected)
+        self.assertEqual(self.machine.pop(), Label(1, 103))
+        self.assertEqual(self.machine.get_current_frame().pc, 101)
 
     def test_block_end(self):
-        funcaddr = self._add_i32_func(i32_block(i32_const(1)))
-        self.machine.invoke_func(funcaddr)
+        self._start_code_at(100, [void_block(nop())])
+        # Flattens out to:
+        #  100: block
+        #  101:   nop
+        #  102: end
+
+        self._step(3)
+
+        self.assertStackDepth(self.starting_stack_depth)
+        self.assertEqual(self.machine.get_current_frame().pc, 103)
+
+    def test_i32_block_end(self):
+        self._start_code_at(100, [i32_block(i32_const(1))])
+        # Flattens out to:
+        #  100: block [i32]
+        #  101:   i32.const 1
+        #  102: end
+
+        self._step(3)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
+        self.assertEqual(self.machine.get_current_frame().pc, 103)
 
     def test_block_return(self):
         funcaddr = self._add_i32_func(
@@ -2402,18 +2449,49 @@ class InsnEvalTest(parameterized.TestCase):
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
 
-    def test_nested_block_ends(self):
-        funcaddr = self._add_i32_func(
-            i32_block(
-                i32_block(
-                    i32_const(1),
-                ),
-            ),
-        )
-        self.machine.invoke_func(funcaddr)
+    def test_i32_nested_block_end(self):
+        self._start_code_at(100, [i32_block(i32_block(i32_const(1)))])
+        # Flattens out to:
+        #  100: block [i32]
+        #  101:   block [i32]
+        #  102:     i32.const 1
+        #  103:   end
+        #  104: end
+
+        self._step(5)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
+        self.assertEqual(self.machine.get_current_frame().pc, 105)
+
+    def test_nested_block_br_0(self):
+        self._start_code_at(100, [void_block(void_block(br(0)))])
+        # Flattens out to:
+        #  100: block
+        #  101:   block
+        #  102:     br 0  # will go to 104
+        #  103:   end
+        #  104: end
+
+        self._step(3)
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        self.assertEqual(self.machine.pop(), Label(0, 105))
+        self.assertEqual(self.machine.get_current_frame().pc, 104)
+
+    def test_nested_block_br_1(self):
+        self._start_code_at(100, [void_block(void_block(br(1)))])
+        # Flattens out to:
+        #  100: block
+        #  101:   block
+        #  102:     br 1  # will go to 105
+        #  103:   end
+        #  104: end
+
+        self._step(3)
+
+        self.assertStackDepth(self.starting_stack_depth)
+        self.assertEqual(self.machine.get_current_frame().pc, 105)
 
     def test_nested_block_returns(self):
         funcaddr = self._add_i32_func(
@@ -2433,185 +2511,104 @@ class InsnEvalTest(parameterized.TestCase):
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
 
-    def test_block_br_0_skips_own_block(self):
-        funcaddr = self._add_i32_func(
-            i32_block(
-                i32_const(1),
-                br(0),
-                noarg(InstructionType.DROP),
-                i32_const(2),
-            ),
-            i32_const(10),
-            noarg(InstructionType.I32_ADD),
-        )
-        self.machine.invoke_func(funcaddr)
+    def test_br_if_0_false(self):
+        self._start_code_at(100, [void_block(void_block(i32_const(0), br_if(0)))])
+        # Flattens out to:
+        #  100: block
+        #  101:   block
+        #  102:     i32.const 0
+        #  103:     br_if 0  # false will continue to 104
+        #  104:   end
+        #  105: end
+
+        self._step(4)
+
+        self.assertStackDepth(self.starting_stack_depth + 2)
+        self.assertEqual(self.machine.pop(), Label(0, 105))
+        self.assertEqual(self.machine.get_current_frame().pc, 104)
+
+    def test_br_if_0_true(self):
+        self._start_code_at(100, [void_block(void_block(i32_const(1), br_if(0)))])
+        # Flattens out to:
+        #  100: block
+        #  101:   block
+        #  102:     i32.const 1
+        #  103:     br_if 0  # true will jump to 105
+        #  104:   end
+        #  105: end
+
+        self._step(4)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 11))
-
-    def test_block_br_1_skips_parent_block(self):
-        funcaddr = self._add_i32_func(
-            i32_block(
-                i32_block(
-                    i32_const(1),
-                    br(1),
-                    noarg(InstructionType.DROP),
-                    i32_const(2),
-                ),
-                i32_const(2),
-                noarg(InstructionType.I32_ADD),
-            ),
-            i32_const(10),
-            noarg(InstructionType.I32_ADD),
-        )
-        self.machine.invoke_func(funcaddr)
-
-        self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 11))
-
-    def test_block_br_0_continues_parent_block(self):
-        funcaddr = self._add_i32_func(
-            i32_block(
-                i32_block(
-                    i32_const(1),
-                    br(0),
-                    noarg(InstructionType.DROP),
-                    i32_const(2),
-                ),
-                i32_const(2),
-                noarg(InstructionType.I32_ADD),
-            ),
-            i32_const(10),
-            noarg(InstructionType.I32_ADD),
-        )
-        self.machine.invoke_func(funcaddr)
-
-        self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 13))
-
-    def test_br_if_0(self):
-        funcaddr = self._add_i32_func(
-            i32_block(
-                i32_const(1),
-                i32_const(0),
-                br_if(0),
-                noarg(InstructionType.DROP),
-                i32_const(2),
-            )
-        )
-        self.machine.invoke_func(funcaddr)
-
-        self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 2))
-
-    def test_br_if_1(self):
-        funcaddr = self._add_i32_func(
-            i32_block(
-                i32_const(1),
-                i32_const(1),
-                br_if(0),
-                noarg(InstructionType.DROP),
-                i32_const(2),
-            )
-        )
-        self.machine.invoke_func(funcaddr)
-
-        self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, 1))
+        self.assertEqual(self.machine.pop(), Label(0, 106))
+        self.assertEqual(self.machine.get_current_frame().pc, 105)
 
     @parameterized.named_parameters(
-        ("0", 0, 1),
-        ("1", 1, 2),
-        ("default", 2, 3),
+        ("0", 0, 106),
+        ("1", 1, 107),
+        ("default", 500, 108),
     )
-    def test_br_table(self, idx: int, expected_result: int):
-        funcaddr = self._add_i32_func(
-            i32_block(
-                i32_block(
-                    i32_block(
-                        i32_const(0),
-                        i32_const(idx),
-                        br_table(0, 1, 2),
-                    ),
-                    i32_const(1),
-                    noarg(InstructionType.RETURN),
-                ),
-                i32_const(2),
-                noarg(InstructionType.RETURN),
-            ),
-            i32_const(3),
-            noarg(InstructionType.RETURN),
+    def test_br_table(self, idx: int, expected_pc: int):
+        self._start_code_at(
+            100, [void_block(void_block(void_block(i32_const(idx), br_table(0, 1, 2))))]
         )
-        self.machine.invoke_func(funcaddr)
+        # Flattens out to:
+        #  100: block
+        #  101:   block
+        #  102:     block
+        #  103:       i32.const idx
+        #  104:       br_table 0 1 2  # 0 -> 106, 1 -> 107, 2 -> 108
+        #  105:     end
+        #  106:   end
+        #  107: end
 
-        self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected_result))
+        self._step(5)
+
+        self.assertEqual(self.machine.get_current_frame().pc, expected_pc)
 
     def test_if_false_skips_to_end(self):
-        self.machine.get_current_frame().pc = 100
-        insn = flatten_instructions([if_void(nop())], 100)
+        self._start_code_at(100, [if_void(nop())])
         # Flattens out to:
         #  100: if
         #  101:   nop
         #  102: end
         self.machine.push(Value(ValueType.I32, 0))
 
-        insn_eval.eval_insn(self.machine, insn[0])
+        self._step()
 
         self.assertStackDepth(self.starting_stack_depth)
         self.assertEqual(self.machine.get_current_frame().pc, 103)
 
     def test_if_true_starts_block_and_continues(self):
-        self.machine.get_current_frame().pc = 100
-        insn = flatten_instructions([if_void(nop())], 100)
+        self._start_code_at(100, [if_void(nop())])
         # Flattens out to:
         #  100: if
         #  101:   nop
         #  102: end
-        print(insn[0])
         self.machine.push(Value(ValueType.I32, 1))
 
-        insn_eval.eval_insn(self.machine, insn[0])
+        self._step()
 
-        self.assertStackDepth(self.starting_stack_depth + 1)  # The label
+        self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.peek(), Label(0, 103))
         self.assertEqual(self.machine.get_current_frame().pc, 101)
 
-        insn_eval.eval_insn(
-            self.machine, insn[self.machine.get_current_frame().pc - 100]
-        )  # Execute nop
-
-        insn_eval.eval_insn(
-            self.machine, insn[self.machine.get_current_frame().pc - 100]
-        )  # Execute end
-
-        self.assertStackDepth(self.starting_stack_depth)
-        self.assertEqual(self.machine.get_current_frame().pc, 103)
-
     def test_if_true_starts_block_and_br0_ends(self):
-        self.machine.get_current_frame().pc = 100
-        insn = flatten_instructions([if_void(br(0), nop())], 100)
+        self._start_code_at(100, [if_void(br(0), nop())])
         # Flattens out to:
         #  100: if
         #  101:   br 0
         #  102:   nop
         #  103: end
-        print(insn[0])
         self.machine.push(Value(ValueType.I32, 1))
 
-        insn_eval.eval_insn(self.machine, insn[0])
-        self.assertEqual(self.machine.get_current_frame().pc, 101)
-
-        insn_eval.eval_insn(
-            self.machine, insn[self.machine.get_current_frame().pc - 100]
-        )  # Execute br 0
+        self._step(2)
 
         self.assertStackDepth(self.starting_stack_depth)
         self.assertEqual(self.machine.get_current_frame().pc, 104)
 
     def test_if_else_false_starts_block_and_skips_to_else(self):
-        self.machine.get_current_frame().pc = 100
-        insn = flatten_instructions([if_else_void([nop()], [nop()])], 100)
+        self._start_code_at(100, [if_else_void([nop()], [nop()])])
         # Flattens out to:
         #  100: if
         #  101:   nop
@@ -2620,26 +2617,19 @@ class InsnEvalTest(parameterized.TestCase):
         #  104: end
         self.machine.push(Value(ValueType.I32, 0))
 
-        insn_eval.eval_insn(self.machine, insn[0])
+        self._step()
 
         self.assertStackDepth(self.starting_stack_depth + 1)  # The label
         self.assertEqual(self.machine.peek(), Label(0, 105))
         self.assertEqual(self.machine.get_current_frame().pc, 103)
 
-        insn_eval.eval_insn(
-            self.machine, insn[self.machine.get_current_frame().pc - 100]
-        )  # Execute nop
-
-        insn_eval.eval_insn(
-            self.machine, insn[self.machine.get_current_frame().pc - 100]
-        )  # Execute end
+        self._step(2)
 
         self.assertStackDepth(self.starting_stack_depth)
         self.assertEqual(self.machine.get_current_frame().pc, 105)
 
     def test_if_else_false_starts_block_and_br0_ends(self):
-        self.machine.get_current_frame().pc = 100
-        insn = flatten_instructions([if_else_void([nop()], [br(0), nop()])], 100)
+        self._start_code_at(100, [if_else_void([nop()], [br(0), nop()])])
         # Flattens out to:
         #  100: if
         #  101:   nop
@@ -2649,19 +2639,17 @@ class InsnEvalTest(parameterized.TestCase):
         #  105: end
         self.machine.push(Value(ValueType.I32, 0))
 
-        insn_eval.eval_insn(self.machine, insn[0])
+        self._step()
+
         self.assertEqual(self.machine.get_current_frame().pc, 103)
 
-        insn_eval.eval_insn(
-            self.machine, insn[self.machine.get_current_frame().pc - 100]
-        )  # Execute br 0
+        self._step()
 
         self.assertStackDepth(self.starting_stack_depth)
         self.assertEqual(self.machine.get_current_frame().pc, 106)
 
     def test_if_else_true_starts_block_and_continues(self):
-        self.machine.get_current_frame().pc = 100
-        insn = flatten_instructions([if_else_void([nop()], [nop()])], 100)
+        self._start_code_at(100, [if_else_void([nop()], [nop()])])
         # Flattens out to:
         #  100: if
         #  101:   nop
@@ -2670,26 +2658,19 @@ class InsnEvalTest(parameterized.TestCase):
         #  104: end
         self.machine.push(Value(ValueType.I32, 1))
 
-        insn_eval.eval_insn(self.machine, insn[0])
+        self._step()
 
         self.assertStackDepth(self.starting_stack_depth + 1)  # The label
         self.assertEqual(self.machine.peek(), Label(0, 105))
         self.assertEqual(self.machine.get_current_frame().pc, 101)
 
-        insn_eval.eval_insn(
-            self.machine, insn[self.machine.get_current_frame().pc - 100]
-        )  # Execute nop
-
-        insn_eval.eval_insn(
-            self.machine, insn[self.machine.get_current_frame().pc - 100]
-        )  # Execute else
+        self._step(2)
 
         self.assertStackDepth(self.starting_stack_depth)
         self.assertEqual(self.machine.get_current_frame().pc, 105)
 
     def test_if_else_true_starts_block_and_br0_ends(self):
-        self.machine.get_current_frame().pc = 100
-        insn = flatten_instructions([if_else_void([br(0), nop()], [nop()])], 100)
+        self._start_code_at(100, [if_else_void([br(0), nop()], [nop()])])
         # Flattens out to:
         #  100: if
         #  101:   br 0
@@ -2699,12 +2680,11 @@ class InsnEvalTest(parameterized.TestCase):
         #  105: end
         self.machine.push(Value(ValueType.I32, 1))
 
-        insn_eval.eval_insn(self.machine, insn[0])
+        self._step()
+
         self.assertEqual(self.machine.get_current_frame().pc, 101)
 
-        insn_eval.eval_insn(
-            self.machine, insn[self.machine.get_current_frame().pc - 100]
-        )  # Execute br 0
+        self._step()
 
         self.assertStackDepth(self.starting_stack_depth)
         self.assertEqual(self.machine.get_current_frame().pc, 106)
@@ -2732,8 +2712,7 @@ class InsnEvalTest(parameterized.TestCase):
         ("True", 2, 3),
     )
     def test_if_else_i32(self, cond: int, expected_result: int):
-        self.machine.get_current_frame().pc = 100
-        insn = flatten_instructions([if_else_i32([i32_const(3)], [i32_const(2)])], 100)
+        self._start_code_at(100, [if_else_i32([i32_const(3)], [i32_const(2)])])
         # Flattens out to:
         #  100: if [i32]
         #  101:   i32.const 3
@@ -2742,14 +2721,7 @@ class InsnEvalTest(parameterized.TestCase):
         #  104: end
         self.machine.push(Value(ValueType.I32, cond))
 
-        insn_eval.eval_insn(self.machine, insn[0])
-        # Execute two instructions
-        insn_eval.eval_insn(
-            self.machine, insn[self.machine.get_current_frame().pc - 100]
-        )
-        insn_eval.eval_insn(
-            self.machine, insn[self.machine.get_current_frame().pc - 100]
-        )
+        self._step(3)
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected_result))
