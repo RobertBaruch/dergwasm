@@ -57,6 +57,41 @@ def _signed_i64(v: values.Value) -> int:
     return n - 0x10000000000000000 if n & 0x8000000000000000 else n
 
 
+def _float32(v: values.Value) -> float:
+    """Converts a value to a 32-bit float."""
+    assert v.value_type == values.ValueType.F32
+    return v.floatval()
+
+
+def _float64(v: values.Value) -> float:
+    """Converts a value to a 64-bit float."""
+    assert v.value_type == values.ValueType.F64
+    return v.floatval()
+
+
+def _make_float32(val: float) -> values.Value:
+    """Converts a Python float to a 32-bit float value.
+
+    Only necessary because Python floats are doubles.
+    """
+    val32 = struct.unpack("<f", struct.pack("<f", val))[0]
+    return values.Value(values.ValueType.F32, val32)
+
+
+def _make_float64(val: float) -> values.Value:
+    """Converts a Python float to a 64-bit float value.
+
+    Although Python floats are doubles, we do this just for consistency.
+    """
+    val64 = struct.unpack("<d", struct.pack("<d", val))[0]
+    return values.Value(values.ValueType.F64, val64)
+
+
+def _make_bool(val: bool) -> values.Value:
+    """Converts a Python bool to an i32 value."""
+    return values.Value(values.ValueType.I32, 1 if val else 0)
+
+
 # Control instructions
 def unreachable(machine: Machine, instruction: Instruction) -> None:
     raise RuntimeError("unreachable instruction reached!")
@@ -1018,9 +1053,7 @@ def f32_const(machine: Machine, instruction: Instruction) -> None:
     operands = instruction.operands
     assert len(operands) == 1
     assert isinstance(operands[0], float)
-    # Necessary because python floats are 64-bit, but wasm F32s are 32-bit.
-    val32 = struct.unpack("f", struct.pack("f", operands[0]))[0]
-    machine.push(values.Value(values.ValueType.F32, val32))
+    machine.push(_make_float32(operands[0]))
     machine.get_current_frame().pc += 1
 
 
@@ -1029,184 +1062,202 @@ def f64_const(machine: Machine, instruction: Instruction) -> None:
     operands = instruction.operands
     assert len(operands) == 1
     assert isinstance(operands[0], float)
-    machine.push(values.Value(values.ValueType.F64, operands[0]))
+    machine.push(_make_float64(operands[0]))
     machine.get_current_frame().pc += 1
 
 
 def i32_eqz(machine: Machine, instruction: Instruction) -> None:
     c1 = _unsigned_i32(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, 0 if c1 else 1))
+    machine.push(_make_bool(c1 == 0))
     machine.get_current_frame().pc += 1
 
 
 def i32_eq(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i32(machine.pop_value())
     c1 = _unsigned_i32(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 == c2)))
+    machine.push(_make_bool(c1 == c2))
     machine.get_current_frame().pc += 1
 
 
 def i32_ne(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i32(machine.pop_value())
     c1 = _unsigned_i32(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 != c2)))
+    machine.push(_make_bool(c1 != c2))
     machine.get_current_frame().pc += 1
 
 
 def i32_lt_s(machine: Machine, instruction: Instruction) -> None:
     c2 = _signed_i32(machine.pop_value())
     c1 = _signed_i32(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 < c2)))
+    machine.push(_make_bool(c1 < c2))
     machine.get_current_frame().pc += 1
 
 
 def i32_lt_u(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i32(machine.pop_value())
     c1 = _unsigned_i32(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 < c2)))
+    machine.push(_make_bool(c1 < c2))
     machine.get_current_frame().pc += 1
 
 
 def i32_gt_s(machine: Machine, instruction: Instruction) -> None:
     c2 = _signed_i32(machine.pop_value())
     c1 = _signed_i32(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 > c2)))
+    machine.push(_make_bool(c1 > c2))
     machine.get_current_frame().pc += 1
 
 
 def i32_gt_u(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i32(machine.pop_value())
     c1 = _unsigned_i32(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 > c2)))
+    machine.push(_make_bool(c1 > c2))
     machine.get_current_frame().pc += 1
 
 
 def i32_le_s(machine: Machine, instruction: Instruction) -> None:
     c2 = _signed_i32(machine.pop_value())
     c1 = _signed_i32(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 <= c2)))
+    machine.push(_make_bool(c1 <= c2))
     machine.get_current_frame().pc += 1
 
 
 def i32_le_u(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i32(machine.pop_value())
     c1 = _unsigned_i32(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 <= c2)))
+    machine.push(_make_bool(c1 <= c2))
     machine.get_current_frame().pc += 1
 
 
 def i32_ge_s(machine: Machine, instruction: Instruction) -> None:
     c2 = _signed_i32(machine.pop_value())
     c1 = _signed_i32(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 >= c2)))
+    machine.push(_make_bool(c1 >= c2))
     machine.get_current_frame().pc += 1
 
 
 def i32_ge_u(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i32(machine.pop_value())
     c1 = _unsigned_i32(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 >= c2)))
+    machine.push(_make_bool(c1 >= c2))
     machine.get_current_frame().pc += 1
 
 
 def i64_eqz(machine: Machine, instruction: Instruction) -> None:
     c1 = machine.pop_value().intval()
-    machine.push(values.Value(values.ValueType.I32, 0 if c1 else 1))
+    machine.push(_make_bool(c1 == 0))
     machine.get_current_frame().pc += 1
 
 
 def i64_eq(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i64(machine.pop_value())
     c1 = _unsigned_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 == c2)))
+    machine.push(_make_bool(c1 == c2))
     machine.get_current_frame().pc += 1
 
 
 def i64_ne(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i64(machine.pop_value())
     c1 = _unsigned_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 != c2)))
+    machine.push(_make_bool(c1 != c2))
     machine.get_current_frame().pc += 1
 
 
 def i64_lt_s(machine: Machine, instruction: Instruction) -> None:
     c2 = _signed_i64(machine.pop_value())
     c1 = _signed_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 < c2)))
+    machine.push(_make_bool(c1 < c2))
     machine.get_current_frame().pc += 1
 
 
 def i64_lt_u(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i64(machine.pop_value())
     c1 = _unsigned_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 < c2)))
+    machine.push(_make_bool(c1 < c2))
     machine.get_current_frame().pc += 1
 
 
 def i64_gt_s(machine: Machine, instruction: Instruction) -> None:
     c2 = _signed_i64(machine.pop_value())
     c1 = _signed_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 > c2)))
+    machine.push(_make_bool(c1 > c2))
     machine.get_current_frame().pc += 1
 
 
 def i64_gt_u(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i64(machine.pop_value())
     c1 = _unsigned_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 > c2)))
+    machine.push(_make_bool(c1 > c2))
     machine.get_current_frame().pc += 1
 
 
 def i64_le_s(machine: Machine, instruction: Instruction) -> None:
     c2 = _signed_i64(machine.pop_value())
     c1 = _signed_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 <= c2)))
+    machine.push(_make_bool(c1 <= c2))
     machine.get_current_frame().pc += 1
 
 
 def i64_le_u(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i64(machine.pop_value())
     c1 = _unsigned_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 <= c2)))
+    machine.push(_make_bool(c1 <= c2))
     machine.get_current_frame().pc += 1
 
 
 def i64_ge_s(machine: Machine, instruction: Instruction) -> None:
     c2 = _signed_i64(machine.pop_value())
     c1 = _signed_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 >= c2)))
+    machine.push(_make_bool(c1 >= c2))
     machine.get_current_frame().pc += 1
 
 
 def i64_ge_u(machine: Machine, instruction: Instruction) -> None:
     c2 = _unsigned_i64(machine.pop_value())
     c1 = _unsigned_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32, int(c1 >= c2)))
+    machine.push(_make_bool(c1 >= c2))
     machine.get_current_frame().pc += 1
 
 
 def f32_eq(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float32(machine.pop_value())
+    c1 = _float32(machine.pop_value())
+    machine.push(_make_bool(c1 == c2))
+    machine.get_current_frame().pc += 1
 
 
 def f32_ne(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float32(machine.pop_value())
+    c1 = _float32(machine.pop_value())
+    machine.push(_make_bool(c1 != c2))
+    machine.get_current_frame().pc += 1
 
 
 def f32_lt(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float32(machine.pop_value())
+    c1 = _float32(machine.pop_value())
+    machine.push(_make_bool(c1 < c2))
+    machine.get_current_frame().pc += 1
 
 
 def f32_gt(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float32(machine.pop_value())
+    c1 = _float32(machine.pop_value())
+    machine.push(_make_bool(c1 > c2))
+    machine.get_current_frame().pc += 1
 
 
 def f32_le(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float32(machine.pop_value())
+    c1 = _float32(machine.pop_value())
+    machine.push(_make_bool(c1 <= c2))
+    machine.get_current_frame().pc += 1
 
 
 def f32_ge(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float32(machine.pop_value())
+    c1 = _float32(machine.pop_value())
+    machine.push(_make_bool(c1 >= c2))
+    machine.get_current_frame().pc += 1
 
 
 def f64_eq(machine: Machine, instruction: Instruction) -> None:
@@ -2365,6 +2416,22 @@ def eval_insn(machine: Machine, instruction: Instruction) -> None:
         print("Instruction not implemented:", instruction)
         machine._debug_stack()
         raise
+
+
+def unimplemented_insns(machine: Machine) -> set[InstructionType]:
+    """Returns the set of unimplemented instructions.
+
+    You can pass in an minimally initialized machine implementation.
+    """
+    insns = set()
+    for insn, func in INSTRUCTION_FUNCS.items():
+        try:
+            func(machine, Instruction(insn, []))
+        except NotImplementedError:
+            insns.add(insn)
+        except Exception:
+            continue
+    return insns
 
 
 INSTRUCTION_FUNCS: dict[InstructionType, EvalFunc] = {
