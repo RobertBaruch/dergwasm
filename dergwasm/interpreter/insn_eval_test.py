@@ -4,6 +4,7 @@
 # pylint: disable=too-many-lines,too-many-public-methods
 # pylint: disable=invalid-name
 
+import math
 import struct
 from absl.testing import absltest, parameterized  # type: ignore
 
@@ -417,6 +418,79 @@ class InsnEvalTest(parameterized.TestCase):
         self.assertEqual(self.machine.get_current_frame().pc, 1)
 
     @parameterized.named_parameters(
+        ("copysign + +", InstructionType.F32_COPYSIGN, 2, 1, 2),
+        ("copysign - -", InstructionType.F32_COPYSIGN, -2, -1, -2),
+        ("copysign + -", InstructionType.F32_COPYSIGN, 2, -1, -2),
+        ("copysign - +", InstructionType.F32_COPYSIGN, -2, 1, 2),
+        ("add", InstructionType.F32_ADD, -2, 1, -1),
+        ("add nan", InstructionType.F32_ADD, -2, float('nan'), float('nan')),
+        ("sub", InstructionType.F32_SUB, -2, 1, -3),
+        ("sub nan", InstructionType.F32_SUB, -2, float('nan'), float('nan')),
+        ("mul", InstructionType.F32_MUL, -2, 1, -2),
+        ("mul nan", InstructionType.F32_MUL, -2, float('nan'), float('nan')),
+        ("div", InstructionType.F32_DIV, -2, 4, -0.5),
+        ("div nan", InstructionType.F32_DIV, -2, float('nan'), float('nan')),
+        ("min", InstructionType.F32_MIN, -2, 4, -2),
+        ("min nan", InstructionType.F32_MIN, -2, float('nan'), -2),
+        ("max", InstructionType.F32_MAX, -2, 4, 4),
+        ("max nan", InstructionType.F32_MAX, -2, float('nan'), -2),
+    )
+    def test_f32_binops(
+        self, insn_type: InstructionType, a: float, b: float, expected: float
+    ):
+        self.machine.push(
+            Value(ValueType.F32, struct.unpack("<f", struct.pack("<f", a))[0])
+        )
+        self.machine.push(
+            Value(ValueType.F32, struct.unpack("<f", struct.pack("<f", b))[0])
+        )
+
+        insn_eval.eval_insn(self.machine, noarg(insn_type))
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        if math.isnan(expected):
+            self.assertTrue(math.isnan(self.machine.pop_value().floatval()))
+        else:
+            self.assertEqual(
+                self.machine.pop(),
+                Value(ValueType.F32, struct.unpack("<f", struct.pack("<f", expected))[0]),
+            )
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
+
+    @parameterized.named_parameters(
+        ("copysign + +", InstructionType.F64_COPYSIGN, 2, 1, 2),
+        ("copysign - -", InstructionType.F64_COPYSIGN, -2, -1, -2),
+        ("copysign + -", InstructionType.F64_COPYSIGN, 2, -1, -2),
+        ("copysign - +", InstructionType.F64_COPYSIGN, -2, 1, 2),
+        ("add", InstructionType.F64_ADD, -2, 1, -1),
+        ("add nan", InstructionType.F64_ADD, -2, float('nan'), float('nan')),
+        ("sub", InstructionType.F64_SUB, -2, 1, -3),
+        ("sub nan", InstructionType.F64_SUB, -2, float('nan'), float('nan')),
+        ("mul", InstructionType.F64_MUL, -2, 1, -2),
+        ("mul nan", InstructionType.F64_MUL, -2, float('nan'), float('nan')),
+        ("div", InstructionType.F64_DIV, -2, 4, -0.5),
+        ("div nan", InstructionType.F64_DIV, -2, float('nan'), float('nan')),
+        ("min", InstructionType.F64_MIN, -2, 4, -2),
+        ("min nan", InstructionType.F64_MIN, -2, float('nan'), -2),
+        ("max", InstructionType.F64_MAX, -2, 4, 4),
+        ("max nan", InstructionType.F64_MAX, -2, float('nan'), -2),
+    )
+    def test_f64_binops(
+        self, insn_type: InstructionType, a: float, b: float, expected: float
+    ):
+        self.machine.push(Value(ValueType.F64, float(a)))
+        self.machine.push(Value(ValueType.F64, float(b)))
+
+        insn_eval.eval_insn(self.machine, noarg(insn_type))
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        if math.isnan(expected):
+            self.assertTrue(math.isnan(self.machine.pop_value().floatval()))
+        else:
+            self.assertEqual(self.machine.pop(), Value(ValueType.F64, float(expected)))
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
+
+    @parameterized.named_parameters(
         ("eq False", InstructionType.I32_EQ, 2, 1, 0),
         ("eq True", InstructionType.I32_EQ, 2, 2, 1),
         ("ne False", InstructionType.I32_NE, 2, 1, 1),
@@ -670,6 +744,89 @@ class InsnEvalTest(parameterized.TestCase):
 
         self.assertStackDepth(self.starting_stack_depth + 1)
         self.assertEqual(self.machine.pop(), Value(ValueType.I64, expected & MASK64))
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
+
+    @parameterized.named_parameters(
+        ("trunc +", InstructionType.F32_TRUNC, 2.2, 2),
+        ("trunc -", InstructionType.F32_TRUNC, -2.2, -2),
+        ("trunc NaN", InstructionType.F32_TRUNC, float('nan'), float('nan')),
+        ("neg +", InstructionType.F32_NEG, 2.2, -2.2),
+        ("neg -", InstructionType.F32_NEG, -2.2, 2.2),
+        ("neg NaN", InstructionType.F32_NEG, float('nan'), float('nan')),
+        ("ceil +", InstructionType.F32_CEIL, 2.2, 3),
+        ("ceil -", InstructionType.F32_CEIL, -2.2, -2),
+        ("ceil NaN", InstructionType.F32_CEIL, float('nan'), float('nan')),
+        ("floor +", InstructionType.F32_FLOOR, 2.2, 2),
+        ("floor -", InstructionType.F32_FLOOR, -2.2, -3),
+        ("floor NaN", InstructionType.F32_FLOOR, float('nan'), float('nan')),
+        ("sqrt +", InstructionType.F32_SQRT, 4, 2),
+        ("sqrt -", InstructionType.F32_SQRT, -4, float('nan')),
+        ("sqrt NaN", InstructionType.F32_SQRT, float('nan'), float('nan')),
+        ("abs +", InstructionType.F32_ABS, 4, 4),
+        ("abs -", InstructionType.F32_ABS, -4, 4),
+        ("abs NaN", InstructionType.F32_ABS, float('nan'), float('nan')),
+        ("round +", InstructionType.F32_NEAREST, 4.2, 4),
+        ("round -", InstructionType.F32_NEAREST, -4.2, -4),
+        ("round even", InstructionType.F32_NEAREST, -4.5, -4),
+        ("round odd", InstructionType.F32_NEAREST, -5.5, -6),
+        ("round NaN", InstructionType.F32_NEAREST, float('nan'), float('nan')),
+    )
+    def test_f32_unops(
+        self, insn_type: InstructionType, val: float, expected: float
+    ):
+        self.machine.push(
+            Value(ValueType.F32, struct.unpack("<f", struct.pack("<f", val))[0])
+        )
+
+        insn_eval.eval_insn(self.machine, noarg(insn_type))
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        if math.isnan(expected):
+            self.assertTrue(math.isnan(self.machine.pop_value().floatval()))
+        else:
+            self.assertEqual(
+                self.machine.pop(),
+                Value(ValueType.F32, struct.unpack("<f", struct.pack("<f", expected))[0]),
+            )
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
+
+    @parameterized.named_parameters(
+        ("trunc +", InstructionType.F64_TRUNC, 2.2, 2),
+        ("trunc -", InstructionType.F64_TRUNC, -2.2, -2),
+        ("trunc NaN", InstructionType.F64_TRUNC, float('nan'), float('nan')),
+        ("neg +", InstructionType.F64_NEG, 2.2, -2.2),
+        ("neg -", InstructionType.F64_NEG, -2.2, 2.2),
+        ("neg NaN", InstructionType.F64_NEG, float('nan'), float('nan')),
+        ("ceil +", InstructionType.F64_CEIL, 2.2, 3),
+        ("ceil -", InstructionType.F64_CEIL, -2.2, -2),
+        ("ceil NaN", InstructionType.F64_CEIL, float('nan'), float('nan')),
+        ("floor +", InstructionType.F64_FLOOR, 2.2, 2),
+        ("floor -", InstructionType.F64_FLOOR, -2.2, -3),
+        ("floor NaN", InstructionType.F64_FLOOR, float('nan'), float('nan')),
+        ("sqrt +", InstructionType.F64_SQRT, 4, 2),
+        ("sqrt -", InstructionType.F64_SQRT, -4, float('nan')),
+        ("sqrt NaN", InstructionType.F64_SQRT, float('nan'), float('nan')),
+        ("abs +", InstructionType.F64_ABS, 4, 4),
+        ("abs -", InstructionType.F64_ABS, -4, 4),
+        ("abs NaN", InstructionType.F64_ABS, float('nan'), float('nan')),
+        ("round +", InstructionType.F64_NEAREST, 4.2, 4),
+        ("round -", InstructionType.F64_NEAREST, -4.2, -4),
+        ("round even", InstructionType.F64_NEAREST, -4.5, -4),
+        ("round odd", InstructionType.F64_NEAREST, -5.5, -6),
+        ("round NaN", InstructionType.F64_NEAREST, float('nan'), float('nan')),
+    )
+    def test_f64_unops(
+        self, insn_type: InstructionType, val: float, expected: float
+    ):
+        self.machine.push(Value(ValueType.F64, float(val)))
+
+        insn_eval.eval_insn(self.machine, noarg(insn_type))
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        if math.isnan(expected):
+            self.assertTrue(math.isnan(self.machine.pop_value().floatval()))
+        else:
+            self.assertEqual(self.machine.pop(), Value(ValueType.F64, float(expected)))
         self.assertEqual(self.machine.get_current_frame().pc, 1)
 
     @parameterized.named_parameters(

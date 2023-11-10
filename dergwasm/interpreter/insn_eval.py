@@ -5,7 +5,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=invalid-name
 
-from __future__ import annotations  # For PEP563 - postponed evaluation of annotations
+from __future__ import annotations
+import math  # For PEP563 - postponed evaluation of annotations
 
 import struct
 from typing import Callable, Union
@@ -20,6 +21,9 @@ EvalFunc = Callable[[Machine, Instruction], None]
 MASK64 = 0xFFFFFFFFFFFFFFFF
 MASK32 = 0xFFFFFFFF
 
+
+# Conversion functions due to Python ints being bignums and floats being doubles.
+# Do not implement these for C#. Just use the correct native types.
 
 def _unsigned_i32(v: values.Value) -> int:
     """Converts a value to an unsigned 32-bit integer.
@@ -1644,116 +1648,273 @@ def i64_rotr(machine: Machine, instruction: Instruction) -> None:
     machine.get_current_frame().pc += 1
 
 
+# Floating point operations in wasm are "non-stop", which means generally that if
+# an operation would raise an exception, it instead returns a NaN.
+
 def f32_abs(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float32(machine.pop_value())
+    try:
+        machine.push(_make_float32(math.fabs(val)))
+    except ValueError:
+        machine.push(_make_float32(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f32_neg(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float32(machine.pop_value())
+    try:
+        machine.push(_make_float32(-val))
+    except ValueError:
+        machine.push(_make_float32(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f32_ceil(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float32(machine.pop_value())
+    try:
+        machine.push(_make_float32(math.ceil(val)))
+    except ValueError:
+        machine.push(_make_float32(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f32_floor(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float32(machine.pop_value())
+    try:
+        machine.push(_make_float32(math.floor(val)))
+    except ValueError:
+        machine.push(_make_float32(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f32_trunc(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float32(machine.pop_value())
+    try:
+        machine.push(_make_float32(math.trunc(val)))
+    except ValueError:
+        machine.push(_make_float32(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f32_nearest(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float32(machine.pop_value())
+    try:
+        machine.push(_make_float32(round(val, 0)))
+    except ValueError:
+        machine.push(_make_float32(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f32_sqrt(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float32(machine.pop_value())
+    try:
+        machine.push(_make_float32(math.sqrt(val)))
+    except ValueError:
+        machine.push(_make_float32(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f32_add(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float32(machine.pop_value())
+    c1 = _float32(machine.pop_value())
+    try:
+        machine.push(_make_float32(c1 + c2))
+    except ValueError:
+        machine.push(_make_float32(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f32_sub(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float32(machine.pop_value())
+    c1 = _float32(machine.pop_value())
+    try:
+        machine.push(_make_float32(c1 - c2))
+    except ValueError:
+        machine.push(_make_float32(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f32_mul(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float32(machine.pop_value())
+    c1 = _float32(machine.pop_value())
+    try:
+        machine.push(_make_float32(c1 * c2))
+    except ValueError:
+        machine.push(_make_float32(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f32_div(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float32(machine.pop_value())
+    c1 = _float32(machine.pop_value())
+    try:
+        machine.push(_make_float32(c1 / c2))
+    except ValueError:
+        machine.push(_make_float32(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f32_min(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float32(machine.pop_value())
+    c1 = _float32(machine.pop_value())
+    try:
+        machine.push(_make_float32(min(c1, c2)))
+    except ValueError:
+        machine.push(_make_float32(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f32_max(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float32(machine.pop_value())
+    c1 = _float32(machine.pop_value())
+    try:
+        machine.push(_make_float32(max(c1, c2)))
+    except ValueError:
+        machine.push(_make_float32(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f32_copysign(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float32(machine.pop_value())
+    c1 = _float32(machine.pop_value())
+    try:
+        machine.push(_make_float32(math.copysign(c1, c2)))
+    except ValueError:
+        machine.push(_make_float32(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f64_abs(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float64(machine.pop_value())
+    try:
+        machine.push(_make_float64(math.fabs(val)))
+    except ValueError:
+        machine.push(_make_float64(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f64_neg(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float64(machine.pop_value())
+    try:
+        machine.push(_make_float64(-val))
+    except ValueError:
+        machine.push(_make_float64(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f64_ceil(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float64(machine.pop_value())
+    try:
+        machine.push(_make_float64(math.ceil(val)))
+    except ValueError:
+        machine.push(_make_float64(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f64_floor(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float64(machine.pop_value())
+    try:
+        machine.push(_make_float64(math.floor(val)))
+    except ValueError:
+        machine.push(_make_float64(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f64_trunc(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float64(machine.pop_value())
+    try:
+        machine.push(_make_float64(math.trunc(val)))
+    except ValueError:
+        machine.push(_make_float64(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f64_nearest(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float64(machine.pop_value())
+    try:
+        machine.push(_make_float64(round(val, 0)))
+    except ValueError:
+        machine.push(_make_float64(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f64_sqrt(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float64(machine.pop_value())
+    try:
+        machine.push(_make_float64(math.sqrt(val)))
+    except ValueError:
+        machine.push(_make_float64(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f64_add(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float64(machine.pop_value())
+    c1 = _float64(machine.pop_value())
+    try:
+        machine.push(_make_float64(c1 + c2))
+    except ValueError:
+        machine.push(_make_float64(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f64_sub(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float64(machine.pop_value())
+    c1 = _float64(machine.pop_value())
+    try:
+        machine.push(_make_float64(c1 - c2))
+    except ValueError:
+        machine.push(_make_float64(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f64_mul(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float64(machine.pop_value())
+    c1 = _float64(machine.pop_value())
+    try:
+        machine.push(_make_float64(c1 * c2))
+    except ValueError:
+        machine.push(_make_float64(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f64_div(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float64(machine.pop_value())
+    c1 = _float64(machine.pop_value())
+    try:
+        machine.push(_make_float64(c1 / c2))
+    except ValueError:
+        machine.push(_make_float64(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f64_min(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float64(machine.pop_value())
+    c1 = _float64(machine.pop_value())
+    try:
+        machine.push(_make_float64(min(c1, c2)))
+    except ValueError:
+        machine.push(_make_float64(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f64_max(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float64(machine.pop_value())
+    c1 = _float64(machine.pop_value())
+    try:
+        machine.push(_make_float64(max(c1, c2)))
+    except ValueError:
+        machine.push(_make_float64(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f64_copysign(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float64(machine.pop_value())
+    c1 = _float64(machine.pop_value())
+    try:
+        machine.push(_make_float64(math.copysign(c1, c2)))
+    except ValueError:
+        machine.push(_make_float64(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def i32_wrap_i64(machine: Machine, instruction: Instruction) -> None:
