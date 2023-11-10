@@ -845,7 +845,7 @@ class CodeSection(ModuleSection):
         """Reads and returns a code section."""
         num_code = _read_unsigned_int(f)
         code = [Code.read(f) for _ in range(num_code)]
-        print(f"Read code (len {len(code)})")
+        print(f"Read code ({len(code)} functions)")
         return CodeSection(code)
 
 
@@ -860,7 +860,7 @@ class DataSection(ModuleSection):
         """Reads and returns a data section."""
         num_data = _read_unsigned_int(f)
         data = [Data.read(f) for _ in range(num_data)]
-        print(f"Read data: {data}")
+        print(f"Read data: ({len(data)} data segments)")
         return DataSection(data)
 
 
