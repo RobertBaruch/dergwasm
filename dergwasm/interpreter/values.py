@@ -102,7 +102,7 @@ class Value(StackValue):
 
     def floatval(self) -> float:
         """Returns the value's float value. Must be a float."""
-        assert isinstance(self.value, float)
+        assert isinstance(self.value, float), f"Expected float value, was {type(self.value)}"
         return cast(float, self.value)
 
     def __repr__(self) -> str:

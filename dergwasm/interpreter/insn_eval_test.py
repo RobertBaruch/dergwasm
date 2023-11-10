@@ -567,24 +567,24 @@ class InsnEvalTest(parameterized.TestCase):
     @parameterized.named_parameters(
         ("eq False", InstructionType.F32_EQ, 2, 1, 0),
         ("eq True", InstructionType.F32_EQ, 2, 2, 1),
-        ("eq NaN False", InstructionType.F32_EQ, float('nan'), float('nan'), 0),
+        ("eq NaN False", InstructionType.F32_EQ, float("nan"), float("nan"), 0),
         ("ne False", InstructionType.F32_NE, 2, 1, 1),
         ("ne True", InstructionType.F32_NE, 2, 2, 0),
-        ("ne NaN True", InstructionType.F32_NE, float('nan'), float('nan'), 1),
+        ("ne NaN True", InstructionType.F32_NE, float("nan"), float("nan"), 1),
         ("lt False", InstructionType.F32_LT, 2, 2, 0),
         ("lt True", InstructionType.F32_LT, 1, 2, 1),
-        ("lt NaN False", InstructionType.F32_LT, float('-inf'), float('nan'), 0),
+        ("lt NaN False", InstructionType.F32_LT, float("-inf"), float("nan"), 0),
         ("gt False", InstructionType.F32_GT, 2, 2, 0),
         ("gt True", InstructionType.F32_GT, 2, 1, 1),
-        ("gt NaN False", InstructionType.F32_GT, float('inf'), float('nan'), 0),
+        ("gt NaN False", InstructionType.F32_GT, float("inf"), float("nan"), 0),
         ("le eq True", InstructionType.F32_LE, 2, 2, 1),
         ("le True", InstructionType.F32_LE, 1, 2, 1),
         ("le False", InstructionType.F32_LE, 2, 1, 0),
-        ("le NaN False", InstructionType.F32_LE, float('nan'), float('nan'), 0),
+        ("le NaN False", InstructionType.F32_LE, float("nan"), float("nan"), 0),
         ("ge False", InstructionType.F32_GE, 1, 2, 0),
         ("ge eq True", InstructionType.F32_GE, 2, 2, 1),
         ("ge True", InstructionType.F32_GE, 3, 2, 1),
-        ("ge NaN False", InstructionType.F32_GE, float('nan'), float('nan'), 0),
+        ("ge NaN False", InstructionType.F32_GE, float("nan"), float("nan"), 0),
     )
     def test_f32_relops(
         self, insn_type: InstructionType, a: float, b: float, expected: int
@@ -595,6 +595,40 @@ class InsnEvalTest(parameterized.TestCase):
         self.machine.push(
             Value(ValueType.F32, struct.unpack("<f", struct.pack("<f", b))[0])
         )
+
+        insn_eval.eval_insn(self.machine, noarg(insn_type))
+
+        self.assertStackDepth(self.starting_stack_depth + 1)
+        self.assertEqual(self.machine.pop(), Value(ValueType.I32, expected & MASK32))
+        self.assertEqual(self.machine.get_current_frame().pc, 1)
+
+    @parameterized.named_parameters(
+        ("eq False", InstructionType.F64_EQ, 2, 1, 0),
+        ("eq True", InstructionType.F64_EQ, 2, 2, 1),
+        ("eq NaN False", InstructionType.F64_EQ, float("nan"), float("nan"), 0),
+        ("ne False", InstructionType.F64_NE, 2, 1, 1),
+        ("ne True", InstructionType.F64_NE, 2, 2, 0),
+        ("ne NaN True", InstructionType.F64_NE, float("nan"), float("nan"), 1),
+        ("lt False", InstructionType.F64_LT, 2, 2, 0),
+        ("lt True", InstructionType.F64_LT, 1, 2, 1),
+        ("lt NaN False", InstructionType.F64_LT, float("-inf"), float("nan"), 0),
+        ("gt False", InstructionType.F64_GT, 2, 2, 0),
+        ("gt True", InstructionType.F64_GT, 2, 1, 1),
+        ("gt NaN False", InstructionType.F64_GT, float("inf"), float("nan"), 0),
+        ("le eq True", InstructionType.F64_LE, 2, 2, 1),
+        ("le True", InstructionType.F64_LE, 1, 2, 1),
+        ("le False", InstructionType.F64_LE, 2, 1, 0),
+        ("le NaN False", InstructionType.F64_LE, float("nan"), float("nan"), 0),
+        ("ge False", InstructionType.F64_GE, 1, 2, 0),
+        ("ge eq True", InstructionType.F64_GE, 2, 2, 1),
+        ("ge True", InstructionType.F64_GE, 3, 2, 1),
+        ("ge NaN False", InstructionType.F64_GE, float("nan"), float("nan"), 0),
+    )
+    def test_f64_relops(
+        self, insn_type: InstructionType, a: float, b: float, expected: int
+    ):
+        self.machine.push(Value(ValueType.F64, float(a)))
+        self.machine.push(Value(ValueType.F64, float(b)))
 
         insn_eval.eval_insn(self.machine, noarg(insn_type))
 

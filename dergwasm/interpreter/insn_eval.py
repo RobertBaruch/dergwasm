@@ -1261,27 +1261,45 @@ def f32_ge(machine: Machine, instruction: Instruction) -> None:
 
 
 def f64_eq(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float64(machine.pop_value())
+    c1 = _float64(machine.pop_value())
+    machine.push(_make_bool(c1 == c2))
+    machine.get_current_frame().pc += 1
 
 
 def f64_ne(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float64(machine.pop_value())
+    c1 = _float64(machine.pop_value())
+    machine.push(_make_bool(c1 != c2))
+    machine.get_current_frame().pc += 1
 
 
 def f64_lt(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float64(machine.pop_value())
+    c1 = _float64(machine.pop_value())
+    machine.push(_make_bool(c1 < c2))
+    machine.get_current_frame().pc += 1
 
 
 def f64_gt(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float64(machine.pop_value())
+    c1 = _float64(machine.pop_value())
+    machine.push(_make_bool(c1 > c2))
+    machine.get_current_frame().pc += 1
 
 
 def f64_le(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float64(machine.pop_value())
+    c1 = _float64(machine.pop_value())
+    machine.push(_make_bool(c1 <= c2))
+    machine.get_current_frame().pc += 1
 
 
 def f64_ge(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    c2 = _float64(machine.pop_value())
+    c1 = _float64(machine.pop_value())
+    machine.push(_make_bool(c1 >= c2))
+    machine.get_current_frame().pc += 1
 
 
 def i32_clz(machine: Machine, instruction: Instruction) -> None:
