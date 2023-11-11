@@ -1970,59 +1970,94 @@ def i64_trunc_f64_u(machine: Machine, instruction: Instruction) -> None:
 
 
 def f32_convert_i32_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _signed_i32(machine.pop_value())
+    machine.push(_make_float32(val))
+    machine.get_current_frame().pc += 1
 
 
 def f32_convert_i32_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _unsigned_i32(machine.pop_value())
+    machine.push(_make_float32(val))
+    machine.get_current_frame().pc += 1
 
 
 def f32_convert_i64_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _signed_i64(machine.pop_value())
+    machine.push(_make_float32(val))
+    machine.get_current_frame().pc += 1
 
 
 def f32_convert_i64_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _unsigned_i64(machine.pop_value())
+    machine.push(_make_float32(val))
+    machine.get_current_frame().pc += 1
 
 
 def f32_demote_f64(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float64(machine.pop_value())
+    try:
+        machine.push(_make_float32(val))
+    except ValueError:
+        machine.push(_make_float32(float("nan")))
+    machine.get_current_frame().pc += 1
 
 
 def f64_convert_i32_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _signed_i32(machine.pop_value())
+    machine.push(_make_float64(val))
+    machine.get_current_frame().pc += 1
 
 
 def f64_convert_i32_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _unsigned_i32(machine.pop_value())
+    machine.push(_make_float64(val))
+    machine.get_current_frame().pc += 1
 
 
 def f64_convert_i64_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _signed_i64(machine.pop_value())
+    machine.push(_make_float64(val))
+    machine.get_current_frame().pc += 1
 
 
 def f64_convert_i64_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _unsigned_i64(machine.pop_value())
+    machine.push(_make_float64(val))
+    machine.get_current_frame().pc += 1
 
 
-def f32_f64_promote(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+def f64_promote_i32(machine: Machine, instruction: Instruction) -> None:
+    val = _float32(machine.pop_value())
+    machine.push(_make_float64(val))
+    machine.get_current_frame().pc += 1
 
 
-def f32_i32_reinterpret(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+def i32_reinterpret_f32(machine: Machine, instruction: Instruction) -> None:
+    val = _float32(machine.pop_value())
+    machine.push(values.Value(values.ValueType.I32,
+                              struct.unpack("<I", struct.pack("<f", val))[0]))
+    machine.get_current_frame().pc += 1
 
 
-def f64_i64_reinterpret(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+def i64_reinterpret_f64(machine: Machine, instruction: Instruction) -> None:
+    val = _float64(machine.pop_value())
+    machine.push(values.Value(values.ValueType.I64,
+                              struct.unpack("<Q", struct.pack("<d", val))[0]))
+    machine.get_current_frame().pc += 1
 
 
 def f32_reinterpret_i32(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _unsigned_i32(machine.pop_value())
+    machine.push(values.Value(values.ValueType.F32,
+                              struct.unpack("<f", struct.pack("<I", val))[0]))
+    machine.get_current_frame().pc += 1
 
 
 def f64_reinterpret_i64(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _unsigned_i64(machine.pop_value())
+    machine.push(values.Value(values.ValueType.F64,
+                              struct.unpack("<d", struct.pack("<Q", val))[0]))
+    machine.get_current_frame().pc += 1
 
 
 def i32_extend8_s(machine: Machine, instruction: Instruction) -> None:
@@ -2806,9 +2841,9 @@ INSTRUCTION_FUNCS: dict[InstructionType, EvalFunc] = {
     InstructionType.F64_CONVERT_I32_U: f64_convert_i32_u,
     InstructionType.F64_CONVERT_I64_S: f64_convert_i64_s,
     InstructionType.F64_CONVERT_I64_U: f64_convert_i64_u,
-    InstructionType.F32_F64_PROMOTE: f32_f64_promote,
-    InstructionType.F32_I32_REINTERPRET: f32_i32_reinterpret,
-    InstructionType.F64_I64_REINTERPRET: f64_i64_reinterpret,
+    InstructionType.F64_PROMOTE_F32: f64_promote_i32,
+    InstructionType.I32_REINTERPRET_F32: i32_reinterpret_f32,
+    InstructionType.I64_REINTERPRET_F64: i64_reinterpret_f64,
     InstructionType.F32_REINTERPRET_I32: f32_reinterpret_i32,
     InstructionType.F64_REINTERPRET_I64: f64_reinterpret_i64,
     InstructionType.I32_EXTEND8_S: i32_extend8_s,

@@ -223,9 +223,9 @@ class InstructionType(enum.Enum):
     F64_CONVERT_I32_U = 0xB8
     F64_CONVERT_I64_S = 0xB9
     F64_CONVERT_I64_U = 0xBA
-    F32_F64_PROMOTE = 0xBB
-    F32_I32_REINTERPRET = 0xBC
-    F64_I64_REINTERPRET = 0xBD
+    F64_PROMOTE_F32 = 0xBB
+    I32_REINTERPRET_F32 = 0xBC
+    I64_REINTERPRET_F64 = 0xBD
     F32_REINTERPRET_I32 = 0xBE
     F64_REINTERPRET_I64 = 0xBF
 
@@ -688,9 +688,9 @@ INSTRUCTION_TYPE_STRINGS: dict[InstructionType, str] = {
     InstructionType.F64_CONVERT_I32_U: "f64.convert_i32_u",
     InstructionType.F64_CONVERT_I64_S: "f64.convert_i64_s",
     InstructionType.F64_CONVERT_I64_U: "f64.convert_i64_u",
-    InstructionType.F32_F64_PROMOTE: "f32.f64_promote",
-    InstructionType.F32_I32_REINTERPRET: "f32.i32_reinterpret",
-    InstructionType.F64_I64_REINTERPRET: "f64.i64_reinterpret",
+    InstructionType.F64_PROMOTE_F32: "f64.promote_f32",
+    InstructionType.I32_REINTERPRET_F32: "i32.reinterpret_f32",
+    InstructionType.I64_REINTERPRET_F64: "i64.reinterpret_f64",
     InstructionType.F32_REINTERPRET_I32: "f32.reinterpret_i32",
     InstructionType.F64_REINTERPRET_I64: "f64.reinterpret_i64",
     InstructionType.I32_EXTEND8_S: "i32.extend8_s",

@@ -4,7 +4,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=invalid-name
 
-import datetime
 import struct
 import sys
 import time

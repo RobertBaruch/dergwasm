@@ -1691,13 +1691,109 @@ class InsnEvalTest(parameterized.TestCase):
             Value(ValueType.I64, 0x80000000),
             Value(ValueType.I64, 0xFFFFFFFF80000000),
         ),
+        (
+            "f32.demote_f64",
+            InstructionType.F32_DEMOTE_F64,
+            Value(ValueType.F64, 1.0),
+            Value(ValueType.F32, 1.0),
+        ),
+        (
+            "f32.demote_f64 nan",
+            InstructionType.F32_DEMOTE_F64,
+            Value(ValueType.F64, float('nan')),
+            Value(ValueType.F32, float('nan')),
+        ),
+        (
+            "f32.convert_i32_s",
+            InstructionType.F32_CONVERT_I32_S,
+            Value(ValueType.I32, 0xFFFFFFFF),
+            Value(ValueType.F32, -1.0),
+        ),
+        (
+            "f32.convert_i32_u",
+            InstructionType.F32_CONVERT_I32_U,
+            Value(ValueType.I32, 0xFFFFFFFF),
+            Value(ValueType.F32, 4294967296.0),
+        ),
+        (
+            "f32.convert_i64_s",
+            InstructionType.F32_CONVERT_I64_S,
+            Value(ValueType.I64, 0xFFFFFFFFFFFFFFFF),
+            Value(ValueType.F32, -1.0),
+        ),
+        (
+            "f32.convert_i64_u",
+            InstructionType.F32_CONVERT_I64_U,
+            Value(ValueType.I64, 0xFFFFFFFF),
+            Value(ValueType.F32, 4294967296.0),
+        ),
+        (
+            "f64.convert_i32_s",
+            InstructionType.F64_CONVERT_I32_S,
+            Value(ValueType.I32, 0xFFFFFFFF),
+            Value(ValueType.F64, -1.0),
+        ),
+        (
+            "f64.convert_i32_u",
+            InstructionType.F64_CONVERT_I32_U,
+            Value(ValueType.I32, 0xFFFFFFFF),
+            Value(ValueType.F64, 4294967295.0),
+        ),
+        (
+            "f64.convert_i64_s",
+            InstructionType.F64_CONVERT_I64_S,
+            Value(ValueType.I64, 0xFFFFFFFFFFFFFFFF),
+            Value(ValueType.F64, -1.0),
+        ),
+        (
+            "f64.convert_i64_u",
+            InstructionType.F64_CONVERT_I64_U,
+            Value(ValueType.I64, 0xFFFFFFFF),
+            Value(ValueType.F64, 4294967295.0),
+        ),
+        (
+            "f64.promote_f32",
+            InstructionType.F64_PROMOTE_F32,
+            Value(ValueType.F32, -1.0),
+            Value(ValueType.F64, -1.0),
+        ),
+        (
+            "i32.reinterpret_f32",
+            InstructionType.I32_REINTERPRET_F32,
+            Value(ValueType.F32, 43.5800018310546875),
+            Value(ValueType.I32, 0x422E51EC),
+        ),
+        (
+            "f32.reinterpret_i32",
+            InstructionType.F32_REINTERPRET_I32,
+            Value(ValueType.I32, 0x422E51EC),
+            Value(ValueType.F32, 43.5800018310546875),
+        ),
+        (
+            "i64.reinterpret_f64",
+            InstructionType.I64_REINTERPRET_F64,
+            Value(ValueType.F64, 4.35800018310999988102594215889E1),
+            Value(ValueType.I64, 0x4045CA3D800018E9),
+        ),
+        (
+            "f64.reinterpret_i64",
+            InstructionType.F64_REINTERPRET_I64,
+            Value(ValueType.I64, 0x4045CA3D800018E9),
+            Value(ValueType.F64, 4.35800018310999988102594215889E1),
+        ),
     )
     def test_cvtops(self, insn_type: InstructionType, v: Value, expected: Value):
         self.machine.push(v)
         insn_eval.eval_insn(self.machine, noarg(insn_type))
 
         self.assertStackDepth(self.starting_stack_depth + 1)
-        self.assertEqual(self.machine.pop(), expected)
+        if expected.value_type in (ValueType.F32, ValueType.F64):
+            if math.isnan(expected.floatval()):
+                self.assertTrue(math.isnan(self.machine.pop_value().floatval()))
+            else:
+                self.assertEqual(self.machine.pop(), expected)
+        else:
+            self.assertEqual(self.machine.pop(), expected)
         self.assertEqual(self.machine.get_current_frame().pc, 1)
 
     @parameterized.named_parameters(
