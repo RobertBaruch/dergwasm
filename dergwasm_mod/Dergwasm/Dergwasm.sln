@@ -5,6 +5,8 @@ VisualStudioVersion = 17.6.33815.320
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dergwasm", "Dergwasm.csproj", "{EB052882-ADCF-400D-B277-1AA5FBA7E945}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DergwasmTests", "..\DergwasmTests\DergwasmTests.csproj", "{DD3FA3DC-5AB2-468C-92FD-09D0A5D75B7B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{EB052882-ADCF-400D-B277-1AA5FBA7E945}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EB052882-ADCF-400D-B277-1AA5FBA7E945}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EB052882-ADCF-400D-B277-1AA5FBA7E945}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD3FA3DC-5AB2-468C-92FD-09D0A5D75B7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD3FA3DC-5AB2-468C-92FD-09D0A5D75B7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD3FA3DC-5AB2-468C-92FD-09D0A5D75B7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD3FA3DC-5AB2-468C-92FD-09D0A5D75B7B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
