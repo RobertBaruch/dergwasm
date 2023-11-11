@@ -889,6 +889,12 @@ def run() -> None:
 
     data_addr = exported_malloc(module_inst, machine_impl, 0x1000)
     print(f"Allocated memory at 0x{data_addr:08X}")
+    data_addr = exported_malloc(module_inst, machine_impl, 0x1000)
+    print(f"Allocated memory at 0x{data_addr:08X}")
+    exported_free(module_inst, machine_impl, data_addr)
+    data_addr = exported_malloc(module_inst, machine_impl, 0x1000)
+    print(f"Allocated memory at 0x{data_addr:08X}")
+    mp_js_do_str(module_inst, machine_impl, "print('Hello, world!')")
 
     start_name = "main"
     if start_name not in module_inst.exports:

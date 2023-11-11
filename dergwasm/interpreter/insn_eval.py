@@ -181,7 +181,7 @@ def else_(machine: Machine, instruction: Instruction) -> None:
     # Push the vals back on the stack
     while stack_values:
         machine.push(stack_values.pop())
-    machine.get_current_frame().pc = label.continuation
+    machine.get_current_frame().pc = label.target
 
 
 def end(machine: Machine, instruction: Instruction) -> None:
@@ -212,7 +212,7 @@ def _br(machine: Machine, level: int) -> None:
     # push the saved values back on the stack
     for v in reversed(vals):
         machine.push(v)
-    machine.get_current_frame().pc = label.continuation
+    machine.get_current_frame().pc = label.target
 
 
 def br(machine: Machine, instruction: Instruction) -> None:

@@ -121,16 +121,19 @@ class Value(StackValue):
 
 @dataclasses.dataclass
 class Frame(StackValue):
-    """A value on the stack that is a frame."""
+    """A value on the stack that is a frame (function call)."""
 
+    # The number of return values from the frame.
     arity: int
+    # The local variables for the frame.
     local_vars: list[Value]
+    # The current module instance. Necessary for mapping indexes to machine addresses.
     module: module_instance.ModuleInstance
-    # The current funcidx.
+    # The current funcidx. Unused.
     funcidx: int
     # The current PC.
     pc: int = 0
-    # The previous frame, if any
+    # The previous frame, if any. Unused.
     prev_frame: Frame | None = None
 
     def __repr__(self) -> str:
@@ -146,7 +149,7 @@ class Label(StackValue):
     """A value on the stack that is a label."""
 
     arity: int
-    continuation: int  # offset into the function's body to run next.
+    target: int  # offset into the function's body to run next.
 
 
 @dataclasses.dataclass
