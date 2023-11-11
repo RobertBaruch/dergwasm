@@ -423,17 +423,17 @@ class InsnEvalTest(parameterized.TestCase):
         ("copysign + -", InstructionType.F32_COPYSIGN, 2, -1, -2),
         ("copysign - +", InstructionType.F32_COPYSIGN, -2, 1, 2),
         ("add", InstructionType.F32_ADD, -2, 1, -1),
-        ("add nan", InstructionType.F32_ADD, -2, float('nan'), float('nan')),
+        ("add nan", InstructionType.F32_ADD, -2, float("nan"), float("nan")),
         ("sub", InstructionType.F32_SUB, -2, 1, -3),
-        ("sub nan", InstructionType.F32_SUB, -2, float('nan'), float('nan')),
+        ("sub nan", InstructionType.F32_SUB, -2, float("nan"), float("nan")),
         ("mul", InstructionType.F32_MUL, -2, 1, -2),
-        ("mul nan", InstructionType.F32_MUL, -2, float('nan'), float('nan')),
+        ("mul nan", InstructionType.F32_MUL, -2, float("nan"), float("nan")),
         ("div", InstructionType.F32_DIV, -2, 4, -0.5),
-        ("div nan", InstructionType.F32_DIV, -2, float('nan'), float('nan')),
+        ("div nan", InstructionType.F32_DIV, -2, float("nan"), float("nan")),
         ("min", InstructionType.F32_MIN, -2, 4, -2),
-        ("min nan", InstructionType.F32_MIN, -2, float('nan'), -2),
+        ("min nan", InstructionType.F32_MIN, -2, float("nan"), -2),
         ("max", InstructionType.F32_MAX, -2, 4, 4),
-        ("max nan", InstructionType.F32_MAX, -2, float('nan'), -2),
+        ("max nan", InstructionType.F32_MAX, -2, float("nan"), -2),
     )
     def test_f32_binops(
         self, insn_type: InstructionType, a: float, b: float, expected: float
@@ -453,7 +453,9 @@ class InsnEvalTest(parameterized.TestCase):
         else:
             self.assertEqual(
                 self.machine.pop(),
-                Value(ValueType.F32, struct.unpack("<f", struct.pack("<f", expected))[0]),
+                Value(
+                    ValueType.F32, struct.unpack("<f", struct.pack("<f", expected))[0]
+                ),
             )
         self.assertEqual(self.machine.get_current_frame().pc, 1)
 
@@ -463,17 +465,17 @@ class InsnEvalTest(parameterized.TestCase):
         ("copysign + -", InstructionType.F64_COPYSIGN, 2, -1, -2),
         ("copysign - +", InstructionType.F64_COPYSIGN, -2, 1, 2),
         ("add", InstructionType.F64_ADD, -2, 1, -1),
-        ("add nan", InstructionType.F64_ADD, -2, float('nan'), float('nan')),
+        ("add nan", InstructionType.F64_ADD, -2, float("nan"), float("nan")),
         ("sub", InstructionType.F64_SUB, -2, 1, -3),
-        ("sub nan", InstructionType.F64_SUB, -2, float('nan'), float('nan')),
+        ("sub nan", InstructionType.F64_SUB, -2, float("nan"), float("nan")),
         ("mul", InstructionType.F64_MUL, -2, 1, -2),
-        ("mul nan", InstructionType.F64_MUL, -2, float('nan'), float('nan')),
+        ("mul nan", InstructionType.F64_MUL, -2, float("nan"), float("nan")),
         ("div", InstructionType.F64_DIV, -2, 4, -0.5),
-        ("div nan", InstructionType.F64_DIV, -2, float('nan'), float('nan')),
+        ("div nan", InstructionType.F64_DIV, -2, float("nan"), float("nan")),
         ("min", InstructionType.F64_MIN, -2, 4, -2),
-        ("min nan", InstructionType.F64_MIN, -2, float('nan'), -2),
+        ("min nan", InstructionType.F64_MIN, -2, float("nan"), -2),
         ("max", InstructionType.F64_MAX, -2, 4, 4),
-        ("max nan", InstructionType.F64_MAX, -2, float('nan'), -2),
+        ("max nan", InstructionType.F64_MAX, -2, float("nan"), -2),
     )
     def test_f64_binops(
         self, insn_type: InstructionType, a: float, b: float, expected: float
@@ -749,31 +751,29 @@ class InsnEvalTest(parameterized.TestCase):
     @parameterized.named_parameters(
         ("trunc +", InstructionType.F32_TRUNC, 2.2, 2),
         ("trunc -", InstructionType.F32_TRUNC, -2.2, -2),
-        ("trunc NaN", InstructionType.F32_TRUNC, float('nan'), float('nan')),
+        ("trunc NaN", InstructionType.F32_TRUNC, float("nan"), float("nan")),
         ("neg +", InstructionType.F32_NEG, 2.2, -2.2),
         ("neg -", InstructionType.F32_NEG, -2.2, 2.2),
-        ("neg NaN", InstructionType.F32_NEG, float('nan'), float('nan')),
+        ("neg NaN", InstructionType.F32_NEG, float("nan"), float("nan")),
         ("ceil +", InstructionType.F32_CEIL, 2.2, 3),
         ("ceil -", InstructionType.F32_CEIL, -2.2, -2),
-        ("ceil NaN", InstructionType.F32_CEIL, float('nan'), float('nan')),
+        ("ceil NaN", InstructionType.F32_CEIL, float("nan"), float("nan")),
         ("floor +", InstructionType.F32_FLOOR, 2.2, 2),
         ("floor -", InstructionType.F32_FLOOR, -2.2, -3),
-        ("floor NaN", InstructionType.F32_FLOOR, float('nan'), float('nan')),
+        ("floor NaN", InstructionType.F32_FLOOR, float("nan"), float("nan")),
         ("sqrt +", InstructionType.F32_SQRT, 4, 2),
-        ("sqrt -", InstructionType.F32_SQRT, -4, float('nan')),
-        ("sqrt NaN", InstructionType.F32_SQRT, float('nan'), float('nan')),
+        ("sqrt -", InstructionType.F32_SQRT, -4, float("nan")),
+        ("sqrt NaN", InstructionType.F32_SQRT, float("nan"), float("nan")),
         ("abs +", InstructionType.F32_ABS, 4, 4),
         ("abs -", InstructionType.F32_ABS, -4, 4),
-        ("abs NaN", InstructionType.F32_ABS, float('nan'), float('nan')),
+        ("abs NaN", InstructionType.F32_ABS, float("nan"), float("nan")),
         ("round +", InstructionType.F32_NEAREST, 4.2, 4),
         ("round -", InstructionType.F32_NEAREST, -4.2, -4),
         ("round even", InstructionType.F32_NEAREST, -4.5, -4),
         ("round odd", InstructionType.F32_NEAREST, -5.5, -6),
-        ("round NaN", InstructionType.F32_NEAREST, float('nan'), float('nan')),
+        ("round NaN", InstructionType.F32_NEAREST, float("nan"), float("nan")),
     )
-    def test_f32_unops(
-        self, insn_type: InstructionType, val: float, expected: float
-    ):
+    def test_f32_unops(self, insn_type: InstructionType, val: float, expected: float):
         self.machine.push(
             Value(ValueType.F32, struct.unpack("<f", struct.pack("<f", val))[0])
         )
@@ -786,38 +786,38 @@ class InsnEvalTest(parameterized.TestCase):
         else:
             self.assertEqual(
                 self.machine.pop(),
-                Value(ValueType.F32, struct.unpack("<f", struct.pack("<f", expected))[0]),
+                Value(
+                    ValueType.F32, struct.unpack("<f", struct.pack("<f", expected))[0]
+                ),
             )
         self.assertEqual(self.machine.get_current_frame().pc, 1)
 
     @parameterized.named_parameters(
         ("trunc +", InstructionType.F64_TRUNC, 2.2, 2),
         ("trunc -", InstructionType.F64_TRUNC, -2.2, -2),
-        ("trunc NaN", InstructionType.F64_TRUNC, float('nan'), float('nan')),
+        ("trunc NaN", InstructionType.F64_TRUNC, float("nan"), float("nan")),
         ("neg +", InstructionType.F64_NEG, 2.2, -2.2),
         ("neg -", InstructionType.F64_NEG, -2.2, 2.2),
-        ("neg NaN", InstructionType.F64_NEG, float('nan'), float('nan')),
+        ("neg NaN", InstructionType.F64_NEG, float("nan"), float("nan")),
         ("ceil +", InstructionType.F64_CEIL, 2.2, 3),
         ("ceil -", InstructionType.F64_CEIL, -2.2, -2),
-        ("ceil NaN", InstructionType.F64_CEIL, float('nan'), float('nan')),
+        ("ceil NaN", InstructionType.F64_CEIL, float("nan"), float("nan")),
         ("floor +", InstructionType.F64_FLOOR, 2.2, 2),
         ("floor -", InstructionType.F64_FLOOR, -2.2, -3),
-        ("floor NaN", InstructionType.F64_FLOOR, float('nan'), float('nan')),
+        ("floor NaN", InstructionType.F64_FLOOR, float("nan"), float("nan")),
         ("sqrt +", InstructionType.F64_SQRT, 4, 2),
-        ("sqrt -", InstructionType.F64_SQRT, -4, float('nan')),
-        ("sqrt NaN", InstructionType.F64_SQRT, float('nan'), float('nan')),
+        ("sqrt -", InstructionType.F64_SQRT, -4, float("nan")),
+        ("sqrt NaN", InstructionType.F64_SQRT, float("nan"), float("nan")),
         ("abs +", InstructionType.F64_ABS, 4, 4),
         ("abs -", InstructionType.F64_ABS, -4, 4),
-        ("abs NaN", InstructionType.F64_ABS, float('nan'), float('nan')),
+        ("abs NaN", InstructionType.F64_ABS, float("nan"), float("nan")),
         ("round +", InstructionType.F64_NEAREST, 4.2, 4),
         ("round -", InstructionType.F64_NEAREST, -4.2, -4),
         ("round even", InstructionType.F64_NEAREST, -4.5, -4),
         ("round odd", InstructionType.F64_NEAREST, -5.5, -6),
-        ("round NaN", InstructionType.F64_NEAREST, float('nan'), float('nan')),
+        ("round NaN", InstructionType.F64_NEAREST, float("nan"), float("nan")),
     )
-    def test_f64_unops(
-        self, insn_type: InstructionType, val: float, expected: float
-    ):
+    def test_f64_unops(self, insn_type: InstructionType, val: float, expected: float):
         self.machine.push(Value(ValueType.F64, float(val)))
 
         insn_eval.eval_insn(self.machine, noarg(insn_type))
@@ -1700,8 +1700,8 @@ class InsnEvalTest(parameterized.TestCase):
         (
             "f32.demote_f64 nan",
             InstructionType.F32_DEMOTE_F64,
-            Value(ValueType.F64, float('nan')),
-            Value(ValueType.F32, float('nan')),
+            Value(ValueType.F64, float("nan")),
+            Value(ValueType.F32, float("nan")),
         ),
         (
             "f32.convert_i32_s",
@@ -1772,14 +1772,62 @@ class InsnEvalTest(parameterized.TestCase):
         (
             "i64.reinterpret_f64",
             InstructionType.I64_REINTERPRET_F64,
-            Value(ValueType.F64, 4.35800018310999988102594215889E1),
+            Value(ValueType.F64, 4.35800018310999988102594215889e1),
             Value(ValueType.I64, 0x4045CA3D800018E9),
         ),
         (
             "f64.reinterpret_i64",
             InstructionType.F64_REINTERPRET_I64,
             Value(ValueType.I64, 0x4045CA3D800018E9),
-            Value(ValueType.F64, 4.35800018310999988102594215889E1),
+            Value(ValueType.F64, 4.35800018310999988102594215889e1),
+        ),
+        (
+            "i32.trunc_f32_s",
+            InstructionType.I32_TRUNC_F32_S,
+            Value(ValueType.F32, -43.5800018310546875),
+            Value(ValueType.I32, -43),
+        ),
+        (
+            "i32.trunc_f32_u",
+            InstructionType.I32_TRUNC_F32_U,
+            Value(ValueType.F32, 43.5800018310546875),
+            Value(ValueType.I32, 43),
+        ),
+        (
+            "i32.trunc_f64_s",
+            InstructionType.I32_TRUNC_F64_S,
+            Value(ValueType.F64, -43.5800018310546875),
+            Value(ValueType.I32, -43),
+        ),
+        (
+            "i32.trunc_f64_u",
+            InstructionType.I32_TRUNC_F64_U,
+            Value(ValueType.F64, 43.5800018310546875),
+            Value(ValueType.I32, 43),
+        ),
+        (
+            "i64.trunc_f32_s",
+            InstructionType.I64_TRUNC_F32_S,
+            Value(ValueType.F32, -43.5800018310546875),
+            Value(ValueType.I64, -43),
+        ),
+        (
+            "i64.trunc_f32_u",
+            InstructionType.I64_TRUNC_F32_U,
+            Value(ValueType.F32, 43.5800018310546875),
+            Value(ValueType.I64, 43),
+        ),
+        (
+            "i64.trunc_f64_s",
+            InstructionType.I64_TRUNC_F64_S,
+            Value(ValueType.F64, -43.5800018310546875),
+            Value(ValueType.I64, -43),
+        ),
+        (
+            "i64.trunc_f64_u",
+            InstructionType.I64_TRUNC_F64_U,
+            Value(ValueType.F64, 43.5800018310546875),
+            Value(ValueType.I64, 43),
         ),
     )
     def test_cvtops(self, insn_type: InstructionType, v: Value, expected: Value):
@@ -1795,6 +1843,93 @@ class InsnEvalTest(parameterized.TestCase):
         else:
             self.assertEqual(self.machine.pop(), expected)
         self.assertEqual(self.machine.get_current_frame().pc, 1)
+
+    @parameterized.named_parameters(
+        (
+            "i32.trunc_f32_s NaN",
+            InstructionType.I32_TRUNC_F32_S,
+            Value(ValueType.F32, float("nan")),
+        ),
+        (
+            "i32.trunc_f32_s too large",
+            InstructionType.I32_TRUNC_F32_S,
+            Value(ValueType.F32, float(0x80000000)),
+        ),
+        (
+            "i32.trunc_f32_u NaN",
+            InstructionType.I32_TRUNC_F32_U,
+            Value(ValueType.F32, float("nan")),
+        ),
+        (
+            "i32.trunc_f32_u too large",
+            InstructionType.I32_TRUNC_F32_U,
+            Value(ValueType.F32, float(0x100000000)),
+        ),
+        (
+            "i32.trunc_f64_s NaN",
+            InstructionType.I32_TRUNC_F64_S,
+            Value(ValueType.F64, float("nan")),
+        ),
+        (
+            "i32.trunc_f64_s too large",
+            InstructionType.I32_TRUNC_F64_S,
+            Value(ValueType.F64, float(0x80000000)),
+        ),
+        (
+            "i32.trunc_f64_u NaN",
+            InstructionType.I32_TRUNC_F64_U,
+            Value(ValueType.F64, float("nan")),
+        ),
+        (
+            "i32.trunc_f64_u too large",
+            InstructionType.I32_TRUNC_F64_U,
+            Value(ValueType.F64, float(0x100000000)),
+        ),
+        (
+            "i64.trunc_f32_s NaN",
+            InstructionType.I64_TRUNC_F32_S,
+            Value(ValueType.F32, float("nan")),
+        ),
+        (
+            "i64.trunc_f32_s too large",
+            InstructionType.I64_TRUNC_F32_S,
+            Value(ValueType.F32, float(0x8000000000000000)),
+        ),
+        (
+            "i64.trunc_f32_u NaN",
+            InstructionType.I64_TRUNC_F32_U,
+            Value(ValueType.F32, float("nan")),
+        ),
+        (
+            "i64.trunc_f32_u too large",
+            InstructionType.I64_TRUNC_F32_U,
+            Value(ValueType.F32, float(0x10000000000000000)),
+        ),
+        (
+            "i64.trunc_f64_s NaN",
+            InstructionType.I64_TRUNC_F64_S,
+            Value(ValueType.F64, float("nan")),
+        ),
+        (
+            "i64.trunc_f64_s too large",
+            InstructionType.I64_TRUNC_F64_S,
+            Value(ValueType.F64, float(0x8000000000000000)),
+        ),
+        (
+            "i64.trunc_f64_u NaN",
+            InstructionType.I64_TRUNC_F64_U,
+            Value(ValueType.F64, float("nan")),
+        ),
+        (
+            "i64.trunc_f64_u too large",
+            InstructionType.I64_TRUNC_F64_U,
+            Value(ValueType.F64, float(0x10000000000000000)),
+        ),
+    )
+    def test_cvtops_traps(self, insn_type: InstructionType, v: Value):
+        self.machine.push(v)
+        with self.assertRaises(RuntimeError):
+            insn_eval.eval_insn(self.machine, noarg(insn_type))
 
     @parameterized.named_parameters(
         ("[5,6] select 0 = 6", 0, 5, 6, Value(ValueType.I32, 6)),

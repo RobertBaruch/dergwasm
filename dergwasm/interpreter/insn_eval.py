@@ -25,6 +25,7 @@ MASK32 = 0xFFFFFFFF
 # Conversion functions due to Python ints being bignums and floats being doubles.
 # Do not implement these for C#. Just use the correct native types.
 
+
 def _unsigned_i32(v: values.Value) -> int:
     """Converts a value to an unsigned 32-bit integer.
 
@@ -1651,6 +1652,7 @@ def i64_rotr(machine: Machine, instruction: Instruction) -> None:
 # Floating point operations in wasm are "non-stop", which means generally that if
 # an operation would raise an exception, it instead returns a NaN.
 
+
 def f32_abs(machine: Machine, instruction: Instruction) -> None:
     val = _float32(machine.pop_value())
     try:
@@ -1924,19 +1926,51 @@ def i32_wrap_i64(machine: Machine, instruction: Instruction) -> None:
 
 
 def i32_trunc_f32_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float32(machine.pop_value())
+    try:
+        ival = math.trunc(val)
+        if ival < -2147483648 or ival > 2147483647:
+            raise RuntimeError("i32.trunc_f32_s: conversion to integer out of range")
+    except ValueError as e:
+        raise RuntimeError("i32.trunc_f32_s: invalid conversion to integer") from e
+    machine.push(values.Value(values.ValueType.I32, ival))
+    machine.get_current_frame().pc += 1
 
 
 def i32_trunc_f32_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float32(machine.pop_value())
+    try:
+        ival = math.trunc(val)
+        if ival < 0 or ival > 0xFFFFFFFF:
+            raise RuntimeError("i32.trunc_f32_u: conversion to integer out of range")
+    except ValueError as e:
+        raise RuntimeError("i32.trunc_f32_u: invalid conversion to integer") from e
+    machine.push(values.Value(values.ValueType.I32, ival))
+    machine.get_current_frame().pc += 1
 
 
 def i32_trunc_f64_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float64(machine.pop_value())
+    try:
+        ival = math.trunc(val)
+        if ival < -2147483648 or ival > 2147483647:
+            raise RuntimeError("i32.trunc_f64_s: conversion to integer out of range")
+    except ValueError as e:
+        raise RuntimeError("i32.trunc_f64_s: invalid conversion to integer") from e
+    machine.push(values.Value(values.ValueType.I32, ival))
+    machine.get_current_frame().pc += 1
 
 
 def i32_trunc_f64_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float64(machine.pop_value())
+    try:
+        ival = math.trunc(val)
+        if ival < 0 or ival > 0xFFFFFFFF:
+            raise RuntimeError("i32.trunc_f64_u: conversion to integer out of range")
+    except ValueError as e:
+        raise RuntimeError("i32.trunc_f64_u: invalid conversion to integer") from e
+    machine.push(values.Value(values.ValueType.I32, ival))
+    machine.get_current_frame().pc += 1
 
 
 def i64_extend_i32_s(machine: Machine, instruction: Instruction) -> None:
@@ -1954,19 +1988,51 @@ def i64_extend_i32_u(machine: Machine, instruction: Instruction) -> None:
 
 
 def i64_trunc_f32_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float32(machine.pop_value())
+    try:
+        ival = math.trunc(val)
+        if ival < -0x8000000000000000 or ival > 0x7FFFFFFFFFFFFFFF:
+            raise RuntimeError("i64.trunc_f32_s: conversion to integer out of range")
+    except ValueError as e:
+        raise RuntimeError("i64.trunc_f32_s: invalid conversion to integer") from e
+    machine.push(values.Value(values.ValueType.I64, ival))
+    machine.get_current_frame().pc += 1
 
 
 def i64_trunc_f32_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float32(machine.pop_value())
+    try:
+        ival = math.trunc(val)
+        if ival < 0 or ival > 0xFFFFFFFFFFFFFFFF:
+            raise RuntimeError("i64.trunc_f32_u: conversion to integer out of range")
+    except ValueError as e:
+        raise RuntimeError("i64.trunc_f32_u: invalid conversion to integer") from e
+    machine.push(values.Value(values.ValueType.I64, ival))
+    machine.get_current_frame().pc += 1
 
 
 def i64_trunc_f64_s(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float64(machine.pop_value())
+    try:
+        ival = math.trunc(val)
+        if ival < -0x8000000000000000 or ival > 0x7FFFFFFFFFFFFFFF:
+            raise RuntimeError("i64.trunc_f64_s: conversion to integer out of range")
+    except ValueError as e:
+        raise RuntimeError("i64.trunc_f64_s: invalid conversion to integer") from e
+    machine.push(values.Value(values.ValueType.I64, ival))
+    machine.get_current_frame().pc += 1
 
 
 def i64_trunc_f64_u(machine: Machine, instruction: Instruction) -> None:
-    raise NotImplementedError
+    val = _float64(machine.pop_value())
+    try:
+        ival = math.trunc(val)
+        if ival < 0 or ival > 0xFFFFFFFFFFFFFFFF:
+            raise RuntimeError("i64.trunc_f64_u: conversion to integer out of range")
+    except ValueError as e:
+        raise RuntimeError("i64.trunc_f64_u: invalid conversion to integer") from e
+    machine.push(values.Value(values.ValueType.I64, ival))
+    machine.get_current_frame().pc += 1
 
 
 def f32_convert_i32_s(machine: Machine, instruction: Instruction) -> None:
@@ -2034,29 +2100,41 @@ def f64_promote_i32(machine: Machine, instruction: Instruction) -> None:
 
 def i32_reinterpret_f32(machine: Machine, instruction: Instruction) -> None:
     val = _float32(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I32,
-                              struct.unpack("<I", struct.pack("<f", val))[0]))
+    machine.push(
+        values.Value(
+            values.ValueType.I32, struct.unpack("<I", struct.pack("<f", val))[0]
+        )
+    )
     machine.get_current_frame().pc += 1
 
 
 def i64_reinterpret_f64(machine: Machine, instruction: Instruction) -> None:
     val = _float64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.I64,
-                              struct.unpack("<Q", struct.pack("<d", val))[0]))
+    machine.push(
+        values.Value(
+            values.ValueType.I64, struct.unpack("<Q", struct.pack("<d", val))[0]
+        )
+    )
     machine.get_current_frame().pc += 1
 
 
 def f32_reinterpret_i32(machine: Machine, instruction: Instruction) -> None:
     val = _unsigned_i32(machine.pop_value())
-    machine.push(values.Value(values.ValueType.F32,
-                              struct.unpack("<f", struct.pack("<I", val))[0]))
+    machine.push(
+        values.Value(
+            values.ValueType.F32, struct.unpack("<f", struct.pack("<I", val))[0]
+        )
+    )
     machine.get_current_frame().pc += 1
 
 
 def f64_reinterpret_i64(machine: Machine, instruction: Instruction) -> None:
     val = _unsigned_i64(machine.pop_value())
-    machine.push(values.Value(values.ValueType.F64,
-                              struct.unpack("<d", struct.pack("<Q", val))[0]))
+    machine.push(
+        values.Value(
+            values.ValueType.F64, struct.unpack("<d", struct.pack("<Q", val))[0]
+        )
+    )
     machine.get_current_frame().pc += 1
 
 
