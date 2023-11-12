@@ -58,6 +58,8 @@ namespace LEB128
 
         public static long ReadLEB128Signed(this Stream stream) => ReadLEB128Signed(stream, out _);
 
+        public static long ReadLEB128Signed(this BinaryReader stream) => ReadLEB128Signed(stream.BaseStream, out _);
+
         public static long ReadLEB128Signed(this Stream stream, out int bytes)
         {
             bytes = 0;
@@ -88,7 +90,11 @@ namespace LEB128
             return value;
         }
 
+        public static long ReadLEB128Signed(this BinaryReader stream, out int bytes) => ReadLEB128Signed(stream.BaseStream, out bytes);
+
         public static ulong ReadLEB128Unsigned(this Stream stream) => ReadLEB128Unsigned(stream, out _);
+
+        public static ulong ReadLEB128Unsigned(this BinaryReader stream) => ReadLEB128Unsigned(stream.BaseStream, out _);
 
         public static ulong ReadLEB128Unsigned(this Stream stream, out int bytes)
         {
@@ -114,6 +120,6 @@ namespace LEB128
 
             return value;
         }
-
+        public static ulong ReadLEB128Unsigned(this BinaryReader stream, out int bytes) => ReadLEB128Unsigned(stream.BaseStream, out bytes);
     }
 }
