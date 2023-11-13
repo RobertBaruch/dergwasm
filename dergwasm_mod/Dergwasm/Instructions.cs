@@ -371,28 +371,6 @@ namespace Derg
         I8X16_AVGR_U = 0xFD7B,
     }
 
-    // When decoding an instruction, this tells us how to decode its operands.
-    // Note that a vector of items always starts with 1 LEB128-encoded unsigned
-    // 32-bit int which tells us the number of the items that follow.
-    internal enum InstructionOperandType
-    {
-        BYTE,  // 1 byte.
-        BYTE8,  // A little-endian unsigned 64-bit int in the next 8 bytes.
-        F32,  // 1 little-endian IEEE 754 32-bit float.
-        F64,  // 1 little-endian IEEE 754 64-bit double.
-        I32,  // 1 LEB128-encoded signed 32-bit int.
-        I64,  // 1 LEB128-encoded signed 64-bit int.
-        U32,  // 1 LEB128-encoded unsigned 32-bit int.
-        BLOCK,  // 1 block of instructions.
-        SWITCH,  // A vector of LEB128-encoded unsigned 32-bit int, followed by a LEB128-encoded unsigned 32-bit int.
-        U32X2,   // 2 LEB128-encoded unsigned 32-bit ints.
-        MEMARG,  // 2 LEB128-encoded unsigned 32-bit ints.
-        MEMARG_LANE,  // 3 LEB128-encoded unsigned 32-bit ints.
-        LANE,  // 1 LEB128-encoded unsigned 32-bit int.
-        LANE8,  // 16 LEB128-encoded unsigned 32-bit ints.
-        VALTYPE_VECTOR,  // A vector of bytes.
-    }
-
     // A fully decoded and flattened instruction.
     public struct Instruction
     {
@@ -482,7 +460,7 @@ namespace Derg
 
             // value_lo will be filled in during the flatten operation, when we will figure
             // out program counters.
-            return new UnflattenedBlockOperand(new Value(value_hi, 0UL), instructions, else_instructions);
+            return new UnflattenedBlockOperand(new Value(0UL, value_hi), instructions, else_instructions);
         }
     }
 
@@ -596,8 +574,30 @@ namespace Derg
             return new UnflattenedInstruction(type, operands);
         }
 
+        // When decoding an instruction, this tells us how to decode its operands.
+        // Note that a vector of items always starts with 1 LEB128-encoded unsigned
+        // 32-bit int which tells us the number of the items that follow.
+        private enum InstructionOperandType
+        {
+            BYTE,  // 1 byte.
+            BYTE8,  // A little-endian unsigned 64-bit int in the next 8 bytes.
+            F32,  // 1 little-endian IEEE 754 32-bit float.
+            F64,  // 1 little-endian IEEE 754 64-bit double.
+            I32,  // 1 LEB128-encoded signed 32-bit int.
+            I64,  // 1 LEB128-encoded signed 64-bit int.
+            U32,  // 1 LEB128-encoded unsigned 32-bit int.
+            BLOCK,  // 1 block of instructions.
+            SWITCH,  // A vector of LEB128-encoded unsigned 32-bit int, followed by a LEB128-encoded unsigned 32-bit int.
+            U32X2,   // 2 LEB128-encoded unsigned 32-bit ints.
+            MEMARG,  // 2 LEB128-encoded unsigned 32-bit ints.
+            MEMARG_LANE,  // 3 LEB128-encoded unsigned 32-bit ints.
+            LANE,  // 1 LEB128-encoded unsigned 32-bit int.
+            LANE8,  // 16 LEB128-encoded unsigned 32-bit ints.
+            VALTYPE_VECTOR,  // A vector of bytes.
+        }
+
         // Instructions not in the map have no operands.
-        internal static IReadOnlyDictionary<InstructionType, InstructionOperandType> Map = new Dictionary<InstructionType, InstructionOperandType>()
+        private static IReadOnlyDictionary<InstructionType, InstructionOperandType> Map = new Dictionary<InstructionType, InstructionOperandType>()
         {
             { InstructionType.REF_NULL, InstructionOperandType.BYTE },
             { InstructionType.V128_CONST, InstructionOperandType.BYTE8 },
@@ -695,11 +695,27 @@ namespace Derg
         };
     }
 
-    // Flattens a list of UnflattenedInstructions. This also resolves instruction locations in terms
-    // of program counters, which allows us to populate block targets.
+    public static class Expr
+    {
+        // Decodes a list of instructions, which ends in END.
+        public static List<UnflattenedInstruction> Decode(BinaryReader stream)
+        {
+            List<UnflattenedInstruction> instructions = new List<UnflattenedInstruction>();
+
+            while (true)
+            {
+                UnflattenedInstruction instruction = UnflattenedInstruction.Decode(stream);
+                instructions.Add(instruction);
+                if (instruction.Type == InstructionType.END) return instructions;
+            }
+        }
+    }
+
     public static class Flattener
     {
-        public static List<Instruction> flatten(this List<UnflattenedInstruction> instructions, uint pc)
+        // Recursively flattens a list of UnflattenedInstructions. This also resolves instruction locations
+        // in terms of program counters, which allows us to populate block targets.
+        public static List<Instruction> Flatten(this List<UnflattenedInstruction> instructions, uint pc)
         {
             List<Instruction> flattened_instructions = new List<Instruction>();
             List<Instruction> block_insns;
@@ -714,9 +730,12 @@ namespace Derg
                     case InstructionType.BLOCK:
                         block_insns = new List<Instruction> { initial_instruction };
                         block_operand = (UnflattenedBlockOperand)instruction.Operands[0];
-                        block_insns.AddRange(block_operand.instructions.flatten(pc + 1));
+                        block_insns.AddRange(block_operand.instructions.Flatten(pc + 1));
 
                         pc += (uint)block_insns.Count;
+                        // The signature for the block.
+                        initial_instruction.Operands[0].value_hi = instruction.Operands[0].value.value_hi;
+                        // Where a BR 0 would go. Will be END+1.
                         initial_instruction.Operands[0].value_lo = pc;
 
                         flattened_instructions.AddRange(block_insns);
@@ -725,8 +744,11 @@ namespace Derg
                     case InstructionType.LOOP:
                         block_insns = new List<Instruction> { initial_instruction };
                         block_operand = (UnflattenedBlockOperand)instruction.Operands[0];
-                        block_insns.AddRange(block_operand.instructions.flatten(pc + 1));
+                        block_insns.AddRange(block_operand.instructions.Flatten(pc + 1));
 
+                        // The signature for the block.
+                        initial_instruction.Operands[0].value_hi = instruction.Operands[0].value.value_hi;
+                        // Where a BR 0 would go. Will be the the LOOP instruction.
                         initial_instruction.Operands[0].value_lo = pc;
                         pc += (uint)block_insns.Count;
 
@@ -736,17 +758,21 @@ namespace Derg
                     case InstructionType.IF:
                         block_insns = new List<Instruction> { initial_instruction };
                         block_operand = (UnflattenedBlockOperand)instruction.Operands[0];
-                        block_insns.AddRange(block_operand.instructions.flatten(pc + 1));
+                        block_insns.AddRange(block_operand.instructions.Flatten(pc + 1));
 
                         // This first block ends in either an END or an ELSE.
 
-                        pc += (uint)block_insns.Count + 1;
-                        initial_instruction.Operands[0].value_lo = (ulong)pc << 32;  // Will be either END+1 or ELSE+1.
+                        pc += (uint)block_insns.Count;
+                        // The negative condition's target.  Will be either ELSE+1 or END+1.
+                        initial_instruction.Operands[0].value_lo = (ulong)pc << 32;
 
-                        List<Instruction> false_insns = block_operand.else_instructions.flatten(pc);
+                        List<Instruction> false_insns = block_operand.else_instructions.Flatten(pc);
                         pc += (uint)false_insns.Count;
 
-                        initial_instruction.Operands[0].value_lo |= pc;  // The end of the IF-[ELSE-]END block.
+                        // The signature for the block.
+                        initial_instruction.Operands[0].value_hi = instruction.Operands[0].value.value_hi;
+                        // Where a BR 0 would go. Will be END+1.
+                        initial_instruction.Operands[0].value_lo |= pc;
 
                         // Note that if there was no ELSE, then both targets will be equal.
 

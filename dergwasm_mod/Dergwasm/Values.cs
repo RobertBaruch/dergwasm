@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Derg
 {
@@ -49,7 +50,7 @@ namespace Derg
     // and validation includes checking that all operations on the stack are performed
     // on the correct types, it means that we don't have to store type information.
     //
-    // Note:  block operands are not values on the stack, but rather values in a block's operands.
+    // Note: block operands are not values on the stack, but rather values in a block's operands.
     public struct Value
     {
         public ulong value_lo;
@@ -152,13 +153,13 @@ namespace Derg
         }
 
         // Only valid if the value is a block operand with a TYPED_BLOCK signature.
-        public uint AsTypeIndex()
+        public uint GetReturningBlockTypeIndex()
         {
             return (uint)((value_hi >> 2) & 0xFFFFFFFF);
         }
 
         // Only valid if the value is a block operand with a RETURNING_BLOCK signature.
-        public ValueType AsValueType()
+        public ValueType GetReturningBlockValueType()
         {
             return (ValueType)((value_hi >> 2) & 0xFF);
         }
@@ -180,24 +181,39 @@ namespace Derg
     public struct Label
     {
         // The number of return values for the block.
-        public int arity;
-        // The target PC for a BR 0 instruction within this block. With
-        // the exception of the LOOP instruction, this always goes to the
-        // END (or ELSE in the case of an IF instruction's positive condition)
-        // of the block.
-        public int target;
+        public uint arity;
+        // The target PC for a BR 0 instruction within this block. With the exception of the
+        // LOOP instruction, this always goes to the END+1 of the block. Targets for LOOP
+        // instructions go back to the LOOP instruction.
+        public uint target;
+        // The size of the stack at the moment the label is created.
+        //
+        // In the WASM spec, labels are stored on the stack for simplicity. This lets
+        // instructions pop everything off the stack up to the label. That would mean that
+        // a stack element would have to indicate that it is a label. Since we only allocate
+        // 128 bits for a stack entry, and a stack entry could be a V128, there is way to
+        // differentiate between a V128 and a label when blindly popping elements off the stack.
+        //
+        // Therefore, we keep labels on a separate label stack for each function -- since regardless
+        // of how a function ends, all labels get removed.
+        public uint stack_level;
     }
 
-    // A frame. Represents the state of a function.
+    // A frame. Represents the state of a function. Frames have their own stack. Frames are
+    // also not skippable like blocks. That means you can't exit a function and continue to
+    // anything other than the function in the previous frame. This is in contrast to blocks,
+    // where you can break out of multiple levels of blocks.
     public class Frame
     {
         // The number of return values for the function.
-        public int arity;
+        public uint arity;
         // The function's locals. This includes its arguments, which come first.
         public Value[] locals;
         // TODO: This should be an interface.
         public object module_inst;
         // The current program counter.
-        public int pc;
+        public uint pc;
+        // The label stack.
+        public Stack<Label> labels;
     }
 }  // namespace Derg
