@@ -374,7 +374,7 @@ namespace Derg
     // When decoding an instruction, this tells us how to decode its operands.
     // Note that a vector of items always starts with 1 LEB128-encoded unsigned
     // 32-bit int which tells us the number of the items that follow.
-    enum InstructionOperandType
+    internal enum InstructionOperandType
     {
         BYTE,  // 1 byte.
         BYTE8,  // A little-endian unsigned 64-bit int in the next 8 bytes.
@@ -393,10 +393,211 @@ namespace Derg
         VALTYPE_VECTOR,  // A vector of bytes.
     }
 
-    struct InstructionOperandMap
+    // A fully decoded and flattened instruction.
+    public struct Instruction
     {
+        public InstructionType Type;
+        public Value[] Operands;
+
+        public Instruction(InstructionType type, Value[] operands)
+        {
+            Type = type;
+            Operands = operands;
+        }
+    }
+
+    // An operand for an UnflattenedInstruction. During the flatten operation, UnflattenedOperands
+    // in UnflattenedInstructions will be replaced by Value operands in Instructions.
+    public class UnflattenedOperand
+    {
+        public Value value;
+
+        public UnflattenedOperand(Value value) { this.value = value; }
+    }
+
+    // An operand for an UnflattenedInstruction that also holds lists of UnflattenedInstructions.
+    // During the flatten operation, these nested blocks get flattened so that we don't need the
+    // lists anymore. Afterward, the block instruction's operands only contain jump targets.
+    public class UnflattenedBlockOperand : UnflattenedOperand
+    {
+        // Used for BLOCK, LOOP, IF-END, and the positive branch of IF instructions.
+        public List<UnflattenedInstruction> instructions;
+        // Used only for the negative branch of IF instructions.
+        public List<UnflattenedInstruction> else_instructions;
+
+        public UnflattenedBlockOperand(Value value, List<UnflattenedInstruction> instructions, List<UnflattenedInstruction> else_instructions) : base(value)
+        {
+            this.instructions = instructions;
+            this.else_instructions = else_instructions;
+        }
+
+        public static UnflattenedBlockOperand Decode(BinaryReader stream)
+        {
+            // The secret here is that if the first byte is >= 0x40, then the signed
+            // LEB128 decode is a negative number -- specifically, a 7-bit signed negative
+            // number. This means that any number between 0x40 and 0x7F can indicate
+            // something other than an type index, namely, either a void block or a block with
+            // a ValueType return type.
+            ulong value_hi;
+
+            long encoded_block_type = stream.ReadLEB128Signed();
+            if (encoded_block_type < 0)
+            {
+                encoded_block_type += 0x80;
+                if (encoded_block_type == 0x40)
+                {
+                    value_hi = (ulong)BlockType.VOID_BLOCK;
+                }
+                else
+                {
+                    value_hi = (ulong)BlockType.RETURNING_BLOCK;
+                    value_hi |= (ulong)(encoded_block_type & 0xFF) << 2;
+                }
+            }
+            else
+            {
+                value_hi = (ulong)BlockType.TYPED_BLOCK;
+                value_hi |= (ulong)encoded_block_type << 2;
+            }
+
+            List<UnflattenedInstruction> instructions = new List<UnflattenedInstruction>();
+            List<UnflattenedInstruction> else_instructions = new List<UnflattenedInstruction>();
+
+            while (true)
+            {
+                UnflattenedInstruction insn = UnflattenedInstruction.Decode(stream);
+                instructions.Add(insn);
+                if (insn.Type == InstructionType.END) break;
+                if (insn.Type == InstructionType.ELSE)
+                {
+                    while (true)
+                    {
+                        insn = UnflattenedInstruction.Decode(stream);
+                        else_instructions.Add(insn);
+                        if (insn.Type == InstructionType.END) break;
+                    }
+                    break;
+                }
+            }
+
+            // value_lo will be filled in during the flatten operation, when we will figure
+            // out program counters.
+            return new UnflattenedBlockOperand(new Value(value_hi, 0UL), instructions, else_instructions);
+        }
+    }
+
+    // A fully decoded but unflattened instruction. That means its operands can contain not only Values
+    // but also lists of (unflattened) instructions.
+    public struct UnflattenedInstruction
+    {
+        public InstructionType Type;
+        public UnflattenedOperand[] Operands;
+
+        public UnflattenedInstruction(InstructionType type, UnflattenedOperand[] operands)
+        {
+            Type = type;
+            Operands = operands;
+        }
+
+        public static UnflattenedInstruction Decode(BinaryReader stream)
+        {
+            uint opcode = stream.ReadByte();
+
+            // I couldn't find it explicitly stated, but at the very least, opcodes
+            // 0xFC and 0xFD are "extension" opcodes, where you have to read the next
+            // LEB128-encoded unsigned int to get the instruction.
+
+            if (opcode == 0xFC || opcode == 0xFD)
+            {
+                uint ext_opcode = (uint)stream.ReadLEB128Unsigned();
+                // We're just going to assume that there aren't any extended opcodes past
+                // 0xFF.
+                if (ext_opcode > 0xFF)
+                    throw new InvalidOperationException(
+                        $"Unknown extended opcode {opcode:02X} + {ext_opcode:02X}"
+                    );
+                opcode = (opcode << 8) | ext_opcode;
+            }
+
+            InstructionType type = (InstructionType)opcode;
+            UnflattenedOperand[] operands = { };
+
+            if (!Map.TryGetValue(type, out InstructionOperandType operandType))
+                return new UnflattenedInstruction(type, operands);
+
+            switch (operandType)
+            {
+                case InstructionOperandType.BYTE:
+                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value((uint)stream.ReadByte())) };
+                    break;
+
+                case InstructionOperandType.BYTE8:
+                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value(stream.ReadUInt64())) };
+                    break;
+
+                case InstructionOperandType.U32:  // fallthrough
+                case InstructionOperandType.LANE:
+                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned())) };
+                    break;
+
+                case InstructionOperandType.U32X2:  // fallthrough
+                case InstructionOperandType.MEMARG:
+                    operands = new UnflattenedOperand[] {
+                        new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned())),
+                        new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned())) };
+                    break;
+
+                case InstructionOperandType.MEMARG_LANE:
+                    operands = new UnflattenedOperand[] {
+                        new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned())),
+                        new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned())),
+                        new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned())) };
+                    break;
+
+                case InstructionOperandType.LANE8:
+                    operands = new UnflattenedOperand[16];
+                    for (int i = 0; i < 16; i++)
+                        operands[i] = new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned()));
+                    break;
+
+                case InstructionOperandType.VALTYPE_VECTOR:
+                    operands = new UnflattenedOperand[(uint)stream.ReadLEB128Unsigned()];
+                    for (uint i = 0; i < operands.Length; i++)
+                        operands[i] = new UnflattenedOperand(new Value((uint)stream.ReadByte()));
+                    break;
+
+                case InstructionOperandType.I32:
+                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned())) };
+                    break;
+
+                case InstructionOperandType.I64:
+                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value(stream.ReadLEB128Unsigned())) };
+                    break;
+
+                case InstructionOperandType.F32:
+                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value(stream.ReadSingle())) };
+                    break;
+
+                case InstructionOperandType.F64:
+                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value(stream.ReadDouble())) };
+                    break;
+
+                case InstructionOperandType.SWITCH:
+                    uint tableSize = (uint)stream.ReadLEB128Unsigned();
+                    operands = new UnflattenedOperand[tableSize + 1];
+                    for (uint i = 0; i < operands.Length; i++)
+                        operands[i] = new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned()));
+                    break;
+
+                case InstructionOperandType.BLOCK:
+                    operands = new UnflattenedOperand[] { UnflattenedBlockOperand.Decode(stream) };
+                    break;
+            }
+            return new UnflattenedInstruction(type, operands);
+        }
+
         // Instructions not in the map have no operands.
-        public static IReadOnlyDictionary<InstructionType, InstructionOperandType> Map = new Dictionary<InstructionType, InstructionOperandType>()
+        internal static IReadOnlyDictionary<InstructionType, InstructionOperandType> Map = new Dictionary<InstructionType, InstructionOperandType>()
         {
             { InstructionType.REF_NULL, InstructionOperandType.BYTE },
             { InstructionType.V128_CONST, InstructionOperandType.BYTE8 },
@@ -494,260 +695,67 @@ namespace Derg
         };
     }
 
-    public class Operand
-    {
-        public Value value;
-
-        public Operand(Value value) { this.value = value; }
-    }
-
-    // A temporary operand holding lists of instructions. During the flatten operation,
-    // these nested blocks get flattened so that we don't need the lists anymore. Afterward,
-    // the block instruction's operands only contain jump targets.
-    public class StructuredBlockOperand : Operand
-    {
-        // Used for BLOCK, LOOP, IF-END, and the positive branch of IF instructions.
-        public List<Instruction> instructions;
-        // Used only for the negative branch of IF instructions.
-        public List<Instruction> else_instructions;
-
-        public StructuredBlockOperand(Value value, List<Instruction> instructions, List<Instruction> else_instructions) : base(value)
-        {
-            this.instructions = instructions;
-            this.else_instructions = else_instructions;
-        }
-
-        public static StructuredBlockOperand Decode(BinaryReader stream)
-        {
-            // The secret here is that if the first byte is >= 0x40, then the signed
-            // LEB128 decode is a negative number -- specifically, a 7-bit signed negative
-            // number. This means that any number between 0x40 and 0x7F can indicate
-            // something other than an type index, namely, either a void block or a block with
-            // a ValueType return type.
-            ulong value_hi;
-
-            long encoded_block_type = stream.ReadLEB128Signed();
-            if (encoded_block_type < 0)
-            {
-                encoded_block_type += 0x80;
-                if (encoded_block_type == 0x40)
-                {
-                    value_hi = (ulong)BlockType.VOID_BLOCK;
-                }
-                else
-                {
-                    value_hi = (ulong)BlockType.RETURNING_BLOCK;
-                    value_hi |= (ulong)(encoded_block_type & 0xFF) << 2;
-                }
-            }
-            else
-            {
-                value_hi = (ulong)BlockType.TYPED_BLOCK;
-                value_hi |= (ulong)encoded_block_type << 2;
-            }
-
-            List<Instruction> instructions = new List<Instruction>();
-            List<Instruction> else_instructions = new List<Instruction>();
-
-            while (true)
-            {
-                Instruction insn = Instruction.Decode(stream);
-                instructions.Add(insn);
-                if (insn.Type == InstructionType.END) break;
-                if (insn.Type == InstructionType.ELSE)
-                {
-                    while (true)
-                    {
-                        insn = Instruction.Decode(stream);
-                        else_instructions.Add(insn);
-                        if (insn.Type == InstructionType.END) break;
-                    }
-                    break;
-                }
-            }
-
-            // value_lo will be filled in during the flatten operation, when we will figure
-            // out program counters.
-            return new StructuredBlockOperand(new Value(value_hi, 0UL), instructions, else_instructions);
-        }
-
-    }
-
-    public struct Instruction
-    {
-        public InstructionType Type;
-        public Operand[] Operands;
-
-        public Instruction(InstructionType type, Operand[] operands)
-        {
-            Type = type;
-            Operands = operands;
-        }
-
-        public static Instruction Decode(BinaryReader stream)
-        {
-            uint opcode = stream.ReadByte();
-
-            // I couldn't find it explicitly stated, but at the very least, opcodes
-            // 0xFC and 0xFD are "extension" opcodes, where you have to read the next
-            // LEB128-encoded unsigned int to get the instruction.
-
-            if (opcode == 0xFC || opcode == 0xFD)
-            {
-                uint ext_opcode = (uint)stream.ReadLEB128Unsigned();
-                // We're just going to assume that there aren't any extended opcodes past
-                // 0xFF.
-                if (ext_opcode > 0xFF)
-                    throw new InvalidOperationException(
-                        $"Unknown extended opcode {opcode:02X} + {ext_opcode:02X}"
-                    );
-                opcode = (opcode << 8) | ext_opcode;
-            }
-
-            InstructionType type = (InstructionType)opcode;
-            Operand[] operands = { };
-
-            if (!InstructionOperandMap.Map.TryGetValue(type, out InstructionOperandType operandType))
-                return new Instruction(type, operands);
-
-            switch (operandType)
-            {
-                case InstructionOperandType.BYTE:
-                    operands = new Operand[] { new Operand(new Value((uint)stream.ReadByte())) };
-                    break;
-
-                case InstructionOperandType.BYTE8:
-                    operands = new Operand[] { new Operand(new Value(stream.ReadUInt64())) };
-                    break;
-
-                case InstructionOperandType.U32:  // fallthrough
-                case InstructionOperandType.LANE:
-                    operands = new Operand[] { new Operand(new Value((uint)stream.ReadLEB128Unsigned())) };
-                    break;
-
-                case InstructionOperandType.U32X2:  // fallthrough
-                case InstructionOperandType.MEMARG:
-                    operands = new Operand[] {
-                        new Operand(new Value((uint)stream.ReadLEB128Unsigned())),
-                        new Operand(new Value((uint)stream.ReadLEB128Unsigned())) };
-                    break;
-
-                case InstructionOperandType.MEMARG_LANE:
-                    operands = new Operand[] {
-                        new Operand(new Value((uint)stream.ReadLEB128Unsigned())),
-                        new Operand(new Value((uint)stream.ReadLEB128Unsigned())),
-                        new Operand(new Value((uint)stream.ReadLEB128Unsigned())) };
-                    break;
-
-                case InstructionOperandType.LANE8:
-                    operands = new Operand[16];
-                    for (int i = 0; i < 16; i++)
-                        operands[i] = new Operand(new Value((uint)stream.ReadLEB128Unsigned()));
-                    break;
-
-                case InstructionOperandType.VALTYPE_VECTOR:
-                    operands = new Operand[(uint)stream.ReadLEB128Unsigned()];
-                    for (uint i = 0; i < operands.Length; i++)
-                        operands[i] = new Operand(new Value((uint)stream.ReadByte()));
-                    break;
-
-                case InstructionOperandType.I32:
-                    operands = new Operand[] { new Operand(new Value((uint)stream.ReadLEB128Unsigned())) };
-                    break;
-
-                case InstructionOperandType.I64:
-                    operands = new Operand[] { new Operand(new Value(stream.ReadLEB128Unsigned())) };
-                    break;
-
-                case InstructionOperandType.F32:
-                    operands = new Operand[] { new Operand(new Value(stream.ReadSingle())) };
-                    break;
-
-                case InstructionOperandType.F64:
-                    operands = new Operand[] { new Operand(new Value(stream.ReadDouble())) };
-                    break;
-
-                case InstructionOperandType.SWITCH:
-                    uint tableSize = (uint)stream.ReadLEB128Unsigned();
-                    operands = new Operand[tableSize + 1];
-                    for (uint i = 0; i < operands.Length; i++)
-                        operands[i] = new Operand(new Value((uint)stream.ReadLEB128Unsigned()));
-                    break;
-
-                case InstructionOperandType.BLOCK:
-                    operands = new Operand[] { StructuredBlockOperand.Decode(stream) };
-                    break;
-            }
-            return new Instruction(type, operands);
-        }
-    }
-
-    // Flattens a list of instructions. This also resolves instruction locations in terms
+    // Flattens a list of UnflattenedInstructions. This also resolves instruction locations in terms
     // of program counters, which allows us to populate block targets.
     public static class Flattener
     {
-        public static List<Instruction> flatten(this List<Instruction> instructions, uint pc)
+        public static List<Instruction> flatten(this List<UnflattenedInstruction> instructions, uint pc)
         {
             List<Instruction> flattened_instructions = new List<Instruction>();
             List<Instruction> block_insns;
-            StructuredBlockOperand block_operand;
+            UnflattenedBlockOperand block_operand;
 
-            foreach (Instruction instruction in instructions)
+            foreach (UnflattenedInstruction instruction in instructions)
             {
+                Instruction initial_instruction = new Instruction(instruction.Type,
+                    (from operand in instruction.Operands select operand.value).ToArray());
                 switch (instruction.Type)
                 {
                     case InstructionType.BLOCK:
-                        block_insns = new List<Instruction> { instruction };
-                        block_operand = (StructuredBlockOperand)instruction.Operands[0];
+                        block_insns = new List<Instruction> { initial_instruction };
+                        block_operand = (UnflattenedBlockOperand)instruction.Operands[0];
                         block_insns.AddRange(block_operand.instructions.flatten(pc + 1));
 
                         pc += (uint)block_insns.Count;
-                        block_operand.value.value_lo = pc;
-                        // Having resolved the block's target, we can replace the StructuredBlockOperand. 
-                        instruction.Operands[0] = new Operand(block_operand.value);
+                        initial_instruction.Operands[0].value_lo = pc;
 
                         flattened_instructions.AddRange(block_insns);
                         break;
 
                     case InstructionType.LOOP:
-                        block_insns = new List<Instruction> { instruction };
-                        block_operand = (StructuredBlockOperand)instruction.Operands[0];
+                        block_insns = new List<Instruction> { initial_instruction };
+                        block_operand = (UnflattenedBlockOperand)instruction.Operands[0];
                         block_insns.AddRange(block_operand.instructions.flatten(pc + 1));
 
-                        block_operand.value.value_lo = pc;
-                        // Having resolved the block's target, we can replace the StructuredBlockOperand. 
-                        instruction.Operands[0] = new Operand(block_operand.value);
+                        initial_instruction.Operands[0].value_lo = pc;
                         pc += (uint)block_insns.Count;
 
                         flattened_instructions.AddRange(block_insns);
                         break;
 
                     case InstructionType.IF:
-                        block_insns = new List<Instruction> { instruction };
-                        block_operand = (StructuredBlockOperand)instruction.Operands[0];
+                        block_insns = new List<Instruction> { initial_instruction };
+                        block_operand = (UnflattenedBlockOperand)instruction.Operands[0];
                         block_insns.AddRange(block_operand.instructions.flatten(pc + 1));
 
                         // This first block ends in either an END or an ELSE.
 
                         pc += (uint)block_insns.Count + 1;
-                        block_operand.value.value_lo = (ulong)pc << 32;  // Will be either END+1 or ELSE+1.
+                        initial_instruction.Operands[0].value_lo = (ulong)pc << 32;  // Will be either END+1 or ELSE+1.
 
                         List<Instruction> false_insns = block_operand.else_instructions.flatten(pc);
                         pc += (uint)false_insns.Count;
 
-                        block_operand.value.value_lo |= pc;  // The end of the IF-[ELSE-]END block.
+                        initial_instruction.Operands[0].value_lo |= pc;  // The end of the IF-[ELSE-]END block.
 
                         // Note that if there was no ELSE, then both targets will be equal.
-
-                        // Having resolved the block's target, we can replace the StructuredBlockOperand. 
-                        instruction.Operands[0] = new Operand(block_operand.value);
 
                         flattened_instructions.AddRange(block_insns);
                         flattened_instructions.AddRange(false_insns);
                         break;
 
                     default:
-                        flattened_instructions.Add(instruction);
+                        flattened_instructions.Add(initial_instruction);
                         pc += 1;
                         break;
                 }
