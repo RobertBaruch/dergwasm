@@ -49,5 +49,9 @@ namespace Derg
 
         // Pops a label off the current frame. 
         Label PopLabel();
+
+        // Gets the FuncType for the given index using the current frame's module
+        // to map the index to the machine's type address.
+        FuncType GetFuncTypeFromIndex(int index);
     }
 }

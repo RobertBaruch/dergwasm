@@ -11,6 +11,12 @@ namespace Derg
     {
         private static void Nop(Instruction instruction, IMachine machine) { }
 
+        private static void I32Const(Instruction instruction, IMachine machine) {
+            machine.Push(instruction.Operands[0]);
+        }
+
+        private static void Drop(Instruction instruction, IMachine machine) => machine.Pop();
+
         private static void Block(Instruction instruction, IMachine machine) {
             int args;
             int arity;
@@ -29,7 +35,7 @@ namespace Derg
                     break;
 
                 default:
-                    FuncType func_type = machine.CurrentFrame().module.GetFuncType(
+                    FuncType func_type = machine.GetFuncTypeFromIndex(
                         operand.GetReturningBlockTypeIndex());
                     args = func_type.args.Length;
                     arity = func_type.returns.Length;
@@ -59,7 +65,7 @@ namespace Derg
                     break;
 
                 default:
-                    FuncType func_type = machine.CurrentFrame().module.GetFuncType(
+                    FuncType func_type = machine.GetFuncTypeFromIndex(
                         operand.GetReturningBlockTypeIndex());
                     arity = func_type.args.Length;
                     break;
@@ -89,17 +95,19 @@ namespace Derg
             machine.SetPC(operand.GetElseTarget() - 1);
         }
 
-        private static void Else(Instruction instruction, IMachine machine)
+        private static void JumpToTopLabel(IMachine machine)
         {
             Label label = machine.PopLabel();
+            // We need to save the top arity values, pop everything else up to
+            // the label's stack level, then restore the values. This is the equivalent
+            // of removing everything from the label's stack_level up to current_stack_level - n.
+            machine.RemoveStack(label.stack_level, label.arity);
             machine.SetPC(label.target - 1);
         }
 
-        private static void End(Instruction instruction, IMachine machine)
-        {
-            Label label = machine.PopLabel();
-            machine.SetPC(label.target - 1);
-        }
+        private static void Else(Instruction instruction, IMachine machine) => JumpToTopLabel(machine);
+
+        private static void End(Instruction instruction, IMachine machine) => JumpToTopLabel(machine);
 
         private static void BrLevels(IMachine machine, int levels)
         {
@@ -108,12 +116,7 @@ namespace Derg
                 levels--;
                 machine.PopLabel();
             }
-            Label label = machine.PopLabel();
-            // We need to save the top arity values, pop everything else up to
-            // the label's stack level, then restore the values. This is the equivalent
-            // of removing everything from the label's stack_level up to current_stack_level - n.
-            machine.RemoveStack(label.stack_level, label.arity);
-            machine.SetPC(label.target - 1);
+            JumpToTopLabel(machine);
         }
 
         private static void Br(Instruction instruction, IMachine machine)
@@ -153,6 +156,8 @@ namespace Derg
             new Dictionary<InstructionType, Action<Instruction, IMachine>>()
         {
             { InstructionType.NOP, Nop },
+            { InstructionType.DROP, Drop },
+            { InstructionType.I32_CONST, I32Const },
             { InstructionType.BLOCK, Block },
             { InstructionType.LOOP, Loop },
             { InstructionType.IF, If },

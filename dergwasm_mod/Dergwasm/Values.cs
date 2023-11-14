@@ -240,5 +240,11 @@ namespace Derg
     {
         public ValueType[] args;
         public ValueType[] returns;
+
+        public FuncType(ValueType[] args, ValueType[] returns)
+        {
+            this.args = args;
+            this.returns = returns;
+        }
     }
 }  // namespace Derg
