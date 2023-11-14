@@ -9,7 +9,7 @@ using LEB128;
 
 namespace Derg
 {
-    public enum InstructionType : uint
+    public enum InstructionType : int
     {
         // Control instructions
         UNREACHABLE = 0x00,
@@ -482,7 +482,7 @@ namespace Derg
 
         public static UnflattenedInstruction Decode(BinaryReader stream)
         {
-            uint opcode = stream.ReadByte();
+            int opcode = stream.ReadByte();
 
             // I couldn't find it explicitly stated, but at the very least, opcodes
             // 0xFC and 0xFD are "extension" opcodes, where you have to read the next
@@ -490,7 +490,7 @@ namespace Derg
 
             if (opcode == 0xFC || opcode == 0xFD)
             {
-                uint ext_opcode = (uint)stream.ReadLEB128Unsigned();
+                int ext_opcode = (int)stream.ReadLEB128Unsigned();
                 // We're just going to assume that there aren't any extended opcodes past
                 // 0xFF.
                 if (ext_opcode > 0xFF)
@@ -509,7 +509,7 @@ namespace Derg
             switch (operandType)
             {
                 case InstructionOperandType.BYTE:
-                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value((uint)stream.ReadByte())) };
+                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value((int)stream.ReadByte())) };
                     break;
 
                 case InstructionOperandType.BYTE8:
@@ -518,37 +518,37 @@ namespace Derg
 
                 case InstructionOperandType.U32:  // fallthrough
                 case InstructionOperandType.LANE:
-                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned())) };
+                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned())) };
                     break;
 
                 case InstructionOperandType.U32X2:  // fallthrough
                 case InstructionOperandType.MEMARG:
                     operands = new UnflattenedOperand[] {
-                        new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned())),
-                        new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned())) };
+                        new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned())),
+                        new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned())) };
                     break;
 
                 case InstructionOperandType.MEMARG_LANE:
                     operands = new UnflattenedOperand[] {
-                        new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned())),
-                        new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned())),
-                        new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned())) };
+                        new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned())),
+                        new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned())),
+                        new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned())) };
                     break;
 
                 case InstructionOperandType.LANE8:
                     operands = new UnflattenedOperand[16];
                     for (int i = 0; i < 16; i++)
-                        operands[i] = new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned()));
+                        operands[i] = new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned()));
                     break;
 
                 case InstructionOperandType.VALTYPE_VECTOR:
-                    operands = new UnflattenedOperand[(uint)stream.ReadLEB128Unsigned()];
-                    for (uint i = 0; i < operands.Length; i++)
-                        operands[i] = new UnflattenedOperand(new Value((uint)stream.ReadByte()));
+                    operands = new UnflattenedOperand[(int)stream.ReadLEB128Unsigned()];
+                    for (int i = 0; i < operands.Length; i++)
+                        operands[i] = new UnflattenedOperand(new Value((int)stream.ReadByte()));
                     break;
 
                 case InstructionOperandType.I32:
-                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned())) };
+                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned())) };
                     break;
 
                 case InstructionOperandType.I64:
@@ -564,10 +564,10 @@ namespace Derg
                     break;
 
                 case InstructionOperandType.SWITCH:
-                    uint tableSize = (uint)stream.ReadLEB128Unsigned();
+                    int tableSize = (int)stream.ReadLEB128Unsigned();
                     operands = new UnflattenedOperand[tableSize + 1];
-                    for (uint i = 0; i < operands.Length; i++)
-                        operands[i] = new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned()));
+                    for (int i = 0; i < operands.Length; i++)
+                        operands[i] = new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned()));
                     break;
 
                 case InstructionOperandType.BLOCK:
@@ -718,7 +718,7 @@ namespace Derg
     {
         // Recursively flattens a list of UnflattenedInstructions. This also resolves instruction locations
         // in terms of program counters, which allows us to populate block targets.
-        public static List<Instruction> Flatten(this List<UnflattenedInstruction> instructions, uint pc)
+        public static List<Instruction> Flatten(this List<UnflattenedInstruction> instructions, int pc)
         {
             List<Instruction> flattened_instructions = new List<Instruction>();
             List<Instruction> block_insns;
@@ -735,11 +735,11 @@ namespace Derg
                         block_operand = (UnflattenedBlockOperand)instruction.Operands[0];
                         block_insns.AddRange(block_operand.instructions.Flatten(pc + 1));
 
-                        pc += (uint)block_insns.Count;
+                        pc += (int)block_insns.Count;
                         // The signature for the block.
                         initial_instruction.Operands[0].value_hi = instruction.Operands[0].value.value_hi;
                         // Where a BR 0 would go. Will be END+1.
-                        initial_instruction.Operands[0].value_lo = pc;
+                        initial_instruction.Operands[0].value_lo = (ulong)pc;
 
                         flattened_instructions.AddRange(block_insns);
                         break;
@@ -752,8 +752,8 @@ namespace Derg
                         // The signature for the block.
                         initial_instruction.Operands[0].value_hi = instruction.Operands[0].value.value_hi;
                         // Where a BR 0 would go. Will be the the LOOP instruction.
-                        initial_instruction.Operands[0].value_lo = pc;
-                        pc += (uint)block_insns.Count;
+                        initial_instruction.Operands[0].value_lo = (ulong)pc;
+                        pc += (int)block_insns.Count;
 
                         flattened_instructions.AddRange(block_insns);
                         break;
@@ -765,17 +765,17 @@ namespace Derg
 
                         // This first block ends in either an END or an ELSE.
 
-                        pc += (uint)block_insns.Count;
+                        pc += (int)block_insns.Count;
                         // The negative condition's target.  Will be either ELSE+1 or END+1.
                         initial_instruction.Operands[0].value_lo = (ulong)pc << 32;
 
                         List<Instruction> false_insns = block_operand.else_instructions.Flatten(pc);
-                        pc += (uint)false_insns.Count;
+                        pc += (int)false_insns.Count;
 
                         // The signature for the block.
                         initial_instruction.Operands[0].value_hi = instruction.Operands[0].value.value_hi;
                         // Where a BR 0 would go. Will be END+1.
-                        initial_instruction.Operands[0].value_lo |= pc;
+                        initial_instruction.Operands[0].value_lo |= (uint)pc;
 
                         // Note that if there was no ELSE, then both targets will be equal.
 

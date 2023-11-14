@@ -8,6 +8,6 @@ namespace Derg
 {
     public interface IModule
     {
-        FuncType GetFuncType(uint funcidx);
+        FuncType GetFuncType(int funcidx);
     }
 }

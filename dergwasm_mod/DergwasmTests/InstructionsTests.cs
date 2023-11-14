@@ -408,7 +408,7 @@ namespace Derg
                 e => Assert.Equal(BlockType.TYPED_BLOCK, e.value.GetBlockType())
             );
             Assert.Collection(insn.Operands,
-                e => Assert.Equal(1U, e.value.GetReturningBlockTypeIndex())
+                e => Assert.Equal(1, e.value.GetReturningBlockTypeIndex())
             );
             Assert.Collection(insn.Operands,
                 e => Assert.IsType<UnflattenedBlockOperand>(e)
@@ -517,7 +517,7 @@ namespace Derg
                 e => Assert.Equal(InstructionType.END, e.Type)     // 104
             );
 
-            Assert.Equal(103U, instructions[0].Operands[0].GetTarget());
+            Assert.Equal(103, instructions[0].Operands[0].GetTarget());
         }
 
         [Fact]
@@ -543,7 +543,7 @@ namespace Derg
                 e => Assert.Equal(InstructionType.END, e.Type)    // 104
             );
 
-            Assert.Equal(100U, instructions[0].Operands[0].GetTarget());
+            Assert.Equal(100, instructions[0].Operands[0].GetTarget());
         }
 
         [Fact]
@@ -569,8 +569,8 @@ namespace Derg
                 e => Assert.Equal(InstructionType.END, e.Type)    // 104
             );
 
-            Assert.Equal(103U, instructions[0].Operands[0].GetTarget());
-            Assert.Equal(103U, instructions[0].Operands[0].GetElseTarget());
+            Assert.Equal(103, instructions[0].Operands[0].GetTarget());
+            Assert.Equal(103, instructions[0].Operands[0].GetElseTarget());
         }
 
         [Fact]
@@ -600,8 +600,8 @@ namespace Derg
                 e => Assert.Equal(InstructionType.END, e.Type)    // 106
             );
 
-            Assert.Equal(105U, instructions[0].Operands[0].GetTarget());
-            Assert.Equal(103U, instructions[0].Operands[0].GetElseTarget());
+            Assert.Equal(105, instructions[0].Operands[0].GetTarget());
+            Assert.Equal(103, instructions[0].Operands[0].GetElseTarget());
         }
     }
 }

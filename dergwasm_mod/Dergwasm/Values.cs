@@ -124,6 +124,8 @@ namespace Derg
             fixed (ulong* ptr = &value_lo) { return *(int*)ptr; }
         }
 
+        public int Int() => AsI32_S();
+
         unsafe public ulong AsI64_U()
         {
             return value_lo;
@@ -135,15 +137,15 @@ namespace Derg
         }
 
         // Only valid if the value is a block operand.
-        public uint GetTarget()
+        public int GetTarget()
         {
-            return (uint)(value_lo & 0xFFFFFFFF);
+            return (int)(value_lo & 0xFFFFFFFF);
         }
 
         // Only valid if the value is a block operand.
-        public uint GetElseTarget()
+        public int GetElseTarget()
         {
-            return (uint)(value_lo >> 32);
+            return (int)(value_lo >> 32);
         }
 
         // Only valid if the value is a block operand.
@@ -153,9 +155,9 @@ namespace Derg
         }
 
         // Only valid if the value is a block operand with a TYPED_BLOCK signature.
-        public uint GetReturningBlockTypeIndex()
+        public int GetReturningBlockTypeIndex()
         {
-            return (uint)((value_hi >> 2) & 0xFFFFFFFF);
+            return (int)((value_hi >> 2) & 0xFFFFFFFF);
         }
 
         // Only valid if the value is a block operand with a RETURNING_BLOCK signature.
@@ -181,11 +183,11 @@ namespace Derg
     public struct Label
     {
         // The number of return values for the block.
-        public uint arity;
+        public int arity;
         // The target PC for a BR 0 instruction within this block. With the exception of the
         // LOOP instruction, this always goes to the END+1 of the block. Targets for LOOP
         // instructions go back to the LOOP instruction.
-        public uint target;
+        public int target;
         // The size of the (value) stack at the moment the label is created.
         //
         // In the WASM spec, labels are stored on the stack for simplicity. This lets
@@ -196,9 +198,9 @@ namespace Derg
         //
         // Therefore, we keep labels on a separate label stack for each function -- since regardless
         // of how a function ends, all labels get removed.
-        public uint stack_level;
+        public int stack_level;
 
-        public Label(uint arity, uint target, uint stack_level)
+        public Label(int arity, int target, int stack_level)
         {
             this.arity = arity;
             this.target = target;
@@ -213,16 +215,25 @@ namespace Derg
     public class Frame
     {
         // The number of return values for the function.
-        public uint arity;
+        public int arity;
         // The function's locals. This includes its arguments, which come first.
         public Value[] locals;
         // The module instance this frame is executing in.
         public IModule module;
         // The current program counter.
-        public uint pc;
+        public int pc;
         // The label stack. We keep a function's label stack separate because labels, unlike values,
         // never travel across function boundaries.
         public Stack<Label> labels;
+
+        public Frame(int arity, Value[] locals, IModule module)
+        {
+            this.arity = arity;
+            this.locals = locals;
+            this.module = module;
+            this.pc = 0;
+            this.labels = new Stack<Label>();
+        }
     }
 
     public struct FuncType

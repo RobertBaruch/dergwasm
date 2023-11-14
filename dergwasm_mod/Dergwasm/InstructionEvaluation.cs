@@ -12,8 +12,8 @@ namespace Derg
         private static void Nop(Instruction instruction, IMachine machine) { }
 
         private static void Block(Instruction instruction, IMachine machine) {
-            uint args;
-            uint arity;
+            int args;
+            int arity;
             Value operand = instruction.Operands[0];
 
             switch (operand.GetBlockType())
@@ -31,8 +31,8 @@ namespace Derg
                 default:
                     FuncType func_type = machine.CurrentFrame().module.GetFuncType(
                         operand.GetReturningBlockTypeIndex());
-                    args = (uint)func_type.args.Length;
-                    arity = (uint)func_type.returns.Length;
+                    args = func_type.args.Length;
+                    arity = func_type.returns.Length;
                     break;
             }
             machine.PushLabel(args, arity, operand.GetTarget());
@@ -45,31 +45,31 @@ namespace Derg
             //    goes to the beginning of the loop, expects some number of values on the stack
             //    (the arity), and this must be the arguments to the loop.
             // 3. Loops don't return anything, regardless of its block type.
-            uint args;
+            int arity;
             Value operand = instruction.Operands[0];
 
             switch (operand.GetBlockType())
             {
                 case BlockType.VOID_BLOCK:
-                    args = 0;
+                    arity = 0;
                     break;
 
                 case BlockType.RETURNING_BLOCK:
-                    args = 0;
+                    arity = 0;
                     break;
 
                 default:
                     FuncType func_type = machine.CurrentFrame().module.GetFuncType(
                         operand.GetReturningBlockTypeIndex());
-                    args = (uint)func_type.args.Length;
+                    arity = func_type.args.Length;
                     break;
             }
-            machine.PushLabel(args, 0, operand.GetTarget());
+            machine.PushLabel(/*args=*/0, arity, operand.GetTarget());
         }
 
         private static void If(Instruction instruction, IMachine machine)
         {
-            bool cond = machine.Pop().AsI32_U() != 0;
+            bool cond = machine.Pop().Int() != 0;
             if (cond)
             {
                 Block(instruction, machine);
@@ -101,7 +101,7 @@ namespace Derg
             machine.SetPC(label.target - 1);
         }
 
-        private static void BrLevels(IMachine machine, uint levels)
+        private static void BrLevels(IMachine machine, int levels)
         {
             while (levels > 0)
             {
@@ -118,20 +118,20 @@ namespace Derg
 
         private static void Br(Instruction instruction, IMachine machine)
         {
-            uint levels = instruction.Operands[0].AsI32_U();
+            int levels = instruction.Operands[0].Int();
             BrLevels(machine, levels);
         }
 
         private static void BrIf(Instruction instruction, IMachine machine)
         {
-            bool cond = machine.Pop().AsI32_U() != 0;
+            bool cond = machine.Pop().Int() != 0;
             if (cond) Br(instruction, machine);
         }
 
         private static void BrTable(Instruction instruction, IMachine machine)
         {
-            uint idx = Math.Min(machine.Pop().AsI32_U(), (uint)instruction.Operands.Length - 1);
-            uint levels = instruction.Operands[idx].AsI32_U();
+            int idx = Math.Min(machine.Pop().Int(), instruction.Operands.Length - 1);
+            int levels = instruction.Operands[idx].Int();
             BrLevels(machine, levels);
         }
 
