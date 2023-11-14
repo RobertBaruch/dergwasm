@@ -55,6 +55,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Dergwasm.cs" />
+    <Compile Include="IMachine.cs" />
+    <Compile Include="IModule.cs" />
+    <Compile Include="InstructionEvaluation.cs" />
     <Compile Include="Instructions.cs" />
     <Compile Include="LEB128.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -384,6 +384,9 @@ namespace Derg
         }
     }
 
+    // Note: I am pretty certain that we can decode into List<Instruction> in one pass by decoding
+    // recursively. So all the unflattened stuff might go away.
+
     // An operand for an UnflattenedInstruction. During the flatten operation, UnflattenedOperands
     // in UnflattenedInstructions will be replaced by Value operands in Instructions.
     public class UnflattenedOperand

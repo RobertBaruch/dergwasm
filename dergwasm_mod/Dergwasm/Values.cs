@@ -186,7 +186,7 @@ namespace Derg
         // LOOP instruction, this always goes to the END+1 of the block. Targets for LOOP
         // instructions go back to the LOOP instruction.
         public uint target;
-        // The size of the stack at the moment the label is created.
+        // The size of the (value) stack at the moment the label is created.
         //
         // In the WASM spec, labels are stored on the stack for simplicity. This lets
         // instructions pop everything off the stack up to the label. That would mean that
@@ -197,6 +197,13 @@ namespace Derg
         // Therefore, we keep labels on a separate label stack for each function -- since regardless
         // of how a function ends, all labels get removed.
         public uint stack_level;
+
+        public Label(uint arity, uint target, uint stack_level)
+        {
+            this.arity = arity;
+            this.target = target;
+            this.stack_level = stack_level;
+        }
     }
 
     // A frame. Represents the state of a function. Frames have their own stack. Frames are
@@ -209,11 +216,18 @@ namespace Derg
         public uint arity;
         // The function's locals. This includes its arguments, which come first.
         public Value[] locals;
-        // TODO: This should be an interface.
-        public object module_inst;
+        // The module instance this frame is executing in.
+        public IModule module;
         // The current program counter.
         public uint pc;
-        // The label stack.
+        // The label stack. We keep a function's label stack separate because labels, unlike values,
+        // never travel across function boundaries.
         public Stack<Label> labels;
+    }
+
+    public struct FuncType
+    {
+        public ValueType[] args;
+        public ValueType[] returns;
     }
 }  // namespace Derg
