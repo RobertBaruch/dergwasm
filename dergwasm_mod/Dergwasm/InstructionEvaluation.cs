@@ -11,13 +11,15 @@ namespace Derg
     {
         private static void Nop(Instruction instruction, IMachine machine) { }
 
-        private static void I32Const(Instruction instruction, IMachine machine) {
+        private static void I32Const(Instruction instruction, IMachine machine)
+        {
             machine.Push(instruction.Operands[0]);
         }
 
         private static void Drop(Instruction instruction, IMachine machine) => machine.Pop();
 
-        private static void Block(Instruction instruction, IMachine machine) {
+        private static void Block(Instruction instruction, IMachine machine)
+        {
             int args;
             int arity;
             Value operand = instruction.Operands[0];
@@ -36,7 +38,8 @@ namespace Derg
 
                 default:
                     FuncType func_type = machine.GetFuncTypeFromIndex(
-                        operand.GetReturningBlockTypeIndex());
+                        operand.GetReturningBlockTypeIndex()
+                    );
                     args = func_type.args.Length;
                     arity = func_type.returns.Length;
                     break;
@@ -44,7 +47,8 @@ namespace Derg
             machine.PushLabel(args, arity, operand.GetTarget());
         }
 
-        private static void Loop(Instruction instruction, IMachine machine) {
+        private static void Loop(Instruction instruction, IMachine machine)
+        {
             // A loop differs from a block in that:
             // 1. BR 0 branches to the beginning of the loop.
             // 2. A loop's "arity" is its number of arguments. This is because a BR 0, which
@@ -66,11 +70,16 @@ namespace Derg
 
                 default:
                     FuncType func_type = machine.GetFuncTypeFromIndex(
-                        operand.GetReturningBlockTypeIndex());
+                        operand.GetReturningBlockTypeIndex()
+                    );
                     arity = func_type.args.Length;
                     break;
             }
-            machine.PushLabel(/*args=*/0, arity, operand.GetTarget());
+            machine.PushLabel(
+                0 /*args*/,
+                arity,
+                operand.GetTarget()
+            );
         }
 
         private static void If(Instruction instruction, IMachine machine)
@@ -105,9 +114,11 @@ namespace Derg
             machine.SetPC(label.target - 1);
         }
 
-        private static void Else(Instruction instruction, IMachine machine) => JumpToTopLabel(machine);
+        private static void Else(Instruction instruction, IMachine machine) =>
+            JumpToTopLabel(machine);
 
-        private static void End(Instruction instruction, IMachine machine) => JumpToTopLabel(machine);
+        private static void End(Instruction instruction, IMachine machine) =>
+            JumpToTopLabel(machine);
 
         private static void BrLevels(IMachine machine, int levels)
         {
@@ -128,7 +139,8 @@ namespace Derg
         private static void BrIf(Instruction instruction, IMachine machine)
         {
             bool cond = machine.Pop().Int() != 0;
-            if (cond) Br(instruction, machine);
+            if (cond)
+                Br(instruction, machine);
         }
 
         private static void BrTable(Instruction instruction, IMachine machine)
@@ -152,20 +164,20 @@ namespace Derg
             machine.IncrementPC();
         }
 
-        private static IReadOnlyDictionary<InstructionType, Action<Instruction, IMachine>> Map = 
+        private static IReadOnlyDictionary<InstructionType, Action<Instruction, IMachine>> Map =
             new Dictionary<InstructionType, Action<Instruction, IMachine>>()
-        {
-            { InstructionType.NOP, Nop },
-            { InstructionType.DROP, Drop },
-            { InstructionType.I32_CONST, I32Const },
-            { InstructionType.BLOCK, Block },
-            { InstructionType.LOOP, Loop },
-            { InstructionType.IF, If },
-            { InstructionType.ELSE, Else },
-            { InstructionType.END, End },
-            { InstructionType.BR, Br },
-            { InstructionType.BR_IF, BrIf },
-            { InstructionType.BR_TABLE, BrTable },
-        };
+            {
+                { InstructionType.NOP, Nop },
+                { InstructionType.DROP, Drop },
+                { InstructionType.I32_CONST, I32Const },
+                { InstructionType.BLOCK, Block },
+                { InstructionType.LOOP, Loop },
+                { InstructionType.IF, If },
+                { InstructionType.ELSE, Else },
+                { InstructionType.END, End },
+                { InstructionType.BR, Br },
+                { InstructionType.BR_IF, BrIf },
+                { InstructionType.BR_TABLE, BrTable },
+            };
     }
 }

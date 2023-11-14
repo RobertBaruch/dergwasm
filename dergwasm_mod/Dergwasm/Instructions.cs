@@ -1,10 +1,9 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
 using LEB128;
 
 namespace Derg
@@ -393,7 +392,10 @@ namespace Derg
     {
         public Value value;
 
-        public UnflattenedOperand(Value value) { this.value = value; }
+        public UnflattenedOperand(Value value)
+        {
+            this.value = value;
+        }
     }
 
     // An operand for an UnflattenedInstruction that also holds lists of UnflattenedInstructions.
@@ -403,10 +405,16 @@ namespace Derg
     {
         // Used for BLOCK, LOOP, IF-END, and the positive branch of IF instructions.
         public List<UnflattenedInstruction> instructions;
+
         // Used only for the negative branch of IF instructions.
         public List<UnflattenedInstruction> else_instructions;
 
-        public UnflattenedBlockOperand(Value value, List<UnflattenedInstruction> instructions, List<UnflattenedInstruction> else_instructions) : base(value)
+        public UnflattenedBlockOperand(
+            Value value,
+            List<UnflattenedInstruction> instructions,
+            List<UnflattenedInstruction> else_instructions
+        )
+            : base(value)
         {
             this.instructions = instructions;
             this.else_instructions = else_instructions;
@@ -448,14 +456,16 @@ namespace Derg
             {
                 UnflattenedInstruction insn = UnflattenedInstruction.Decode(stream);
                 instructions.Add(insn);
-                if (insn.Type == InstructionType.END) break;
+                if (insn.Type == InstructionType.END)
+                    break;
                 if (insn.Type == InstructionType.ELSE)
                 {
                     while (true)
                     {
                         insn = UnflattenedInstruction.Decode(stream);
                         else_instructions.Add(insn);
-                        if (insn.Type == InstructionType.END) break;
+                        if (insn.Type == InstructionType.END)
+                            break;
                     }
                     break;
                 }
@@ -463,7 +473,11 @@ namespace Derg
 
             // value_lo will be filled in during the flatten operation, when we will figure
             // out program counters.
-            return new UnflattenedBlockOperand(new Value(0UL, value_hi), instructions, else_instructions);
+            return new UnflattenedBlockOperand(
+                new Value(0UL, value_hi),
+                instructions,
+                else_instructions
+            );
         }
     }
 
@@ -509,36 +523,51 @@ namespace Derg
             switch (operandType)
             {
                 case InstructionOperandType.BYTE:
-                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value((int)stream.ReadByte())) };
+                    operands = new UnflattenedOperand[]
+                    {
+                        new UnflattenedOperand(new Value((int)stream.ReadByte()))
+                    };
                     break;
 
                 case InstructionOperandType.BYTE8:
-                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value(stream.ReadUInt64())) };
+                    operands = new UnflattenedOperand[]
+                    {
+                        new UnflattenedOperand(new Value(stream.ReadUInt64()))
+                    };
                     break;
 
-                case InstructionOperandType.U32:  // fallthrough
+                case InstructionOperandType.U32: // fallthrough
                 case InstructionOperandType.LANE:
-                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned())) };
+                    operands = new UnflattenedOperand[]
+                    {
+                        new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned()))
+                    };
                     break;
 
-                case InstructionOperandType.U32X2:  // fallthrough
+                case InstructionOperandType.U32X2: // fallthrough
                 case InstructionOperandType.MEMARG:
-                    operands = new UnflattenedOperand[] {
+                    operands = new UnflattenedOperand[]
+                    {
                         new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned())),
-                        new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned())) };
+                        new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned()))
+                    };
                     break;
 
                 case InstructionOperandType.MEMARG_LANE:
-                    operands = new UnflattenedOperand[] {
+                    operands = new UnflattenedOperand[]
+                    {
                         new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned())),
                         new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned())),
-                        new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned())) };
+                        new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned()))
+                    };
                     break;
 
                 case InstructionOperandType.LANE8:
                     operands = new UnflattenedOperand[16];
                     for (int i = 0; i < 16; i++)
-                        operands[i] = new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned()));
+                        operands[i] = new UnflattenedOperand(
+                            new Value((int)stream.ReadLEB128Unsigned())
+                        );
                     break;
 
                 case InstructionOperandType.VALTYPE_VECTOR:
@@ -548,26 +577,40 @@ namespace Derg
                     break;
 
                 case InstructionOperandType.I32:
-                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned())) };
+                    operands = new UnflattenedOperand[]
+                    {
+                        new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned()))
+                    };
                     break;
 
                 case InstructionOperandType.I64:
-                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value(stream.ReadLEB128Unsigned())) };
+                    operands = new UnflattenedOperand[]
+                    {
+                        new UnflattenedOperand(new Value(stream.ReadLEB128Unsigned()))
+                    };
                     break;
 
                 case InstructionOperandType.F32:
-                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value(stream.ReadSingle())) };
+                    operands = new UnflattenedOperand[]
+                    {
+                        new UnflattenedOperand(new Value(stream.ReadSingle()))
+                    };
                     break;
 
                 case InstructionOperandType.F64:
-                    operands = new UnflattenedOperand[] { new UnflattenedOperand(new Value(stream.ReadDouble())) };
+                    operands = new UnflattenedOperand[]
+                    {
+                        new UnflattenedOperand(new Value(stream.ReadDouble()))
+                    };
                     break;
 
                 case InstructionOperandType.SWITCH:
                     int tableSize = (int)stream.ReadLEB128Unsigned();
                     operands = new UnflattenedOperand[tableSize + 1];
                     for (int i = 0; i < operands.Length; i++)
-                        operands[i] = new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned()));
+                        operands[i] = new UnflattenedOperand(
+                            new Value((int)stream.ReadLEB128Unsigned())
+                        );
                     break;
 
                 case InstructionOperandType.BLOCK:
@@ -582,120 +625,121 @@ namespace Derg
         // 32-bit int which tells us the number of the items that follow.
         private enum InstructionOperandType
         {
-            BYTE,  // 1 byte.
-            BYTE8,  // A little-endian unsigned 64-bit int in the next 8 bytes.
-            F32,  // 1 little-endian IEEE 754 32-bit float.
-            F64,  // 1 little-endian IEEE 754 64-bit double.
-            I32,  // 1 LEB128-encoded signed 32-bit int.
-            I64,  // 1 LEB128-encoded signed 64-bit int.
-            U32,  // 1 LEB128-encoded unsigned 32-bit int.
-            BLOCK,  // 1 block of instructions.
-            SWITCH,  // A vector of LEB128-encoded unsigned 32-bit int, followed by a LEB128-encoded unsigned 32-bit int.
-            U32X2,   // 2 LEB128-encoded unsigned 32-bit ints.
-            MEMARG,  // 2 LEB128-encoded unsigned 32-bit ints.
-            MEMARG_LANE,  // 3 LEB128-encoded unsigned 32-bit ints.
-            LANE,  // 1 LEB128-encoded unsigned 32-bit int.
-            LANE8,  // 16 LEB128-encoded unsigned 32-bit ints.
-            VALTYPE_VECTOR,  // A vector of bytes.
+            BYTE, // 1 byte.
+            BYTE8, // A little-endian unsigned 64-bit int in the next 8 bytes.
+            F32, // 1 little-endian IEEE 754 32-bit float.
+            F64, // 1 little-endian IEEE 754 64-bit double.
+            I32, // 1 LEB128-encoded signed 32-bit int.
+            I64, // 1 LEB128-encoded signed 64-bit int.
+            U32, // 1 LEB128-encoded unsigned 32-bit int.
+            BLOCK, // 1 block of instructions.
+            SWITCH, // A vector of LEB128-encoded unsigned 32-bit int, followed by a LEB128-encoded unsigned 32-bit int.
+            U32X2, // 2 LEB128-encoded unsigned 32-bit ints.
+            MEMARG, // 2 LEB128-encoded unsigned 32-bit ints.
+            MEMARG_LANE, // 3 LEB128-encoded unsigned 32-bit ints.
+            LANE, // 1 LEB128-encoded unsigned 32-bit int.
+            LANE8, // 16 LEB128-encoded unsigned 32-bit ints.
+            VALTYPE_VECTOR, // A vector of bytes.
         }
 
         // Instructions not in the map have no operands.
-        private static IReadOnlyDictionary<InstructionType, InstructionOperandType> Map = new Dictionary<InstructionType, InstructionOperandType>()
-        {
-            { InstructionType.REF_NULL, InstructionOperandType.BYTE },
-            { InstructionType.V128_CONST, InstructionOperandType.BYTE8 },
-            { InstructionType.REF_FUNC, InstructionOperandType.U32 },
-            { InstructionType.LOCAL_GET, InstructionOperandType.U32 },
-            { InstructionType.LOCAL_SET, InstructionOperandType.U32 },
-            { InstructionType.LOCAL_TEE, InstructionOperandType.U32 },
-            { InstructionType.GLOBAL_GET, InstructionOperandType.U32 },
-            { InstructionType.GLOBAL_SET, InstructionOperandType.U32 },
-            { InstructionType.TABLE_GET, InstructionOperandType.U32 },
-            { InstructionType.ELEM_DROP, InstructionOperandType.U32 },
-            { InstructionType.TABLE_GROW, InstructionOperandType.U32 },
-            { InstructionType.TABLE_SIZE, InstructionOperandType.U32 },
-            { InstructionType.TABLE_FILL, InstructionOperandType.U32 },
-            { InstructionType.DATA_DROP, InstructionOperandType.U32 },
-            { InstructionType.MEMORY_SIZE, InstructionOperandType.U32 },
-            { InstructionType.MEMORY_GROW, InstructionOperandType.U32 },
-            { InstructionType.MEMORY_FILL, InstructionOperandType.U32 },
-            { InstructionType.BR, InstructionOperandType.U32 },
-            { InstructionType.BR_IF, InstructionOperandType.U32 },
-            { InstructionType.CALL, InstructionOperandType.U32 },
-            { InstructionType.TABLE_INIT, InstructionOperandType.U32X2 },
-            { InstructionType.TABLE_COPY, InstructionOperandType.U32X2 },
-            { InstructionType.MEMORY_INIT, InstructionOperandType.U32X2 },
-            { InstructionType.MEMORY_COPY, InstructionOperandType.U32X2 },
-            { InstructionType.CALL_INDIRECT, InstructionOperandType.U32X2 },
-            { InstructionType.I32_LOAD, InstructionOperandType.MEMARG },
-            { InstructionType.I64_LOAD, InstructionOperandType.MEMARG },
-            { InstructionType.F32_LOAD, InstructionOperandType.MEMARG },
-            { InstructionType.F64_LOAD, InstructionOperandType.MEMARG },
-            { InstructionType.I32_LOAD8_S, InstructionOperandType.MEMARG },
-            { InstructionType.I32_LOAD8_U, InstructionOperandType.MEMARG },
-            { InstructionType.I32_LOAD16_S, InstructionOperandType.MEMARG },
-            { InstructionType.I32_LOAD16_U, InstructionOperandType.MEMARG },
-            { InstructionType.I64_LOAD8_S, InstructionOperandType.MEMARG },
-            { InstructionType.I64_LOAD8_U, InstructionOperandType.MEMARG },
-            { InstructionType.I64_LOAD16_S, InstructionOperandType.MEMARG },
-            { InstructionType.I64_LOAD16_U, InstructionOperandType.MEMARG },
-            { InstructionType.I64_LOAD32_S, InstructionOperandType.MEMARG },
-            { InstructionType.I64_LOAD32_U, InstructionOperandType.MEMARG },
-            { InstructionType.I32_STORE, InstructionOperandType.MEMARG },
-            { InstructionType.I64_STORE, InstructionOperandType.MEMARG },
-            { InstructionType.F32_STORE, InstructionOperandType.MEMARG },
-            { InstructionType.F64_STORE, InstructionOperandType.MEMARG },
-            { InstructionType.I32_STORE8, InstructionOperandType.MEMARG },
-            { InstructionType.I32_STORE16, InstructionOperandType.MEMARG },
-            { InstructionType.I64_STORE8, InstructionOperandType.MEMARG },
-            { InstructionType.I64_STORE16, InstructionOperandType.MEMARG },
-            { InstructionType.I64_STORE32, InstructionOperandType.MEMARG },
-            { InstructionType.V128_LOAD, InstructionOperandType.MEMARG },
-            { InstructionType.V128_LOAD8X8_S, InstructionOperandType.MEMARG },
-            { InstructionType.V128_LOAD8X8_U, InstructionOperandType.MEMARG },
-            { InstructionType.V128_LOAD16X4_S, InstructionOperandType.MEMARG },
-            { InstructionType.V128_LOAD16X4_U, InstructionOperandType.MEMARG },
-            { InstructionType.V128_LOAD32X2_S, InstructionOperandType.MEMARG },
-            { InstructionType.V128_LOAD32X2_U, InstructionOperandType.MEMARG },
-            { InstructionType.V128_LOAD8_SPLAT, InstructionOperandType.MEMARG },
-            { InstructionType.V128_LOAD16_SPLAT, InstructionOperandType.MEMARG },
-            { InstructionType.V128_LOAD32_SPLAT, InstructionOperandType.MEMARG },
-            { InstructionType.V128_LOAD64_SPLAT, InstructionOperandType.MEMARG },
-            { InstructionType.V128_LOAD32_ZERO, InstructionOperandType.MEMARG },
-            { InstructionType.V128_LOAD64_ZERO, InstructionOperandType.MEMARG },
-            { InstructionType.V128_LOAD8_LANE, InstructionOperandType.MEMARG_LANE },
-            { InstructionType.V128_LOAD16_LANE, InstructionOperandType.MEMARG_LANE },
-            { InstructionType.V128_LOAD32_LANE, InstructionOperandType.MEMARG_LANE },
-            { InstructionType.V128_LOAD64_LANE, InstructionOperandType.MEMARG_LANE },
-            { InstructionType.V128_STORE8_LANE, InstructionOperandType.MEMARG_LANE },
-            { InstructionType.V128_STORE16_LANE, InstructionOperandType.MEMARG_LANE },
-            { InstructionType.V128_STORE32_LANE, InstructionOperandType.MEMARG_LANE },
-            { InstructionType.V128_STORE64_LANE, InstructionOperandType.MEMARG_LANE },
-            { InstructionType.I8X16_EXTRACT_LANE_S, InstructionOperandType.LANE },
-            { InstructionType.I8X16_EXTRACT_LANE_U, InstructionOperandType.LANE },
-            { InstructionType.I8X16_REPLACE_LANE, InstructionOperandType.LANE },
-            { InstructionType.I16X8_EXTRACT_LANE_S, InstructionOperandType.LANE },
-            { InstructionType.I16X8_EXTRACT_LANE_U, InstructionOperandType.LANE },
-            { InstructionType.I16X8_REPLACE_LANE, InstructionOperandType.LANE },
-            { InstructionType.I32X4_EXTRACT_LANE, InstructionOperandType.LANE },
-            { InstructionType.I32X4_REPLACE_LANE, InstructionOperandType.LANE },
-            { InstructionType.I64X2_EXTRACT_LANE, InstructionOperandType.LANE },
-            { InstructionType.I64X2_REPLACE_LANE, InstructionOperandType.LANE },
-            { InstructionType.F32X4_EXTRACT_LANE, InstructionOperandType.LANE },
-            { InstructionType.F32X4_REPLACE_LANE, InstructionOperandType.LANE },
-            { InstructionType.F64X2_EXTRACT_LANE, InstructionOperandType.LANE },
-            { InstructionType.F64X2_REPLACE_LANE, InstructionOperandType.LANE },
-            { InstructionType.I8X16_SHUFFLE, InstructionOperandType.LANE8 },
-            { InstructionType.SELECT_VEC, InstructionOperandType.VALTYPE_VECTOR },
-            { InstructionType.I32_CONST, InstructionOperandType.I32 },
-            { InstructionType.I64_CONST, InstructionOperandType.I64 },
-            { InstructionType.F32_CONST, InstructionOperandType.F32 },
-            { InstructionType.F64_CONST, InstructionOperandType.F64 },
-            { InstructionType.BLOCK, InstructionOperandType.BLOCK },
-            { InstructionType.LOOP, InstructionOperandType.BLOCK },
-            { InstructionType.IF, InstructionOperandType.BLOCK },
-            { InstructionType.BR_TABLE, InstructionOperandType.SWITCH },
-        };
+        private static IReadOnlyDictionary<InstructionType, InstructionOperandType> Map =
+            new Dictionary<InstructionType, InstructionOperandType>()
+            {
+                { InstructionType.REF_NULL, InstructionOperandType.BYTE },
+                { InstructionType.V128_CONST, InstructionOperandType.BYTE8 },
+                { InstructionType.REF_FUNC, InstructionOperandType.U32 },
+                { InstructionType.LOCAL_GET, InstructionOperandType.U32 },
+                { InstructionType.LOCAL_SET, InstructionOperandType.U32 },
+                { InstructionType.LOCAL_TEE, InstructionOperandType.U32 },
+                { InstructionType.GLOBAL_GET, InstructionOperandType.U32 },
+                { InstructionType.GLOBAL_SET, InstructionOperandType.U32 },
+                { InstructionType.TABLE_GET, InstructionOperandType.U32 },
+                { InstructionType.ELEM_DROP, InstructionOperandType.U32 },
+                { InstructionType.TABLE_GROW, InstructionOperandType.U32 },
+                { InstructionType.TABLE_SIZE, InstructionOperandType.U32 },
+                { InstructionType.TABLE_FILL, InstructionOperandType.U32 },
+                { InstructionType.DATA_DROP, InstructionOperandType.U32 },
+                { InstructionType.MEMORY_SIZE, InstructionOperandType.U32 },
+                { InstructionType.MEMORY_GROW, InstructionOperandType.U32 },
+                { InstructionType.MEMORY_FILL, InstructionOperandType.U32 },
+                { InstructionType.BR, InstructionOperandType.U32 },
+                { InstructionType.BR_IF, InstructionOperandType.U32 },
+                { InstructionType.CALL, InstructionOperandType.U32 },
+                { InstructionType.TABLE_INIT, InstructionOperandType.U32X2 },
+                { InstructionType.TABLE_COPY, InstructionOperandType.U32X2 },
+                { InstructionType.MEMORY_INIT, InstructionOperandType.U32X2 },
+                { InstructionType.MEMORY_COPY, InstructionOperandType.U32X2 },
+                { InstructionType.CALL_INDIRECT, InstructionOperandType.U32X2 },
+                { InstructionType.I32_LOAD, InstructionOperandType.MEMARG },
+                { InstructionType.I64_LOAD, InstructionOperandType.MEMARG },
+                { InstructionType.F32_LOAD, InstructionOperandType.MEMARG },
+                { InstructionType.F64_LOAD, InstructionOperandType.MEMARG },
+                { InstructionType.I32_LOAD8_S, InstructionOperandType.MEMARG },
+                { InstructionType.I32_LOAD8_U, InstructionOperandType.MEMARG },
+                { InstructionType.I32_LOAD16_S, InstructionOperandType.MEMARG },
+                { InstructionType.I32_LOAD16_U, InstructionOperandType.MEMARG },
+                { InstructionType.I64_LOAD8_S, InstructionOperandType.MEMARG },
+                { InstructionType.I64_LOAD8_U, InstructionOperandType.MEMARG },
+                { InstructionType.I64_LOAD16_S, InstructionOperandType.MEMARG },
+                { InstructionType.I64_LOAD16_U, InstructionOperandType.MEMARG },
+                { InstructionType.I64_LOAD32_S, InstructionOperandType.MEMARG },
+                { InstructionType.I64_LOAD32_U, InstructionOperandType.MEMARG },
+                { InstructionType.I32_STORE, InstructionOperandType.MEMARG },
+                { InstructionType.I64_STORE, InstructionOperandType.MEMARG },
+                { InstructionType.F32_STORE, InstructionOperandType.MEMARG },
+                { InstructionType.F64_STORE, InstructionOperandType.MEMARG },
+                { InstructionType.I32_STORE8, InstructionOperandType.MEMARG },
+                { InstructionType.I32_STORE16, InstructionOperandType.MEMARG },
+                { InstructionType.I64_STORE8, InstructionOperandType.MEMARG },
+                { InstructionType.I64_STORE16, InstructionOperandType.MEMARG },
+                { InstructionType.I64_STORE32, InstructionOperandType.MEMARG },
+                { InstructionType.V128_LOAD, InstructionOperandType.MEMARG },
+                { InstructionType.V128_LOAD8X8_S, InstructionOperandType.MEMARG },
+                { InstructionType.V128_LOAD8X8_U, InstructionOperandType.MEMARG },
+                { InstructionType.V128_LOAD16X4_S, InstructionOperandType.MEMARG },
+                { InstructionType.V128_LOAD16X4_U, InstructionOperandType.MEMARG },
+                { InstructionType.V128_LOAD32X2_S, InstructionOperandType.MEMARG },
+                { InstructionType.V128_LOAD32X2_U, InstructionOperandType.MEMARG },
+                { InstructionType.V128_LOAD8_SPLAT, InstructionOperandType.MEMARG },
+                { InstructionType.V128_LOAD16_SPLAT, InstructionOperandType.MEMARG },
+                { InstructionType.V128_LOAD32_SPLAT, InstructionOperandType.MEMARG },
+                { InstructionType.V128_LOAD64_SPLAT, InstructionOperandType.MEMARG },
+                { InstructionType.V128_LOAD32_ZERO, InstructionOperandType.MEMARG },
+                { InstructionType.V128_LOAD64_ZERO, InstructionOperandType.MEMARG },
+                { InstructionType.V128_LOAD8_LANE, InstructionOperandType.MEMARG_LANE },
+                { InstructionType.V128_LOAD16_LANE, InstructionOperandType.MEMARG_LANE },
+                { InstructionType.V128_LOAD32_LANE, InstructionOperandType.MEMARG_LANE },
+                { InstructionType.V128_LOAD64_LANE, InstructionOperandType.MEMARG_LANE },
+                { InstructionType.V128_STORE8_LANE, InstructionOperandType.MEMARG_LANE },
+                { InstructionType.V128_STORE16_LANE, InstructionOperandType.MEMARG_LANE },
+                { InstructionType.V128_STORE32_LANE, InstructionOperandType.MEMARG_LANE },
+                { InstructionType.V128_STORE64_LANE, InstructionOperandType.MEMARG_LANE },
+                { InstructionType.I8X16_EXTRACT_LANE_S, InstructionOperandType.LANE },
+                { InstructionType.I8X16_EXTRACT_LANE_U, InstructionOperandType.LANE },
+                { InstructionType.I8X16_REPLACE_LANE, InstructionOperandType.LANE },
+                { InstructionType.I16X8_EXTRACT_LANE_S, InstructionOperandType.LANE },
+                { InstructionType.I16X8_EXTRACT_LANE_U, InstructionOperandType.LANE },
+                { InstructionType.I16X8_REPLACE_LANE, InstructionOperandType.LANE },
+                { InstructionType.I32X4_EXTRACT_LANE, InstructionOperandType.LANE },
+                { InstructionType.I32X4_REPLACE_LANE, InstructionOperandType.LANE },
+                { InstructionType.I64X2_EXTRACT_LANE, InstructionOperandType.LANE },
+                { InstructionType.I64X2_REPLACE_LANE, InstructionOperandType.LANE },
+                { InstructionType.F32X4_EXTRACT_LANE, InstructionOperandType.LANE },
+                { InstructionType.F32X4_REPLACE_LANE, InstructionOperandType.LANE },
+                { InstructionType.F64X2_EXTRACT_LANE, InstructionOperandType.LANE },
+                { InstructionType.F64X2_REPLACE_LANE, InstructionOperandType.LANE },
+                { InstructionType.I8X16_SHUFFLE, InstructionOperandType.LANE8 },
+                { InstructionType.SELECT_VEC, InstructionOperandType.VALTYPE_VECTOR },
+                { InstructionType.I32_CONST, InstructionOperandType.I32 },
+                { InstructionType.I64_CONST, InstructionOperandType.I64 },
+                { InstructionType.F32_CONST, InstructionOperandType.F32 },
+                { InstructionType.F64_CONST, InstructionOperandType.F64 },
+                { InstructionType.BLOCK, InstructionOperandType.BLOCK },
+                { InstructionType.LOOP, InstructionOperandType.BLOCK },
+                { InstructionType.IF, InstructionOperandType.BLOCK },
+                { InstructionType.BR_TABLE, InstructionOperandType.SWITCH },
+            };
     }
 
     public static class Expr
@@ -709,7 +753,8 @@ namespace Derg
             {
                 UnflattenedInstruction instruction = UnflattenedInstruction.Decode(stream);
                 instructions.Add(instruction);
-                if (instruction.Type == InstructionType.END) return instructions;
+                if (instruction.Type == InstructionType.END)
+                    return instructions;
             }
         }
     }
@@ -718,7 +763,10 @@ namespace Derg
     {
         // Recursively flattens a list of UnflattenedInstructions. This also resolves instruction locations
         // in terms of program counters, which allows us to populate block targets.
-        public static List<Instruction> Flatten(this List<UnflattenedInstruction> instructions, int pc)
+        public static List<Instruction> Flatten(
+            this List<UnflattenedInstruction> instructions,
+            int pc
+        )
         {
             List<Instruction> flattened_instructions = new List<Instruction>();
             List<Instruction> block_insns;
@@ -726,8 +774,10 @@ namespace Derg
 
             foreach (UnflattenedInstruction instruction in instructions)
             {
-                Instruction initial_instruction = new Instruction(instruction.Type,
-                    (from operand in instruction.Operands select operand.value).ToArray());
+                Instruction initial_instruction = new Instruction(
+                    instruction.Type,
+                    (from operand in instruction.Operands select operand.value).ToArray()
+                );
                 switch (instruction.Type)
                 {
                     case InstructionType.BLOCK:
@@ -737,7 +787,10 @@ namespace Derg
 
                         pc += (int)block_insns.Count;
                         // The signature for the block.
-                        initial_instruction.Operands[0].value_hi = instruction.Operands[0].value.value_hi;
+                        initial_instruction.Operands[0].value_hi = instruction
+                            .Operands[0]
+                            .value
+                            .value_hi;
                         // Where a BR 0 would go. Will be END+1.
                         initial_instruction.Operands[0].value_lo = (ulong)pc;
 
@@ -750,7 +803,10 @@ namespace Derg
                         block_insns.AddRange(block_operand.instructions.Flatten(pc + 1));
 
                         // The signature for the block.
-                        initial_instruction.Operands[0].value_hi = instruction.Operands[0].value.value_hi;
+                        initial_instruction.Operands[0].value_hi = instruction
+                            .Operands[0]
+                            .value
+                            .value_hi;
                         // Where a BR 0 would go. Will be the the LOOP instruction.
                         initial_instruction.Operands[0].value_lo = (ulong)pc;
                         pc += (int)block_insns.Count;
@@ -773,7 +829,10 @@ namespace Derg
                         pc += (int)false_insns.Count;
 
                         // The signature for the block.
-                        initial_instruction.Operands[0].value_hi = instruction.Operands[0].value.value_hi;
+                        initial_instruction.Operands[0].value_hi = instruction
+                            .Operands[0]
+                            .value
+                            .value_hi;
                         // Where a BR 0 would go. Will be END+1.
                         initial_instruction.Operands[0].value_lo |= (uint)pc;
 
@@ -792,4 +851,4 @@ namespace Derg
             return flattened_instructions;
         }
     }
-}  // namespace Derg
+} // namespace Derg

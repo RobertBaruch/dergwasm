@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
-using Elements.Core;  // For UniLog
-using HarmonyLib;
+using Elements.Core; // For UniLog
 using FrooxEngine;
+using HarmonyLib;
 using ResoniteModLoader;
 using static FrooxEngine.SessionControlDialog;
 
@@ -33,8 +32,11 @@ namespace Derg
                 UniLog.Log("Postfix called on World.Load");
                 UniLog.Log($"... WorldName {__instance.Configuration.WorldName.Value}");
                 UniLog.Log($"... SessionID {__instance.Configuration.SessionID.Value}");
-                Slot dergwasmSlot = __instance.RootSlot.FindChild(s => s.Tag == "_dergwasm", maxDepth: 0);
-                if (dergwasmSlot == null) {
+                Slot dergwasmSlot = __instance
+                    .RootSlot
+                    .FindChild(s => s.Tag == "_dergwasm", maxDepth: 0);
+                if (dergwasmSlot == null)
+                {
                     dergwasmSlot = __instance.RootSlot.AddSlot("Dergwasm");
                     dergwasmSlot.Tag = "_dergwasm";
                 }

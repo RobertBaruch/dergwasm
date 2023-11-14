@@ -15,7 +15,8 @@ namespace LEB128
         private const long SIGN_EXTEND_MASK = -1L;
         private const int INT64_BITSIZE = (sizeof(long) * 8);
 
-        public static void WriteLEB128Signed(this Stream stream, long value) => WriteLEB128Signed(stream, value, out _);
+        public static void WriteLEB128Signed(this Stream stream, long value) =>
+            WriteLEB128Signed(stream, value, out _);
 
         public static void WriteLEB128Signed(this Stream stream, long value, out int bytes)
         {
@@ -29,14 +30,19 @@ namespace LEB128
 
                 bool signBitSet = (chunk & 0x40) != 0; // sign bit is the msb of a 7-bit byte, so 0x40
                 more = !((value == 0 && !signBitSet) || (value == -1 && signBitSet));
-                if (more) { chunk |= 0x80; } // set msb marker that more bytes are coming
+                if (more)
+                {
+                    chunk |= 0x80;
+                } // set msb marker that more bytes are coming
 
                 stream.WriteByte(chunk);
                 bytes += 1;
-            };
+            }
+            ;
         }
 
-        public static void WriteLEB128Unsigned(this Stream stream, ulong value) => WriteLEB128Unsigned(stream, value, out _);
+        public static void WriteLEB128Unsigned(this Stream stream, ulong value) =>
+            WriteLEB128Unsigned(stream, value, out _);
 
         public static void WriteLEB128Unsigned(this Stream stream, ulong value, out int bytes)
         {
@@ -49,16 +55,21 @@ namespace LEB128
                 value >>= 7;
 
                 more = value != 0;
-                if (more) { chunk |= 0x80; } // set msb marker that more bytes are coming
+                if (more)
+                {
+                    chunk |= 0x80;
+                } // set msb marker that more bytes are coming
 
                 stream.WriteByte(chunk);
                 bytes += 1;
-            };
+            }
+            ;
         }
 
         public static long ReadLEB128Signed(this Stream stream) => ReadLEB128Signed(stream, out _);
 
-        public static long ReadLEB128Signed(this BinaryReader stream) => ReadLEB128Signed(stream.BaseStream, out _);
+        public static long ReadLEB128Signed(this BinaryReader stream) =>
+            ReadLEB128Signed(stream.BaseStream, out _);
 
         public static long ReadLEB128Signed(this Stream stream, out int bytes)
         {
@@ -66,12 +77,16 @@ namespace LEB128
 
             long value = 0;
             int shift = 0;
-            bool more = true, signBitSet = false;
+            bool more = true,
+                signBitSet = false;
 
             while (more)
             {
                 var next = stream.ReadByte();
-                if (next < 0) { throw new InvalidOperationException("Unexpected end of stream"); }
+                if (next < 0)
+                {
+                    throw new InvalidOperationException("Unexpected end of stream");
+                }
 
                 byte b = (byte)next;
                 bytes += 1;
@@ -82,19 +97,26 @@ namespace LEB128
                 long chunk = b & 0x7fL; // extract lower 7 bits
                 value |= chunk << shift;
                 shift += 7;
-            };
+            }
+            ;
 
             // extend the sign of shorter negative numbers
-            if (shift < INT64_BITSIZE && signBitSet) { value |= SIGN_EXTEND_MASK << shift; }
+            if (shift < INT64_BITSIZE && signBitSet)
+            {
+                value |= SIGN_EXTEND_MASK << shift;
+            }
 
             return value;
         }
 
-        public static long ReadLEB128Signed(this BinaryReader stream, out int bytes) => ReadLEB128Signed(stream.BaseStream, out bytes);
+        public static long ReadLEB128Signed(this BinaryReader stream, out int bytes) =>
+            ReadLEB128Signed(stream.BaseStream, out bytes);
 
-        public static ulong ReadLEB128Unsigned(this Stream stream) => ReadLEB128Unsigned(stream, out _);
+        public static ulong ReadLEB128Unsigned(this Stream stream) =>
+            ReadLEB128Unsigned(stream, out _);
 
-        public static ulong ReadLEB128Unsigned(this BinaryReader stream) => ReadLEB128Unsigned(stream.BaseStream, out _);
+        public static ulong ReadLEB128Unsigned(this BinaryReader stream) =>
+            ReadLEB128Unsigned(stream.BaseStream, out _);
 
         public static ulong ReadLEB128Unsigned(this Stream stream, out int bytes)
         {
@@ -107,12 +129,15 @@ namespace LEB128
             while (more)
             {
                 var next = stream.ReadByte();
-                if (next < 0) { throw new InvalidOperationException("Unexpected end of stream"); }
+                if (next < 0)
+                {
+                    throw new InvalidOperationException("Unexpected end of stream");
+                }
 
                 byte b = (byte)next;
                 bytes += 1;
 
-                more = (b & 0x80) != 0;   // extract msb
+                more = (b & 0x80) != 0; // extract msb
                 ulong chunk = b & 0x7fUL; // extract lower 7 bits
                 value |= chunk << shift;
                 shift += 7;
@@ -120,6 +145,8 @@ namespace LEB128
 
             return value;
         }
-        public static ulong ReadLEB128Unsigned(this BinaryReader stream, out int bytes) => ReadLEB128Unsigned(stream.BaseStream, out bytes);
+
+        public static ulong ReadLEB128Unsigned(this BinaryReader stream, out int bytes) =>
+            ReadLEB128Unsigned(stream.BaseStream, out bytes);
     }
 }

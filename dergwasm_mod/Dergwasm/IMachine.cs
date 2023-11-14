@@ -47,7 +47,7 @@ namespace Derg
         // counter to jump to for a BR 0 instruction.
         void PushLabel(int args, int arity, int target);
 
-        // Pops a label off the current frame. 
+        // Pops a label off the current frame.
         Label PopLabel();
 
         // Gets the FuncType for the given index using the current frame's module

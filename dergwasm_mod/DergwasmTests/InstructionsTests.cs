@@ -5,7 +5,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-
 using LEB128;
 using Xunit;
 
@@ -53,9 +52,7 @@ namespace Derg
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.REF_NULL, insn.Type);
-            Assert.Collection(insn.Operands,
-                e => Assert.Equal(1U, e.value.AsI32_U())
-            );
+            Assert.Collection(insn.Operands, e => Assert.Equal(1U, e.value.AsI32_U()));
         }
 
         [Fact]
@@ -71,7 +68,8 @@ namespace Derg
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.V128_CONST, insn.Type);
-            Assert.Collection(insn.Operands,
+            Assert.Collection(
+                insn.Operands,
                 e => Assert.Equal(0x8877665544332211UL, e.value.AsI64_U())
             );
         }
@@ -88,9 +86,7 @@ namespace Derg
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.BR, insn.Type);
-            Assert.Collection(insn.Operands,
-                e => Assert.Equal(1U, e.value.AsI32_U())
-            );
+            Assert.Collection(insn.Operands, e => Assert.Equal(1U, e.value.AsI32_U()));
         }
 
         [Fact]
@@ -106,7 +102,8 @@ namespace Derg
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.TABLE_INIT, insn.Type);
-            Assert.Collection(insn.Operands,
+            Assert.Collection(
+                insn.Operands,
                 e => Assert.Equal(1U, e.value.AsI32_U()),
                 e => Assert.Equal(2U, e.value.AsI32_U())
             );
@@ -125,7 +122,8 @@ namespace Derg
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.I32_LOAD, insn.Type);
-            Assert.Collection(insn.Operands,
+            Assert.Collection(
+                insn.Operands,
                 e => Assert.Equal(1U, e.value.AsI32_U()),
                 e => Assert.Equal(2U, e.value.AsI32_U())
             );
@@ -145,7 +143,8 @@ namespace Derg
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.V128_LOAD8_LANE, insn.Type);
-            Assert.Collection(insn.Operands,
+            Assert.Collection(
+                insn.Operands,
                 e => Assert.Equal(1U, e.value.AsI32_U()),
                 e => Assert.Equal(2U, e.value.AsI32_U()),
                 e => Assert.Equal(3U, e.value.AsI32_U())
@@ -164,9 +163,7 @@ namespace Derg
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.I8X16_EXTRACT_LANE_S, insn.Type);
-            Assert.Collection(insn.Operands,
-                e => Assert.Equal(1U, e.value.AsI32_U())
-            );
+            Assert.Collection(insn.Operands, e => Assert.Equal(1U, e.value.AsI32_U()));
         }
 
         [Fact]
@@ -196,7 +193,8 @@ namespace Derg
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.I8X16_SHUFFLE, insn.Type);
-            Assert.Collection(insn.Operands,
+            Assert.Collection(
+                insn.Operands,
                 e => Assert.Equal(1U, e.value.AsI32_U()),
                 e => Assert.Equal(2U, e.value.AsI32_U()),
                 e => Assert.Equal(3U, e.value.AsI32_U()),
@@ -232,7 +230,8 @@ namespace Derg
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.SELECT_VEC, insn.Type);
-            Assert.Collection(insn.Operands,
+            Assert.Collection(
+                insn.Operands,
                 e => Assert.Equal(1U, e.value.AsI32_U()),
                 e => Assert.Equal(2U, e.value.AsI32_U()),
                 e => Assert.Equal(3U, e.value.AsI32_U()),
@@ -252,9 +251,7 @@ namespace Derg
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.I32_CONST, insn.Type);
-            Assert.Collection(insn.Operands,
-                e => Assert.Equal(0x11223344U, e.value.AsI32_U())
-            );
+            Assert.Collection(insn.Operands, e => Assert.Equal(0x11223344U, e.value.AsI32_U()));
         }
 
         [Fact]
@@ -269,7 +266,8 @@ namespace Derg
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.I64_CONST, insn.Type);
-            Assert.Collection(insn.Operands,
+            Assert.Collection(
+                insn.Operands,
                 e => Assert.Equal(0x1122334455667788UL, e.value.AsI64_U())
             );
         }
@@ -287,9 +285,7 @@ namespace Derg
 
             Assert.Equal(InstructionType.F32_CONST, insn.Type);
             Assert.Single(insn.Operands);
-            Assert.Collection(insn.Operands,
-                e => Assert.Equal(3.14159f, e.value.AsF32())
-            );
+            Assert.Collection(insn.Operands, e => Assert.Equal(3.14159f, e.value.AsF32()));
         }
 
         [Fact]
@@ -304,9 +300,7 @@ namespace Derg
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.F64_CONST, insn.Type);
-            Assert.Collection(insn.Operands,
-                e => Assert.Equal(3.14159, e.value.AsF64())
-            );
+            Assert.Collection(insn.Operands, e => Assert.Equal(3.14159, e.value.AsF64()));
         }
 
         [Fact]
@@ -326,7 +320,8 @@ namespace Derg
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.BR_TABLE, insn.Type);
-            Assert.Collection(insn.Operands,
+            Assert.Collection(
+                insn.Operands,
                 e => Assert.Equal(1U, e.value.AsI32_U()),
                 e => Assert.Equal(2U, e.value.AsI32_U()),
                 e => Assert.Equal(3U, e.value.AsI32_U()),
@@ -341,7 +336,7 @@ namespace Derg
             MemoryStream stream = new MemoryStream();
 
             stream.WriteOpcode(InstructionType.BLOCK);
-            stream.WriteLEB128Signed(-0x40);  // void block
+            stream.WriteLEB128Signed(-0x40); // void block
             stream.WriteOpcode(InstructionType.NOP);
             stream.WriteOpcode(InstructionType.END);
             stream.Position = 0;
@@ -349,13 +344,13 @@ namespace Derg
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.BLOCK, insn.Type);
-            Assert.Collection(insn.Operands,
+            Assert.Collection(
+                insn.Operands,
                 e => Assert.Equal(BlockType.VOID_BLOCK, e.value.GetBlockType())
             );
-            Assert.Collection(insn.Operands,
-                e => Assert.IsType<UnflattenedBlockOperand>(e)
-            );
-            Assert.Collection(((UnflattenedBlockOperand)insn.Operands[0]).instructions,
+            Assert.Collection(insn.Operands, e => Assert.IsType<UnflattenedBlockOperand>(e));
+            Assert.Collection(
+                ((UnflattenedBlockOperand)insn.Operands[0]).instructions,
                 e => Assert.Equal(InstructionType.NOP, e.Type),
                 e => Assert.Equal(InstructionType.END, e.Type)
             );
@@ -367,7 +362,7 @@ namespace Derg
             MemoryStream stream = new MemoryStream();
 
             stream.WriteOpcode(InstructionType.BLOCK);
-            stream.WriteLEB128Signed((int)ValueType.F32 - 0x80);  // returning block, returns F32.
+            stream.WriteLEB128Signed((int)ValueType.F32 - 0x80); // returning block, returns F32.
             stream.WriteOpcode(InstructionType.NOP);
             stream.WriteOpcode(InstructionType.END);
             stream.Position = 0;
@@ -375,16 +370,17 @@ namespace Derg
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.BLOCK, insn.Type);
-            Assert.Collection(insn.Operands,
+            Assert.Collection(
+                insn.Operands,
                 e => Assert.Equal(BlockType.RETURNING_BLOCK, e.value.GetBlockType())
             );
-            Assert.Collection(insn.Operands,
+            Assert.Collection(
+                insn.Operands,
                 e => Assert.Equal(ValueType.F32, e.value.GetReturningBlockValueType())
             );
-            Assert.Collection(insn.Operands,
-                e => Assert.IsType<UnflattenedBlockOperand>(e)
-            );
-            Assert.Collection(((UnflattenedBlockOperand)insn.Operands[0]).instructions,
+            Assert.Collection(insn.Operands, e => Assert.IsType<UnflattenedBlockOperand>(e));
+            Assert.Collection(
+                ((UnflattenedBlockOperand)insn.Operands[0]).instructions,
                 e => Assert.Equal(InstructionType.NOP, e.Type),
                 e => Assert.Equal(InstructionType.END, e.Type)
             );
@@ -396,7 +392,7 @@ namespace Derg
             MemoryStream stream = new MemoryStream();
 
             stream.WriteOpcode(InstructionType.BLOCK);
-            stream.WriteLEB128Signed(1);  // typed block, type index 1.
+            stream.WriteLEB128Signed(1); // typed block, type index 1.
             stream.WriteOpcode(InstructionType.NOP);
             stream.WriteOpcode(InstructionType.END);
             stream.Position = 0;
@@ -404,16 +400,17 @@ namespace Derg
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.BLOCK, insn.Type);
-            Assert.Collection(insn.Operands,
+            Assert.Collection(
+                insn.Operands,
                 e => Assert.Equal(BlockType.TYPED_BLOCK, e.value.GetBlockType())
             );
-            Assert.Collection(insn.Operands,
+            Assert.Collection(
+                insn.Operands,
                 e => Assert.Equal(1, e.value.GetReturningBlockTypeIndex())
             );
-            Assert.Collection(insn.Operands,
-                e => Assert.IsType<UnflattenedBlockOperand>(e)
-            );
-            Assert.Collection(((UnflattenedBlockOperand)insn.Operands[0]).instructions,
+            Assert.Collection(insn.Operands, e => Assert.IsType<UnflattenedBlockOperand>(e));
+            Assert.Collection(
+                ((UnflattenedBlockOperand)insn.Operands[0]).instructions,
                 e => Assert.Equal(InstructionType.NOP, e.Type),
                 e => Assert.Equal(InstructionType.END, e.Type)
             );
@@ -425,7 +422,7 @@ namespace Derg
             MemoryStream stream = new MemoryStream();
 
             stream.WriteOpcode(InstructionType.IF);
-            stream.WriteLEB128Signed(-0x40);  // void block
+            stream.WriteLEB128Signed(-0x40); // void block
             stream.WriteOpcode(InstructionType.NOP);
             stream.WriteOpcode(InstructionType.ELSE);
             stream.WriteOpcode(InstructionType.NOP);
@@ -436,17 +433,18 @@ namespace Derg
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.IF, insn.Type);
-            Assert.Collection(insn.Operands,
+            Assert.Collection(
+                insn.Operands,
                 e => Assert.Equal(BlockType.VOID_BLOCK, e.value.GetBlockType())
             );
-            Assert.Collection(insn.Operands,
-                e => Assert.IsType<UnflattenedBlockOperand>(e)
-            );
-            Assert.Collection(((UnflattenedBlockOperand)insn.Operands[0]).instructions,
+            Assert.Collection(insn.Operands, e => Assert.IsType<UnflattenedBlockOperand>(e));
+            Assert.Collection(
+                ((UnflattenedBlockOperand)insn.Operands[0]).instructions,
                 e => Assert.Equal(InstructionType.NOP, e.Type),
                 e => Assert.Equal(InstructionType.ELSE, e.Type)
             );
-            Assert.Collection(((UnflattenedBlockOperand)insn.Operands[0]).else_instructions,
+            Assert.Collection(
+                ((UnflattenedBlockOperand)insn.Operands[0]).else_instructions,
                 e => Assert.Equal(InstructionType.NOP, e.Type),
                 e => Assert.Equal(InstructionType.NOP, e.Type),
                 e => Assert.Equal(InstructionType.END, e.Type)
@@ -468,7 +466,8 @@ namespace Derg
 
             List<UnflattenedInstruction> instructions = Expr.Decode(new BinaryReader(stream));
 
-            Assert.Collection(instructions,
+            Assert.Collection(
+                instructions,
                 e => Assert.Equal(InstructionType.NOP, e.Type),
                 e => Assert.Equal(InstructionType.NOP, e.Type),
                 e => Assert.Equal(InstructionType.END, e.Type)
@@ -487,7 +486,8 @@ namespace Derg
 
             List<Instruction> instructions = Expr.Decode(new BinaryReader(stream)).Flatten(0);
 
-            Assert.Collection(instructions,
+            Assert.Collection(
+                instructions,
                 e => Assert.Equal(InstructionType.NOP, e.Type),
                 e => Assert.Equal(InstructionType.NOP, e.Type),
                 e => Assert.Equal(InstructionType.END, e.Type)
@@ -500,7 +500,7 @@ namespace Derg
             MemoryStream stream = new MemoryStream();
 
             stream.WriteOpcode(InstructionType.BLOCK);
-            stream.WriteLEB128Signed(-0x40);  // void block
+            stream.WriteLEB128Signed(-0x40); // void block
             stream.WriteOpcode(InstructionType.NOP);
             stream.WriteOpcode(InstructionType.END);
             stream.WriteOpcode(InstructionType.NOP);
@@ -509,12 +509,13 @@ namespace Derg
 
             List<Instruction> instructions = Expr.Decode(new BinaryReader(stream)).Flatten(100);
 
-            Assert.Collection(instructions,
-                e => Assert.Equal(InstructionType.BLOCK, e.Type),  // 100
-                e => Assert.Equal(InstructionType.NOP, e.Type),    // 101
-                e => Assert.Equal(InstructionType.END, e.Type),    // 102
-                e => Assert.Equal(InstructionType.NOP, e.Type),    // 103
-                e => Assert.Equal(InstructionType.END, e.Type)     // 104
+            Assert.Collection(
+                instructions,
+                e => Assert.Equal(InstructionType.BLOCK, e.Type), // 100
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 101
+                e => Assert.Equal(InstructionType.END, e.Type), // 102
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 103
+                e => Assert.Equal(InstructionType.END, e.Type) // 104
             );
 
             Assert.Equal(103, instructions[0].Operands[0].GetTarget());
@@ -526,7 +527,7 @@ namespace Derg
             MemoryStream stream = new MemoryStream();
 
             stream.WriteOpcode(InstructionType.LOOP);
-            stream.WriteLEB128Signed(-0x40);  // void block
+            stream.WriteLEB128Signed(-0x40); // void block
             stream.WriteOpcode(InstructionType.NOP);
             stream.WriteOpcode(InstructionType.END);
             stream.WriteOpcode(InstructionType.NOP);
@@ -535,12 +536,13 @@ namespace Derg
 
             List<Instruction> instructions = Expr.Decode(new BinaryReader(stream)).Flatten(100);
 
-            Assert.Collection(instructions,
-                e => Assert.Equal(InstructionType.LOOP, e.Type),  // 100
-                e => Assert.Equal(InstructionType.NOP, e.Type),   // 101
-                e => Assert.Equal(InstructionType.END, e.Type),   // 102
-                e => Assert.Equal(InstructionType.NOP, e.Type),   // 103
-                e => Assert.Equal(InstructionType.END, e.Type)    // 104
+            Assert.Collection(
+                instructions,
+                e => Assert.Equal(InstructionType.LOOP, e.Type), // 100
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 101
+                e => Assert.Equal(InstructionType.END, e.Type), // 102
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 103
+                e => Assert.Equal(InstructionType.END, e.Type) // 104
             );
 
             Assert.Equal(100, instructions[0].Operands[0].GetTarget());
@@ -552,7 +554,7 @@ namespace Derg
             MemoryStream stream = new MemoryStream();
 
             stream.WriteOpcode(InstructionType.IF);
-            stream.WriteLEB128Signed(-0x40);  // void block
+            stream.WriteLEB128Signed(-0x40); // void block
             stream.WriteOpcode(InstructionType.NOP);
             stream.WriteOpcode(InstructionType.END);
             stream.WriteOpcode(InstructionType.NOP);
@@ -561,12 +563,13 @@ namespace Derg
 
             List<Instruction> instructions = Expr.Decode(new BinaryReader(stream)).Flatten(100);
 
-            Assert.Collection(instructions,
-                e => Assert.Equal(InstructionType.IF, e.Type),    // 100
-                e => Assert.Equal(InstructionType.NOP, e.Type),   // 101
-                e => Assert.Equal(InstructionType.END, e.Type),   // 102
-                e => Assert.Equal(InstructionType.NOP, e.Type),   // 103
-                e => Assert.Equal(InstructionType.END, e.Type)    // 104
+            Assert.Collection(
+                instructions,
+                e => Assert.Equal(InstructionType.IF, e.Type), // 100
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 101
+                e => Assert.Equal(InstructionType.END, e.Type), // 102
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 103
+                e => Assert.Equal(InstructionType.END, e.Type) // 104
             );
 
             Assert.Equal(103, instructions[0].Operands[0].GetTarget());
@@ -579,7 +582,7 @@ namespace Derg
             MemoryStream stream = new MemoryStream();
 
             stream.WriteOpcode(InstructionType.IF);
-            stream.WriteLEB128Signed(-0x40);  // void block
+            stream.WriteLEB128Signed(-0x40); // void block
             stream.WriteOpcode(InstructionType.NOP);
             stream.WriteOpcode(InstructionType.ELSE);
             stream.WriteOpcode(InstructionType.NOP);
@@ -590,14 +593,15 @@ namespace Derg
 
             List<Instruction> instructions = Expr.Decode(new BinaryReader(stream)).Flatten(100);
 
-            Assert.Collection(instructions,
-                e => Assert.Equal(InstructionType.IF, e.Type),    // 100
-                e => Assert.Equal(InstructionType.NOP, e.Type),   // 101
-                e => Assert.Equal(InstructionType.ELSE, e.Type),  // 102
-                e => Assert.Equal(InstructionType.NOP, e.Type),   // 103
-                e => Assert.Equal(InstructionType.END, e.Type),   // 104
-                e => Assert.Equal(InstructionType.NOP, e.Type),   // 105
-                e => Assert.Equal(InstructionType.END, e.Type)    // 106
+            Assert.Collection(
+                instructions,
+                e => Assert.Equal(InstructionType.IF, e.Type), // 100
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 101
+                e => Assert.Equal(InstructionType.ELSE, e.Type), // 102
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 103
+                e => Assert.Equal(InstructionType.END, e.Type), // 104
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 105
+                e => Assert.Equal(InstructionType.END, e.Type) // 106
             );
 
             Assert.Equal(105, instructions[0].Operands[0].GetTarget());

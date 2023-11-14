@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
 using LEB128;
 using Xunit;
 
@@ -27,7 +26,19 @@ namespace Derg
         [InlineData(512UL, (byte)0x80, (byte)0x04)]
         [InlineData(624485, (byte)0xe5, (byte)0x8e, (byte)0x26)] // test value from wikipedia :)
         [InlineData(0x7fffffffUL, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0x07)]
-        [InlineData(ulong.MaxValue, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0x01)]
+        [InlineData(
+            ulong.MaxValue,
+            (byte)0xff,
+            (byte)0xff,
+            (byte)0xff,
+            (byte)0xff,
+            (byte)0xff,
+            (byte)0xff,
+            (byte)0xff,
+            (byte)0xff,
+            (byte)0xff,
+            (byte)0x01
+        )]
         public void TestLEB128Unsigned(ulong expected, params byte[] bytes)
         {
             var ms = new MemoryStream();
@@ -60,8 +71,32 @@ namespace Derg
         [InlineData(-128L, (byte)0x80, (byte)0x7f)]
         [InlineData(-129L, (byte)0xff, (byte)0x7e)]
         [InlineData(-123456L, (byte)0xc0, (byte)0xbb, (byte)0x78)] // test value from wikipedia :)
-        [InlineData(long.MinValue, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x7f)]
-        [InlineData(long.MaxValue, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0x00)]
+        [InlineData(
+            long.MinValue,
+            (byte)0x80,
+            (byte)0x80,
+            (byte)0x80,
+            (byte)0x80,
+            (byte)0x80,
+            (byte)0x80,
+            (byte)0x80,
+            (byte)0x80,
+            (byte)0x80,
+            (byte)0x7f
+        )]
+        [InlineData(
+            long.MaxValue,
+            (byte)0xff,
+            (byte)0xff,
+            (byte)0xff,
+            (byte)0xff,
+            (byte)0xff,
+            (byte)0xff,
+            (byte)0xff,
+            (byte)0xff,
+            (byte)0xff,
+            (byte)0x00
+        )]
         public void TestLEB128Signed(long value, params byte[] bytes)
         {
             var ms = new MemoryStream();
@@ -69,7 +104,6 @@ namespace Derg
             ms.Position = 0;
             Assert.Equal(value, ms.ReadLEB128Signed());
             AssertStreamBytesEqual(ms, bytes);
-
         }
 
         private void AssertStreamBytesEqual(MemoryStream ms, params byte[] values)

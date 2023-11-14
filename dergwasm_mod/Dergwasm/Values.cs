@@ -68,72 +68,102 @@ namespace Derg
             value_hi = value.value_hi;
         }
 
-        unsafe public Value(float f32)
+        public unsafe Value(float f32)
         {
-            fixed (ulong* ptr = &value_lo) { *(float*)ptr = f32; }
+            fixed (ulong* ptr = &value_lo)
+            {
+                *(float*)ptr = f32;
+            }
             value_hi = 0;
         }
 
-        unsafe public Value(double f64)
+        public unsafe Value(double f64)
         {
-            fixed (ulong* ptr = &value_lo) { *(double*)ptr = f64; }
+            fixed (ulong* ptr = &value_lo)
+            {
+                *(double*)ptr = f64;
+            }
             value_hi = 0;
         }
 
-        unsafe public Value(uint i32)
+        public unsafe Value(uint i32)
         {
-            fixed (ulong* ptr = &value_lo) { *(uint*)ptr = i32; }
+            fixed (ulong* ptr = &value_lo)
+            {
+                *(uint*)ptr = i32;
+            }
             value_hi = 0;
         }
 
-        unsafe public Value(int i32)
+        public unsafe Value(int i32)
         {
-            fixed (ulong* ptr = &value_lo) { *(int*)ptr = i32; }
+            fixed (ulong* ptr = &value_lo)
+            {
+                *(int*)ptr = i32;
+            }
             value_hi = 0;
         }
 
-        unsafe public Value(ulong i64)
+        public unsafe Value(ulong i64)
         {
             value_lo = i64;
             value_hi = 0;
         }
 
-        unsafe public Value(long i64)
+        public unsafe Value(long i64)
         {
-            fixed (ulong* ptr = &value_lo) { *(long*)ptr = i64; }
+            fixed (ulong* ptr = &value_lo)
+            {
+                *(long*)ptr = i64;
+            }
             value_hi = 0;
         }
 
-        unsafe public float AsF32()
+        public unsafe float AsF32()
         {
-            fixed (ulong* ptr = &value_lo) { return *(float*)ptr; }
+            fixed (ulong* ptr = &value_lo)
+            {
+                return *(float*)ptr;
+            }
         }
 
-        unsafe public double AsF64()
+        public unsafe double AsF64()
         {
-            fixed (ulong* ptr = &value_lo) { return *(double*)ptr; }
+            fixed (ulong* ptr = &value_lo)
+            {
+                return *(double*)ptr;
+            }
         }
 
-        unsafe public uint AsI32_U()
+        public unsafe uint AsI32_U()
         {
-            fixed (ulong* ptr = &value_lo) { return *(uint*)ptr; }
+            fixed (ulong* ptr = &value_lo)
+            {
+                return *(uint*)ptr;
+            }
         }
 
-        unsafe public int AsI32_S()
+        public unsafe int AsI32_S()
         {
-            fixed (ulong* ptr = &value_lo) { return *(int*)ptr; }
+            fixed (ulong* ptr = &value_lo)
+            {
+                return *(int*)ptr;
+            }
         }
 
         public int Int() => AsI32_S();
 
-        unsafe public ulong AsI64_U()
+        public unsafe ulong AsI64_U()
         {
             return value_lo;
         }
 
-        unsafe public long AsI64_S()
+        public unsafe long AsI64_S()
         {
-            fixed (ulong* ptr = &value_lo) { return *(long*)ptr; }
+            fixed (ulong* ptr = &value_lo)
+            {
+                return *(long*)ptr;
+            }
         }
 
         // Only valid if the value is a block operand.
@@ -173,10 +203,16 @@ namespace Derg
         }
 
         // Only valid if the value is a reference type.
-        public bool IsNullRef() { return value_lo == 0xFFFFFFFFFFFFFFFF; }
+        public bool IsNullRef()
+        {
+            return value_lo == 0xFFFFFFFFFFFFFFFF;
+        }
 
         // Only valid if the value is a reference type.
-        public ulong AsRefAddr() { return value_lo; }
+        public ulong AsRefAddr()
+        {
+            return value_lo;
+        }
     }
 
     // A label. Created on entry to a block, and used to exit blocks.
@@ -184,10 +220,12 @@ namespace Derg
     {
         // The number of return values for the block.
         public int arity;
+
         // The target PC for a BR 0 instruction within this block. With the exception of the
         // LOOP instruction, this always goes to the END+1 of the block. Targets for LOOP
         // instructions go back to the LOOP instruction.
         public int target;
+
         // The size of the (value) stack at the moment the label is created.
         //
         // In the WASM spec, labels are stored on the stack for simplicity. This lets
@@ -216,12 +254,16 @@ namespace Derg
     {
         // The number of return values for the function.
         public int arity;
+
         // The function's locals. This includes its arguments, which come first.
         public Value[] locals;
+
         // The module instance this frame is executing in.
         public IModule module;
+
         // The current program counter.
         public int pc;
+
         // The label stack. We keep a function's label stack separate because labels, unlike values,
         // never travel across function boundaries.
         public Stack<Label> labels;
@@ -247,4 +289,4 @@ namespace Derg
             this.returns = returns;
         }
     }
-}  // namespace Derg
+} // namespace Derg
