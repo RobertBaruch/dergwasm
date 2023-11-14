@@ -214,10 +214,8 @@ namespace Derg
                 e =>
                     Assert.Equal(
                         new Label(
-                            0 /*arity*/
-                            ,
-                            103 /*target*/
-                            ,
+                            0, /*arity*/
+                            103, /*target*/
                             0 /*stack_level*/
                         ),
                         e
@@ -257,10 +255,8 @@ namespace Derg
                 e =>
                     Assert.Equal(
                         new Label(
-                            1 /*arity*/
-                            ,
-                            103 /*target*/
-                            ,
+                            1, /*arity*/
+                            103, /*target*/
                             0 /*stack_level*/
                         ),
                         e
@@ -304,9 +300,9 @@ namespace Derg
         {
             // 100: I32_CONST 1
             // 101: BLOCK
-            // 102:   DROP  // The block is expected to consume its args.
+            // 102:   NOP
             // 103: END
-            SetProgram(I32Const(1), I32_VoidBlock(Drop(), End()));
+            SetProgram(I32Const(1), I32_VoidBlock(Nop(), End()));
 
             Step(4);
 
