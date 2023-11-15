@@ -104,10 +104,15 @@ namespace Derg
 
         private UnflattenedInstruction End() => Insn(InstructionType.END);
 
+        private UnflattenedInstruction Else() => Insn(InstructionType.ELSE);
+
         private UnflattenedInstruction Drop() => Insn(InstructionType.DROP);
 
         private UnflattenedInstruction I32Const(int v) =>
             Insn(InstructionType.I32_CONST, new Value(v));
+
+        private UnflattenedInstruction Br(int levels) =>
+            Insn(InstructionType.BR, new Value(levels));
 
         // A block with zero args and zero returns.
         private UnflattenedInstruction VoidBlock(params UnflattenedInstruction[] instructions)
@@ -160,6 +165,57 @@ namespace Derg
             );
         }
 
+        // An IF with no ELSE, zero args and zero returns.
+        private UnflattenedInstruction VoidIf(params UnflattenedInstruction[] instructions)
+        {
+            return new UnflattenedInstruction(
+                InstructionType.IF,
+                new UnflattenedOperand[]
+                {
+                    new UnflattenedBlockOperand(
+                        new Value(0UL, (ulong)BlockType.VOID_BLOCK),
+                        new List<UnflattenedInstruction>(instructions),
+                        new List<UnflattenedInstruction>()
+                    ),
+                }
+            );
+        }
+
+        // An IF with an ELSE, zero args and zero returns.
+        private UnflattenedInstruction VoidIfElse(
+            UnflattenedInstruction[] instructions,
+            UnflattenedInstruction[] else_instructions
+        )
+        {
+            return new UnflattenedInstruction(
+                InstructionType.IF,
+                new UnflattenedOperand[]
+                {
+                    new UnflattenedBlockOperand(
+                        new Value(0UL, (ulong)BlockType.VOID_BLOCK),
+                        new List<UnflattenedInstruction>(instructions),
+                        new List<UnflattenedInstruction>(else_instructions)
+                    ),
+                }
+            );
+        }
+
+        // A loop with zero args and zero returns.
+        private UnflattenedInstruction VoidLoop(params UnflattenedInstruction[] instructions)
+        {
+            return new UnflattenedInstruction(
+                InstructionType.LOOP,
+                new UnflattenedOperand[]
+                {
+                    new UnflattenedBlockOperand(
+                        new Value(0UL, (ulong)BlockType.VOID_BLOCK),
+                        new List<UnflattenedInstruction>(instructions),
+                        new List<UnflattenedInstruction>()
+                    ),
+                }
+            );
+        }
+
         [Fact]
         public void TestNop()
         {
@@ -169,7 +225,7 @@ namespace Derg
             Step();
 
             Assert.Equal(101, machine.CurrentPC());
-            Assert.Equal(0, machine.StackLevel());
+            Assert.Empty(machine.value_stack);
         }
 
         [Fact]
@@ -208,7 +264,7 @@ namespace Derg
             Step();
 
             Assert.Equal(101, machine.CurrentPC());
-            Assert.Equal(0, machine.StackLevel());
+            Assert.Empty(machine.value_stack);
             Assert.Collection(
                 machine.label_stack,
                 e =>
@@ -249,7 +305,7 @@ namespace Derg
             Step();
 
             Assert.Equal(101, machine.CurrentPC());
-            Assert.Equal(0, machine.StackLevel());
+            Assert.Empty(machine.value_stack);
             Assert.Collection(
                 machine.label_stack,
                 e =>
@@ -280,7 +336,7 @@ namespace Derg
         }
 
         [Fact]
-        public void TestI32BlockEndRemovesNonReturnStackValues()
+        public void TestI32BlockEndRestoresStack()
         {
             // 100: BLOCK
             // 101:   I32_CONST 2
@@ -307,6 +363,280 @@ namespace Derg
             Step(4);
 
             Assert.Equal(104, machine.CurrentPC());
+            Assert.Empty(machine.value_stack);
+            Assert.Empty(machine.label_stack);
+        }
+
+        [Fact]
+        public void TestIf_True()
+        {
+            // 100: I32_CONST 1
+            // 101: IF
+            // 102:   NOP
+            // 103: END
+            SetProgram(I32Const(1), VoidIf(Nop(), End()));
+
+            Step(2);
+
+            Assert.Equal(102, machine.CurrentPC());
+            Assert.Empty(machine.value_stack);
+            Assert.Collection(
+                machine.label_stack,
+                e =>
+                    Assert.Equal(
+                        new Label(
+                            0, /*arity*/
+                            104, /*target*/
+                            0 /*stack_level*/
+                        ),
+                        e
+                    )
+            );
+        }
+
+        [Fact]
+        public void TestIf_False()
+        {
+            // 100: I32_CONST 1
+            // 101: IF
+            // 102:   NOP
+            // 103: END
+            SetProgram(I32Const(0), VoidIf(Nop(), End()));
+
+            Step(2);
+
+            Assert.Equal(104, machine.CurrentPC());
+            Assert.Empty(machine.value_stack);
+            Assert.Empty(machine.label_stack);
+        }
+
+        [Fact]
+        public void TestIfElse_False()
+        {
+            // 100: I32_CONST 0
+            // 101: IF
+            // 102:   NOP
+            // 103: ELSE
+            // 104:   NOP
+            // 105: END
+            SetProgram(
+                I32Const(0),
+                VoidIfElse(
+                    new UnflattenedInstruction[] { Nop(), Else() },
+                    new UnflattenedInstruction[] { Nop(), End() }
+                )
+            );
+
+            Step(2);
+
+            Assert.Equal(104, machine.CurrentPC());
+            Assert.Empty(machine.value_stack);
+            Assert.Collection(
+                machine.label_stack,
+                e =>
+                    Assert.Equal(
+                        new Label(
+                            0, /*arity*/
+                            106, /*target*/
+                            0 /*stack_level*/
+                        ),
+                        e
+                    )
+            );
+        }
+
+        [Fact]
+        public void TestIfElseEnd_False()
+        {
+            // 100: I32_CONST 0
+            // 101: IF
+            // 102:   NOP
+            // 103: ELSE
+            // 104:   NOP
+            // 105: END
+            SetProgram(
+                I32Const(0),
+                VoidIfElse(
+                    new UnflattenedInstruction[] { Nop(), Else() },
+                    new UnflattenedInstruction[] { Nop(), End() }
+                )
+            );
+
+            Step(4);
+
+            Assert.Equal(106, machine.CurrentPC());
+            Assert.Empty(machine.value_stack);
+            Assert.Empty(machine.label_stack);
+        }
+
+        [Fact]
+        public void TestIfElseEnd_True()
+        {
+            // 100: I32_CONST 1
+            // 101: IF
+            // 102:   NOP
+            // 103: ELSE
+            // 104:   NOP
+            // 105: END
+            SetProgram(
+                I32Const(1),
+                VoidIfElse(
+                    new UnflattenedInstruction[] { Nop(), Else() },
+                    new UnflattenedInstruction[] { Nop(), End() }
+                )
+            );
+
+            Step(4);
+
+            Assert.Equal(106, machine.CurrentPC());
+            Assert.Empty(machine.value_stack);
+            Assert.Empty(machine.label_stack);
+        }
+
+        [Fact]
+        public void TestBlockBR0()
+        {
+            // 100: BLOCK
+            // 101:   BR 0
+            // 102:   NOP
+            // 103: END
+            SetProgram(VoidBlock(Br(0), Nop(), End()));
+
+            Step(2);
+
+            Assert.Equal(104, machine.CurrentPC());
+            Assert.Empty(machine.value_stack);
+            Assert.Empty(machine.label_stack);
+        }
+
+        [Fact]
+        public void TestBlockBR0RestoresStack()
+        {
+            // 100: BLOCK
+            // 101:   I32_CONST 1
+            // 102:   BR 0
+            // 103:   NOP
+            // 104: END
+            SetProgram(VoidBlock(I32Const(1), Br(0), Nop(), End()));
+
+            Step(3);
+
+            Assert.Equal(105, machine.CurrentPC());
+            Assert.Empty(machine.value_stack);
+            Assert.Empty(machine.label_stack);
+        }
+
+        [Fact]
+        public void TestReturningBlockBR0()
+        {
+            // 100: BLOCK
+            // 101:   I32_CONST 1
+            // 102:   BR 0
+            // 103:   NOP
+            // 104: END
+            SetProgram(I32Block(I32Const(1), Br(0), Nop(), End()));
+
+            Step(3);
+
+            Assert.Equal(105, machine.CurrentPC());
+            Assert.Collection(machine.value_stack, e => Assert.Equal(new Value(1), e));
+            Assert.Empty(machine.label_stack);
+        }
+
+        [Fact]
+        public void TestBlockBR1()
+        {
+            // 100: BLOCK
+            // 101:   BLOCK
+            // 102:     BR 1
+            // 103:     NOP
+            // 104:   END
+            // 105:   NOP
+            // 106: END
+            SetProgram(VoidBlock(VoidBlock(Br(1), Nop(), End()), Nop(), End()));
+
+            Step(3);
+
+            Assert.Equal(107, machine.CurrentPC());
+            Assert.Empty(machine.value_stack);
+            Assert.Empty(machine.label_stack);
+        }
+
+        [Fact]
+        public void TestBlockBR1RestoresStackAndReturnsCorrectValue()
+        {
+            // 100: BLOCK
+            // 101:   I32_CONST 1
+            // 102:   BLOCK
+            // 103:     I32_CONST 2
+            // 104:     BR 1
+            // 105:     NOP
+            // 106:   END
+            // 107:   NOP
+            // 108: END
+            SetProgram(
+                I32Block(I32Const(1), I32Block(I32Const(2), Br(1), Nop(), End()), Nop(), End())
+            );
+
+            Step(5);
+
+            Assert.Equal(109, machine.CurrentPC());
+            Assert.Collection(machine.value_stack, e => Assert.Equal(new Value(2), e));
+            Assert.Empty(machine.label_stack);
+        }
+
+        [Fact]
+        public void TestLoop()
+        {
+            // 100: LOOP
+            // 101:   BR 0
+            // 102: END
+            SetProgram(VoidLoop(Br(0), End()));
+
+            Step(1);
+
+            Assert.Equal(101, machine.CurrentPC());
+            Assert.Empty(machine.value_stack);
+            Assert.Collection(
+                machine.label_stack,
+                e =>
+                    Assert.Equal(
+                        new Label(
+                            0, /*arity*/
+                            100, /*target*/
+                            0 /*stack_level*/
+                        ),
+                        e
+                    )
+            );
+        }
+
+        [Fact]
+        public void TestLoopBR0()
+        {
+            // 100: LOOP
+            // 101:   BR 0
+            // 102: END
+            SetProgram(VoidLoop(Br(0), End()));
+
+            Step(2);
+
+            Assert.Equal(100, machine.CurrentPC());
+            Assert.Empty(machine.value_stack);
+            Assert.Empty(machine.label_stack);
+        }
+
+        [Fact]
+        public void TestLoopEnd()
+        {
+            // 100: LOOP
+            // 101:   NOP
+            // 102: END
+            SetProgram(VoidLoop(Nop(), End()));
+
+            Step(3);
+
+            Assert.Equal(103, machine.CurrentPC());
             Assert.Empty(machine.value_stack);
             Assert.Empty(machine.label_stack);
         }

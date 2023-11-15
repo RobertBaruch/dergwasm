@@ -76,7 +76,8 @@ namespace Derg
                     break;
             }
             machine.PushLabel(
-                0 /*args*/,
+                0 /*args*/
+                ,
                 arity,
                 operand.GetTarget()
             );
@@ -95,9 +96,7 @@ namespace Derg
             // not the same as the instruction's else_target.
             Value operand = instruction.Operands[0];
             if (operand.GetTarget() != operand.GetElseTarget())
-            {
                 Block(instruction, machine);
-            }
             // Jump to the else target (minus one because we always add one at the
             // end of an instruction). This is equal to the instruction's target
             // if there was no else clause.
@@ -117,16 +116,19 @@ namespace Derg
         private static void Else(Instruction instruction, IMachine machine) =>
             JumpToTopLabel(machine);
 
-        private static void End(Instruction instruction, IMachine machine) =>
-            JumpToTopLabel(machine);
+        private static void End(Instruction instruction, IMachine machine)
+        {
+            Label label = machine.PopLabel();
+            // We need to save the top arity values, pop everything else up to
+            // the label's stack level, then restore the values. This is the equivalent
+            // of removing everything from the label's stack_level up to current_stack_level - n.
+            machine.RemoveStack(label.stack_level, label.arity);
+        }
 
         private static void BrLevels(IMachine machine, int levels)
         {
-            while (levels > 0)
-            {
-                levels--;
+            for (; levels > 0; levels--)
                 machine.PopLabel();
-            }
             JumpToTopLabel(machine);
         }
 
@@ -157,9 +159,7 @@ namespace Derg
         public static void Execute(Instruction instruction, IMachine machine)
         {
             if (!Map.TryGetValue(instruction.Type, out var implementation))
-            {
                 throw new ArgumentException($"Unimplemented instruction: {instruction.Type}");
-            }
             implementation(instruction, machine);
             machine.IncrementPC();
         }
