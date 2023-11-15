@@ -52,7 +52,7 @@ namespace Derg
         {
             switch (index)
             {
-                case 0:
+                case 0: // A func with an I32 arg and no return.
                     return new FuncType(
                         /*args=*/new ValueType[] { ValueType.I32 },
                         /*returns=*/new ValueType[] { }
@@ -216,6 +216,22 @@ namespace Derg
             );
         }
 
+        // A loop with an I32 arg and no return.
+        private UnflattenedInstruction I32Loop(params UnflattenedInstruction[] instructions)
+        {
+            return new UnflattenedInstruction(
+                InstructionType.LOOP,
+                new UnflattenedOperand[]
+                {
+                    new UnflattenedBlockOperand(
+                        new Value(0UL, (ulong)BlockType.TYPED_BLOCK | ((ulong)0 << 2)),
+                        new List<UnflattenedInstruction>(instructions),
+                        new List<UnflattenedInstruction>()
+                    ),
+                }
+            );
+        }
+
         [Fact]
         public void TestNop()
         {
@@ -336,8 +352,11 @@ namespace Derg
         }
 
         [Fact]
-        public void TestI32BlockEndRestoresStack()
+        public void TestI32BlockEndWithExtraValues()
         {
+            // This is an invalid program. Normally blocks add only arity values to the stack.
+            // But if not, the extra values are left on the stack!
+            //
             // 100: BLOCK
             // 101:   I32_CONST 2
             // 102:   I32_CONST 1
@@ -347,13 +366,20 @@ namespace Derg
             Step(4);
 
             Assert.Equal(104, machine.CurrentPC());
-            Assert.Collection(machine.value_stack, e => Assert.Equal(new Value(1), e));
+            Assert.Collection(
+                machine.value_stack,
+                e => Assert.Equal(new Value(2), e),
+                e => Assert.Equal(new Value(1), e)
+            );
             Assert.Empty(machine.label_stack);
         }
 
         [Fact]
         public void TestI32_VoidBlockEnd()
         {
+            // This is an invalid program.  Normally blocks consume their args.
+            // But if not, their args are left on the stack!
+            //
             // 100: I32_CONST 1
             // 101: BLOCK
             // 102:   NOP
@@ -363,7 +389,7 @@ namespace Derg
             Step(4);
 
             Assert.Equal(104, machine.CurrentPC());
-            Assert.Empty(machine.value_stack);
+            Assert.Collection(machine.value_stack, e => Assert.Equal(new Value(1), e));
             Assert.Empty(machine.label_stack);
         }
 
@@ -510,8 +536,11 @@ namespace Derg
         }
 
         [Fact]
-        public void TestBlockBR0RestoresStack()
+        public void TestBlockBR0WithExtraValues()
         {
+            // This is an invalid program. Normally blocks add only arity values to the stack.
+            // But if not, the extra values are left on the stack!
+            //
             // 100: BLOCK
             // 101:   I32_CONST 1
             // 102:   BR 0
@@ -522,14 +551,14 @@ namespace Derg
             Step(3);
 
             Assert.Equal(105, machine.CurrentPC());
-            Assert.Empty(machine.value_stack);
+            Assert.Collection(machine.value_stack, e => Assert.Equal(new Value(1), e));
             Assert.Empty(machine.label_stack);
         }
 
         [Fact]
         public void TestReturningBlockBR0()
         {
-            // 100: BLOCK
+            // 100: BLOCK [i32]
             // 101:   I32_CONST 1
             // 102:   BR 0
             // 103:   NOP
@@ -563,11 +592,14 @@ namespace Derg
         }
 
         [Fact]
-        public void TestBlockBR1RestoresStackAndReturnsCorrectValue()
+        public void TestBlockBR1WithExtraValues()
         {
-            // 100: BLOCK
+            // This is an invalid program. Normally blocks add only arity values to the stack.
+            // But if not, the extra values are left on the stack!
+            //
+            // 100: BLOCK [i32]
             // 101:   I32_CONST 1
-            // 102:   BLOCK
+            // 102:   BLOCK [i32]
             // 103:     I32_CONST 2
             // 104:     BR 1
             // 105:     NOP
@@ -581,7 +613,11 @@ namespace Derg
             Step(5);
 
             Assert.Equal(109, machine.CurrentPC());
-            Assert.Collection(machine.value_stack, e => Assert.Equal(new Value(2), e));
+            Assert.Collection(
+                machine.value_stack,
+                e => Assert.Equal(new Value(1), e),
+                e => Assert.Equal(new Value(2), e)
+            );
             Assert.Empty(machine.label_stack);
         }
 
@@ -638,6 +674,82 @@ namespace Derg
 
             Assert.Equal(103, machine.CurrentPC());
             Assert.Empty(machine.value_stack);
+            Assert.Empty(machine.label_stack);
+        }
+
+        [Fact]
+        public void TestArgLoop()
+        {
+            // 100: I32_CONST 1
+            // 101: LOOP
+            // 102:   BR 0
+            // 103: END
+            SetProgram(I32Const(1), I32Loop(Br(0), End()));
+
+            Step(2);
+
+            Assert.Equal(102, machine.CurrentPC());
+            Assert.Collection(machine.value_stack, e => Assert.Equal(new Value(1), e));
+            Assert.Collection(machine.label_stack, e => Assert.Equal(1, e.arity));
+            Assert.Collection(machine.label_stack, e => Assert.Equal(101, e.target));
+        }
+
+        [Fact]
+        public void TestArgLoopBR0()
+        {
+            // 100: I32_CONST 1
+            // 101: LOOP
+            // 102:   BR 0
+            // 103: END
+            SetProgram(I32Const(1), I32Loop(Br(0), End()));
+
+            Step(3);
+
+            Assert.Equal(101, machine.CurrentPC());
+            Assert.Collection(machine.value_stack, e => Assert.Equal(new Value(1), e));
+            Assert.Empty(machine.label_stack);
+        }
+
+        [Fact]
+        public void TestArgLoopEndWithExtraValues()
+        {
+            // This is an invalid program, but only because the loop's signature says that
+            // it returns nothing, but this program has the loop returning an i32.
+            //
+            // 100: I32_CONST 1
+            // 101: LOOP
+            // 102:   NOP
+            // 103: END
+            SetProgram(I32Const(1), I32Loop(Nop(), End()));
+
+            Step(4);
+
+            Assert.Equal(104, machine.CurrentPC());
+            Assert.Collection(machine.value_stack, e => Assert.Equal(new Value(1), e));
+            Assert.Empty(machine.label_stack);
+        }
+
+        [Fact]
+        public void TestArgLoopBR0WithExtraValues()
+        {
+            // This is an invalid program. Normally blocks consume their args.
+            // But if not, their args are left on the stack!
+            //
+            // 100: I32_CONST 1
+            // 101: LOOP
+            // 102:   I32_CONST 2
+            // 103:   BR 0
+            // 104: END
+            SetProgram(I32Const(1), I32Loop(I32Const(2), Br(0), End()));
+
+            Step(4);
+
+            Assert.Equal(101, machine.CurrentPC());
+            Assert.Collection(
+                machine.value_stack,
+                e => Assert.Equal(new Value(1), e),
+                e => Assert.Equal(new Value(2), e)
+            );
             Assert.Empty(machine.label_stack);
         }
     }

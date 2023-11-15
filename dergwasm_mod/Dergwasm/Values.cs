@@ -228,6 +228,12 @@ namespace Derg
 
         // The size of the (value) stack at the moment the label is created.
         //
+        // Note: I do not believe the following is correct, since it seems that ending a
+        // block does NOT necessarily leave only the block's arity extra values on the stack. I think
+        // a valid program would only leave arity extra values on the stack.
+        //
+        // Incorrect:
+        //
         // In the WASM spec, labels are stored on the stack for simplicity. This lets
         // instructions pop everything off the stack up to the label. That would mean that
         // a stack element would have to indicate that it is a label. Since we only allocate

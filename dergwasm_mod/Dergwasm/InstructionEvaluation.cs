@@ -20,6 +20,8 @@ namespace Derg
 
         private static void Block(Instruction instruction, IMachine machine)
         {
+            // A block's args are what it expects to be on the stack upon entry.
+            // A block's arity are what it leaves on the stack upon exit.
             int args;
             int arity;
             Value operand = instruction.Operands[0];
@@ -53,8 +55,7 @@ namespace Derg
             // 1. BR 0 branches to the beginning of the loop.
             // 2. A loop's "arity" is its number of arguments. This is because a BR 0, which
             //    goes to the beginning of the loop, expects some number of values on the stack
-            //    (the arity), and this must be the arguments to the loop.
-            // 3. Loops don't return anything, regardless of its block type.
+            //    (the arity) to continue, and this must be the arguments to the loop.
             int arity;
             Value operand = instruction.Operands[0];
 
@@ -76,9 +77,8 @@ namespace Derg
                     break;
             }
             machine.PushLabel(
-                0 /*args*/
-                ,
-                arity,
+                0, /*args*/
+                arity, /*arity*/
                 operand.GetTarget()
             );
         }
@@ -106,10 +106,6 @@ namespace Derg
         private static void JumpToTopLabel(IMachine machine)
         {
             Label label = machine.PopLabel();
-            // We need to save the top arity values, pop everything else up to
-            // the label's stack level, then restore the values. This is the equivalent
-            // of removing everything from the label's stack_level up to current_stack_level - n.
-            machine.RemoveStack(label.stack_level, label.arity);
             machine.SetPC(label.target - 1);
         }
 
@@ -118,11 +114,7 @@ namespace Derg
 
         private static void End(Instruction instruction, IMachine machine)
         {
-            Label label = machine.PopLabel();
-            // We need to save the top arity values, pop everything else up to
-            // the label's stack level, then restore the values. This is the equivalent
-            // of removing everything from the label's stack_level up to current_stack_level - n.
-            machine.RemoveStack(label.stack_level, label.arity);
+            machine.PopLabel();
         }
 
         private static void BrLevels(IMachine machine, int levels)
