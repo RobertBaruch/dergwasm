@@ -32,6 +32,9 @@ namespace Derg
         // Pushes a frame onto the frame stack.
         void PushFrame(Frame frame);
 
+        // Pop a frame. This effectively returns from the current function.
+        void PopFrame();
+
         // Gets the current program counter from the current frame.
         int CurrentPC();
 
@@ -48,6 +51,9 @@ namespace Derg
 
         // Pops a label off the current frame.
         Label PopLabel();
+
+        // Peeks at the top label.
+        Label PeekLabel();
 
         // Gets the FuncType for the given index, using the current frame's module
         // to map the index to the machine's type address.

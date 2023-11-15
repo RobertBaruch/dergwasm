@@ -16,6 +16,18 @@ namespace Derg
 
         public void PushFrame(Frame frame) => frame_stack.Push(frame);
 
+        public void PopFrame()
+        {
+            Frame last_frame = frame_stack.Pop();
+            CurrentFrame()
+                .value_stack
+                .AddRange(
+                    last_frame
+                        .value_stack
+                        .GetRange(last_frame.value_stack.Count - last_frame.arity, last_frame.arity)
+                );
+        }
+
         public int CurrentPC() => frame_stack.Peek().pc;
 
         public void IncrementPC() => frame_stack.Peek().pc++;
@@ -27,7 +39,7 @@ namespace Derg
         public Value Pop()
         {
             Value top = CurrentFrame().value_stack.Last();
-            CurrentFrame().value_stack.RemoveRange(CurrentFrame().value_stack.Count - 1, 1);
+            CurrentFrame().value_stack.RemoveAt(CurrentFrame().value_stack.Count - 1);
             return top;
         }
 
@@ -43,6 +55,8 @@ namespace Derg
         }
 
         public Label PopLabel() => CurrentFrame().label_stack.Pop();
+
+        public Label PeekLabel() => CurrentFrame().label_stack.Peek();
 
         public void PushLabel(int arity, int target)
         {
@@ -74,45 +88,51 @@ namespace Derg
             int num_locals = func.locals.Length;
             int code_len = func.code.Count;
 
-            Frame frame = new Frame(arity, new Value[args + num_locals], CurrentFrame().module);
+            Frame next_frame = new Frame(
+                arity,
+                new Value[args + num_locals],
+                CurrentFrame().module
+            );
 
             // Remove args from stack and place in new frame's locals.
             CurrentFrame()
                 .value_stack
-                .CopyTo(0, frame.locals, CurrentFrame().value_stack.Count - args, args);
+                .CopyTo(0, next_frame.locals, CurrentFrame().value_stack.Count - args, args);
             CurrentFrame().value_stack.RemoveRange(CurrentFrame().value_stack.Count - args, args);
 
             // Here we would initialize the other locals. But we assume they're I32, so they're
             // already defaulted to zero.
 
-            frame.pc = -1; // So that incrementing PC goes to beginning.
-            PushFrame(frame);
+            next_frame.pc = -1; // So that incrementing PC goes to beginning.
+            PushFrame(next_frame);
             PushLabel(arity, code_len);
         }
     }
 
     public class InstructionEvaluationTests
     {
-        public int start_pc = 100;
         public TestMachine machine = new TestMachine();
         public List<Instruction> program;
 
         public InstructionEvaluationTests()
         {
+            // This frame collects any return values.
             machine.PushFrame(new Frame(0, new Value[] { }, null));
-            machine.SetPC(start_pc);
         }
 
-        private void SetProgram(params UnflattenedInstruction[] instructions)
+        private void SetProgram(int arity, params UnflattenedInstruction[] instructions)
         {
-            program = new List<UnflattenedInstruction>(instructions).Flatten(start_pc);
+            machine.PushFrame(new Frame(0, new Value[] { }, null));
+            program = new List<UnflattenedInstruction>(instructions).Flatten(0);
+            machine.CurrentFrame().code = program;
+            machine.PushLabel(arity, program.Count);
         }
 
         private void Step(int n = 1)
         {
             for (int i = 0; i < n; i++)
             {
-                Instruction insn = program[machine.CurrentPC() - start_pc];
+                Instruction insn = machine.CurrentFrame().code[machine.CurrentPC()];
                 InstructionEvaluation.Execute(insn, machine);
             }
         }
@@ -260,24 +280,31 @@ namespace Derg
         [Fact]
         public void TestNop()
         {
-            // 100: NOP
-            SetProgram(Nop());
+            // Note that in most of these tests, we don't want to fall off the
+            // end of the function, so we stick a NOP on the end. We could have
+            // just as easily stuck an END on the end, which would probably be
+            // more accurate, since all funcs end in END.
+
+            // 0: NOP
+            // 1: NOP
+            SetProgram(0, Nop(), Nop());
 
             Step();
 
-            Assert.Equal(101, machine.CurrentPC());
+            Assert.Equal(1, machine.CurrentPC());
             Assert.Empty(machine.CurrentFrame().value_stack);
         }
 
         [Fact]
         public void TestI32Const()
         {
-            // 100: I32_CONST 1
-            SetProgram(I32Const(1));
+            // 0: I32_CONST 1
+            // 1: NOP
+            SetProgram(0, I32Const(1), Nop());
 
             Step();
 
-            Assert.Equal(101, machine.CurrentPC());
+            Assert.Equal(1, machine.CurrentPC());
             Assert.Collection(
                 machine.CurrentFrame().value_stack,
                 e => Assert.Equal(new Value(1), e)
@@ -287,97 +314,94 @@ namespace Derg
         [Fact]
         public void TestDrop()
         {
-            // 100: I32_CONST 1
-            // 101: DROP
-            SetProgram(I32Const(1), Drop());
+            // 0: I32_CONST 1
+            // 1: DROP
+            // 2: NOP
+            SetProgram(0, I32Const(1), Drop(), Nop());
 
             Step(2);
 
-            Assert.Equal(102, machine.CurrentPC());
+            Assert.Equal(2, machine.CurrentPC());
             Assert.Empty(machine.CurrentFrame().value_stack);
         }
 
         [Fact]
         public void TestBlock()
         {
-            // 100: BLOCK
-            // 101:   NOP
-            // 102: END
-            SetProgram(VoidBlock(Nop(), End()));
+            // 0: BLOCK
+            // 1:   NOP
+            // 2: END
+            // 3: NOP
+            SetProgram(0, VoidBlock(Nop(), End()), Nop());
 
             Step();
 
-            Assert.Equal(101, machine.CurrentPC());
+            Assert.Equal(1, machine.CurrentPC());
             Assert.Empty(machine.CurrentFrame().value_stack);
-            Assert.Collection(
-                machine.CurrentFrame().label_stack,
-                e =>
-                    Assert.Equal(
-                        new Label(
-                            0, /*arity*/
-                            103
-                        ),
-                        e
-                    )
+            Assert.Equal(
+                new Label(
+                    0, /*arity*/
+                    3
+                ),
+                machine.PeekLabel()
             );
         }
 
         [Fact]
         public void TestBlockEnd()
         {
-            // 100: BLOCK
-            // 101:   NOP
-            // 102: END
-            SetProgram(VoidBlock(Nop(), End()));
+            // 0: BLOCK
+            // 1:   NOP
+            // 2: END
+            // 3: NOP
+            SetProgram(0, VoidBlock(Nop(), End()), Nop());
 
             Step(3);
 
-            Assert.Equal(103, machine.CurrentPC());
+            Assert.Equal(3, machine.CurrentPC());
             Assert.Empty(machine.CurrentFrame().value_stack);
-            Assert.Empty(machine.CurrentFrame().label_stack);
+            Assert.Single(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
         public void TestI32Block()
         {
-            // 100: BLOCK
-            // 101:   I32_CONST 1
-            // 102: END
-            SetProgram(I32Block(I32Const(1), End()));
+            // 0: BLOCK
+            // 1:   I32_CONST 1
+            // 2: END
+            // 3: NOP
+            SetProgram(0, I32Block(I32Const(1), End()), Nop());
 
             Step();
 
-            Assert.Equal(101, machine.CurrentPC());
+            Assert.Equal(1, machine.CurrentPC());
             Assert.Empty(machine.CurrentFrame().value_stack);
-            Assert.Collection(
-                machine.CurrentFrame().label_stack,
-                e =>
-                    Assert.Equal(
-                        new Label(
-                            1, /*arity*/
-                            103 /*target*/
-                        ),
-                        e
-                    )
+            Assert.Equal(
+                new Label(
+                    1, /*arity*/
+                    3 /*target*/
+                ),
+                machine.PeekLabel()
             );
         }
 
         [Fact]
         public void TestI32BlockEnd()
         {
-            // 100: BLOCK
-            // 101:   I32_CONST 1
-            // 102: END
-            SetProgram(I32Block(I32Const(1), End()));
+            // 0: BLOCK
+            // 1:   I32_CONST 1
+            // 2: END
+            // 3: NOP
+            SetProgram(0, I32Block(I32Const(1), End()), Nop());
 
             Step(3);
 
-            Assert.Equal(103, machine.CurrentPC());
+            Assert.Equal(3, machine.CurrentPC());
             Assert.Collection(
                 machine.CurrentFrame().value_stack,
                 e => Assert.Equal(new Value(1), e)
             );
-            Assert.Empty(machine.CurrentFrame().label_stack);
+            Assert.Single(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -386,21 +410,22 @@ namespace Derg
             // This is an invalid program. Normally blocks add only arity values to the stack.
             // But if not, the extra values are left on the stack!
             //
-            // 100: BLOCK
-            // 101:   I32_CONST 2
-            // 102:   I32_CONST 1
-            // 103: END
-            SetProgram(I32Block(I32Const(2), I32Const(1), End()));
+            // 0: BLOCK
+            // 1:   I32_CONST 2
+            // 2:   I32_CONST 1
+            // 3: END
+            // 4: NOP
+            SetProgram(0, I32Block(I32Const(2), I32Const(1), End()), Nop());
 
             Step(4);
 
-            Assert.Equal(104, machine.CurrentPC());
+            Assert.Equal(4, machine.CurrentPC());
             Assert.Collection(
                 machine.CurrentFrame().value_stack,
                 e => Assert.Equal(new Value(2), e),
                 e => Assert.Equal(new Value(1), e)
             );
-            Assert.Empty(machine.CurrentFrame().label_stack);
+            Assert.Single(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -409,160 +434,165 @@ namespace Derg
             // This is an invalid program.  Normally blocks consume their args.
             // But if not, their args are left on the stack!
             //
-            // 100: I32_CONST 1
-            // 101: BLOCK
-            // 102:   NOP
-            // 103: END
-            SetProgram(I32Const(1), I32_VoidBlock(Nop(), End()));
+            // 0: I32_CONST 1
+            // 1: BLOCK
+            // 2:   NOP
+            // 3: END
+            // 4: NOP
+            SetProgram(0, I32Const(1), I32_VoidBlock(Nop(), End()), Nop());
 
             Step(4);
 
-            Assert.Equal(104, machine.CurrentPC());
+            Assert.Equal(4, machine.CurrentPC());
             Assert.Collection(
                 machine.CurrentFrame().value_stack,
                 e => Assert.Equal(new Value(1), e)
             );
-            Assert.Empty(machine.CurrentFrame().label_stack);
+            Assert.Single(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
         public void TestIf_True()
         {
-            // 100: I32_CONST 1
-            // 101: IF
-            // 102:   NOP
-            // 103: END
-            SetProgram(I32Const(1), VoidIf(Nop(), End()));
+            // 0: I32_CONST 1
+            // 1: IF
+            // 2:   NOP
+            // 3: END
+            // 4: NOP
+            SetProgram(0, I32Const(1), VoidIf(Nop(), End()), Nop());
 
             Step(2);
 
-            Assert.Equal(102, machine.CurrentPC());
+            Assert.Equal(2, machine.CurrentPC());
             Assert.Empty(machine.CurrentFrame().value_stack);
-            Assert.Collection(
-                machine.CurrentFrame().label_stack,
-                e =>
-                    Assert.Equal(
-                        new Label(
-                            0, /*arity*/
-                            104 /*target*/
-                        ),
-                        e
-                    )
+            Assert.Equal(
+                new Label(
+                    0, /*arity*/
+                    4 /*target*/
+                ),
+                machine.PeekLabel()
             );
         }
 
         [Fact]
         public void TestIf_False()
         {
-            // 100: I32_CONST 1
-            // 101: IF
-            // 102:   NOP
-            // 103: END
-            SetProgram(I32Const(0), VoidIf(Nop(), End()));
+            // 0: I32_CONST 1
+            // 1: IF
+            // 2:   NOP
+            // 3: END
+            // 4: NOP
+            SetProgram(0, I32Const(0), VoidIf(Nop(), End()), Nop());
 
             Step(2);
 
-            Assert.Equal(104, machine.CurrentPC());
+            Assert.Equal(4, machine.CurrentPC());
             Assert.Empty(machine.CurrentFrame().value_stack);
-            Assert.Empty(machine.CurrentFrame().label_stack);
+            Assert.Single(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
         public void TestIfElse_False()
         {
-            // 100: I32_CONST 0
-            // 101: IF
-            // 102:   NOP
-            // 103: ELSE
-            // 104:   NOP
-            // 105: END
+            // 0: I32_CONST 0
+            // 1: IF
+            // 2:   NOP
+            // 3: ELSE
+            // 4:   NOP
+            // 5: END
+            // 6: NOP
             SetProgram(
+                0,
                 I32Const(0),
                 VoidIfElse(
                     new UnflattenedInstruction[] { Nop(), Else() },
                     new UnflattenedInstruction[] { Nop(), End() }
-                )
+                ),
+                Nop()
             );
 
             Step(2);
 
-            Assert.Equal(104, machine.CurrentPC());
+            Assert.Equal(4, machine.CurrentPC());
             Assert.Empty(machine.CurrentFrame().value_stack);
-            Assert.Collection(
-                machine.CurrentFrame().label_stack,
-                e =>
-                    Assert.Equal(
-                        new Label(
-                            0, /*arity*/
-                            106 /*target*/
-                        ),
-                        e
-                    )
+            Assert.Equal(
+                new Label(
+                    0, /*arity*/
+                    6 /*target*/
+                ),
+                machine.PeekLabel()
             );
         }
 
         [Fact]
         public void TestIfElseEnd_False()
         {
-            // 100: I32_CONST 0
-            // 101: IF
-            // 102:   NOP
-            // 103: ELSE
-            // 104:   NOP
-            // 105: END
+            // 0: I32_CONST 0
+            // 1: IF
+            // 2:   NOP
+            // 3: ELSE
+            // 4:   NOP
+            // 5: END
+            // 6: NOP
             SetProgram(
+                0,
                 I32Const(0),
                 VoidIfElse(
                     new UnflattenedInstruction[] { Nop(), Else() },
                     new UnflattenedInstruction[] { Nop(), End() }
-                )
+                ),
+                Nop()
             );
 
             Step(4);
 
-            Assert.Equal(106, machine.CurrentPC());
+            Assert.Equal(6, machine.CurrentPC());
             Assert.Empty(machine.CurrentFrame().value_stack);
-            Assert.Empty(machine.CurrentFrame().label_stack);
+            Assert.Single(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
         public void TestIfElseEnd_True()
         {
-            // 100: I32_CONST 1
-            // 101: IF
-            // 102:   NOP
-            // 103: ELSE
-            // 104:   NOP
-            // 105: END
+            // 0: I32_CONST 1
+            // 1: IF
+            // 2:   NOP
+            // 3: ELSE
+            // 4:   NOP
+            // 5: END
+            // 6: NOP
             SetProgram(
+                0,
                 I32Const(1),
                 VoidIfElse(
                     new UnflattenedInstruction[] { Nop(), Else() },
                     new UnflattenedInstruction[] { Nop(), End() }
-                )
+                ),
+                Nop()
             );
 
             Step(4);
 
-            Assert.Equal(106, machine.CurrentPC());
+            Assert.Equal(6, machine.CurrentPC());
             Assert.Empty(machine.CurrentFrame().value_stack);
-            Assert.Empty(machine.CurrentFrame().label_stack);
+            Assert.Single(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
         public void TestBlockBR0()
         {
-            // 100: BLOCK
-            // 101:   BR 0
-            // 102:   NOP
-            // 103: END
-            SetProgram(VoidBlock(Br(0), Nop(), End()));
+            // 0: BLOCK
+            // 1:   BR 0
+            // 2:   NOP
+            // 3: END
+            // 4: NOP
+            SetProgram(0, VoidBlock(Br(0), Nop(), End()), Nop());
 
             Step(2);
 
-            Assert.Equal(104, machine.CurrentPC());
+            Assert.Equal(4, machine.CurrentPC());
             Assert.Empty(machine.CurrentFrame().value_stack);
-            Assert.Empty(machine.CurrentFrame().label_stack);
+            Assert.Single(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -571,60 +601,63 @@ namespace Derg
             // This is an invalid program. Normally blocks add only arity values to the stack.
             // But if not, the extra values are left on the stack!
             //
-            // 100: BLOCK
-            // 101:   I32_CONST 1
-            // 102:   BR 0
-            // 103:   NOP
-            // 104: END
-            SetProgram(VoidBlock(I32Const(1), Br(0), Nop(), End()));
+            // 0: BLOCK
+            // 1:   I32_CONST 1
+            // 2:   BR 0
+            // 3:   NOP
+            // 4: END
+            // 5: NOP
+            SetProgram(0, VoidBlock(I32Const(1), Br(0), Nop(), End()), Nop());
 
             Step(3);
 
-            Assert.Equal(105, machine.CurrentPC());
+            Assert.Equal(5, machine.CurrentPC());
             Assert.Collection(
                 machine.CurrentFrame().value_stack,
                 e => Assert.Equal(new Value(1), e)
             );
-            Assert.Empty(machine.CurrentFrame().label_stack);
+            Assert.Single(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
         public void TestReturningBlockBR0()
         {
-            // 100: BLOCK [i32]
-            // 101:   I32_CONST 1
-            // 102:   BR 0
-            // 103:   NOP
-            // 104: END
-            SetProgram(I32Block(I32Const(1), Br(0), Nop(), End()));
+            // 0: BLOCK [i32]
+            // 1:   I32_CONST 1
+            // 2:   BR 0
+            // 3:   NOP
+            // 4: END
+            // 5: NOP
+            SetProgram(0, I32Block(I32Const(1), Br(0), Nop(), End()), Nop());
 
             Step(3);
 
-            Assert.Equal(105, machine.CurrentPC());
+            Assert.Equal(5, machine.CurrentPC());
             Assert.Collection(
                 machine.CurrentFrame().value_stack,
                 e => Assert.Equal(new Value(1), e)
             );
-            Assert.Empty(machine.CurrentFrame().label_stack);
+            Assert.Single(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
         public void TestBlockBR1()
         {
-            // 100: BLOCK
-            // 101:   BLOCK
-            // 102:     BR 1
-            // 103:     NOP
-            // 104:   END
-            // 105:   NOP
-            // 106: END
-            SetProgram(VoidBlock(VoidBlock(Br(1), Nop(), End()), Nop(), End()));
+            // 0: BLOCK
+            // 1:   BLOCK
+            // 2:     BR 1
+            // 3:     NOP
+            // 4:   END
+            // 5:   NOP
+            // 6: END
+            // 7: NOP
+            SetProgram(0, VoidBlock(VoidBlock(Br(1), Nop(), End()), Nop(), End()), Nop());
 
             Step(3);
 
-            Assert.Equal(107, machine.CurrentPC());
+            Assert.Equal(7, machine.CurrentPC());
             Assert.Empty(machine.CurrentFrame().value_stack);
-            Assert.Empty(machine.CurrentFrame().label_stack);
+            Assert.Single(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -633,122 +666,125 @@ namespace Derg
             // This is an invalid program. Normally blocks add only arity values to the stack.
             // But if not, the extra values are left on the stack!
             //
-            // 100: BLOCK [i32]
-            // 101:   I32_CONST 1
-            // 102:   BLOCK [i32]
-            // 103:     I32_CONST 2
-            // 104:     BR 1
-            // 105:     NOP
-            // 106:   END
-            // 107:   NOP
-            // 108: END
+            // 0: BLOCK [i32]
+            // 1:   I32_CONST 1
+            // 2:   BLOCK [i32]
+            // 3:     I32_CONST 2
+            // 4:     BR 1
+            // 5:     NOP
+            // 6:   END
+            // 7:   NOP
+            // 8: END
+            // 9: NOP
             SetProgram(
-                I32Block(I32Const(1), I32Block(I32Const(2), Br(1), Nop(), End()), Nop(), End())
+                0,
+                I32Block(I32Const(1), I32Block(I32Const(2), Br(1), Nop(), End()), Nop(), End()),
+                Nop()
             );
 
             Step(5);
 
-            Assert.Equal(109, machine.CurrentPC());
+            Assert.Equal(9, machine.CurrentPC());
             Assert.Collection(
                 machine.CurrentFrame().value_stack,
                 e => Assert.Equal(new Value(1), e),
                 e => Assert.Equal(new Value(2), e)
             );
-            Assert.Empty(machine.CurrentFrame().label_stack);
+            Assert.Single(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
         public void TestLoop()
         {
-            // 100: LOOP
-            // 101:   BR 0
-            // 102: END
-            SetProgram(VoidLoop(Br(0), End()));
+            // 0: LOOP
+            // 1:   BR 0
+            // 2: END
+            // 3: NOP
+            SetProgram(0, VoidLoop(Br(0), End()), Nop());
 
             Step(1);
 
-            Assert.Equal(101, machine.CurrentPC());
+            Assert.Equal(1, machine.CurrentPC());
             Assert.Empty(machine.CurrentFrame().value_stack);
-            Assert.Collection(
-                machine.CurrentFrame().label_stack,
-                e =>
-                    Assert.Equal(
-                        new Label(
-                            0, /*arity*/
-                            100 /*target*/
-                        ),
-                        e
-                    )
+            Assert.Equal(
+                new Label(
+                    0, /*arity*/
+                    0 /*target*/
+                ),
+                machine.PeekLabel()
             );
         }
 
         [Fact]
         public void TestLoopBR0()
         {
-            // 100: LOOP
-            // 101:   BR 0
-            // 102: END
-            SetProgram(VoidLoop(Br(0), End()));
+            // 0: LOOP
+            // 1:   BR 0
+            // 2: END
+            // 3: NOP
+            SetProgram(0, VoidLoop(Br(0), End()), Nop());
 
             Step(2);
 
-            Assert.Equal(100, machine.CurrentPC());
+            Assert.Equal(0, machine.CurrentPC());
             Assert.Empty(machine.CurrentFrame().value_stack);
-            Assert.Empty(machine.CurrentFrame().label_stack);
+            Assert.Single(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
         public void TestLoopEnd()
         {
-            // 100: LOOP
-            // 101:   NOP
-            // 102: END
-            SetProgram(VoidLoop(Nop(), End()));
+            // 0: LOOP
+            // 1:   NOP
+            // 2: END
+            // 3: NOP
+            SetProgram(0, VoidLoop(Nop(), End()), Nop());
 
             Step(3);
 
-            Assert.Equal(103, machine.CurrentPC());
+            Assert.Equal(3, machine.CurrentPC());
             Assert.Empty(machine.CurrentFrame().value_stack);
-            Assert.Empty(machine.CurrentFrame().label_stack);
+            Assert.Single(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
         public void TestArgLoop()
         {
-            // 100: I32_CONST 1
-            // 101: LOOP
-            // 102:   BR 0
-            // 103: END
-            SetProgram(I32Const(1), I32Loop(Br(0), End()));
+            // 0: I32_CONST 1
+            // 1: LOOP [i32]
+            // 2:   BR 0
+            // 3: END
+            // 4: NOP
+            SetProgram(0, I32Const(1), I32Loop(Br(0), End()), Nop());
 
             Step(2);
 
-            Assert.Equal(102, machine.CurrentPC());
+            Assert.Equal(2, machine.CurrentPC());
             Assert.Collection(
                 machine.CurrentFrame().value_stack,
                 e => Assert.Equal(new Value(1), e)
             );
-            Assert.Collection(machine.CurrentFrame().label_stack, e => Assert.Equal(1, e.arity));
-            Assert.Collection(machine.CurrentFrame().label_stack, e => Assert.Equal(101, e.target));
+            Assert.Equal(new Label(1, 1), machine.PeekLabel());
         }
 
         [Fact]
         public void TestArgLoopBR0()
         {
-            // 100: I32_CONST 1
-            // 101: LOOP
-            // 102:   BR 0
-            // 103: END
-            SetProgram(I32Const(1), I32Loop(Br(0), End()));
+            // 0: I32_CONST 1
+            // 1: LOOP [i32]
+            // 2:   BR 0
+            // 3: END
+            // 4: NOP
+            SetProgram(0, I32Const(1), I32Loop(Br(0), End()), Nop());
 
             Step(3);
 
-            Assert.Equal(101, machine.CurrentPC());
+            Assert.Equal(1, machine.CurrentPC());
             Assert.Collection(
                 machine.CurrentFrame().value_stack,
                 e => Assert.Equal(new Value(1), e)
             );
-            Assert.Empty(machine.CurrentFrame().label_stack);
+            Assert.Single(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -757,20 +793,21 @@ namespace Derg
             // This is an invalid program, but only because the loop's signature says that
             // it returns nothing, but this program has the loop returning an i32.
             //
-            // 100: I32_CONST 1
-            // 101: LOOP
-            // 102:   NOP
-            // 103: END
-            SetProgram(I32Const(1), I32Loop(Nop(), End()));
+            // 0: I32_CONST 1
+            // 1: LOOP [i32]
+            // 2:   NOP
+            // 3: END
+            // 4: NOP
+            SetProgram(0, I32Const(1), I32Loop(Nop(), End()), Nop());
 
             Step(4);
 
-            Assert.Equal(104, machine.CurrentPC());
+            Assert.Equal(4, machine.CurrentPC());
             Assert.Collection(
                 machine.CurrentFrame().value_stack,
                 e => Assert.Equal(new Value(1), e)
             );
-            Assert.Empty(machine.CurrentFrame().label_stack);
+            Assert.Single(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -779,22 +816,22 @@ namespace Derg
             // This is an invalid program. Normally blocks consume their args.
             // But if not, their args are left on the stack!
             //
-            // 100: I32_CONST 1
-            // 101: LOOP
-            // 102:   I32_CONST 2
-            // 103:   BR 0
-            // 104: END
-            SetProgram(I32Const(1), I32Loop(I32Const(2), Br(0), End()));
+            // 0: I32_CONST 1
+            // 1: LOOP [i32]
+            // 2:   I32_CONST 2
+            // 3:   BR 0
+            // 4: END
+            SetProgram(0, I32Const(1), I32Loop(I32Const(2), Br(0), End()), Nop());
 
             Step(4);
 
-            Assert.Equal(101, machine.CurrentPC());
+            Assert.Equal(1, machine.CurrentPC());
             Assert.Collection(
                 machine.CurrentFrame().value_stack,
                 e => Assert.Equal(new Value(1), e),
                 e => Assert.Equal(new Value(2), e)
             );
-            Assert.Empty(machine.CurrentFrame().label_stack);
+            Assert.Single(machine.CurrentFrame().label_stack);
         }
     }
 }

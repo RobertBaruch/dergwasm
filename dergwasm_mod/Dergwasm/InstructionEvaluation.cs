@@ -149,6 +149,12 @@ namespace Derg
             machine.InvokeFuncFromIndex(idx);
         }
 
+        private static void Return(Instruction instruction, IMachine machine)
+        {
+            // This guarantees we pop the current frame.
+            machine.SetPC(machine.CurrentFrame().code.Count);
+        }
+
         // Executes a single instruction. After the instruction is executed, the current
         // frame's program counter will be incremented. Therefore, instructions that don't
         // do that (e.g. branches) must set the program counter to the desired program counter
@@ -159,6 +165,14 @@ namespace Derg
                 throw new ArgumentException($"Unimplemented instruction: {instruction.Type}");
             implementation(instruction, machine);
             machine.IncrementPC();
+
+            // If we ran off the end of the function, we return from the function.
+
+            if (machine.CurrentPC() >= machine.CurrentFrame().code.Count)
+            {
+                machine.PopFrame();
+                machine.IncrementPC();
+            }
         }
 
         private static IReadOnlyDictionary<InstructionType, Action<Instruction, IMachine>> Map =

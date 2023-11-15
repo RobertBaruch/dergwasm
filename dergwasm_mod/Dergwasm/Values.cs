@@ -269,6 +269,9 @@ namespace Derg
         // from the caller's stack.
         public List<Value> value_stack;
 
+        // The code we're executing.
+        public List<Instruction> code;
+
         public Frame(int arity, Value[] locals, IModule module)
         {
             this.arity = arity;
