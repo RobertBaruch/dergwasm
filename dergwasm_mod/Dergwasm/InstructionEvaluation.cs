@@ -144,6 +144,12 @@ namespace Derg
             BrLevels(machine, levels);
         }
 
+        private static void Call(Instruction instruction, IMachine machine)
+        {
+            int idx = instruction.Operands[0].Int();
+            machine.InvokeFuncFromIndex(idx);
+        }
+
         // Executes a single instruction. After the instruction is executed, the current
         // frame's program counter will be incremented. Therefore, instructions that don't
         // do that (e.g. branches) must set the program counter to the desired program counter
@@ -159,17 +165,18 @@ namespace Derg
         private static IReadOnlyDictionary<InstructionType, Action<Instruction, IMachine>> Map =
             new Dictionary<InstructionType, Action<Instruction, IMachine>>()
             {
-                { InstructionType.NOP, Nop },
-                { InstructionType.DROP, Drop },
-                { InstructionType.I32_CONST, I32Const },
-                { InstructionType.BLOCK, Block },
-                { InstructionType.LOOP, Loop },
-                { InstructionType.IF, If },
-                { InstructionType.ELSE, Else },
-                { InstructionType.END, End },
+                // Please maintain these sorted alphanumerically by InstructionType.
                 { InstructionType.BR, Br },
                 { InstructionType.BR_IF, BrIf },
                 { InstructionType.BR_TABLE, BrTable },
+                { InstructionType.BLOCK, Block },
+                { InstructionType.DROP, Drop },
+                { InstructionType.ELSE, Else },
+                { InstructionType.END, End },
+                { InstructionType.I32_CONST, I32Const },
+                { InstructionType.IF, If },
+                { InstructionType.LOOP, Loop },
+                { InstructionType.NOP, Nop },
             };
     }
 }

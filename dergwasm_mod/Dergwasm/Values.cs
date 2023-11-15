@@ -19,11 +19,11 @@ namespace Derg
     {
         // A func reference, with the funcaddr in value_lo.
         // If value_lo contains 0xFFFFFFFFFFFFFFFF, it's a null reference.
-        FUNCREF = 0,
+        FUNCREF = 1,
 
         // Am extern reference, with the externaddr in value_lo.
         // If value_lo contains 0xFFFFFFFFFFFFFFFF, it's a null reference.
-        EXTERNREF = 1,
+        EXTERNREF = 2,
     }
 
     // For block operands, the low 2 bits of value_hi show how its type signature can
@@ -213,6 +213,11 @@ namespace Derg
         {
             return value_lo;
         }
+
+        public override string ToString()
+        {
+            return $"Value[hi={value_hi:X16}, lo={value_lo:X16}]";
+        }
     }
 
     // A label. Created on entry to a block, and used to exit blocks.
@@ -250,10 +255,15 @@ namespace Derg
             this.target = target;
             this.stack_level = stack_level;
         }
+
+        public override string ToString()
+        {
+            return $"Label[arity={arity}, target={target}, stack_level={stack_level}]";
+        }
     }
 
-    // A frame. Represents the state of a function. Frames have their own stack. Frames are
-    // also not skippable like blocks. That means you can't exit a function and continue to
+    // A frame. Represents the state of a function. Frames have their own label and value stacks.
+    // Frames are also not skippable like blocks. That means you can't exit a function and continue to
     // anything other than the function in the previous frame. This is in contrast to blocks,
     // where you can break out of multiple levels of blocks.
     public class Frame
@@ -270,9 +280,13 @@ namespace Derg
         // The current program counter.
         public int pc;
 
-        // The label stack. We keep a function's label stack separate because labels, unlike values,
-        // never travel across function boundaries.
-        public Stack<Label> labels;
+        // The label stack. Labels never apply across function boundaries.
+        public Stack<Label> label_stack;
+
+        // The value stack. Values never apply across function boundaires. Return values
+        // are handled explicitly by copying from stack to stack. Args are locals copied
+        // from the caller's stack.
+        public List<Value> value_stack;
 
         public Frame(int arity, Value[] locals, IModule module)
         {
@@ -280,7 +294,8 @@ namespace Derg
             this.locals = locals;
             this.module = module;
             this.pc = 0;
-            this.labels = new Stack<Label>();
+            this.label_stack = new Stack<Label>();
+            this.value_stack = new List<Value>();
         }
     }
 

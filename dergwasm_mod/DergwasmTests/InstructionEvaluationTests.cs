@@ -10,8 +10,7 @@ namespace Derg
     public class TestMachine : IMachine
     {
         public Stack<Frame> frame_stack = new Stack<Frame>();
-        public List<Value> value_stack = new List<Value>();
-        public Stack<Label> label_stack = new Stack<Label>();
+        public List<ModuleFunc> module_funcs = new List<ModuleFunc>();
 
         public Frame CurrentFrame() => frame_stack.Peek();
 
@@ -23,29 +22,31 @@ namespace Derg
 
         public void SetPC(int pc) => frame_stack.Peek().pc = pc;
 
-        public Value Peek() => value_stack.Last();
+        public Value Peek() => CurrentFrame().value_stack.Last();
 
         public Value Pop()
         {
-            Value top = value_stack.Last();
-            value_stack.RemoveRange(value_stack.Count - 1, 1);
+            Value top = CurrentFrame().value_stack.Last();
+            CurrentFrame().value_stack.RemoveRange(CurrentFrame().value_stack.Count - 1, 1);
             return top;
         }
 
-        public void Push(Value val) => value_stack.Add(val);
+        public void Push(Value val) => CurrentFrame().value_stack.Add(val);
 
-        public int StackLevel() => value_stack.Count;
+        public int StackLevel() => CurrentFrame().value_stack.Count;
 
         public void RemoveStack(int from_level, int arity)
         {
-            value_stack.RemoveRange(from_level, value_stack.Count - from_level - arity);
+            CurrentFrame()
+                .value_stack
+                .RemoveRange(from_level, CurrentFrame().value_stack.Count - from_level - arity);
         }
 
-        public Label PopLabel() => label_stack.Pop();
+        public Label PopLabel() => CurrentFrame().label_stack.Pop();
 
         public void PushLabel(int args, int arity, int target)
         {
-            label_stack.Push(new Label(arity, target, StackLevel() - args));
+            CurrentFrame().label_stack.Push(new Label(arity, target, StackLevel() - args));
         }
 
         public FuncType GetFuncTypeFromIndex(int index)
@@ -63,6 +64,30 @@ namespace Derg
                         /*returns=*/new ValueType[] { }
                     );
             }
+        }
+
+        public void InvokeFuncFromIndex(int index)
+        {
+            ModuleFunc func = module_funcs[index];
+            int arity = func.signature.returns.Length;
+            int args = func.signature.args.Length;
+            int num_locals = func.locals.Length;
+            int code_len = func.code.Count;
+
+            Frame frame = new Frame(arity, new Value[args + num_locals], CurrentFrame().module);
+
+            // Remove args from stack and place in new frame's locals.
+            CurrentFrame()
+                .value_stack
+                .CopyTo(0, frame.locals, CurrentFrame().value_stack.Count - args, args);
+            CurrentFrame().value_stack.RemoveRange(CurrentFrame().value_stack.Count - args, args);
+
+            // Here we would initialize the other locals. But we assume they're I32, so they're
+            // already defaulted to zero.
+
+            frame.pc = -1; // So that incrementing PC goes to beginning.
+            PushFrame(frame);
+            PushLabel(0, arity, code_len);
         }
     }
 
@@ -241,7 +266,7 @@ namespace Derg
             Step();
 
             Assert.Equal(101, machine.CurrentPC());
-            Assert.Empty(machine.value_stack);
+            Assert.Empty(machine.CurrentFrame().value_stack);
         }
 
         [Fact]
@@ -253,7 +278,10 @@ namespace Derg
             Step();
 
             Assert.Equal(101, machine.CurrentPC());
-            Assert.Collection(machine.value_stack, e => Assert.Equal(new Value(1), e));
+            Assert.Collection(
+                machine.CurrentFrame().value_stack,
+                e => Assert.Equal(new Value(1), e)
+            );
         }
 
         [Fact]
@@ -266,7 +294,7 @@ namespace Derg
             Step(2);
 
             Assert.Equal(102, machine.CurrentPC());
-            Assert.Empty(machine.value_stack);
+            Assert.Empty(machine.CurrentFrame().value_stack);
         }
 
         [Fact]
@@ -280,9 +308,9 @@ namespace Derg
             Step();
 
             Assert.Equal(101, machine.CurrentPC());
-            Assert.Empty(machine.value_stack);
+            Assert.Empty(machine.CurrentFrame().value_stack);
             Assert.Collection(
-                machine.label_stack,
+                machine.CurrentFrame().label_stack,
                 e =>
                     Assert.Equal(
                         new Label(
@@ -306,8 +334,8 @@ namespace Derg
             Step(3);
 
             Assert.Equal(103, machine.CurrentPC());
-            Assert.Empty(machine.value_stack);
-            Assert.Empty(machine.label_stack);
+            Assert.Empty(machine.CurrentFrame().value_stack);
+            Assert.Empty(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -321,9 +349,9 @@ namespace Derg
             Step();
 
             Assert.Equal(101, machine.CurrentPC());
-            Assert.Empty(machine.value_stack);
+            Assert.Empty(machine.CurrentFrame().value_stack);
             Assert.Collection(
-                machine.label_stack,
+                machine.CurrentFrame().label_stack,
                 e =>
                     Assert.Equal(
                         new Label(
@@ -347,8 +375,11 @@ namespace Derg
             Step(3);
 
             Assert.Equal(103, machine.CurrentPC());
-            Assert.Collection(machine.value_stack, e => Assert.Equal(new Value(1), e));
-            Assert.Empty(machine.label_stack);
+            Assert.Collection(
+                machine.CurrentFrame().value_stack,
+                e => Assert.Equal(new Value(1), e)
+            );
+            Assert.Empty(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -367,11 +398,11 @@ namespace Derg
 
             Assert.Equal(104, machine.CurrentPC());
             Assert.Collection(
-                machine.value_stack,
+                machine.CurrentFrame().value_stack,
                 e => Assert.Equal(new Value(2), e),
                 e => Assert.Equal(new Value(1), e)
             );
-            Assert.Empty(machine.label_stack);
+            Assert.Empty(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -389,8 +420,11 @@ namespace Derg
             Step(4);
 
             Assert.Equal(104, machine.CurrentPC());
-            Assert.Collection(machine.value_stack, e => Assert.Equal(new Value(1), e));
-            Assert.Empty(machine.label_stack);
+            Assert.Collection(
+                machine.CurrentFrame().value_stack,
+                e => Assert.Equal(new Value(1), e)
+            );
+            Assert.Empty(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -405,9 +439,9 @@ namespace Derg
             Step(2);
 
             Assert.Equal(102, machine.CurrentPC());
-            Assert.Empty(machine.value_stack);
+            Assert.Empty(machine.CurrentFrame().value_stack);
             Assert.Collection(
-                machine.label_stack,
+                machine.CurrentFrame().label_stack,
                 e =>
                     Assert.Equal(
                         new Label(
@@ -432,8 +466,8 @@ namespace Derg
             Step(2);
 
             Assert.Equal(104, machine.CurrentPC());
-            Assert.Empty(machine.value_stack);
-            Assert.Empty(machine.label_stack);
+            Assert.Empty(machine.CurrentFrame().value_stack);
+            Assert.Empty(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -456,9 +490,9 @@ namespace Derg
             Step(2);
 
             Assert.Equal(104, machine.CurrentPC());
-            Assert.Empty(machine.value_stack);
+            Assert.Empty(machine.CurrentFrame().value_stack);
             Assert.Collection(
-                machine.label_stack,
+                machine.CurrentFrame().label_stack,
                 e =>
                     Assert.Equal(
                         new Label(
@@ -491,8 +525,8 @@ namespace Derg
             Step(4);
 
             Assert.Equal(106, machine.CurrentPC());
-            Assert.Empty(machine.value_stack);
-            Assert.Empty(machine.label_stack);
+            Assert.Empty(machine.CurrentFrame().value_stack);
+            Assert.Empty(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -515,8 +549,8 @@ namespace Derg
             Step(4);
 
             Assert.Equal(106, machine.CurrentPC());
-            Assert.Empty(machine.value_stack);
-            Assert.Empty(machine.label_stack);
+            Assert.Empty(machine.CurrentFrame().value_stack);
+            Assert.Empty(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -531,8 +565,8 @@ namespace Derg
             Step(2);
 
             Assert.Equal(104, machine.CurrentPC());
-            Assert.Empty(machine.value_stack);
-            Assert.Empty(machine.label_stack);
+            Assert.Empty(machine.CurrentFrame().value_stack);
+            Assert.Empty(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -551,8 +585,11 @@ namespace Derg
             Step(3);
 
             Assert.Equal(105, machine.CurrentPC());
-            Assert.Collection(machine.value_stack, e => Assert.Equal(new Value(1), e));
-            Assert.Empty(machine.label_stack);
+            Assert.Collection(
+                machine.CurrentFrame().value_stack,
+                e => Assert.Equal(new Value(1), e)
+            );
+            Assert.Empty(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -568,8 +605,11 @@ namespace Derg
             Step(3);
 
             Assert.Equal(105, machine.CurrentPC());
-            Assert.Collection(machine.value_stack, e => Assert.Equal(new Value(1), e));
-            Assert.Empty(machine.label_stack);
+            Assert.Collection(
+                machine.CurrentFrame().value_stack,
+                e => Assert.Equal(new Value(1), e)
+            );
+            Assert.Empty(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -587,8 +627,8 @@ namespace Derg
             Step(3);
 
             Assert.Equal(107, machine.CurrentPC());
-            Assert.Empty(machine.value_stack);
-            Assert.Empty(machine.label_stack);
+            Assert.Empty(machine.CurrentFrame().value_stack);
+            Assert.Empty(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -614,11 +654,11 @@ namespace Derg
 
             Assert.Equal(109, machine.CurrentPC());
             Assert.Collection(
-                machine.value_stack,
+                machine.CurrentFrame().value_stack,
                 e => Assert.Equal(new Value(1), e),
                 e => Assert.Equal(new Value(2), e)
             );
-            Assert.Empty(machine.label_stack);
+            Assert.Empty(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -632,9 +672,9 @@ namespace Derg
             Step(1);
 
             Assert.Equal(101, machine.CurrentPC());
-            Assert.Empty(machine.value_stack);
+            Assert.Empty(machine.CurrentFrame().value_stack);
             Assert.Collection(
-                machine.label_stack,
+                machine.CurrentFrame().label_stack,
                 e =>
                     Assert.Equal(
                         new Label(
@@ -658,8 +698,8 @@ namespace Derg
             Step(2);
 
             Assert.Equal(100, machine.CurrentPC());
-            Assert.Empty(machine.value_stack);
-            Assert.Empty(machine.label_stack);
+            Assert.Empty(machine.CurrentFrame().value_stack);
+            Assert.Empty(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -673,8 +713,8 @@ namespace Derg
             Step(3);
 
             Assert.Equal(103, machine.CurrentPC());
-            Assert.Empty(machine.value_stack);
-            Assert.Empty(machine.label_stack);
+            Assert.Empty(machine.CurrentFrame().value_stack);
+            Assert.Empty(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -689,9 +729,12 @@ namespace Derg
             Step(2);
 
             Assert.Equal(102, machine.CurrentPC());
-            Assert.Collection(machine.value_stack, e => Assert.Equal(new Value(1), e));
-            Assert.Collection(machine.label_stack, e => Assert.Equal(1, e.arity));
-            Assert.Collection(machine.label_stack, e => Assert.Equal(101, e.target));
+            Assert.Collection(
+                machine.CurrentFrame().value_stack,
+                e => Assert.Equal(new Value(1), e)
+            );
+            Assert.Collection(machine.CurrentFrame().label_stack, e => Assert.Equal(1, e.arity));
+            Assert.Collection(machine.CurrentFrame().label_stack, e => Assert.Equal(101, e.target));
         }
 
         [Fact]
@@ -706,8 +749,11 @@ namespace Derg
             Step(3);
 
             Assert.Equal(101, machine.CurrentPC());
-            Assert.Collection(machine.value_stack, e => Assert.Equal(new Value(1), e));
-            Assert.Empty(machine.label_stack);
+            Assert.Collection(
+                machine.CurrentFrame().value_stack,
+                e => Assert.Equal(new Value(1), e)
+            );
+            Assert.Empty(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -725,8 +771,11 @@ namespace Derg
             Step(4);
 
             Assert.Equal(104, machine.CurrentPC());
-            Assert.Collection(machine.value_stack, e => Assert.Equal(new Value(1), e));
-            Assert.Empty(machine.label_stack);
+            Assert.Collection(
+                machine.CurrentFrame().value_stack,
+                e => Assert.Equal(new Value(1), e)
+            );
+            Assert.Empty(machine.CurrentFrame().label_stack);
         }
 
         [Fact]
@@ -746,11 +795,11 @@ namespace Derg
 
             Assert.Equal(101, machine.CurrentPC());
             Assert.Collection(
-                machine.value_stack,
+                machine.CurrentFrame().value_stack,
                 e => Assert.Equal(new Value(1), e),
                 e => Assert.Equal(new Value(2), e)
             );
-            Assert.Empty(machine.label_stack);
+            Assert.Empty(machine.CurrentFrame().label_stack);
         }
     }
 }

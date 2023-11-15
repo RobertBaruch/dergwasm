@@ -50,8 +50,14 @@ namespace Derg
         // Pops a label off the current frame.
         Label PopLabel();
 
-        // Gets the FuncType for the given index using the current frame's module
+        // Gets the FuncType for the given index, using the current frame's module
         // to map the index to the machine's type address.
         FuncType GetFuncTypeFromIndex(int index);
+
+        // Invokes the function at the given index, using the current frame's module
+        // to map the index to the machine's function address. Note that you can only
+        // invoke a function in the current module or on the host using this. If you
+        // need to invoke a function outside the module, use InvokeExternalFunc().
+        void InvokeFuncFromIndex(int index);
     }
 }
