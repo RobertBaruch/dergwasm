@@ -41,11 +41,10 @@ namespace Derg
         // Sets the program counter on the current frame.
         void SetPC(int pc);
 
-        // Creates and pushes a label onto the current frame. The args is the number of
-        // arguments the block consumes off the value stack. The arity is the number
+        // Creates and pushes a label onto the current frame. The arity is the number
         // of values expected to be returned by the block. The target is the program
         // counter to jump to for a BR 0 instruction.
-        void PushLabel(int args, int arity, int target);
+        void PushLabel(int arity, int target);
 
         // Pops a label off the current frame.
         Label PopLabel();

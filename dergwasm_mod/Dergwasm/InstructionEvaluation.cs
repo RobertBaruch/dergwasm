@@ -46,7 +46,7 @@ namespace Derg
                     arity = func_type.returns.Length;
                     break;
             }
-            machine.PushLabel(args, arity, operand.GetTarget());
+            machine.PushLabel(arity, operand.GetTarget());
         }
 
         private static void Loop(Instruction instruction, IMachine machine)
@@ -77,7 +77,6 @@ namespace Derg
                     break;
             }
             machine.PushLabel(
-                0, /*args*/
                 arity, /*arity*/
                 operand.GetTarget()
             );

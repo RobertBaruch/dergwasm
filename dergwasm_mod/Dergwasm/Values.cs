@@ -231,34 +231,15 @@ namespace Derg
         // instructions go back to the LOOP instruction.
         public int target;
 
-        // The size of the (value) stack at the moment the label is created.
-        //
-        // Note: I do not believe the following is correct, since it seems that ending a
-        // block does NOT necessarily leave only the block's arity extra values on the stack. I think
-        // a valid program would only leave arity extra values on the stack.
-        //
-        // Incorrect:
-        //
-        // In the WASM spec, labels are stored on the stack for simplicity. This lets
-        // instructions pop everything off the stack up to the label. That would mean that
-        // a stack element would have to indicate that it is a label. Since we only allocate
-        // 128 bits for a stack entry, and a stack entry could be a V128, there is way to
-        // differentiate between a V128 and a label when blindly popping elements off the stack.
-        //
-        // Therefore, we keep labels on a separate label stack for each function -- since regardless
-        // of how a function ends, all labels get removed.
-        public int stack_level;
-
-        public Label(int arity, int target, int stack_level)
+        public Label(int arity, int target)
         {
             this.arity = arity;
             this.target = target;
-            this.stack_level = stack_level;
         }
 
         public override string ToString()
         {
-            return $"Label[arity={arity}, target={target}, stack_level={stack_level}]";
+            return $"Label[arity={arity}, target={target}]";
         }
     }
 

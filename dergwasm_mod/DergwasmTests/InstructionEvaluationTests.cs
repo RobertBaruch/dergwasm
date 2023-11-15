@@ -44,9 +44,9 @@ namespace Derg
 
         public Label PopLabel() => CurrentFrame().label_stack.Pop();
 
-        public void PushLabel(int args, int arity, int target)
+        public void PushLabel(int arity, int target)
         {
-            CurrentFrame().label_stack.Push(new Label(arity, target, StackLevel() - args));
+            CurrentFrame().label_stack.Push(new Label(arity, target));
         }
 
         public FuncType GetFuncTypeFromIndex(int index)
@@ -87,7 +87,7 @@ namespace Derg
 
             frame.pc = -1; // So that incrementing PC goes to beginning.
             PushFrame(frame);
-            PushLabel(0, arity, code_len);
+            PushLabel(arity, code_len);
         }
     }
 
@@ -315,8 +315,7 @@ namespace Derg
                     Assert.Equal(
                         new Label(
                             0, /*arity*/
-                            103, /*target*/
-                            0 /*stack_level*/
+                            103
                         ),
                         e
                     )
@@ -356,8 +355,7 @@ namespace Derg
                     Assert.Equal(
                         new Label(
                             1, /*arity*/
-                            103, /*target*/
-                            0 /*stack_level*/
+                            103 /*target*/
                         ),
                         e
                     )
@@ -446,8 +444,7 @@ namespace Derg
                     Assert.Equal(
                         new Label(
                             0, /*arity*/
-                            104, /*target*/
-                            0 /*stack_level*/
+                            104 /*target*/
                         ),
                         e
                     )
@@ -497,8 +494,7 @@ namespace Derg
                     Assert.Equal(
                         new Label(
                             0, /*arity*/
-                            106, /*target*/
-                            0 /*stack_level*/
+                            106 /*target*/
                         ),
                         e
                     )
@@ -679,8 +675,7 @@ namespace Derg
                     Assert.Equal(
                         new Label(
                             0, /*arity*/
-                            100, /*target*/
-                            0 /*stack_level*/
+                            100 /*target*/
                         ),
                         e
                     )
