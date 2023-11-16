@@ -46,7 +46,7 @@ namespace Derg
                     arity = func_type.returns.Length;
                     break;
             }
-            machine.PushLabel(arity, operand.GetTarget());
+            machine.Label = new Label(arity, operand.GetTarget());
         }
 
         private static void Loop(Instruction instruction, IMachine machine)
@@ -76,7 +76,7 @@ namespace Derg
                     arity = func_type.args.Length;
                     break;
             }
-            machine.PushLabel(
+            machine.Label = new Label(
                 arity, /*arity*/
                 operand.GetTarget()
             );
@@ -99,13 +99,13 @@ namespace Derg
             // Jump to the else target (minus one because we always add one at the
             // end of an instruction). This is equal to the instruction's target
             // if there was no else clause.
-            machine.SetPC(operand.GetElseTarget() - 1);
+            machine.PC = operand.GetElseTarget() - 1;
         }
 
         private static void JumpToTopLabel(IMachine machine)
         {
             Label label = machine.PopLabel();
-            machine.SetPC(label.target - 1);
+            machine.PC = label.target - 1;
         }
 
         private static void Else(Instruction instruction, IMachine machine) =>
@@ -152,7 +152,7 @@ namespace Derg
         private static void Return(Instruction instruction, IMachine machine)
         {
             // This guarantees we pop the current frame.
-            machine.SetPC(machine.CurrentFrame().Code.Count);
+            machine.PC = machine.Frame.Code.Count;
         }
 
         // Executes a single instruction. After the instruction is executed, the current
@@ -164,14 +164,14 @@ namespace Derg
             if (!Map.TryGetValue(instruction.Type, out var implementation))
                 throw new ArgumentException($"Unimplemented instruction: {instruction.Type}");
             implementation(instruction, machine);
-            machine.IncrementPC();
+            machine.PC++;
 
             // If we ran off the end of the function, we return from the function.
 
-            if (machine.CurrentPC() >= machine.CurrentFrame().Code.Count)
+            if (machine.PC >= machine.Frame.Code.Count)
             {
                 machine.PopFrame();
-                machine.IncrementPC();
+                machine.PC++;
             }
         }
 
