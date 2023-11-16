@@ -24,7 +24,7 @@ namespace Derg
                 .AddRange(
                     last_frame
                         .value_stack
-                        .GetRange(last_frame.value_stack.Count - last_frame.arity, last_frame.arity)
+                        .GetRange(last_frame.value_stack.Count - last_frame.Arity, last_frame.Arity)
                 );
         }
 
@@ -67,10 +67,20 @@ namespace Derg
         {
             switch (index)
             {
-                case 0: // A func with an I32 arg and no return.
+                case 1: // A func with an I32 arg and no return.
                     return new FuncType(
                         /*args=*/new ValueType[] { ValueType.I32 },
                         /*returns=*/new ValueType[] { }
+                    );
+                case 2: // A func with no args and an I32 return.
+                    return new FuncType(
+                        /*args=*/new ValueType[] { },
+                        /*returns=*/new ValueType[] { ValueType.I32 }
+                    );
+                case 3: // A func with 2 I32 args and 2 I32 returns.
+                    return new FuncType(
+                        /*args=*/new ValueType[] { ValueType.I32, ValueType.I32 },
+                        /*returns=*/new ValueType[] { ValueType.I32, ValueType.I32 }
                     );
                 default:
                     return new FuncType(
@@ -83,21 +93,17 @@ namespace Derg
         public void InvokeFuncFromIndex(int index)
         {
             ModuleFunc func = module_funcs[index];
-            int arity = func.signature.returns.Length;
-            int args = func.signature.args.Length;
-            int num_locals = func.locals.Length;
-            int code_len = func.code.Count;
+            int arity = func.Signature.returns.Length;
+            int args = func.Signature.args.Length;
+            int num_locals = func.Locals.Length;
+            int code_len = func.Code.Count;
 
-            Frame next_frame = new Frame(
-                arity,
-                new Value[args + num_locals],
-                CurrentFrame().module
-            );
+            Frame next_frame = new Frame(new Value[args + num_locals], CurrentFrame().Module);
 
             // Remove args from stack and place in new frame's locals.
             CurrentFrame()
                 .value_stack
-                .CopyTo(0, next_frame.locals, CurrentFrame().value_stack.Count - args, args);
+                .CopyTo(0, next_frame.Locals, CurrentFrame().value_stack.Count - args, args);
             CurrentFrame().value_stack.RemoveRange(CurrentFrame().value_stack.Count - args, args);
 
             // Here we would initialize the other locals. But we assume they're I32, so they're
@@ -117,22 +123,29 @@ namespace Derg
         public InstructionEvaluationTests()
         {
             // This frame collects any return values.
-            machine.PushFrame(new Frame(0, new Value[] { }, null));
+            machine.PushFrame(new Frame(new Value[] { }, null));
         }
 
-        private void SetProgram(int arity, params UnflattenedInstruction[] instructions)
+        // Sets the program up for execution, with a signature given by the idx (see GetFuncTypeFromIndex).
+        // The program always has two I32 locals.
+        private void SetProgram(int idx, params UnflattenedInstruction[] instructions)
         {
-            machine.PushFrame(new Frame(0, new Value[] { }, null));
+            FuncType signature = machine.GetFuncTypeFromIndex(idx);
+            machine.PushFrame(new Frame(new Value[] { new Value(0), new Value(0) }, null));
             program = new List<UnflattenedInstruction>(instructions).Flatten(0);
-            machine.CurrentFrame().code = program;
-            machine.PushLabel(arity, program.Count);
+            machine.CurrentFrame().Func = new ModuleFunc(
+                signature,
+                new ValueType[] { ValueType.I32, ValueType.I32 },
+                program
+            );
+            machine.PushLabel(machine.CurrentFrame().Arity, program.Count);
         }
 
         private void Step(int n = 1)
         {
             for (int i = 0; i < n; i++)
             {
-                Instruction insn = machine.CurrentFrame().code[machine.CurrentPC()];
+                Instruction insn = machine.CurrentFrame().Code[machine.CurrentPC()];
                 InstructionEvaluation.Execute(insn, machine);
             }
         }
@@ -152,6 +165,8 @@ namespace Derg
         private UnflattenedInstruction Else() => Insn(InstructionType.ELSE);
 
         private UnflattenedInstruction Drop() => Insn(InstructionType.DROP);
+
+        private UnflattenedInstruction Return() => Insn(InstructionType.RETURN);
 
         private UnflattenedInstruction I32Const(int v) =>
             Insn(InstructionType.I32_CONST, new Value(v));
@@ -202,7 +217,7 @@ namespace Derg
                 new UnflattenedOperand[]
                 {
                     new UnflattenedBlockOperand(
-                        new Value(0UL, (ulong)BlockType.TYPED_BLOCK | (0UL << 2)),
+                        new Value(0UL, (ulong)BlockType.TYPED_BLOCK | (1UL << 2)),
                         new List<UnflattenedInstruction>(instructions),
                         new List<UnflattenedInstruction>()
                     ),
@@ -269,7 +284,7 @@ namespace Derg
                 new UnflattenedOperand[]
                 {
                     new UnflattenedBlockOperand(
-                        new Value(0UL, (ulong)BlockType.TYPED_BLOCK | ((ulong)0 << 2)),
+                        new Value(0UL, (ulong)BlockType.TYPED_BLOCK | (1UL << 2)),
                         new List<UnflattenedInstruction>(instructions),
                         new List<UnflattenedInstruction>()
                     ),
@@ -821,6 +836,7 @@ namespace Derg
             // 2:   I32_CONST 2
             // 3:   BR 0
             // 4: END
+            // 5: NOP
             SetProgram(0, I32Const(1), I32Loop(I32Const(2), Br(0), End()), Nop());
 
             Step(4);
@@ -832,6 +848,55 @@ namespace Derg
                 e => Assert.Equal(new Value(2), e)
             );
             Assert.Single(machine.CurrentFrame().label_stack);
+        }
+
+        [Fact]
+        public void TestReturnNoReturnValues()
+        {
+            // 0: NOP
+            // 1: RETURN
+            // 2: NOP
+            SetProgram(0, Nop(), Return(), Nop());
+
+            Step(2);
+
+            Assert.Equal(1, machine.CurrentPC());
+            Assert.Single(machine.frame_stack);
+        }
+
+        [Fact]
+        public void TestReturnFromBlock()
+        {
+            // 0: BLOCK
+            // 1:   RETURN
+            // 2:   NOP
+            // 3: END
+            // 4: NOP
+            SetProgram(0, VoidBlock(Return(), Nop(), End()), Nop());
+
+            Step(2);
+
+            Assert.Equal(1, machine.CurrentPC());
+            Assert.Single(machine.frame_stack);
+        }
+
+        [Fact]
+        public void TestReturnValues()
+        {
+            // 0: I32_CONST 1
+            // 1: I32_CONST 2
+            // 2: RETURN
+            SetProgram(3, I32Const(1), I32Const(2), Return());
+
+            Step(3);
+
+            Assert.Equal(1, machine.CurrentPC());
+            Assert.Single(machine.frame_stack);
+            Assert.Collection(
+                machine.CurrentFrame().value_stack,
+                e => Assert.Equal(new Value(1), e),
+                e => Assert.Equal(new Value(2), e)
+            );
         }
     }
 }

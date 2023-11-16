@@ -152,7 +152,7 @@ namespace Derg
         private static void Return(Instruction instruction, IMachine machine)
         {
             // This guarantees we pop the current frame.
-            machine.SetPC(machine.CurrentFrame().code.Count);
+            machine.SetPC(machine.CurrentFrame().Code.Count);
         }
 
         // Executes a single instruction. After the instruction is executed, the current
@@ -168,7 +168,7 @@ namespace Derg
 
             // If we ran off the end of the function, we return from the function.
 
-            if (machine.CurrentPC() >= machine.CurrentFrame().code.Count)
+            if (machine.CurrentPC() >= machine.CurrentFrame().Code.Count)
             {
                 machine.PopFrame();
                 machine.IncrementPC();
@@ -190,6 +190,7 @@ namespace Derg
                 { InstructionType.IF, If },
                 { InstructionType.LOOP, Loop },
                 { InstructionType.NOP, Nop },
+                { InstructionType.RETURN, Return },
             };
     }
 }

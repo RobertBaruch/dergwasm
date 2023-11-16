@@ -243,46 +243,6 @@ namespace Derg
         }
     }
 
-    // A frame. Represents the state of a function. Frames have their own label and value stacks.
-    // Frames are also not skippable like blocks. That means you can't exit a function and continue to
-    // anything other than the function in the previous frame. This is in contrast to blocks,
-    // where you can break out of multiple levels of blocks.
-    public class Frame
-    {
-        // The number of return values for the function.
-        public int arity;
-
-        // The function's locals. This includes its arguments, which come first.
-        public Value[] locals;
-
-        // The module instance this frame is executing in.
-        public IModule module;
-
-        // The current program counter.
-        public int pc;
-
-        // The label stack. Labels never apply across function boundaries.
-        public Stack<Label> label_stack;
-
-        // The value stack. Values never apply across function boundaires. Return values
-        // are handled explicitly by copying from stack to stack. Args are locals copied
-        // from the caller's stack.
-        public List<Value> value_stack;
-
-        // The code we're executing.
-        public List<Instruction> code;
-
-        public Frame(int arity, Value[] locals, IModule module)
-        {
-            this.arity = arity;
-            this.locals = locals;
-            this.module = module;
-            this.pc = 0;
-            this.label_stack = new Stack<Label>();
-            this.value_stack = new List<Value>();
-        }
-    }
-
     public struct FuncType
     {
         public ValueType[] args;
