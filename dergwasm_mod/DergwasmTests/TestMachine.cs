@@ -106,6 +106,8 @@ namespace DergwasmTests
 
         public void InvokeFunc(int addr) => InvokeFuncFromIndex(addr);
 
+        public int GetFuncAddrFromIndex(int idx) => idx + 10; // Ensure addr != idx.
+
         // Sets the program up for execution, with a signature given by the idx (see GetFuncTypeFromIndex).
         // The program always has two I32 locals.
         public void SetProgram(int idx, params UnflattenedInstruction[] instructions)

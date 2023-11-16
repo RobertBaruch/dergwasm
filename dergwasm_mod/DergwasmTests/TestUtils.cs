@@ -48,6 +48,21 @@ namespace DergwasmTests
         public UnflattenedInstruction I32Const(int v) =>
             Insn(InstructionType.I32_CONST, new Value(v));
 
+        public UnflattenedInstruction I32Const(uint v) =>
+            Insn(InstructionType.I32_CONST, new Value(v));
+
+        public UnflattenedInstruction I64Const(long v) =>
+            Insn(InstructionType.I64_CONST, new Value(v));
+
+        public UnflattenedInstruction I64Const(ulong v) =>
+            Insn(InstructionType.I64_CONST, new Value(v));
+
+        public UnflattenedInstruction F32Const(float v) =>
+            Insn(InstructionType.F32_CONST, new Value(v));
+
+        public UnflattenedInstruction F64Const(double v) =>
+            Insn(InstructionType.F64_CONST, new Value(v));
+
         public UnflattenedInstruction Br(int levels) => Insn(InstructionType.BR, new Value(levels));
 
         // A block with zero args and zero returns.

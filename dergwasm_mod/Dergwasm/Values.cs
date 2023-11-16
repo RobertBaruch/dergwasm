@@ -16,14 +16,13 @@ namespace Derg
         EXTERNREF = 0x6F,
     }
 
+    // Reference value types. Note that a null ref is encoded as value_lo = 0, value_hi = 0.
     public enum ReferenceValueType : ulong
     {
         // A func reference, with the funcaddr in value_lo.
-        // If value_lo contains 0xFFFFFFFFFFFFFFFF, it's a null reference.
         FUNCREF = 1,
 
         // Am extern reference, with the externaddr in value_lo.
-        // If value_lo contains 0xFFFFFFFFFFFFFFFF, it's a null reference.
         EXTERNREF = 2,
     }
 
@@ -67,6 +66,12 @@ namespace Derg
         {
             value_lo = value.value_lo;
             value_hi = value.value_hi;
+        }
+
+        public Value(bool b)
+        {
+            value_lo = b ? 1UL : 0;
+            value_hi = 0;
         }
 
         public unsafe Value(float f32)
@@ -179,6 +184,8 @@ namespace Derg
             }
         }
 
+        public bool Bool => value_lo != 0 || value_hi != 0;
+
         // Only valid if the value is a block operand.
         public int GetTarget()
         {
@@ -218,7 +225,7 @@ namespace Derg
         // Only valid if the value is a reference type.
         public bool IsNullRef()
         {
-            return value_lo == 0xFFFFFFFFFFFFFFFF;
+            return value_lo == 0 && value_hi == 0;
         }
 
         // Only valid if the value is a reference type.

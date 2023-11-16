@@ -52,6 +52,8 @@ namespace Derg
 
         Func GetFunc(int addr);
 
+        int GetFuncAddrFromIndex(int index);
+
         // Invokes the function at the given index, using the current frame's module
         // to map the index to the machine's function address. Note that you can only
         // invoke a function in the current module or on the host using this. If you

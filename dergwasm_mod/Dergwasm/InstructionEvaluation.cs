@@ -14,6 +14,22 @@ namespace Derg
         private static void Const(Instruction instruction, IMachine machine) =>
             machine.Push(instruction.Operands[0]);
 
+        private static void RefNull(Instruction instruction, IMachine machine) =>
+            machine.Push(new Value(0, 0));
+
+        private static void RefIsNull(Instruction instruction, IMachine machine)
+        {
+            Value v = machine.Pop();
+            machine.Push(new Value(v.IsNullRef()));
+        }
+
+        private static void Ref(Instruction instruction, IMachine machine)
+        {
+            int idx = instruction.Operands[0].Int;
+            int addr = machine.GetFuncAddrFromIndex(idx);
+            machine.Push(Value.RefOfFuncAddr(addr));
+        }
+
         private static void Drop(Instruction instruction, IMachine machine) => machine.Pop();
 
         private static void Block(Instruction instruction, IMachine machine)
@@ -216,6 +232,9 @@ namespace Derg
                 { InstructionType.IF, If },
                 { InstructionType.LOOP, Loop },
                 { InstructionType.NOP, Nop },
+                { InstructionType.REF_IS_NULL, RefIsNull },
+                { InstructionType.REF_FUNC, Ref },
+                { InstructionType.REF_NULL, RefNull },
                 { InstructionType.RETURN, Return },
             };
     }
