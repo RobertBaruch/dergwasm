@@ -32,6 +32,14 @@ namespace Derg
 
         private static void Drop(Instruction instruction, IMachine machine) => machine.Pop();
 
+        private static void Select(Instruction instruction, IMachine machine)
+        {
+            bool cond = machine.Pop().Bool;
+            Value v2 = machine.Pop();
+            Value v1 = machine.Pop();
+            machine.Push(cond ? v1 : v2);
+        }
+
         private static void Block(Instruction instruction, IMachine machine)
         {
             // A block's args are what it expects to be on the stack upon entry.
@@ -236,6 +244,7 @@ namespace Derg
                 { InstructionType.REF_FUNC, Ref },
                 { InstructionType.REF_NULL, RefNull },
                 { InstructionType.RETURN, Return },
+                { InstructionType.SELECT, Select },
             };
     }
 }
