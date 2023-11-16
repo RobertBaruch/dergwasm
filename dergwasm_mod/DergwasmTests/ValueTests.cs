@@ -1,6 +1,7 @@
+using Derg;
 using Xunit;
 
-namespace Derg
+namespace DergwasmTests
 {
     public class ValueTests
     {

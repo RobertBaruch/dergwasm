@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.IO;
 using LEB128;
 using Xunit;
 
-namespace Derg
+namespace DergwasmTests
 {
     public class LEB128Tests
     {
