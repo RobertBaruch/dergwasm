@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Derg;
 
-namespace Derg
+namespace DergwasmTests
 {
     // A Machine for testing. Implements a real frame stack, but all other runtime structures
     // are just dictionaries.
