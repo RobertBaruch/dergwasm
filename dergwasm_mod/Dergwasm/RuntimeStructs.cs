@@ -54,11 +54,32 @@ namespace Derg
         }
     }
 
-    public class Func { }
+    // Minimum and optional maximum limits for resizable storage.
+    public struct Limits
+    {
+        public uint Minimum;
+        public Nullable<uint> Maximum;
+
+        public Limits(uint minimum)
+        {
+            Minimum = minimum;
+            Maximum = new Nullable<uint>();
+        }
+
+        public Limits(uint minimum, uint maximum)
+        {
+            Minimum = minimum;
+            Maximum = new Nullable<uint>(maximum);
+        }
+    }
+
+    public class Func
+    {
+        public FuncType Signature;
+    }
 
     public class ModuleFunc : Func
     {
-        public FuncType Signature;
         public ValueType[] Locals;
         public List<Instruction> Code;
 
@@ -67,6 +88,32 @@ namespace Derg
             Signature = signature;
             Locals = locals;
             Code = code;
+        }
+    }
+
+    public struct TableType
+    {
+        public Limits Limits;
+
+        // The WASM spec currently only allows reference types (funcref/externref).
+        public ValueType ElementType;
+
+        public TableType(Limits limits, ValueType elementType)
+        {
+            Limits = limits;
+            ElementType = elementType;
+        }
+    }
+
+    public class Table
+    {
+        public TableType Type;
+        public Value[] Elements;
+
+        public Table(TableType type)
+        {
+            Type = type;
+            Elements = new Value[Type.Limits.Minimum];
         }
     }
 }

@@ -7,10 +7,26 @@ using Xunit;
 
 namespace Derg
 {
+    // A Machine for testing. Implements a real frame stack, but all other runtime structures
+    // are just dictionaries.
     public class TestMachine : IMachine
     {
         public Stack<Frame> frame_stack = new Stack<Frame>();
+        public Dictionary<int, FuncType> funcTypes = new Dictionary<int, FuncType>()
+        {
+            { 0, new FuncType(new ValueType[] { }, new ValueType[] { }) },
+            { 1, new FuncType(new ValueType[] { ValueType.I32 }, new ValueType[] { }) },
+            { 2, new FuncType(new ValueType[] { }, new ValueType[] { ValueType.I32 }) },
+            {
+                3,
+                new FuncType(
+                    new ValueType[] { ValueType.I32, ValueType.I32 },
+                    new ValueType[] { ValueType.I32, ValueType.I32 }
+                )
+            },
+        };
         public Dictionary<int, ModuleFunc> module_funcs = new Dictionary<int, ModuleFunc>();
+        public Dictionary<int, Table> tables = new Dictionary<int, Table>();
 
         public Frame Frame
         {
@@ -36,10 +52,7 @@ namespace Derg
             set => Frame.pc = value;
         }
 
-        public Value TopOfStack
-        {
-            get => Frame.value_stack.Last();
-        }
+        public Value TopOfStack => Frame.value_stack.Last();
 
         public Value Pop()
         {
@@ -67,29 +80,7 @@ namespace Derg
 
         public FuncType GetFuncTypeFromIndex(int index)
         {
-            switch (index)
-            {
-                case 1: // A func with an I32 arg and no return.
-                    return new FuncType(
-                        /*args=*/new ValueType[] { ValueType.I32 },
-                        /*returns=*/new ValueType[] { }
-                    );
-                case 2: // A func with no args and an I32 return.
-                    return new FuncType(
-                        /*args=*/new ValueType[] { },
-                        /*returns=*/new ValueType[] { ValueType.I32 }
-                    );
-                case 3: // A func with 2 I32 args and 2 I32 returns.
-                    return new FuncType(
-                        /*args=*/new ValueType[] { ValueType.I32, ValueType.I32 },
-                        /*returns=*/new ValueType[] { ValueType.I32, ValueType.I32 }
-                    );
-                default:
-                    return new FuncType(
-                        /*args=*/new ValueType[] { },
-                        /*returns=*/new ValueType[] { }
-                    );
-            }
+            return funcTypes.ContainsKey(index) ? funcTypes[index] : funcTypes[index / 100];
         }
 
         public void InvokeFuncFromIndex(int index)
@@ -111,6 +102,12 @@ namespace Derg
             PC = -1; // So that incrementing PC goes to beginning.
             Label = new Label(arity, func.Code.Count);
         }
+
+        public Table GetTableFromIndex(int index) => tables[index];
+
+        public Func GetFunc(int addr) => module_funcs[addr];
+
+        public void InvokeFunc(int addr) => InvokeFuncFromIndex(addr);
     }
 
     public class InstructionEvaluationTests
@@ -156,6 +153,8 @@ namespace Derg
             );
         }
 
+        private void AddTable(int idx, Table table) => machine.tables[idx] = table;
+
         private void Step(int n = 1)
         {
             for (int i = 0; i < n; i++)
@@ -184,6 +183,11 @@ namespace Derg
         private UnflattenedInstruction Return() => Insn(InstructionType.RETURN);
 
         private UnflattenedInstruction Call(int v) => Insn(InstructionType.CALL, new Value(v));
+
+        private UnflattenedInstruction CallIndirect(int typeidx, int tableidx)
+        {
+            return Insn(InstructionType.CALL_INDIRECT, new Value(typeidx), new Value(tableidx));
+        }
 
         private UnflattenedInstruction I32Const(int v) =>
             Insn(InstructionType.I32_CONST, new Value(v));
@@ -973,6 +977,33 @@ namespace Derg
                 e => Assert.Equal(new Value(1), e),
                 e => Assert.Equal(new Value(2), e)
             );
+        }
+
+        [Fact]
+        public void TestCallIndirect()
+        {
+            // 0: I32_CONST 1
+            // 1: CALL_INDIRECT 2, 3  // Should call Func 201.
+            // 2: END
+            //
+            // Func 200:
+            // 0: I32_CONST 1
+            // 1: END
+            //
+            // Func 201:
+            // 0: I32_CONST 2
+            // 1: END
+            AddFunction(200, I32Const(1), End());
+            AddFunction(201, I32Const(2), End());
+            SetProgram(0, I32Const(1), CallIndirect(2, 3), End());
+            AddTable(3, new Table(new TableType(new Limits(2), ValueType.FUNCREF)));
+            machine.tables[3].Elements[0] = Value.RefOfFuncAddr(200);
+            machine.tables[3].Elements[1] = Value.RefOfFuncAddr(201);
+
+            Step(3);
+
+            Assert.Equal(1, machine.PC);
+            Assert.Equal(new Value(2), machine.TopOfStack);
         }
     }
 }

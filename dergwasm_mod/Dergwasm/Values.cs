@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Derg
 {
@@ -209,9 +210,11 @@ namespace Derg
         }
 
         // Only valid if the value is a reference type.
-        public ulong AsRefAddr()
+        public int RefAddr => (int)value_lo;
+
+        public static Value RefOfFuncAddr(int addr)
         {
-            return value_lo;
+            return new Value((ulong)addr, (ulong)ReferenceValueType.FUNCREF);
         }
 
         public override string ToString()
@@ -243,7 +246,7 @@ namespace Derg
         }
     }
 
-    public struct FuncType
+    public struct FuncType : IEquatable<FuncType>
     {
         public ValueType[] args;
         public ValueType[] returns;
@@ -252,6 +255,26 @@ namespace Derg
         {
             this.args = args;
             this.returns = returns;
+        }
+
+        public bool Equals(FuncType other)
+        {
+            return args.SequenceEqual(other.args) && returns.SequenceEqual(other.returns);
+        }
+
+        public override int GetHashCode()
+        {
+            return (args, returns).GetHashCode();
+        }
+
+        public static bool operator ==(FuncType lhs, FuncType rhs)
+        {
+            return lhs.Equals(rhs);
+        }
+
+        public static bool operator !=(FuncType lhs, FuncType rhs)
+        {
+            return !lhs.Equals(rhs);
         }
     }
 } // namespace Derg

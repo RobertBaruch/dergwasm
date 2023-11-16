@@ -11,10 +11,8 @@ namespace Derg
     {
         private static void Nop(Instruction instruction, IMachine machine) { }
 
-        private static void I32Const(Instruction instruction, IMachine machine)
-        {
+        private static void Const(Instruction instruction, IMachine machine) =>
             machine.Push(instruction.Operands[0]);
-        }
 
         private static void Drop(Instruction instruction, IMachine machine) => machine.Pop();
 
@@ -111,10 +109,7 @@ namespace Derg
         private static void Else(Instruction instruction, IMachine machine) =>
             JumpToTopLabel(machine);
 
-        private static void End(Instruction instruction, IMachine machine)
-        {
-            machine.PopLabel();
-        }
+        private static void End(Instruction instruction, IMachine machine) => machine.PopLabel();
 
         private static void BrLevels(IMachine machine, int levels)
         {
@@ -138,7 +133,7 @@ namespace Derg
 
         private static void BrTable(Instruction instruction, IMachine machine)
         {
-            int idx = Math.Min(machine.Pop().Int(), instruction.Operands.Length - 1);
+            int idx = (int)Math.Min(machine.Pop().AsI32_U(), (uint)instruction.Operands.Length - 1);
             int levels = instruction.Operands[idx].Int();
             BrLevels(machine, levels);
         }
@@ -147,6 +142,32 @@ namespace Derg
         {
             int idx = instruction.Operands[0].Int();
             machine.InvokeFuncFromIndex(idx);
+        }
+
+        private static void CallIndirect(Instruction instruction, IMachine machine)
+        {
+            int tableidx = instruction.Operands[1].Int();
+            int typeidx = instruction.Operands[0].Int();
+            Table table = machine.GetTableFromIndex(tableidx);
+            FuncType funcType = machine.GetFuncTypeFromIndex(typeidx);
+            uint i = machine.Pop().AsI32_U();
+            if (i >= table.Elements.LongLength)
+            {
+                throw new Trap(
+                    $"call_indirect: access out of bounds (index {i}, table len {table.Elements.LongLength})"
+                );
+            }
+            Value funcAddr = table.Elements[i];
+            if (funcAddr.IsNullRef())
+            {
+                throw new Trap("call_indirect: null reference");
+            }
+            Func func = machine.GetFunc(funcAddr.RefAddr);
+            if (func.Signature != funcType)
+            {
+                throw new Trap("call_indirect: type mismatch");
+            }
+            machine.InvokeFunc(funcAddr.RefAddr);
         }
 
         private static void Return(Instruction instruction, IMachine machine)
@@ -184,10 +205,14 @@ namespace Derg
                 { InstructionType.BR_TABLE, BrTable },
                 { InstructionType.BLOCK, Block },
                 { InstructionType.CALL, Call },
+                { InstructionType.CALL_INDIRECT, CallIndirect },
                 { InstructionType.DROP, Drop },
                 { InstructionType.ELSE, Else },
                 { InstructionType.END, End },
-                { InstructionType.I32_CONST, I32Const },
+                { InstructionType.F32_CONST, Const },
+                { InstructionType.F64_CONST, Const },
+                { InstructionType.I32_CONST, Const },
+                { InstructionType.I64_CONST, Const },
                 { InstructionType.IF, If },
                 { InstructionType.LOOP, Loop },
                 { InstructionType.NOP, Nop },
