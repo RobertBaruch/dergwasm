@@ -7,109 +7,6 @@ using Xunit;
 
 namespace Derg
 {
-    // A Machine for testing. Implements a real frame stack, but all other runtime structures
-    // are just dictionaries.
-    public class TestMachine : IMachine
-    {
-        public Stack<Frame> frame_stack = new Stack<Frame>();
-        public Dictionary<int, FuncType> funcTypes = new Dictionary<int, FuncType>()
-        {
-            { 0, new FuncType(new ValueType[] { }, new ValueType[] { }) },
-            { 1, new FuncType(new ValueType[] { ValueType.I32 }, new ValueType[] { }) },
-            { 2, new FuncType(new ValueType[] { }, new ValueType[] { ValueType.I32 }) },
-            {
-                3,
-                new FuncType(
-                    new ValueType[] { ValueType.I32, ValueType.I32 },
-                    new ValueType[] { ValueType.I32, ValueType.I32 }
-                )
-            },
-        };
-        public Dictionary<int, ModuleFunc> module_funcs = new Dictionary<int, ModuleFunc>();
-        public Dictionary<int, Table> tables = new Dictionary<int, Table>();
-
-        public Frame Frame
-        {
-            get => frame_stack.Peek();
-            set => frame_stack.Push(value);
-        }
-
-        public void PopFrame()
-        {
-            Frame last_frame = frame_stack.Pop();
-            Frame
-                .value_stack
-                .AddRange(
-                    last_frame
-                        .value_stack
-                        .GetRange(last_frame.value_stack.Count - last_frame.Arity, last_frame.Arity)
-                );
-        }
-
-        public int PC
-        {
-            get => Frame.pc;
-            set => Frame.pc = value;
-        }
-
-        public Value TopOfStack => Frame.value_stack.Last();
-
-        public Value Pop()
-        {
-            Value top = Frame.value_stack.Last();
-            Frame.value_stack.RemoveAt(Frame.value_stack.Count - 1);
-            return top;
-        }
-
-        public void Push(Value val) => Frame.value_stack.Add(val);
-
-        public int StackLevel() => Frame.value_stack.Count;
-
-        public void RemoveStack(int from_level, int arity)
-        {
-            Frame.value_stack.RemoveRange(from_level, Frame.value_stack.Count - from_level - arity);
-        }
-
-        public Label PopLabel() => Frame.label_stack.Pop();
-
-        public Label Label
-        {
-            get => Frame.label_stack.Peek();
-            set => Frame.label_stack.Push(value);
-        }
-
-        public FuncType GetFuncTypeFromIndex(int index)
-        {
-            return funcTypes.ContainsKey(index) ? funcTypes[index] : funcTypes[index / 100];
-        }
-
-        public void InvokeFuncFromIndex(int index)
-        {
-            ModuleFunc func = module_funcs[index];
-            int arity = func.Signature.returns.Length;
-            int args = func.Signature.args.Length;
-
-            Frame next_frame = new Frame(func, Frame.Module);
-
-            // Remove args from stack and place in new frame's locals.
-            Frame.value_stack.CopyTo(0, next_frame.Locals, Frame.value_stack.Count - args, args);
-            Frame.value_stack.RemoveRange(Frame.value_stack.Count - args, args);
-
-            // Here we would initialize the other locals. But we assume they're I32, so they're
-            // already defaulted to zero.
-
-            Frame = next_frame;
-            PC = -1; // So that incrementing PC goes to beginning.
-            Label = new Label(arity, func.Code.Count);
-        }
-
-        public Table GetTableFromIndex(int index) => tables[index];
-
-        public Func GetFunc(int addr) => module_funcs[addr];
-
-        public void InvokeFunc(int addr) => InvokeFuncFromIndex(addr);
-    }
-
     public class InstructionEvaluationTests
     {
         public TestMachine machine = new TestMachine();
@@ -124,44 +21,6 @@ namespace Derg
                 new List<Instruction>()
             );
             machine.Frame = new Frame(func, null);
-        }
-
-        // Sets the program up for execution, with a signature given by the idx (see GetFuncTypeFromIndex).
-        // The program always has two I32 locals.
-        private void SetProgram(int idx, params UnflattenedInstruction[] instructions)
-        {
-            program = new List<UnflattenedInstruction>(instructions).Flatten(0);
-            ModuleFunc func = new ModuleFunc(
-                machine.GetFuncTypeFromIndex(idx),
-                new ValueType[] { ValueType.I32, ValueType.I32 },
-                program
-            );
-            FuncType signature = machine.GetFuncTypeFromIndex(idx);
-            machine.Frame = new Frame(func, null);
-            machine.Label = new Label(machine.Frame.Arity, program.Count);
-        }
-
-        // Adds a function at the given index. The index is also used to determine the function's
-        // signature (see GetFuncTypeFromIndex). The function has two I32 locals.
-        private void AddFunction(int idx, params UnflattenedInstruction[] instructions)
-        {
-            program = new List<UnflattenedInstruction>(instructions).Flatten(0);
-            machine.module_funcs[idx] = new ModuleFunc(
-                machine.GetFuncTypeFromIndex(idx),
-                new ValueType[] { ValueType.I32, ValueType.I32 },
-                program
-            );
-        }
-
-        private void AddTable(int idx, Table table) => machine.tables[idx] = table;
-
-        private void Step(int n = 1)
-        {
-            for (int i = 0; i < n; i++)
-            {
-                Instruction insn = machine.Frame.Code[machine.PC];
-                InstructionEvaluation.Execute(insn, machine);
-            }
         }
 
         private UnflattenedInstruction Insn(InstructionType type, params Value[] operands)
@@ -323,9 +182,9 @@ namespace Derg
 
             // 0: NOP
             // 1: NOP
-            SetProgram(0, Nop(), Nop());
+            machine.SetProgram(0, Nop(), Nop());
 
-            Step();
+            machine.Step();
 
             Assert.Equal(1, machine.PC);
             Assert.Empty(machine.Frame.value_stack);
@@ -336,9 +195,9 @@ namespace Derg
         {
             // 0: I32_CONST 1
             // 1: NOP
-            SetProgram(0, I32Const(1), Nop());
+            machine.SetProgram(0, I32Const(1), Nop());
 
-            Step();
+            machine.Step();
 
             Assert.Equal(1, machine.PC);
             Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(1), e));
@@ -350,9 +209,9 @@ namespace Derg
             // 0: I32_CONST 1
             // 1: DROP
             // 2: NOP
-            SetProgram(0, I32Const(1), Drop(), Nop());
+            machine.SetProgram(0, I32Const(1), Drop(), Nop());
 
-            Step(2);
+            machine.Step(2);
 
             Assert.Equal(2, machine.PC);
             Assert.Empty(machine.Frame.value_stack);
@@ -365,9 +224,9 @@ namespace Derg
             // 1:   NOP
             // 2: END
             // 3: NOP
-            SetProgram(0, VoidBlock(Nop(), End()), Nop());
+            machine.SetProgram(0, VoidBlock(Nop(), End()), Nop());
 
-            Step();
+            machine.Step();
 
             Assert.Equal(1, machine.PC);
             Assert.Empty(machine.Frame.value_stack);
@@ -381,9 +240,9 @@ namespace Derg
             // 1:   NOP
             // 2: END
             // 3: NOP
-            SetProgram(0, VoidBlock(Nop(), End()), Nop());
+            machine.SetProgram(0, VoidBlock(Nop(), End()), Nop());
 
-            Step(3);
+            machine.Step(3);
 
             Assert.Equal(3, machine.PC);
             Assert.Empty(machine.Frame.value_stack);
@@ -397,9 +256,9 @@ namespace Derg
             // 1:   I32_CONST 1
             // 2: END
             // 3: NOP
-            SetProgram(0, I32Block(I32Const(1), End()), Nop());
+            machine.SetProgram(0, I32Block(I32Const(1), End()), Nop());
 
-            Step();
+            machine.Step();
 
             Assert.Equal(1, machine.PC);
             Assert.Empty(machine.Frame.value_stack);
@@ -413,9 +272,9 @@ namespace Derg
             // 1:   I32_CONST 1
             // 2: END
             // 3: NOP
-            SetProgram(0, I32Block(I32Const(1), End()), Nop());
+            machine.SetProgram(0, I32Block(I32Const(1), End()), Nop());
 
-            Step(3);
+            machine.Step(3);
 
             Assert.Equal(3, machine.PC);
             Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(1), e));
@@ -433,9 +292,9 @@ namespace Derg
             // 2:   I32_CONST 1
             // 3: END
             // 4: NOP
-            SetProgram(0, I32Block(I32Const(2), I32Const(1), End()), Nop());
+            machine.SetProgram(0, I32Block(I32Const(2), I32Const(1), End()), Nop());
 
-            Step(4);
+            machine.Step(4);
 
             Assert.Equal(4, machine.PC);
             Assert.Collection(
@@ -457,9 +316,9 @@ namespace Derg
             // 2:   NOP
             // 3: END
             // 4: NOP
-            SetProgram(0, I32Const(1), I32_VoidBlock(Nop(), End()), Nop());
+            machine.SetProgram(0, I32Const(1), I32_VoidBlock(Nop(), End()), Nop());
 
-            Step(4);
+            machine.Step(4);
 
             Assert.Equal(4, machine.PC);
             Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(1), e));
@@ -474,9 +333,9 @@ namespace Derg
             // 2:   NOP
             // 3: END
             // 4: NOP
-            SetProgram(0, I32Const(1), VoidIf(Nop(), End()), Nop());
+            machine.SetProgram(0, I32Const(1), VoidIf(Nop(), End()), Nop());
 
-            Step(2);
+            machine.Step(2);
 
             Assert.Equal(2, machine.PC);
             Assert.Empty(machine.Frame.value_stack);
@@ -491,9 +350,9 @@ namespace Derg
             // 2:   NOP
             // 3: END
             // 4: NOP
-            SetProgram(0, I32Const(0), VoidIf(Nop(), End()), Nop());
+            machine.SetProgram(0, I32Const(0), VoidIf(Nop(), End()), Nop());
 
-            Step(2);
+            machine.Step(2);
 
             Assert.Equal(4, machine.PC);
             Assert.Empty(machine.Frame.value_stack);
@@ -510,7 +369,7 @@ namespace Derg
             // 4:   NOP
             // 5: END
             // 6: NOP
-            SetProgram(
+            machine.SetProgram(
                 0,
                 I32Const(0),
                 VoidIfElse(
@@ -520,7 +379,7 @@ namespace Derg
                 Nop()
             );
 
-            Step(2);
+            machine.Step(2);
 
             Assert.Equal(4, machine.PC);
             Assert.Empty(machine.Frame.value_stack);
@@ -537,7 +396,7 @@ namespace Derg
             // 4:   NOP
             // 5: END
             // 6: NOP
-            SetProgram(
+            machine.SetProgram(
                 0,
                 I32Const(0),
                 VoidIfElse(
@@ -547,7 +406,7 @@ namespace Derg
                 Nop()
             );
 
-            Step(4);
+            machine.Step(4);
 
             Assert.Equal(6, machine.PC);
             Assert.Empty(machine.Frame.value_stack);
@@ -564,7 +423,7 @@ namespace Derg
             // 4:   NOP
             // 5: END
             // 6: NOP
-            SetProgram(
+            machine.SetProgram(
                 0,
                 I32Const(1),
                 VoidIfElse(
@@ -574,7 +433,7 @@ namespace Derg
                 Nop()
             );
 
-            Step(4);
+            machine.Step(4);
 
             Assert.Equal(6, machine.PC);
             Assert.Empty(machine.Frame.value_stack);
@@ -589,9 +448,9 @@ namespace Derg
             // 2:   NOP
             // 3: END
             // 4: NOP
-            SetProgram(0, VoidBlock(Br(0), Nop(), End()), Nop());
+            machine.SetProgram(0, VoidBlock(Br(0), Nop(), End()), Nop());
 
-            Step(2);
+            machine.Step(2);
 
             Assert.Equal(4, machine.PC);
             Assert.Empty(machine.Frame.value_stack);
@@ -610,9 +469,9 @@ namespace Derg
             // 3:   NOP
             // 4: END
             // 5: NOP
-            SetProgram(0, VoidBlock(I32Const(1), Br(0), Nop(), End()), Nop());
+            machine.SetProgram(0, VoidBlock(I32Const(1), Br(0), Nop(), End()), Nop());
 
-            Step(3);
+            machine.Step(3);
 
             Assert.Equal(5, machine.PC);
             Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(1), e));
@@ -628,9 +487,9 @@ namespace Derg
             // 3:   NOP
             // 4: END
             // 5: NOP
-            SetProgram(0, I32Block(I32Const(1), Br(0), Nop(), End()), Nop());
+            machine.SetProgram(0, I32Block(I32Const(1), Br(0), Nop(), End()), Nop());
 
-            Step(3);
+            machine.Step(3);
 
             Assert.Equal(5, machine.PC);
             Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(1), e));
@@ -648,9 +507,9 @@ namespace Derg
             // 5:   NOP
             // 6: END
             // 7: NOP
-            SetProgram(0, VoidBlock(VoidBlock(Br(1), Nop(), End()), Nop(), End()), Nop());
+            machine.SetProgram(0, VoidBlock(VoidBlock(Br(1), Nop(), End()), Nop(), End()), Nop());
 
-            Step(3);
+            machine.Step(3);
 
             Assert.Equal(7, machine.PC);
             Assert.Empty(machine.Frame.value_stack);
@@ -673,13 +532,13 @@ namespace Derg
             // 7:   NOP
             // 8: END
             // 9: NOP
-            SetProgram(
+            machine.SetProgram(
                 0,
                 I32Block(I32Const(1), I32Block(I32Const(2), Br(1), Nop(), End()), Nop(), End()),
                 Nop()
             );
 
-            Step(5);
+            machine.Step(5);
 
             Assert.Equal(9, machine.PC);
             Assert.Collection(
@@ -697,9 +556,9 @@ namespace Derg
             // 1:   BR 0
             // 2: END
             // 3: NOP
-            SetProgram(0, VoidLoop(Br(0), End()), Nop());
+            machine.SetProgram(0, VoidLoop(Br(0), End()), Nop());
 
-            Step(1);
+            machine.Step(1);
 
             Assert.Equal(1, machine.PC);
             Assert.Empty(machine.Frame.value_stack);
@@ -713,9 +572,9 @@ namespace Derg
             // 1:   BR 0
             // 2: END
             // 3: NOP
-            SetProgram(0, VoidLoop(Br(0), End()), Nop());
+            machine.SetProgram(0, VoidLoop(Br(0), End()), Nop());
 
-            Step(2);
+            machine.Step(2);
 
             Assert.Equal(0, machine.PC);
             Assert.Empty(machine.Frame.value_stack);
@@ -729,9 +588,9 @@ namespace Derg
             // 1:   NOP
             // 2: END
             // 3: NOP
-            SetProgram(0, VoidLoop(Nop(), End()), Nop());
+            machine.SetProgram(0, VoidLoop(Nop(), End()), Nop());
 
-            Step(3);
+            machine.Step(3);
 
             Assert.Equal(3, machine.PC);
             Assert.Empty(machine.Frame.value_stack);
@@ -746,9 +605,9 @@ namespace Derg
             // 2:   BR 0
             // 3: END
             // 4: NOP
-            SetProgram(0, I32Const(1), I32Loop(Br(0), End()), Nop());
+            machine.SetProgram(0, I32Const(1), I32Loop(Br(0), End()), Nop());
 
-            Step(2);
+            machine.Step(2);
 
             Assert.Equal(2, machine.PC);
             Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(1), e));
@@ -763,9 +622,9 @@ namespace Derg
             // 2:   BR 0
             // 3: END
             // 4: NOP
-            SetProgram(0, I32Const(1), I32Loop(Br(0), End()), Nop());
+            machine.SetProgram(0, I32Const(1), I32Loop(Br(0), End()), Nop());
 
-            Step(3);
+            machine.Step(3);
 
             Assert.Equal(1, machine.PC);
             Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(1), e));
@@ -783,9 +642,9 @@ namespace Derg
             // 2:   NOP
             // 3: END
             // 4: NOP
-            SetProgram(0, I32Const(1), I32Loop(Nop(), End()), Nop());
+            machine.SetProgram(0, I32Const(1), I32Loop(Nop(), End()), Nop());
 
-            Step(4);
+            machine.Step(4);
 
             Assert.Equal(4, machine.PC);
             Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(1), e));
@@ -804,9 +663,9 @@ namespace Derg
             // 3:   BR 0
             // 4: END
             // 5: NOP
-            SetProgram(0, I32Const(1), I32Loop(I32Const(2), Br(0), End()), Nop());
+            machine.SetProgram(0, I32Const(1), I32Loop(I32Const(2), Br(0), End()), Nop());
 
-            Step(4);
+            machine.Step(4);
 
             Assert.Equal(1, machine.PC);
             Assert.Collection(
@@ -823,9 +682,9 @@ namespace Derg
             // 0: NOP
             // 1: RETURN
             // 2: NOP
-            SetProgram(0, Nop(), Return(), Nop());
+            machine.SetProgram(0, Nop(), Return(), Nop());
 
-            Step(2);
+            machine.Step(2);
 
             Assert.Equal(1, machine.PC);
             Assert.Single(machine.frame_stack);
@@ -839,9 +698,9 @@ namespace Derg
             // 2:   NOP
             // 3: END
             // 4: NOP
-            SetProgram(0, VoidBlock(Return(), Nop(), End()), Nop());
+            machine.SetProgram(0, VoidBlock(Return(), Nop(), End()), Nop());
 
-            Step(2);
+            machine.Step(2);
 
             Assert.Equal(1, machine.PC);
             Assert.Single(machine.frame_stack);
@@ -853,9 +712,9 @@ namespace Derg
             // 0: I32_CONST 1
             // 1: I32_CONST 2
             // 2: RETURN
-            SetProgram(3, I32Const(1), I32Const(2), Return());
+            machine.SetProgram(3, I32Const(1), I32Const(2), Return());
 
-            Step(3);
+            machine.Step(3);
 
             Assert.Equal(1, machine.PC);
             Assert.Single(machine.frame_stack);
@@ -875,20 +734,20 @@ namespace Derg
             // Func 10:
             // 0: NOP
             // 1: END
-            AddFunction(10, Nop(), End());
-            SetProgram(0, Call(10), Nop());
+            machine.AddFunction(10, Nop(), End());
+            machine.SetProgram(0, Call(10), Nop());
 
-            Step();
+            machine.Step();
 
             Assert.Equal(0, machine.PC);
             Assert.Empty(machine.Frame.value_stack);
 
-            Step();
+            machine.Step();
 
             Assert.Equal(1, machine.PC);
             Assert.Empty(machine.Frame.value_stack);
 
-            Step();
+            machine.Step();
 
             Assert.Equal(1, machine.PC);
             Assert.Empty(machine.Frame.value_stack);
@@ -904,10 +763,10 @@ namespace Derg
             // Func 1:
             // 0: NOP
             // 1: END
-            AddFunction(1, Nop(), End());
-            SetProgram(0, I32Const(1), Call(1), Nop());
+            machine.AddFunction(1, Nop(), End());
+            machine.SetProgram(0, I32Const(1), Call(1), Nop());
 
-            Step(2);
+            machine.Step(2);
 
             Assert.Equal(0, machine.PC);
             Assert.Equal(new Value(1), machine.Frame.Locals[0]);
@@ -925,10 +784,10 @@ namespace Derg
             // Func 3:
             // 0: NOP
             // 1: END
-            AddFunction(3, Nop(), End());
-            SetProgram(0, I32Const(1), I32Const(2), Call(3), Nop());
+            machine.AddFunction(3, Nop(), End());
+            machine.SetProgram(0, I32Const(1), I32Const(2), Call(3), Nop());
 
-            Step(3);
+            machine.Step(3);
 
             Assert.Equal(0, machine.PC);
             Assert.Equal(new Value(1), machine.Frame.Locals[0]);
@@ -945,10 +804,10 @@ namespace Derg
             // Func 2:
             // 0: I32_CONST 1
             // 1: END
-            AddFunction(2, I32Const(1), End());
-            SetProgram(0, Call(2), Nop());
+            machine.AddFunction(2, I32Const(1), End());
+            machine.SetProgram(0, Call(2), Nop());
 
-            Step(3);
+            machine.Step(3);
 
             Assert.Equal(1, machine.PC);
             Assert.Equal(new Value(1), machine.TopOfStack);
@@ -966,10 +825,10 @@ namespace Derg
             // 0: I32_CONST 1
             // 1: I32_CONST 2
             // 2: END
-            AddFunction(3, I32Const(1), I32Const(2), End());
-            SetProgram(0, I32Const(10), I32Const(20), Call(3), Nop());
+            machine.AddFunction(3, I32Const(1), I32Const(2), End());
+            machine.SetProgram(0, I32Const(10), I32Const(20), Call(3), Nop());
 
-            Step(6);
+            machine.Step(6);
 
             Assert.Equal(3, machine.PC);
             Assert.Collection(
@@ -993,14 +852,14 @@ namespace Derg
             // Func 201:
             // 0: I32_CONST 2
             // 1: END
-            AddFunction(200, I32Const(1), End());
-            AddFunction(201, I32Const(2), End());
-            SetProgram(0, I32Const(1), CallIndirect(2, 3), End());
-            AddTable(3, new Table(new TableType(new Limits(2), ValueType.FUNCREF)));
+            machine.AddFunction(200, I32Const(1), End());
+            machine.AddFunction(201, I32Const(2), End());
+            machine.SetProgram(0, I32Const(1), CallIndirect(2, 3), End());
+            machine.AddTable(3, new Table(new TableType(new Limits(2), ValueType.FUNCREF)));
             machine.tables[3].Elements[0] = Value.RefOfFuncAddr(200);
             machine.tables[3].Elements[1] = Value.RefOfFuncAddr(201);
 
-            Step(3);
+            machine.Step(3);
 
             Assert.Equal(1, machine.PC);
             Assert.Equal(new Value(2), machine.TopOfStack);
