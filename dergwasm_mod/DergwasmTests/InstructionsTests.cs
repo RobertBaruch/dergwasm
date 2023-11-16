@@ -49,7 +49,7 @@ namespace DergwasmTests
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.REF_NULL, insn.Type);
-            Assert.Collection(insn.Operands, e => Assert.Equal(1U, e.value.AsI32_U()));
+            Assert.Collection(insn.Operands, e => Assert.Equal(1U, e.value.U32));
         }
 
         [Fact]
@@ -65,10 +65,7 @@ namespace DergwasmTests
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.V128_CONST, insn.Type);
-            Assert.Collection(
-                insn.Operands,
-                e => Assert.Equal(0x8877665544332211UL, e.value.AsI64_U())
-            );
+            Assert.Collection(insn.Operands, e => Assert.Equal(0x8877665544332211UL, e.value.U64));
         }
 
         [Fact]
@@ -83,7 +80,7 @@ namespace DergwasmTests
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.BR, insn.Type);
-            Assert.Collection(insn.Operands, e => Assert.Equal(1U, e.value.AsI32_U()));
+            Assert.Collection(insn.Operands, e => Assert.Equal(1U, e.value.U32));
         }
 
         [Fact]
@@ -101,8 +98,8 @@ namespace DergwasmTests
             Assert.Equal(InstructionType.TABLE_INIT, insn.Type);
             Assert.Collection(
                 insn.Operands,
-                e => Assert.Equal(1U, e.value.AsI32_U()),
-                e => Assert.Equal(2U, e.value.AsI32_U())
+                e => Assert.Equal(1U, e.value.U32),
+                e => Assert.Equal(2U, e.value.U32)
             );
         }
 
@@ -121,8 +118,8 @@ namespace DergwasmTests
             Assert.Equal(InstructionType.I32_LOAD, insn.Type);
             Assert.Collection(
                 insn.Operands,
-                e => Assert.Equal(1U, e.value.AsI32_U()),
-                e => Assert.Equal(2U, e.value.AsI32_U())
+                e => Assert.Equal(1U, e.value.U32),
+                e => Assert.Equal(2U, e.value.U32)
             );
         }
 
@@ -142,9 +139,9 @@ namespace DergwasmTests
             Assert.Equal(InstructionType.V128_LOAD8_LANE, insn.Type);
             Assert.Collection(
                 insn.Operands,
-                e => Assert.Equal(1U, e.value.AsI32_U()),
-                e => Assert.Equal(2U, e.value.AsI32_U()),
-                e => Assert.Equal(3U, e.value.AsI32_U())
+                e => Assert.Equal(1U, e.value.U32),
+                e => Assert.Equal(2U, e.value.U32),
+                e => Assert.Equal(3U, e.value.U32)
             );
         }
 
@@ -160,7 +157,7 @@ namespace DergwasmTests
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.I8X16_EXTRACT_LANE_S, insn.Type);
-            Assert.Collection(insn.Operands, e => Assert.Equal(1U, e.value.AsI32_U()));
+            Assert.Collection(insn.Operands, e => Assert.Equal(1U, e.value.U32));
         }
 
         [Fact]
@@ -192,22 +189,22 @@ namespace DergwasmTests
             Assert.Equal(InstructionType.I8X16_SHUFFLE, insn.Type);
             Assert.Collection(
                 insn.Operands,
-                e => Assert.Equal(1U, e.value.AsI32_U()),
-                e => Assert.Equal(2U, e.value.AsI32_U()),
-                e => Assert.Equal(3U, e.value.AsI32_U()),
-                e => Assert.Equal(4U, e.value.AsI32_U()),
-                e => Assert.Equal(5U, e.value.AsI32_U()),
-                e => Assert.Equal(6U, e.value.AsI32_U()),
-                e => Assert.Equal(7U, e.value.AsI32_U()),
-                e => Assert.Equal(8U, e.value.AsI32_U()),
-                e => Assert.Equal(9U, e.value.AsI32_U()),
-                e => Assert.Equal(10U, e.value.AsI32_U()),
-                e => Assert.Equal(11U, e.value.AsI32_U()),
-                e => Assert.Equal(12U, e.value.AsI32_U()),
-                e => Assert.Equal(13U, e.value.AsI32_U()),
-                e => Assert.Equal(14U, e.value.AsI32_U()),
-                e => Assert.Equal(15U, e.value.AsI32_U()),
-                e => Assert.Equal(16U, e.value.AsI32_U())
+                e => Assert.Equal(1U, e.value.U32),
+                e => Assert.Equal(2U, e.value.U32),
+                e => Assert.Equal(3U, e.value.U32),
+                e => Assert.Equal(4U, e.value.U32),
+                e => Assert.Equal(5U, e.value.U32),
+                e => Assert.Equal(6U, e.value.U32),
+                e => Assert.Equal(7U, e.value.U32),
+                e => Assert.Equal(8U, e.value.U32),
+                e => Assert.Equal(9U, e.value.U32),
+                e => Assert.Equal(10U, e.value.U32),
+                e => Assert.Equal(11U, e.value.U32),
+                e => Assert.Equal(12U, e.value.U32),
+                e => Assert.Equal(13U, e.value.U32),
+                e => Assert.Equal(14U, e.value.U32),
+                e => Assert.Equal(15U, e.value.U32),
+                e => Assert.Equal(16U, e.value.U32)
             );
         }
 
@@ -229,10 +226,10 @@ namespace DergwasmTests
             Assert.Equal(InstructionType.SELECT_VEC, insn.Type);
             Assert.Collection(
                 insn.Operands,
-                e => Assert.Equal(1U, e.value.AsI32_U()),
-                e => Assert.Equal(2U, e.value.AsI32_U()),
-                e => Assert.Equal(3U, e.value.AsI32_U()),
-                e => Assert.Equal(4U, e.value.AsI32_U())
+                e => Assert.Equal(1U, e.value.U32),
+                e => Assert.Equal(2U, e.value.U32),
+                e => Assert.Equal(3U, e.value.U32),
+                e => Assert.Equal(4U, e.value.U32)
             );
         }
 
@@ -248,7 +245,7 @@ namespace DergwasmTests
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.I32_CONST, insn.Type);
-            Assert.Collection(insn.Operands, e => Assert.Equal(0x11223344U, e.value.AsI32_U()));
+            Assert.Collection(insn.Operands, e => Assert.Equal(0x11223344U, e.value.U32));
         }
 
         [Fact]
@@ -263,10 +260,7 @@ namespace DergwasmTests
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.I64_CONST, insn.Type);
-            Assert.Collection(
-                insn.Operands,
-                e => Assert.Equal(0x1122334455667788UL, e.value.AsI64_U())
-            );
+            Assert.Collection(insn.Operands, e => Assert.Equal(0x1122334455667788UL, e.value.U64));
         }
 
         [Fact]
@@ -282,7 +276,7 @@ namespace DergwasmTests
 
             Assert.Equal(InstructionType.F32_CONST, insn.Type);
             Assert.Single(insn.Operands);
-            Assert.Collection(insn.Operands, e => Assert.Equal(3.14159f, e.value.AsF32()));
+            Assert.Collection(insn.Operands, e => Assert.Equal(3.14159f, e.value.F32));
         }
 
         [Fact]
@@ -297,7 +291,7 @@ namespace DergwasmTests
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.F64_CONST, insn.Type);
-            Assert.Collection(insn.Operands, e => Assert.Equal(3.14159, e.value.AsF64()));
+            Assert.Collection(insn.Operands, e => Assert.Equal(3.14159, e.value.F64));
         }
 
         [Fact]
@@ -319,11 +313,11 @@ namespace DergwasmTests
             Assert.Equal(InstructionType.BR_TABLE, insn.Type);
             Assert.Collection(
                 insn.Operands,
-                e => Assert.Equal(1U, e.value.AsI32_U()),
-                e => Assert.Equal(2U, e.value.AsI32_U()),
-                e => Assert.Equal(3U, e.value.AsI32_U()),
-                e => Assert.Equal(4U, e.value.AsI32_U()),
-                e => Assert.Equal(5U, e.value.AsI32_U())
+                e => Assert.Equal(1U, e.value.U32),
+                e => Assert.Equal(2U, e.value.U32),
+                e => Assert.Equal(3U, e.value.U32),
+                e => Assert.Equal(4U, e.value.U32),
+                e => Assert.Equal(5U, e.value.U32)
             );
         }
 

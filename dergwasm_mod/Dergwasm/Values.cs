@@ -120,50 +120,62 @@ namespace Derg
             value_hi = 0;
         }
 
-        public unsafe float AsF32()
+        public unsafe float F32
         {
-            fixed (ulong* ptr = &value_lo)
+            get
             {
-                return *(float*)ptr;
+                fixed (ulong* ptr = &value_lo)
+                {
+                    return *(float*)ptr;
+                }
             }
         }
 
-        public unsafe double AsF64()
+        public unsafe double F64
         {
-            fixed (ulong* ptr = &value_lo)
+            get
             {
-                return *(double*)ptr;
+                fixed (ulong* ptr = &value_lo)
+                {
+                    return *(double*)ptr;
+                }
             }
         }
 
-        public unsafe uint AsI32_U()
+        public unsafe uint U32
         {
-            fixed (ulong* ptr = &value_lo)
+            get
             {
-                return *(uint*)ptr;
+                fixed (ulong* ptr = &value_lo)
+                {
+                    return *(uint*)ptr;
+                }
             }
         }
 
-        public unsafe int AsI32_S()
+        public unsafe int S32
         {
-            fixed (ulong* ptr = &value_lo)
+            get
             {
-                return *(int*)ptr;
+                fixed (ulong* ptr = &value_lo)
+                {
+                    return *(int*)ptr;
+                }
             }
         }
 
-        public int Int() => AsI32_S();
+        public int Int => S32;
 
-        public unsafe ulong AsI64_U()
-        {
-            return value_lo;
-        }
+        public unsafe ulong U64 => value_lo;
 
-        public unsafe long AsI64_S()
+        public unsafe long S64
         {
-            fixed (ulong* ptr = &value_lo)
+            get
             {
-                return *(long*)ptr;
+                fixed (ulong* ptr = &value_lo)
+                {
+                    return *(long*)ptr;
+                }
             }
         }
 

@@ -82,7 +82,7 @@ namespace Derg
 
         private static void If(Instruction instruction, IMachine machine)
         {
-            bool cond = machine.Pop().Int() != 0;
+            bool cond = machine.Pop().Int != 0;
             if (cond)
             {
                 Block(instruction, machine);
@@ -120,37 +120,37 @@ namespace Derg
 
         private static void Br(Instruction instruction, IMachine machine)
         {
-            int levels = instruction.Operands[0].Int();
+            int levels = instruction.Operands[0].Int;
             BrLevels(machine, levels);
         }
 
         private static void BrIf(Instruction instruction, IMachine machine)
         {
-            bool cond = machine.Pop().Int() != 0;
+            bool cond = machine.Pop().Int != 0;
             if (cond)
                 Br(instruction, machine);
         }
 
         private static void BrTable(Instruction instruction, IMachine machine)
         {
-            int idx = (int)Math.Min(machine.Pop().AsI32_U(), (uint)instruction.Operands.Length - 1);
-            int levels = instruction.Operands[idx].Int();
+            int idx = (int)Math.Min(machine.Pop().U32, (uint)instruction.Operands.Length - 1);
+            int levels = instruction.Operands[idx].Int;
             BrLevels(machine, levels);
         }
 
         private static void Call(Instruction instruction, IMachine machine)
         {
-            int idx = instruction.Operands[0].Int();
+            int idx = instruction.Operands[0].Int;
             machine.InvokeFuncFromIndex(idx);
         }
 
         private static void CallIndirect(Instruction instruction, IMachine machine)
         {
-            int tableidx = instruction.Operands[1].Int();
-            int typeidx = instruction.Operands[0].Int();
+            int tableidx = instruction.Operands[1].Int;
+            int typeidx = instruction.Operands[0].Int;
             Table table = machine.GetTableFromIndex(tableidx);
             FuncType funcType = machine.GetFuncTypeFromIndex(typeidx);
-            uint i = machine.Pop().AsI32_U();
+            uint i = machine.Pop().U32;
             if (i >= table.Elements.LongLength)
             {
                 throw new Trap(

@@ -10,7 +10,7 @@ namespace DergwasmTests
         {
             Value v = new Value(1u);
 
-            Assert.Equal(1u, v.AsI32_U());
+            Assert.Equal(1u, v.U32);
         }
 
         [Fact]
@@ -18,7 +18,7 @@ namespace DergwasmTests
         {
             Value v = new Value(-1);
 
-            Assert.Equal(-1, v.AsI32_S());
+            Assert.Equal(-1, v.S32);
         }
 
         [Fact]
@@ -26,7 +26,7 @@ namespace DergwasmTests
         {
             Value v = new Value(1ul);
 
-            Assert.Equal(1ul, v.AsI64_U());
+            Assert.Equal(1ul, v.U64);
         }
 
         [Fact]
@@ -34,7 +34,7 @@ namespace DergwasmTests
         {
             Value v = new Value(-1L);
 
-            Assert.Equal(-1L, v.AsI64_S());
+            Assert.Equal(-1L, v.S64);
         }
 
         [Fact]
@@ -42,7 +42,7 @@ namespace DergwasmTests
         {
             Value v = new Value(1.0f);
 
-            Assert.Equal(1.0f, v.AsF32());
+            Assert.Equal(1.0f, v.F32);
         }
 
         [Fact]
@@ -50,7 +50,7 @@ namespace DergwasmTests
         {
             Value v = new Value(1.0);
 
-            Assert.Equal(1.0, v.AsF64());
+            Assert.Equal(1.0, v.F64);
         }
     }
 }
