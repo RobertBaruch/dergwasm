@@ -10,7 +10,7 @@ namespace Derg
     public class TestMachine : IMachine
     {
         public Stack<Frame> frame_stack = new Stack<Frame>();
-        public List<ModuleFunc> module_funcs = new List<ModuleFunc>();
+        public Dictionary<int, ModuleFunc> module_funcs = new Dictionary<int, ModuleFunc>();
 
         public Frame Frame
         {
@@ -97,10 +97,8 @@ namespace Derg
             ModuleFunc func = module_funcs[index];
             int arity = func.Signature.returns.Length;
             int args = func.Signature.args.Length;
-            int num_locals = func.Locals.Length;
-            int code_len = func.Code.Count;
 
-            Frame next_frame = new Frame(new Value[args + num_locals], Frame.Module);
+            Frame next_frame = new Frame(func, Frame.Module);
 
             // Remove args from stack and place in new frame's locals.
             Frame.value_stack.CopyTo(0, next_frame.Locals, Frame.value_stack.Count - args, args);
@@ -111,7 +109,7 @@ namespace Derg
 
             Frame = next_frame;
             PC = -1; // So that incrementing PC goes to beginning.
-            Label = new Label(arity, code_len);
+            Label = new Label(arity, func.Code.Count);
         }
     }
 
@@ -123,22 +121,39 @@ namespace Derg
         public InstructionEvaluationTests()
         {
             // This frame collects any return values.
-            machine.Frame = new Frame(new Value[] { }, null);
+            ModuleFunc func = new ModuleFunc(
+                machine.GetFuncTypeFromIndex(0),
+                new ValueType[] { ValueType.I32, ValueType.I32 },
+                new List<Instruction>()
+            );
+            machine.Frame = new Frame(func, null);
         }
 
         // Sets the program up for execution, with a signature given by the idx (see GetFuncTypeFromIndex).
         // The program always has two I32 locals.
         private void SetProgram(int idx, params UnflattenedInstruction[] instructions)
         {
-            FuncType signature = machine.GetFuncTypeFromIndex(idx);
-            machine.Frame = new Frame(new Value[] { new Value(0), new Value(0) }, null);
             program = new List<UnflattenedInstruction>(instructions).Flatten(0);
-            machine.Frame.Func = new ModuleFunc(
-                signature,
+            ModuleFunc func = new ModuleFunc(
+                machine.GetFuncTypeFromIndex(idx),
                 new ValueType[] { ValueType.I32, ValueType.I32 },
                 program
             );
+            FuncType signature = machine.GetFuncTypeFromIndex(idx);
+            machine.Frame = new Frame(func, null);
             machine.Label = new Label(machine.Frame.Arity, program.Count);
+        }
+
+        // Adds a function at the given index. The index is also used to determine the function's
+        // signature (see GetFuncTypeFromIndex). The function has two I32 locals.
+        private void AddFunction(int idx, params UnflattenedInstruction[] instructions)
+        {
+            program = new List<UnflattenedInstruction>(instructions).Flatten(0);
+            machine.module_funcs[idx] = new ModuleFunc(
+                machine.GetFuncTypeFromIndex(idx),
+                new ValueType[] { ValueType.I32, ValueType.I32 },
+                program
+            );
         }
 
         private void Step(int n = 1)
@@ -167,6 +182,8 @@ namespace Derg
         private UnflattenedInstruction Drop() => Insn(InstructionType.DROP);
 
         private UnflattenedInstruction Return() => Insn(InstructionType.RETURN);
+
+        private UnflattenedInstruction Call(int v) => Insn(InstructionType.CALL, new Value(v));
 
         private UnflattenedInstruction I32Const(int v) =>
             Insn(InstructionType.I32_CONST, new Value(v));
@@ -838,6 +855,119 @@ namespace Derg
 
             Assert.Equal(1, machine.PC);
             Assert.Single(machine.frame_stack);
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(new Value(1), e),
+                e => Assert.Equal(new Value(2), e)
+            );
+        }
+
+        [Fact]
+        public void TestCall()
+        {
+            // 0: CALL 10
+            // 1: NOP
+            //
+            // Func 10:
+            // 0: NOP
+            // 1: END
+            AddFunction(10, Nop(), End());
+            SetProgram(0, Call(10), Nop());
+
+            Step();
+
+            Assert.Equal(0, machine.PC);
+            Assert.Empty(machine.Frame.value_stack);
+
+            Step();
+
+            Assert.Equal(1, machine.PC);
+            Assert.Empty(machine.Frame.value_stack);
+
+            Step();
+
+            Assert.Equal(1, machine.PC);
+            Assert.Empty(machine.Frame.value_stack);
+        }
+
+        [Fact]
+        public void TestCallWithOneArg()
+        {
+            // 0: I32_CONST 1
+            // 1: CALL 1
+            // 2: NOP
+            //
+            // Func 1:
+            // 0: NOP
+            // 1: END
+            AddFunction(1, Nop(), End());
+            SetProgram(0, I32Const(1), Call(1), Nop());
+
+            Step(2);
+
+            Assert.Equal(0, machine.PC);
+            Assert.Equal(new Value(1), machine.Frame.Locals[0]);
+            Assert.Empty(machine.Frame.value_stack);
+        }
+
+        [Fact]
+        public void TestCallWithTwoArgs()
+        {
+            // 0: I32_CONST 1
+            // 1: I32_CONST 2
+            // 2: CALL 1
+            // 3: NOP
+            //
+            // Func 3:
+            // 0: NOP
+            // 1: END
+            AddFunction(3, Nop(), End());
+            SetProgram(0, I32Const(1), I32Const(2), Call(3), Nop());
+
+            Step(3);
+
+            Assert.Equal(0, machine.PC);
+            Assert.Equal(new Value(1), machine.Frame.Locals[0]);
+            Assert.Equal(new Value(2), machine.Frame.Locals[1]);
+            Assert.Empty(machine.Frame.value_stack);
+        }
+
+        [Fact]
+        public void TestCallWithOneReturn()
+        {
+            // 0: CALL 2
+            // 1: NOP
+            //
+            // Func 2:
+            // 0: I32_CONST 1
+            // 1: END
+            AddFunction(2, I32Const(1), End());
+            SetProgram(0, Call(2), Nop());
+
+            Step(3);
+
+            Assert.Equal(1, machine.PC);
+            Assert.Equal(new Value(1), machine.TopOfStack);
+        }
+
+        [Fact]
+        public void TestCallWithTwoReturns()
+        {
+            // 0: I32_CONST 10
+            // 1: I32_CONST 20
+            // 2: CALL 3
+            // 3: NOP
+            //
+            // Func 3:
+            // 0: I32_CONST 1
+            // 1: I32_CONST 2
+            // 2: END
+            AddFunction(3, I32Const(1), I32Const(2), End());
+            SetProgram(0, I32Const(10), I32Const(20), Call(3), Nop());
+
+            Step(6);
+
+            Assert.Equal(3, machine.PC);
             Assert.Collection(
                 machine.Frame.value_stack,
                 e => Assert.Equal(new Value(1), e),

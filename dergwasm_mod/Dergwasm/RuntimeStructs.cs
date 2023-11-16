@@ -43,13 +43,14 @@ namespace Derg
             get => Func.Code;
         }
 
-        public Frame(Value[] locals, IModule module)
+        public Frame(ModuleFunc func, IModule module)
         {
-            this.Locals = locals;
+            this.Locals = new Value[func.Signature.args.Length + func.Locals.Length];
             this.Module = module;
             this.pc = 0;
             this.label_stack = new Stack<Label>();
             this.value_stack = new List<Value>();
+            this.Func = func;
         }
     }
 

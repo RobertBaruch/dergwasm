@@ -183,6 +183,7 @@ namespace Derg
                 { InstructionType.BR_IF, BrIf },
                 { InstructionType.BR_TABLE, BrTable },
                 { InstructionType.BLOCK, Block },
+                { InstructionType.CALL, Call },
                 { InstructionType.DROP, Drop },
                 { InstructionType.ELSE, Else },
                 { InstructionType.END, End },
