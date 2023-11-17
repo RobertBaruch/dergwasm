@@ -6,6 +6,20 @@ namespace DergwasmTests
 {
     // A Machine for testing. Implements a real frame stack, but all other runtime structures
     // are just dictionaries.
+    //
+    // In the test machine, the addresses for functions, tables, element segments, and globals are offset
+    // from their indices. This is to ensure that the address is not equal to the index, which
+    // helps in testing.
+    //
+    // The offsets are:
+    //
+    // Global addr = index - 10
+    // Function addr = index + 10
+    // Table addr = index + 30
+    // Element segment addr = index + 40
+    //
+    // You can add functions, tables, element segments, and globals to the machine using the Add* methods,
+    // specifying the address to put them in.
     public class TestMachine : IMachine
     {
         public const int VoidType = 0;
@@ -27,11 +41,13 @@ namespace DergwasmTests
                 )
             },
         };
-        public Dictionary<int, ModuleFunc> module_funcs = new Dictionary<int, ModuleFunc>();
+        public Dictionary<int, ModuleFunc> funcs = new Dictionary<int, ModuleFunc>();
         public Dictionary<int, Table> tables = new Dictionary<int, Table>();
+        public Dictionary<int, ElementSegment> elementSegments =
+            new Dictionary<int, ElementSegment>();
         public Value[] Globals = new Value[2];
 
-        public int GetGlobalAddrForIndex(int idx) => idx - 20;
+        public int GetGlobalAddrForIndex(int idx) => idx - 10;
 
         public Frame Frame
         {
@@ -92,9 +108,11 @@ namespace DergwasmTests
             return funcTypes.ContainsKey(index) ? funcTypes[index] : funcTypes[index / 100];
         }
 
-        public void InvokeFuncFromIndex(int index)
+        public void InvokeFuncFromIndex(int idx) => InvokeFunc(GetFuncAddrFromIndex(idx));
+
+        public void InvokeFunc(int addr)
         {
-            ModuleFunc func = module_funcs[index];
+            ModuleFunc func = funcs[addr];
             int arity = func.Signature.returns.Length;
             int args = func.Signature.args.Length;
 
@@ -112,21 +130,17 @@ namespace DergwasmTests
             Label = new Label(arity, func.Code.Count);
         }
 
-        public Table GetTableFromIndex(int index) => tables[index];
-
-        public Func GetFunc(int addr) => module_funcs[addr];
-
-        public void InvokeFunc(int addr) => InvokeFuncFromIndex(addr);
+        public Func GetFunc(int addr) => funcs[addr];
 
         public int GetFuncAddrFromIndex(int idx) => idx + 10; // Ensure addr != idx.
 
-        // Sets the program up for execution, with a signature given by the idx (see GetFuncTypeFromIndex).
+        // Sets the program up for execution, with a signature given by the signature_idx (see GetFuncTypeFromIndex).
         // The program always has two I32 locals.
-        public void SetProgram(int idx, params UnflattenedInstruction[] instructions)
+        public void SetProgram(int signature_idx, params UnflattenedInstruction[] instructions)
         {
             List<Instruction> program = new List<UnflattenedInstruction>(instructions).Flatten(0);
             ModuleFunc func = new ModuleFunc(
-                GetFuncTypeFromIndex(idx),
+                GetFuncTypeFromIndex(signature_idx),
                 new ValueType[] { ValueType.I32, ValueType.I32 },
                 program
             );
@@ -134,19 +148,28 @@ namespace DergwasmTests
             Label = new Label(Frame.Arity, program.Count);
         }
 
-        // Adds a function at the given index. The index is also used to determine the function's
+        // Adds a function at the given addr. The index is also used to determine the function's
         // signature (see GetFuncTypeFromIndex). The function has two I32 locals.
-        public void AddFunction(int idx, params UnflattenedInstruction[] instructions)
+        public void AddFunction(int addr, params UnflattenedInstruction[] instructions)
         {
             List<Instruction> program = new List<UnflattenedInstruction>(instructions).Flatten(0);
-            module_funcs[idx] = new ModuleFunc(
-                GetFuncTypeFromIndex(idx),
+            funcs[addr] = new ModuleFunc(
+                GetFuncTypeFromIndex(addr - 10),
                 new ValueType[] { ValueType.I32, ValueType.I32 },
                 program
             );
         }
 
-        public void AddTable(int idx, Table table) => tables[idx] = table;
+        public void AddTable(int addr, Table table) => tables[addr] = table;
+
+        public Table GetTableFromIndex(int idx) => tables[idx + 30];
+
+        public void AddElementSegment(int addr, ElementSegment segment) =>
+            elementSegments[addr] = segment;
+
+        public ElementSegment GetElementSegmentFromIndex(int idx) => elementSegments[idx + 40];
+
+        public void DropElementSegmentFromIndex(int idx) => elementSegments.Remove(idx + 40);
 
         public void Step(int n = 1)
         {

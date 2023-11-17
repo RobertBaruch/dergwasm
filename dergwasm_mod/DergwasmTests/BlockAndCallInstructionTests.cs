@@ -516,14 +516,14 @@ namespace DergwasmTests
         [Fact]
         public void TestCall()
         {
-            // 0: CALL 10
+            // 0: CALL 0
             // 1: NOP
             //
-            // Func 10:
-            // 0: NOP
+            // Func 10 (= idx 0):
+            // 0: I32_CONST 1
             // 1: END
-            machine.AddFunction(10, Nop(), End());
-            machine.SetProgram(0, Call(10), Nop());
+            machine.AddFunction(10, I32Const(1), End());
+            machine.SetProgram(0, Call(0), Nop());
 
             machine.Step();
 
@@ -533,7 +533,7 @@ namespace DergwasmTests
             machine.Step();
 
             Assert.Equal(1, machine.PC);
-            Assert.Empty(machine.Frame.value_stack);
+            Assert.Equal(1, machine.TopOfStack.S32);
 
             machine.Step();
 
@@ -548,10 +548,10 @@ namespace DergwasmTests
             // 1: CALL 1
             // 2: NOP
             //
-            // Func 1:
+            // Func 11 (= idx 1):
             // 0: NOP
             // 1: END
-            machine.AddFunction(1, Nop(), End());
+            machine.AddFunction(11, Nop(), End());
             machine.SetProgram(0, I32Const(1), Call(1), Nop());
 
             machine.Step(2);
@@ -566,13 +566,13 @@ namespace DergwasmTests
         {
             // 0: I32_CONST 1
             // 1: I32_CONST 2
-            // 2: CALL 1
+            // 2: CALL 3
             // 3: NOP
             //
-            // Func 3:
+            // Func 13 (= idx 3):
             // 0: NOP
             // 1: END
-            machine.AddFunction(3, Nop(), End());
+            machine.AddFunction(13, Nop(), End());
             machine.SetProgram(0, I32Const(1), I32Const(2), Call(3), Nop());
 
             machine.Step(3);
@@ -589,10 +589,10 @@ namespace DergwasmTests
             // 0: CALL 2
             // 1: NOP
             //
-            // Func 2:
+            // Func 12 (= idx 2):
             // 0: I32_CONST 1
             // 1: END
-            machine.AddFunction(2, I32Const(1), End());
+            machine.AddFunction(12, I32Const(1), End());
             machine.SetProgram(0, Call(2), Nop());
 
             machine.Step(3);
@@ -609,11 +609,11 @@ namespace DergwasmTests
             // 2: CALL 3
             // 3: NOP
             //
-            // Func 3:
+            // Func 13 (= idx 3):
             // 0: I32_CONST 1
             // 1: I32_CONST 2
             // 2: END
-            machine.AddFunction(3, I32Const(1), I32Const(2), End());
+            machine.AddFunction(13, I32Const(1), I32Const(2), End());
             machine.SetProgram(0, I32Const(10), I32Const(20), Call(3), Nop());
 
             machine.Step(6);
@@ -633,19 +633,19 @@ namespace DergwasmTests
             // 1: CALL_INDIRECT 2, 3  // Should call Func 201.
             // 2: END
             //
-            // Func 200:
+            // Func 210 (= idx 200, type 2):
             // 0: I32_CONST 1
             // 1: END
             //
-            // Func 201:
+            // Func 211 (= idx 201, type 2):
             // 0: I32_CONST 2
             // 1: END
-            machine.AddFunction(200, I32Const(1), End());
-            machine.AddFunction(201, I32Const(2), End());
+            machine.AddFunction(210, I32Const(1), End());
+            machine.AddFunction(211, I32Const(2), End());
             machine.SetProgram(0, I32Const(1), CallIndirect(2, 3), End());
-            machine.AddTable(3, new Table(new TableType(new Limits(2), ValueType.FUNCREF)));
-            machine.tables[3].Elements[0] = Value.RefOfFuncAddr(200);
-            machine.tables[3].Elements[1] = Value.RefOfFuncAddr(201);
+            machine.AddTable(33, new Table(new TableType(new Limits(2), ValueType.FUNCREF)));
+            machine.tables[33].Elements[0] = Value.RefOfFuncAddr(210);
+            machine.tables[33].Elements[1] = Value.RefOfFuncAddr(211);
 
             machine.Step(3);
 

@@ -69,8 +69,8 @@ namespace DergwasmTests
         }
 
         [Theory]
-        [InlineData(20, 1)]
-        [InlineData(21, 2)]
+        [InlineData(10, 1)]
+        [InlineData(11, 2)]
         public void TestGlobalGet(int globalidx, int expected)
         {
             // 0: GLOBAL_GET globalidx
@@ -90,8 +90,8 @@ namespace DergwasmTests
         }
 
         [Theory]
-        [InlineData(20, 0)]
-        [InlineData(21, 1)]
+        [InlineData(10, 0)]
+        [InlineData(11, 1)]
         public void TestGlobalSet(int globalidx, int globaladdr)
         {
             // 0: I32_CONST 1

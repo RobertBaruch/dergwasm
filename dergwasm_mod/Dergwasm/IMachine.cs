@@ -53,21 +53,29 @@ namespace Derg
 
         // Gets the FuncType for the given index, using the current frame's module
         // to map the index to the machine's type address.
-        FuncType GetFuncTypeFromIndex(int index);
+        FuncType GetFuncTypeFromIndex(int idx);
 
         // Gets the Table for the given index, using the current frame's module
         // to map the index to the machine's table address.
-        Table GetTableFromIndex(int index);
+        Table GetTableFromIndex(int idx);
+
+        // Gets the ElementSegment for the given index, using the current frame's module
+        // to map the index to the machine's element segment address.
+        ElementSegment GetElementSegmentFromIndex(int idx);
+
+        // Nulls out the ElementSegment for the given index, using the current frame's module
+        // to map the index to the machine's element segment address.
+        void DropElementSegmentFromIndex(int idx);
 
         Func GetFunc(int addr);
 
-        int GetFuncAddrFromIndex(int index);
+        int GetFuncAddrFromIndex(int idx);
 
         // Invokes the function at the given index, using the current frame's module
         // to map the index to the machine's function address. Note that you can only
         // invoke a function in the current module or on the host using this. If you
         // need to invoke a function outside the module, use InvokeExternalFunc().
-        void InvokeFuncFromIndex(int index);
+        void InvokeFuncFromIndex(int idx);
 
         void InvokeFunc(int addr);
     }

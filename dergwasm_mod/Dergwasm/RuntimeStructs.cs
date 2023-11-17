@@ -116,4 +116,16 @@ namespace Derg
             Elements = new Value[Type.Limits.Minimum];
         }
     }
+
+    public class ElementSegment
+    {
+        public ValueType Type; // One of the reference types.
+        public Value[] Elements;
+
+        public ElementSegment(ValueType type, Value[] elements)
+        {
+            Type = type;
+            Elements = elements;
+        }
+    }
 }
