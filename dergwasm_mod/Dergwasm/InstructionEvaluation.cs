@@ -11,6 +11,9 @@ namespace Derg
     {
         private static void Nop(Instruction instruction, IMachine machine) { }
 
+        private static void Unreachable(Instruction instruction, IMachine machine) =>
+            throw new Trap("Unreachable instruction reached!");
+
         private static void Const(Instruction instruction, IMachine machine) =>
             machine.Push(instruction.Operands[0]);
 
@@ -38,6 +41,39 @@ namespace Derg
             Value v2 = machine.Pop();
             Value v1 = machine.Pop();
             machine.Push(cond ? v1 : v2);
+        }
+
+        private static void LocalGet(Instruction instruction, IMachine machine)
+        {
+            int idx = instruction.Operands[0].Int;
+            machine.Push(machine.Locals[idx]);
+        }
+
+        private static void LocalSet(Instruction instruction, IMachine machine)
+        {
+            int idx = instruction.Operands[0].Int;
+            Value val = machine.Pop();
+            machine.Locals[idx] = val;
+        }
+
+        private static void LocalTee(Instruction instruction, IMachine machine)
+        {
+            int idx = instruction.Operands[0].Int;
+            Value val = machine.TopOfStack;
+            machine.Locals[idx] = val;
+        }
+
+        private static void GlobalGet(Instruction instruction, IMachine machine)
+        {
+            int idx = instruction.Operands[0].Int;
+            machine.Push(machine.Globals[machine.GetGlobalAddrForIndex(idx)]);
+        }
+
+        private static void GlobalSet(Instruction instruction, IMachine machine)
+        {
+            int idx = instruction.Operands[0].Int;
+            Value val = machine.Pop();
+            machine.Globals[machine.GetGlobalAddrForIndex(idx)] = val;
         }
 
         private static void Block(Instruction instruction, IMachine machine)
@@ -235,9 +271,14 @@ namespace Derg
                 { InstructionType.END, End },
                 { InstructionType.F32_CONST, Const },
                 { InstructionType.F64_CONST, Const },
+                { InstructionType.GLOBAL_GET, GlobalGet },
+                { InstructionType.GLOBAL_SET, GlobalSet },
                 { InstructionType.I32_CONST, Const },
                 { InstructionType.I64_CONST, Const },
                 { InstructionType.IF, If },
+                { InstructionType.LOCAL_GET, LocalGet },
+                { InstructionType.LOCAL_SET, LocalSet },
+                { InstructionType.LOCAL_TEE, LocalTee },
                 { InstructionType.LOOP, Loop },
                 { InstructionType.NOP, Nop },
                 { InstructionType.REF_IS_NULL, RefIsNull },
@@ -245,6 +286,7 @@ namespace Derg
                 { InstructionType.REF_NULL, RefNull },
                 { InstructionType.RETURN, Return },
                 { InstructionType.SELECT, Select },
+                { InstructionType.UNREACHABLE, Unreachable },
             };
     }
 }

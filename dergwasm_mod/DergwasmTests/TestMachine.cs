@@ -8,6 +8,11 @@ namespace DergwasmTests
     // are just dictionaries.
     public class TestMachine : IMachine
     {
+        public const int VoidType = 0;
+        public const int OneArgType = 1;
+        public const int OneReturnType = 2;
+        public const int TwoArgTwoReturnType = 3;
+
         public Stack<Frame> frame_stack = new Stack<Frame>();
         public Dictionary<int, FuncType> funcTypes = new Dictionary<int, FuncType>()
         {
@@ -24,6 +29,9 @@ namespace DergwasmTests
         };
         public Dictionary<int, ModuleFunc> module_funcs = new Dictionary<int, ModuleFunc>();
         public Dictionary<int, Table> tables = new Dictionary<int, Table>();
+        public Value[] Globals = new Value[2];
+
+        public int GetGlobalAddrForIndex(int idx) => idx - 20;
 
         public Frame Frame
         {
@@ -59,6 +67,10 @@ namespace DergwasmTests
         }
 
         public void Push(Value val) => Frame.value_stack.Add(val);
+
+        public Value[] Locals => Frame.Locals;
+
+        Value[] IMachine.Globals => Globals;
 
         public int StackLevel() => Frame.value_stack.Count;
 
@@ -118,7 +130,6 @@ namespace DergwasmTests
                 new ValueType[] { ValueType.I32, ValueType.I32 },
                 program
             );
-            FuncType signature = GetFuncTypeFromIndex(idx);
             Frame = new Frame(func, null);
             Label = new Label(Frame.Arity, program.Count);
         }

@@ -28,6 +28,15 @@ namespace Derg
         // Pops the top value off the stack.
         Value Pop();
 
+        // Gets the locals for the current frame.
+        Value[] Locals { get; }
+
+        // Gets the global address for the current module's index.
+        int GetGlobalAddrForIndex(int idx);
+
+        // Gets the machine's globals.
+        Value[] Globals { get; }
+
         // Gets the number of values on the stack.
         int StackLevel();
 
