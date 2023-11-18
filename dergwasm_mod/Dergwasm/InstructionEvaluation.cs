@@ -9,6 +9,15 @@ namespace Derg
 {
     public static class InstructionEvaluation
     {
+        private static unsafe T Convert<T>(byte[] mem, uint ea)
+            where T : unmanaged
+        {
+            fixed (byte* ptr = &mem[ea])
+            {
+                return *(T*)ptr;
+            }
+        }
+
         private static void Nop(Instruction instruction, IMachine machine) { }
 
         private static void Unreachable(Instruction instruction, IMachine machine) =>
@@ -194,6 +203,46 @@ namespace Derg
         {
             int elemidx = instruction.Operands[0].Int;
             machine.DropElementSegmentFromIndex(elemidx);
+        }
+
+        private static void I32Load(Instruction instruction, IMachine machine)
+        {
+            uint offset = machine.Pop().U32;
+            byte[] mem = machine.Memory0;
+            // Ignore Operands[0], the alignment.
+            uint base_addr = instruction.Operands[1].U32;
+            uint ea = base_addr + offset;
+            machine.Push(new Value(Convert<uint>(mem, ea)));
+        }
+
+        private static void I64Load(Instruction instruction, IMachine machine)
+        {
+            uint offset = machine.Pop().U32;
+            byte[] mem = machine.Memory0;
+            // Ignore Operands[0], the alignment.
+            uint base_addr = instruction.Operands[1].U32;
+            uint ea = base_addr + offset;
+            machine.Push(new Value(Convert<ulong>(mem, ea)));
+        }
+
+        private static void F32Load(Instruction instruction, IMachine machine)
+        {
+            uint offset = machine.Pop().U32;
+            byte[] mem = machine.Memory0;
+            // Ignore Operands[0], the alignment.
+            uint base_addr = instruction.Operands[1].U32;
+            uint ea = base_addr + offset;
+            machine.Push(new Value(Convert<float>(mem, ea)));
+        }
+
+        private static void F64Load(Instruction instruction, IMachine machine)
+        {
+            uint offset = machine.Pop().U32;
+            byte[] mem = machine.Memory0;
+            // Ignore Operands[0], the alignment.
+            uint base_addr = instruction.Operands[1].U32;
+            uint ea = base_addr + offset;
+            machine.Push(new Value(Convert<double>(mem, ea)));
         }
 
         private static void Block(Instruction instruction, IMachine machine)
@@ -391,11 +440,15 @@ namespace Derg
                 { InstructionType.ELSE, Else },
                 { InstructionType.END, End },
                 { InstructionType.F32_CONST, Const },
+                { InstructionType.F32_LOAD, F32Load },
                 { InstructionType.F64_CONST, Const },
+                { InstructionType.F64_LOAD, F64Load },
                 { InstructionType.GLOBAL_GET, GlobalGet },
                 { InstructionType.GLOBAL_SET, GlobalSet },
                 { InstructionType.I32_CONST, Const },
+                { InstructionType.I32_LOAD, I32Load },
                 { InstructionType.I64_CONST, Const },
+                { InstructionType.I64_LOAD, I64Load },
                 { InstructionType.IF, If },
                 { InstructionType.LOCAL_GET, LocalGet },
                 { InstructionType.LOCAL_SET, LocalSet },

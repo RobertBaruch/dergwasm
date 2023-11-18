@@ -67,6 +67,13 @@ namespace Derg
         // to map the index to the machine's element segment address.
         void DropElementSegmentFromIndex(int idx);
 
+        // Gets the Memory for the given index, using the current frame's module
+        // to map the index to the machine's memory address.
+        Memory GetMemoryFromIndex(int idx);
+
+        // A shortcut to get to the data in Memory 0.
+        byte[] Memory0 { get; }
+
         Func GetFunc(int addr);
 
         int GetFuncAddrFromIndex(int idx);

@@ -46,6 +46,7 @@ namespace DergwasmTests
         public Dictionary<int, ElementSegment> elementSegments =
             new Dictionary<int, ElementSegment>();
         public Value[] Globals = new Value[2];
+        public Memory Memory = new Memory(new Limits(1));
 
         public int GetGlobalAddrForIndex(int idx) => idx - 10;
 
@@ -102,6 +103,17 @@ namespace DergwasmTests
             get => Frame.label_stack.Peek();
             set => Frame.label_stack.Push(value);
         }
+
+        public Memory GetMemoryFromIndex(int idx)
+        {
+            if (idx != 0)
+            {
+                throw new Trap($"Nonzero memory {idx} accessed.");
+            }
+            return Memory;
+        }
+
+        public byte[] Memory0 => Memory.Data;
 
         public FuncType GetFuncTypeFromIndex(int index)
         {

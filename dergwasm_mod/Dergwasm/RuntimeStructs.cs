@@ -128,4 +128,16 @@ namespace Derg
             Elements = elements;
         }
     }
+
+    public class Memory
+    {
+        public Limits Limits;
+        public byte[] Data;
+
+        public Memory(Limits limits)
+        {
+            Limits = limits;
+            Data = new byte[Limits.Minimum << 16];
+        }
+    }
 }
