@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Derg
 {
@@ -73,6 +69,9 @@ namespace Derg
 
         // A shortcut to get to the data in Memory 0.
         byte[] Memory0 { get; }
+
+        // Gets a span of bytes from Memory 0.
+        Span<byte> Span0(int offset, int sz);
 
         Func GetFunc(int addr);
 

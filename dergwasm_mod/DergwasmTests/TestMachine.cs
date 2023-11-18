@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Derg;
 
@@ -30,14 +31,20 @@ namespace DergwasmTests
         public Stack<Frame> frame_stack = new Stack<Frame>();
         public Dictionary<int, FuncType> funcTypes = new Dictionary<int, FuncType>()
         {
-            { 0, new FuncType(new ValueType[] { }, new ValueType[] { }) },
-            { 1, new FuncType(new ValueType[] { ValueType.I32 }, new ValueType[] { }) },
-            { 2, new FuncType(new ValueType[] { }, new ValueType[] { ValueType.I32 }) },
+            { 0, new FuncType(new Derg.ValueType[] { }, new Derg.ValueType[] { }) },
+            {
+                1,
+                new FuncType(new Derg.ValueType[] { Derg.ValueType.I32 }, new Derg.ValueType[] { })
+            },
+            {
+                2,
+                new FuncType(new Derg.ValueType[] { }, new Derg.ValueType[] { Derg.ValueType.I32 })
+            },
             {
                 3,
                 new FuncType(
-                    new ValueType[] { ValueType.I32, ValueType.I32 },
-                    new ValueType[] { ValueType.I32, ValueType.I32 }
+                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
+                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 }
                 )
             },
         };
@@ -115,6 +122,8 @@ namespace DergwasmTests
 
         public byte[] Memory0 => Memory.Data;
 
+        public Span<byte> Span0(int offset, int sz) => new Span<byte>(Memory.Data, offset, sz);
+
         public FuncType GetFuncTypeFromIndex(int index)
         {
             return funcTypes.ContainsKey(index) ? funcTypes[index] : funcTypes[index / 100];
@@ -153,7 +162,7 @@ namespace DergwasmTests
             List<Instruction> program = new List<UnflattenedInstruction>(instructions).Flatten(0);
             ModuleFunc func = new ModuleFunc(
                 GetFuncTypeFromIndex(signature_idx),
-                new ValueType[] { ValueType.I32, ValueType.I32 },
+                new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
                 program
             );
             Frame = new Frame(func, null);
@@ -167,7 +176,7 @@ namespace DergwasmTests
             List<Instruction> program = new List<UnflattenedInstruction>(instructions).Flatten(0);
             funcs[addr] = new ModuleFunc(
                 GetFuncTypeFromIndex(addr - 10),
-                new ValueType[] { ValueType.I32, ValueType.I32 },
+                new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
                 program
             );
         }
