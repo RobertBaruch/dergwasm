@@ -140,4 +140,14 @@ namespace Derg
             Data = new byte[Limits.Minimum << 16];
         }
     }
+
+    public class DataSegment
+    {
+        public byte[] Data;
+
+        public DataSegment(byte[] data)
+        {
+            Data = data;
+        }
+    }
 }

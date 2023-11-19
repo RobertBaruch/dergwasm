@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Elements.Core;
+using System;
 
 namespace Derg
 {
@@ -72,6 +73,18 @@ namespace Derg
 
         // Gets a span of bytes from Memory 0.
         Span<byte> Span0(int offset, int sz);
+
+        // Gets the DataSegment for the given index, using the current frame's module
+        // to map the index to the machine's data segment address.
+        byte[] GetDataSegmentFromIndex(int idx);
+
+        // Gets the address of the data segment for the given index, using the current frame's module
+        // to map the index to the machine's data segment address.
+        int GetDataSegmentAddrFromIndex(int idx);
+
+        // Nulls out the DataSegment for the given index, using the current frame's module
+        // to map the index to the machine's data segment address.
+        void DropDataSegmentFromIndex(int idx);
 
         Func GetFunc(int addr);
 

@@ -180,14 +180,16 @@ namespace Derg
             byte val = (byte)machine.Pop().U32;
             uint d = machine.Pop().U32;
             Memory mem = machine.GetMemoryFromIndex(0);
-            if (d + n > mem.Data.Length)
+            try
+            {
+                machine.Memory0.AsSpan<byte>((int)d, (int)n).Fill(val);
+            }
+            catch (Exception e)
             {
                 throw new Trap(
                     $"memory.fill: Access out of bounds: offset 0x{d:8X} length 0x{n:8X} bytes"
                 );
             }
-            // Maddeningly, there's no Array.Fill for .NET 4.7.
-            machine.Span0((int)d, (int)n).Fill(val);
         }
 
         public static void MemoryCopy(Instruction instruction, IMachine machine)
@@ -201,23 +203,50 @@ namespace Derg
             uint s = machine.Pop().U32;
             uint d = machine.Pop().U32;
             Memory mem = machine.GetMemoryFromIndex(0);
-            if (d + n > mem.Data.Length)
+            try
+            {
+                Array.Copy(mem.Data, s, mem.Data, d, n);
+            }
+            catch (Exception e)
             {
                 throw new Trap(
-                    $"memory.copy: Destination access out of bounds: offset 0x{d:8X} length 0x{n:8X} bytes"
+                    $"memory.copy: Access out of bounds: source offset 0x{s:8X}, destination offset 0x{d:8X}, length 0x{n:8X} bytes"
                 );
             }
-            if (s + n > mem.Data.Length)
+        }
+
+        public static void MemoryInit(Instruction instruction, IMachine machine)
+        {
+            int memidx = instruction.Operands[1].Int;
+            if (memidx != 0)
+            {
+                throw new Trap("memory.init: Non-zero memory segment accessed");
+            }
+            int dataidx = instruction.Operands[0].Int;
+            byte[] data = machine.GetDataSegmentFromIndex(dataidx);
+            if (data == null)
+            {
+                throw new Trap($"memory.init: dropped data segment accessed (index {dataidx})");
+            }
+            uint n = machine.Pop().U32;
+            uint s_offset = machine.Pop().U32;
+            uint d_offset = machine.Pop().U32;
+            try
+            {
+                Array.Copy(data, s_offset, machine.Memory0, d_offset, n);
+            }
+            catch (Exception e)
             {
                 throw new Trap(
-                    $"memory.copy: Source access out of bounds: offset 0x{s:8X} length 0x{n:8X} bytes"
+                    $"memory.init: Access out of bounds: source index {dataidx} offset 0x{s_offset:8X}, destination offset 0x{d_offset:8X}, length 0x{n:8X} bytes"
                 );
             }
-            if (n == 0)
-            {
-                return;
-            }
-            machine.Span0((int)s, (int)n).CopyTo(machine.Span0((int)d, (int)n));
+        }
+
+        public static void DataDrop(Instruction instruction, IMachine machine)
+        {
+            int elemidx = instruction.Operands[0].Int;
+            machine.DropDataSegmentFromIndex(elemidx);
         }
     }
 }

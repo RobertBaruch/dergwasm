@@ -18,6 +18,7 @@ namespace DergwasmTests
     // Function addr = index + 10
     // Table addr = index + 30
     // Element segment addr = index + 40
+    // Data segment addr = index + 50
     //
     // You can add functions, tables, element segments, and globals to the machine using the Add* methods,
     // specifying the address to put them in.
@@ -54,6 +55,7 @@ namespace DergwasmTests
             new Dictionary<int, ElementSegment>();
         public Value[] Globals = new Value[2];
         public Memory Memory = new Memory(new Limits(1));
+        public Dictionary<int, byte[]> dataSegments = new Dictionary<int, byte[]>();
 
         public int GetGlobalAddrForIndex(int idx) => idx - 10;
 
@@ -66,13 +68,12 @@ namespace DergwasmTests
         public void PopFrame()
         {
             Frame last_frame = frame_stack.Pop();
-            Frame
-                .value_stack
-                .AddRange(
-                    last_frame
-                        .value_stack
-                        .GetRange(last_frame.value_stack.Count - last_frame.Arity, last_frame.Arity)
-                );
+            Frame.value_stack.AddRange(
+                last_frame.value_stack.GetRange(
+                    last_frame.value_stack.Count - last_frame.Arity,
+                    last_frame.Arity
+                )
+            );
         }
 
         public int PC
@@ -191,6 +192,14 @@ namespace DergwasmTests
         public ElementSegment GetElementSegmentFromIndex(int idx) => elementSegments[idx + 40];
 
         public void DropElementSegmentFromIndex(int idx) => elementSegments.Remove(idx + 40);
+
+        public int GetDataSegmentAddrFromIndex(int idx) => idx + 50;
+
+        public byte[] GetDataSegmentFromIndex(int idx) => dataSegments[idx + 50];
+
+        public void AddDataSegment(int addr, byte[] data) => dataSegments[addr] = data;
+
+        public void DropDataSegmentFromIndex(int idx) => dataSegments.Remove(idx + 50);
 
         public void Step(int n = 1)
         {
