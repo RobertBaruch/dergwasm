@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Derg;
 using Xunit;
 
@@ -318,7 +319,7 @@ namespace DergwasmTests
 
             Assert.Empty(machine.Frame.value_stack);
 
-            Assert.Equal(expected, machine.Memory0.AsSpan<byte>(0, 5).ToArray());
+            Assert.Equal(expected, new ArraySegment<byte>(machine.Memory0, 0, 5).ToArray());
         }
 
         [Theory]
@@ -369,7 +370,7 @@ namespace DergwasmTests
 
             Assert.Empty(machine.Frame.value_stack);
 
-            Assert.Equal(expected, machine.Memory0.AsSpan<byte>(0, 5).ToArray());
+            Assert.Equal(expected, new ArraySegment<byte>(machine.Memory0, 0, 5).ToArray());
         }
 
         [Theory]
@@ -423,7 +424,7 @@ namespace DergwasmTests
 
             Assert.Empty(machine.Frame.value_stack);
 
-            Assert.Equal(expected, machine.Memory0.AsSpan<byte>(0, 5).ToArray());
+            Assert.Equal(expected, new ArraySegment<byte>(machine.Memory0, 0, 5).ToArray());
         }
 
         [Theory]

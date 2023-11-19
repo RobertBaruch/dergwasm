@@ -3,8 +3,35 @@ using Xunit;
 
 namespace DergwasmTests
 {
-    public class BlockAndCallInstructionTests : InstructionTestFixture
+    public class ControlInstructionTests : InstructionTestFixture
     {
+        [Fact]
+        public void TestNop()
+        {
+            // Note that in most of these tests, we don't want to fall off the
+            // end of the function, so we stick a NOP on the end. We could have
+            // just as easily stuck an END on the end, which would probably be
+            // more accurate, since all funcs end in END.
+
+            // 0: NOP
+            // 1: NOP
+            machine.SetProgram(0, Nop(), Nop());
+            machine.Step();
+
+            Assert.Equal(1, machine.PC);
+            Assert.Empty(machine.Frame.value_stack);
+        }
+
+        [Fact]
+        public void TestUnreachable()
+        {
+            // 0: UNREACHABLE
+            // 1: NOP
+            machine.SetProgram(0, Insn(InstructionType.UNREACHABLE), Nop());
+
+            Assert.Throws<Trap>(() => machine.Step());
+        }
+
         [Fact]
         public void TestBlock()
         {

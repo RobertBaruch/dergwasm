@@ -2,11 +2,6 @@
 {
     public static class StackInstructions
     {
-        public static void Nop(Instruction instruction, IMachine machine) { }
-
-        public static void Unreachable(Instruction instruction, IMachine machine) =>
-            throw new Trap("Unreachable instruction reached!");
-
         public static void Const(Instruction instruction, IMachine machine) =>
             machine.Push(instruction.Operands[0]);
 

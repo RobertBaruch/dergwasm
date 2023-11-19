@@ -2,8 +2,13 @@
 
 namespace Derg
 {
-    public static class BlockAndControlInstructions
+    public static class ControlInstructions
     {
+        public static void Nop(Instruction instruction, IMachine machine) { }
+
+        public static void Unreachable(Instruction instruction, IMachine machine) =>
+            throw new Trap("Unreachable instruction reached!");
+
         public static void Block(Instruction instruction, IMachine machine)
         {
             // A block's args are what it expects to be on the stack upon entry.
