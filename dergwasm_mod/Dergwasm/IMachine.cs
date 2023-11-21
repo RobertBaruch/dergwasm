@@ -25,6 +25,9 @@ namespace Derg
         // Pops the top value off the stack.
         Value Pop();
 
+        unsafe T Pop<T>()
+            where T : unmanaged;
+
         // Gets the locals for the current frame.
         Value[] Locals { get; }
 

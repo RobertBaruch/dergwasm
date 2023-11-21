@@ -5,7 +5,13 @@ VisualStudioVersion = 17.6.33815.320
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dergwasm", "Dergwasm.csproj", "{EB052882-ADCF-400D-B277-1AA5FBA7E945}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DergwasmTests", "..\DergwasmTests\DergwasmTests.csproj", "{DD3FA3DC-5AB2-468C-92FD-09D0A5D75B7B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DergwasmTests", "..\DergwasmTests\DergwasmTests.csproj", "{DD3FA3DC-5AB2-468C-92FD-09D0A5D75B7B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks", "..\Benchmarks\Benchmarks.csproj", "{BC1097C2-8834-42EF-AFA8-8734C198EC40}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DD3FA3DC-5AB2-468C-92FD-09D0A5D75B7B} = {DD3FA3DC-5AB2-468C-92FD-09D0A5D75B7B}
+		{EB052882-ADCF-400D-B277-1AA5FBA7E945} = {EB052882-ADCF-400D-B277-1AA5FBA7E945}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +27,10 @@ Global
 		{DD3FA3DC-5AB2-468C-92FD-09D0A5D75B7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DD3FA3DC-5AB2-468C-92FD-09D0A5D75B7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DD3FA3DC-5AB2-468C-92FD-09D0A5D75B7B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC1097C2-8834-42EF-AFA8-8734C198EC40}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC1097C2-8834-42EF-AFA8-8734C198EC40}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC1097C2-8834-42EF-AFA8-8734C198EC40}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC1097C2-8834-42EF-AFA8-8734C198EC40}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

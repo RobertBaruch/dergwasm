@@ -91,6 +91,13 @@ namespace DergwasmTests
             return top;
         }
 
+        public unsafe T Pop<T>()
+            where T : unmanaged
+        {
+            Value top = Pop();
+            return *(T*)&top.value_lo;
+        }
+
         public void Push(Value val) => Frame.value_stack.Add(val);
 
         public Value[] Locals => Frame.Locals;
@@ -208,6 +215,14 @@ namespace DergwasmTests
                 Instruction insn = Frame.Code[PC];
                 InstructionEvaluation.Execute(insn, this);
             }
+        }
+
+        public UnflattenedInstruction Insn(InstructionType type, params Value[] operands)
+        {
+            return new UnflattenedInstruction(
+                type,
+                (from operand in operands select new UnflattenedOperand(operand)).ToArray()
+            );
         }
     }
 }
