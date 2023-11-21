@@ -366,5 +366,73 @@ namespace DergwasmTests
 
             Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.Bool));
         }
+
+        [Theory]
+        [InlineData(InstructionType.I32_EXTEND8_S, 0x01U, 0x01U)]
+        [InlineData(InstructionType.I32_EXTEND8_S, 0xF1U, 0xFFFFFFF1U)]
+        [InlineData(InstructionType.I32_EXTEND16_S, 0xFF1U, 0xFF1U)]
+        [InlineData(InstructionType.I32_EXTEND16_S, 0xFFF1U, 0xFFFFFFF1U)]
+        public void TestI32ExtendOps(InstructionType insn, uint v, uint expected)
+        {
+            // 0: I32_CONST v
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(0, I32Const(v), Insn(insn), Nop());
+
+            machine.Step(2);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.U32));
+        }
+
+        [Theory]
+        [InlineData(InstructionType.I64_EXTEND8_S, 0x01UL, 0x01UL)]
+        [InlineData(InstructionType.I64_EXTEND8_S, 0xF1UL, 0xFFFFFFFFFFFFFFF1UL)]
+        [InlineData(InstructionType.I64_EXTEND16_S, 0xFF1UL, 0xFF1UL)]
+        [InlineData(InstructionType.I64_EXTEND16_S, 0xFFF1UL, 0xFFFFFFFFFFFFFFF1UL)]
+        [InlineData(InstructionType.I64_EXTEND32_S, 0xFFFFFF1UL, 0xFFFFFF1UL)]
+        [InlineData(InstructionType.I64_EXTEND32_S, 0xFFFFFFF1UL, 0xFFFFFFFFFFFFFFF1UL)]
+        public void TestI64ExtendOps(InstructionType insn, ulong v, ulong expected)
+        {
+            // 0: I64_CONST v
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(0, I64Const(v), Insn(insn), Nop());
+
+            machine.Step(2);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.U64));
+        }
+
+        [Theory]
+        [InlineData(0xFFUL, 0xFFU)]
+        [InlineData(0x1FFFFFFFFUL, 0xFFFFFFFFU)]
+        public void TestI32WrapI64(ulong v, uint expected)
+        {
+            // 0: I64_CONST v
+            // 1: I32_WRAP_I64
+            // 2: NOP
+            machine.SetProgram(0, I64Const(v), Insn(InstructionType.I32_WRAP_I64), Nop());
+
+            machine.Step(2);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.U32));
+        }
+
+        [Theory]
+        [InlineData(InstructionType.I64_EXTEND_I32_S, 0xFFU, 0xFFUL)]
+        [InlineData(InstructionType.I64_EXTEND_I32_S, 0xFFFFFFFFU, 0xFFFFFFFFFFFFFFFFUL)]
+        [InlineData(InstructionType.I64_EXTEND_I32_U, 0xFFU, 0xFFUL)]
+        [InlineData(InstructionType.I64_EXTEND_I32_U, 0xFFFFFFFFU, 0xFFFFFFFFUL)]
+        public void TestI64ExtendI32(InstructionType insn, uint v, ulong expected)
+        {
+            // 0: I32_CONST v
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(0, I32Const(v), Insn(insn), Nop());
+
+            machine.Step(2);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.U64));
+        }
     }
 }

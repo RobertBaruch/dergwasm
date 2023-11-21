@@ -512,5 +512,53 @@ namespace Derg
             ulong c1 = machine.Pop<ulong>();
             machine.Push(new Value(c1 >= c2));
         }
+
+        public static void I32Extend8S(Instruction instruction, IMachine machine)
+        {
+            int c1 = machine.Pop<sbyte>();
+            machine.Push(new Value(c1));
+        }
+
+        public static void I32Extend16S(Instruction instruction, IMachine machine)
+        {
+            int c1 = machine.Pop<short>();
+            machine.Push(new Value(c1));
+        }
+
+        public static void I64Extend8S(Instruction instruction, IMachine machine)
+        {
+            long c1 = machine.Pop<sbyte>();
+            machine.Push(new Value(c1));
+        }
+
+        public static void I64Extend16S(Instruction instruction, IMachine machine)
+        {
+            long c1 = machine.Pop<short>();
+            machine.Push(new Value(c1));
+        }
+
+        public static void I64Extend32S(Instruction instruction, IMachine machine)
+        {
+            long c1 = machine.Pop<int>();
+            machine.Push(new Value(c1));
+        }
+
+        public static void I32WrapI64(Instruction instruction, IMachine machine)
+        {
+            uint c1 = machine.Pop<uint>();
+            machine.Push(new Value(c1));
+        }
+
+        public static void I64ExtendI32S(Instruction instruction, IMachine machine)
+        {
+            long c1 = machine.Pop<int>();
+            machine.Push(new Value(c1));
+        }
+
+        public static void I64ExtendI32U(Instruction instruction, IMachine machine)
+        {
+            long c1 = machine.Pop<uint>();
+            machine.Push(new Value(c1));
+        }
     }
 }
