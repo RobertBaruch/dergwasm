@@ -599,5 +599,365 @@ namespace DergwasmTests
 
             Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.Bool));
         }
+
+        [Fact]
+        public void TestI32TruncF32S()
+        {
+            // 0: F32_CONST -1.58f
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(0, F32Const(-1.58f), Insn(InstructionType.I32_TRUNC_F32_S), Nop());
+
+            machine.Step(2);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(0xFFFFFFFFU, e.U32));
+        }
+
+        [Fact]
+        public void TestI32TruncF32U()
+        {
+            // 0: F32_CONST 2200000000.58
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(
+                0,
+                F32Const(2200000000.58f),
+                Insn(InstructionType.I32_TRUNC_F32_U),
+                Nop()
+            );
+
+            machine.Step(2);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(0x83215600U, e.U32));
+        }
+
+        [Fact]
+        public void TestI32TruncF64S()
+        {
+            // 0: F64_CONST -1.58
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(0, F64Const(-1.58), Insn(InstructionType.I32_TRUNC_F64_S), Nop());
+
+            machine.Step(2);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(0xFFFFFFFFU, e.U32));
+        }
+
+        [Fact]
+        public void TestI32TruncF64U()
+        {
+            // 0: F64_CONST 2200000000.58
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(
+                0,
+                F64Const(2200000000.58),
+                Insn(InstructionType.I32_TRUNC_F64_U),
+                Nop()
+            );
+
+            machine.Step(2);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(0x83215600U, e.U32));
+        }
+
+        [Fact]
+        public void TestI64TruncF32S()
+        {
+            // 0: F32_CONST -1.58f
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(0, F32Const(-1.58f), Insn(InstructionType.I64_TRUNC_F32_S), Nop());
+
+            machine.Step(2);
+
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(0xFFFFFFFFFFFFFFFFU, e.U64)
+            );
+        }
+
+        [Fact]
+        public void TestI64TruncF32U()
+        {
+            // 0: F32_CONST 9.5e18
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(0, F32Const(9.5e18f), Insn(InstructionType.I64_TRUNC_F32_U), Nop());
+
+            machine.Step(2);
+
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(0x83D6C80000000000UL, e.U64)
+            );
+        }
+
+        [Fact]
+        public void TestI64TruncF64S()
+        {
+            // 0: F64_CONST -1.58
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(0, F64Const(-1.58), Insn(InstructionType.I64_TRUNC_F64_S), Nop());
+
+            machine.Step(2);
+
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(0xFFFFFFFFFFFFFFFFU, e.U64)
+            );
+        }
+
+        [Fact]
+        public void TestI64TruncF64U()
+        {
+            // 0: F64_CONST 9.5e18
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(0, F64Const(9.5e18), Insn(InstructionType.I64_TRUNC_F64_U), Nop());
+
+            machine.Step(2);
+
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(0x83D6C7AAB6360000UL, e.U64)
+            );
+        }
+
+        [Fact]
+        public void TestF32DemoteF64()
+        {
+            // 0: F64_CONST 1.58
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(0, F64Const(1.58), Insn(InstructionType.F32_DEMOTE_F64), Nop());
+
+            machine.Step(2);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(1.58f, e.F32));
+        }
+
+        [Fact]
+        public void TestF64PromoteF32()
+        {
+            // 0: F32_CONST 1.58f  // There's no exact representation for this.
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(0, F32Const(1.58f), Insn(InstructionType.F64_PROMOTE_F32), Nop());
+
+            machine.Step(2);
+
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(1.5800000429153442, e.F64)
+            );
+        }
+
+        [Fact]
+        public void TestF32ConvertI32S()
+        {
+            // 0: I32_CONST -1
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(0, I32Const(-1), Insn(InstructionType.F32_CONVERT_I32_S), Nop());
+
+            machine.Step(2);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(-1f, e.F32));
+        }
+
+        [Fact]
+        public void TestF32ConvertI32U()
+        {
+            // 0: I32_CONST 0xFFFFFFFF
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(
+                0,
+                I32Const(0xFFFFFFFFU),
+                Insn(InstructionType.F32_CONVERT_I32_U),
+                Nop()
+            );
+
+            machine.Step(2);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(4294967296f, e.F32));
+        }
+
+        [Fact]
+        public void TestF32ConvertI64S()
+        {
+            // 0: I64_CONST -1
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(0, I64Const(-1), Insn(InstructionType.F32_CONVERT_I64_S), Nop());
+
+            machine.Step(2);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(-1f, e.F32));
+        }
+
+        [Fact]
+        public void TestF32ConvertI64U()
+        {
+            // 0: I64_CONST 0xFFFFFFFFFFFFFFFF
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(
+                0,
+                I64Const(0xFFFFFFFFFFFFFFFFUL),
+                Insn(InstructionType.F32_CONVERT_I64_U),
+                Nop()
+            );
+
+            machine.Step(2);
+
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(18446744073709551616f, e.F32)
+            );
+        }
+
+        [Fact]
+        public void TestF64ConvertI32S()
+        {
+            // 0: I32_CONST -1
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(0, I32Const(-1), Insn(InstructionType.F64_CONVERT_I32_S), Nop());
+
+            machine.Step(2);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(-1, e.F64));
+        }
+
+        [Fact]
+        public void TestF64ConvertI32U()
+        {
+            // 0: I32_CONST 0xFFFFFFFF
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(
+                0,
+                I32Const(0xFFFFFFFFU),
+                Insn(InstructionType.F64_CONVERT_I32_U),
+                Nop()
+            );
+
+            machine.Step(2);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(4294967295, e.F64));
+        }
+
+        [Fact]
+        public void TestF64ConvertI64S()
+        {
+            // 0: I64_CONST -1
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(0, I64Const(-1), Insn(InstructionType.F64_CONVERT_I64_S), Nop());
+
+            machine.Step(2);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(-1, e.F64));
+        }
+
+        [Fact]
+        public void TestF64ConvertI64U()
+        {
+            // 0: I64_CONST 0xFFFFFFFFFFFFFFFF
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(
+                0,
+                I64Const(0xFFFFFFFFFFFFFFFFUL),
+                Insn(InstructionType.F64_CONVERT_I64_U),
+                Nop()
+            );
+
+            machine.Step(2);
+
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(18446744073709551615.0, e.F64)
+            );
+        }
+
+        [Fact]
+        public void TestI32ReinterpretF32()
+        {
+            // 0: F32_CONST -1.5f
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(
+                0,
+                F32Const(-1.5f),
+                Insn(InstructionType.I32_REINTERPRET_F32),
+                Nop()
+            );
+
+            machine.Step(2);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(0xBFC00000U, e.U32));
+        }
+
+        [Fact]
+        public void TestI64ReinterpretF64()
+        {
+            // 0: F64_CONST -1.58
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(
+                0,
+                F64Const(-1.58),
+                Insn(InstructionType.I64_REINTERPRET_F64),
+                Nop()
+            );
+
+            machine.Step(2);
+
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(0xBFF947AE147AE148UL, e.U64)
+            );
+        }
+
+        [Fact]
+        public void TestF32ReinterpretI32()
+        {
+            // 0: I32_CONST 0xBFC00000
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(
+                0,
+                I32Const(0xBFC00000U),
+                Insn(InstructionType.F32_REINTERPRET_I32),
+                Nop()
+            );
+
+            machine.Step(2);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(-1.5f, e.F32));
+        }
+
+        [Fact]
+        public void TestF64ReinterpretI64()
+        {
+            // 0: I64_CONST 0xBFF947AE147AE148
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(
+                0,
+                I64Const(0xBFF947AE147AE148UL),
+                Insn(InstructionType.F64_REINTERPRET_I64),
+                Nop()
+            );
+
+            machine.Step(2);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(-1.58, e.F64));
+        }
     }
 }

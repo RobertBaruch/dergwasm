@@ -736,5 +736,68 @@ namespace Derg
             double c1 = machine.Pop<double>();
             machine.Push(c1 >= c2);
         }
+
+        public static void I32TruncF32S(Instruction instruction, IMachine machine) =>
+            machine.Push((int)machine.Pop<float>());
+
+        public static void I32TruncF32U(Instruction instruction, IMachine machine) =>
+            machine.Push((uint)machine.Pop<float>());
+
+        public static void I32TruncF64S(Instruction instruction, IMachine machine) =>
+            machine.Push((int)machine.Pop<double>());
+
+        public static void I32TruncF64U(Instruction instruction, IMachine machine) =>
+            machine.Push((uint)machine.Pop<double>());
+
+        public static void I64TruncF32S(Instruction instruction, IMachine machine) =>
+            machine.Push((long)machine.Pop<float>());
+
+        public static void I64TruncF32U(Instruction instruction, IMachine machine) =>
+            machine.Push((ulong)machine.Pop<float>());
+
+        public static void I64TruncF64S(Instruction instruction, IMachine machine) =>
+            machine.Push((long)machine.Pop<double>());
+
+        public static void I64TruncF64U(Instruction instruction, IMachine machine) =>
+            machine.Push((ulong)machine.Pop<double>());
+
+        public static void F32DemoteF64(Instruction instruction, IMachine machine) =>
+            machine.Push((float)machine.Pop<double>());
+
+        public static void F64PromoteF32(Instruction instruction, IMachine machine) =>
+            machine.Push((double)machine.Pop<float>());
+
+        public static void F32ConvertI32S(Instruction instruction, IMachine machine) =>
+            machine.Push((float)machine.Pop<int>());
+
+        public static void F32ConvertI32U(Instruction instruction, IMachine machine) =>
+            machine.Push((float)machine.Pop<uint>());
+
+        public static void F32ConvertI64S(Instruction instruction, IMachine machine) =>
+            machine.Push((float)machine.Pop<long>());
+
+        public static void F32ConvertI64U(Instruction instruction, IMachine machine) =>
+            machine.Push((float)machine.Pop<ulong>());
+
+        public static void F64ConvertI32S(Instruction instruction, IMachine machine) =>
+            machine.Push((double)machine.Pop<int>());
+
+        public static void F64ConvertI32U(Instruction instruction, IMachine machine) =>
+            machine.Push((double)machine.Pop<uint>());
+
+        public static void F64ConvertI64S(Instruction instruction, IMachine machine) =>
+            machine.Push((double)machine.Pop<long>());
+
+        public static void F64ConvertI64U(Instruction instruction, IMachine machine) =>
+            machine.Push((double)machine.Pop<ulong>());
+
+        // Reinterpretations are no-ops, because we don't have a separate type in Value.
+        public static void I32ReinterpretF32(Instruction instruction, IMachine machine) { }
+
+        public static void I64ReinterpretF64(Instruction instruction, IMachine machine) { }
+
+        public static void F32ReinterpretI32(Instruction instruction, IMachine machine) { }
+
+        public static void F64ReinterpretI64(Instruction instruction, IMachine machine) { }
     }
 }
