@@ -22,6 +22,14 @@ namespace Derg
         // Pushes the given value onto the stack.
         void Push(Value val);
 
+        void Push(bool val);
+        void Push(int val);
+        void Push(uint val);
+        void Push(long val);
+        void Push(ulong val);
+        void Push(float val);
+        void Push(double val);
+
         // Pops the top value off the stack.
         Value Pop();
 

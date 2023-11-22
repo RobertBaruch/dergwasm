@@ -100,6 +100,20 @@ namespace DergwasmTests
 
         public void Push(Value val) => Frame.value_stack.Add(val);
 
+        public void Push(int val) => Push(new Value(val));
+
+        public void Push(uint val) => Push(new Value(val));
+
+        public void Push(long val) => Push(new Value(val));
+
+        public void Push(ulong val) => Push(new Value(val));
+
+        public void Push(float val) => Push(new Value(val));
+
+        public void Push(double val) => Push(new Value(val));
+
+        public void Push(bool val) => Push(new Value(val));
+
         public Value[] Locals => Frame.Locals;
 
         Value[] IMachine.Globals => Globals;
