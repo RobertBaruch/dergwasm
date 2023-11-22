@@ -461,5 +461,143 @@ namespace DergwasmTests
 
             Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.F32));
         }
+
+        [Theory]
+        [InlineData(InstructionType.F64_ABS, 4f, 4f)]
+        [InlineData(InstructionType.F64_ABS, -4f, 4f)]
+        [InlineData(InstructionType.F64_NEG, 4f, -4f)]
+        [InlineData(InstructionType.F64_SQRT, 4f, 2f)]
+        [InlineData(InstructionType.F64_SQRT, -4f, Single.NaN)]
+        [InlineData(InstructionType.F64_CEIL, 2.2f, 3f)]
+        [InlineData(InstructionType.F64_CEIL, -2.2f, -2f)]
+        [InlineData(InstructionType.F64_FLOOR, 2.2f, 2f)]
+        [InlineData(InstructionType.F64_FLOOR, -2.2f, -3f)]
+        [InlineData(InstructionType.F64_TRUNC, 2.2f, 2f)]
+        [InlineData(InstructionType.F64_TRUNC, -2.2f, -2f)]
+        [InlineData(InstructionType.F64_NEAREST, -4.5f, -4f)]
+        [InlineData(InstructionType.F64_NEAREST, -5.5f, -6f)]
+        public void TestF64Unops(InstructionType insn, double v, double expected)
+        {
+            // 0: F64_CONST v
+            // 1: insn
+            // 2: NOP
+            machine.SetProgram(0, F64Const(v), Insn(insn), Nop());
+
+            machine.Step(2);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.F64));
+        }
+
+        [Theory]
+        [InlineData(InstructionType.F32_ADD, 1f, 2f, 3f)]
+        [InlineData(InstructionType.F32_SUB, 1f, 2f, -1f)]
+        [InlineData(InstructionType.F32_MUL, 3f, 2f, 6f)]
+        [InlineData(InstructionType.F32_DIV, 1f, 2f, 0.5f)]
+        [InlineData(InstructionType.F32_MIN, 1f, 2f, 1f)]
+        [InlineData(InstructionType.F32_MIN, 2f, 1f, 1f)]
+        [InlineData(InstructionType.F32_MAX, 1f, 2f, 2f)]
+        [InlineData(InstructionType.F32_MAX, 2f, 1f, 2f)]
+        [InlineData(InstructionType.F32_COPYSIGN, 2f, 1f, 2f)]
+        [InlineData(InstructionType.F32_COPYSIGN, -2f, -1f, -2f)]
+        [InlineData(InstructionType.F32_COPYSIGN, 2f, -1f, -2f)]
+        [InlineData(InstructionType.F32_COPYSIGN, -2f, 1f, 2f)]
+        public void TestF32Binops(InstructionType insn, float v1, float v2, float expected)
+        {
+            // 0: F32_CONST v1
+            // 1: F32_CONST v2
+            // 2: insn
+            // 3: NOP
+            machine.SetProgram(0, F32Const(v1), F32Const(v2), Insn(insn), Nop());
+
+            machine.Step(3);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.F32));
+        }
+
+        [Theory]
+        [InlineData(InstructionType.F64_ADD, 1f, 2f, 3f)]
+        [InlineData(InstructionType.F64_SUB, 1f, 2f, -1f)]
+        [InlineData(InstructionType.F64_MUL, 3f, 2f, 6f)]
+        [InlineData(InstructionType.F64_DIV, 1f, 2f, 0.5f)]
+        [InlineData(InstructionType.F64_MIN, 1f, 2f, 1f)]
+        [InlineData(InstructionType.F64_MIN, 2f, 1f, 1f)]
+        [InlineData(InstructionType.F64_MAX, 1f, 2f, 2f)]
+        [InlineData(InstructionType.F64_MAX, 2f, 1f, 2f)]
+        [InlineData(InstructionType.F64_COPYSIGN, 2f, 1f, 2f)]
+        [InlineData(InstructionType.F64_COPYSIGN, -2f, -1f, -2f)]
+        [InlineData(InstructionType.F64_COPYSIGN, 2f, -1f, -2f)]
+        [InlineData(InstructionType.F64_COPYSIGN, -2f, 1f, 2f)]
+        public void TestF64Binops(InstructionType insn, double v1, double v2, float expected)
+        {
+            // 0: F64_CONST v1
+            // 1: F64_CONST v2
+            // 2: insn
+            // 3: NOP
+            machine.SetProgram(0, F64Const(v1), F64Const(v2), Insn(insn), Nop());
+
+            machine.Step(3);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.F64));
+        }
+
+        [Theory]
+        [InlineData(InstructionType.F32_EQ, 1f, 1f, true)]
+        [InlineData(InstructionType.F32_EQ, 1f, 0f, false)]
+        [InlineData(InstructionType.F32_NE, 1f, 1f, false)]
+        [InlineData(InstructionType.F32_NE, 1f, 0f, true)]
+        [InlineData(InstructionType.F32_LT, 1f, 1f, false)]
+        [InlineData(InstructionType.F32_LT, 0f, 1f, true)]
+        [InlineData(InstructionType.F32_LT, 1f, 0f, false)]
+        [InlineData(InstructionType.F32_LE, 1f, 1f, true)]
+        [InlineData(InstructionType.F32_LE, 0f, 1f, true)]
+        [InlineData(InstructionType.F32_LE, 1f, 0f, false)]
+        [InlineData(InstructionType.F32_GT, 1f, 1f, false)]
+        [InlineData(InstructionType.F32_GT, 0f, 1f, false)]
+        [InlineData(InstructionType.F32_GT, 1f, 0f, true)]
+        [InlineData(InstructionType.F32_GE, 1f, 1f, true)]
+        [InlineData(InstructionType.F32_GE, 0f, 1f, false)]
+        [InlineData(InstructionType.F32_GE, 1f, 0f, true)]
+        public void TestF32Relops(InstructionType insn, float v1, float v2, bool expected)
+        {
+            // 0: F32_CONST v1
+            // 1: F32_CONST v2
+            // 2: insn
+            // 3: NOP
+            machine.SetProgram(0, F32Const(v1), F32Const(v2), Insn(insn), Nop());
+
+            machine.Step(3);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.Bool));
+        }
+
+        [Theory]
+        [InlineData(InstructionType.F64_EQ, 1f, 1f, true)]
+        [InlineData(InstructionType.F64_EQ, 1f, 0f, false)]
+        [InlineData(InstructionType.F64_NE, 1f, 1f, false)]
+        [InlineData(InstructionType.F64_NE, 1f, 0f, true)]
+        [InlineData(InstructionType.F64_LT, 1f, 1f, false)]
+        [InlineData(InstructionType.F64_LT, 0f, 1f, true)]
+        [InlineData(InstructionType.F64_LT, 1f, 0f, false)]
+        [InlineData(InstructionType.F64_LE, 1f, 1f, true)]
+        [InlineData(InstructionType.F64_LE, 0f, 1f, true)]
+        [InlineData(InstructionType.F64_LE, 1f, 0f, false)]
+        [InlineData(InstructionType.F64_GT, 1f, 1f, false)]
+        [InlineData(InstructionType.F64_GT, 0f, 1f, false)]
+        [InlineData(InstructionType.F64_GT, 1f, 0f, true)]
+        [InlineData(InstructionType.F64_GE, 1f, 1f, true)]
+        [InlineData(InstructionType.F64_GE, 0f, 1f, false)]
+        [InlineData(InstructionType.F64_GE, 1f, 0f, true)]
+        public void TestF64Relops(InstructionType insn, double v1, double v2, bool expected)
+        {
+            // 0: F64_CONST v1
+            // 1: F64_CONST v2
+            // 2: insn
+            // 3: NOP
+            machine.SetProgram(0, F64Const(v1), F64Const(v2), Insn(insn), Nop());
+
+            machine.Step(3);
+
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.Bool));
+        }
     }
 }

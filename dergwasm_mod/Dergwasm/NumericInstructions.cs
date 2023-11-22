@@ -554,5 +554,187 @@ namespace Derg
 
         public static void F64Nearest(Instruction instruction, IMachine machine) =>
             machine.Push(Math.Round(machine.Pop<double>()));
+
+        public static void F32Add(Instruction instruction, IMachine machine)
+        {
+            float c2 = machine.Pop<float>();
+            float c1 = machine.Pop<float>();
+            machine.Push(c1 + c2);
+        }
+
+        public static void F64Add(Instruction instruction, IMachine machine)
+        {
+            double c2 = machine.Pop<double>();
+            double c1 = machine.Pop<double>();
+            machine.Push(c1 + c2);
+        }
+
+        public static void F32Sub(Instruction instruction, IMachine machine)
+        {
+            float c2 = machine.Pop<float>();
+            float c1 = machine.Pop<float>();
+            machine.Push(c1 - c2);
+        }
+
+        public static void F64Sub(Instruction instruction, IMachine machine)
+        {
+            double c2 = machine.Pop<double>();
+            double c1 = machine.Pop<double>();
+            machine.Push(c1 - c2);
+        }
+
+        public static void F32Mul(Instruction instruction, IMachine machine)
+        {
+            float c2 = machine.Pop<float>();
+            float c1 = machine.Pop<float>();
+            machine.Push(c1 * c2);
+        }
+
+        public static void F64Mul(Instruction instruction, IMachine machine)
+        {
+            double c2 = machine.Pop<double>();
+            double c1 = machine.Pop<double>();
+            machine.Push(c1 * c2);
+        }
+
+        public static void F32Div(Instruction instruction, IMachine machine)
+        {
+            float c2 = machine.Pop<float>();
+            float c1 = machine.Pop<float>();
+            machine.Push(c1 / c2);
+        }
+
+        public static void F64Div(Instruction instruction, IMachine machine)
+        {
+            double c2 = machine.Pop<double>();
+            double c1 = machine.Pop<double>();
+            machine.Push(c1 / c2);
+        }
+
+        public static void F32Min(Instruction instruction, IMachine machine)
+        {
+            float c2 = machine.Pop<float>();
+            float c1 = machine.Pop<float>();
+            machine.Push(Math.Min(c1, c2));
+        }
+
+        public static void F64Min(Instruction instruction, IMachine machine)
+        {
+            double c2 = machine.Pop<double>();
+            double c1 = machine.Pop<double>();
+            machine.Push(Math.Min(c1, c2));
+        }
+
+        public static void F32Max(Instruction instruction, IMachine machine)
+        {
+            float c2 = machine.Pop<float>();
+            float c1 = machine.Pop<float>();
+            machine.Push(Math.Max(c1, c2));
+        }
+
+        public static void F64Max(Instruction instruction, IMachine machine)
+        {
+            double c2 = machine.Pop<double>();
+            double c1 = machine.Pop<double>();
+            machine.Push(Math.Max(c1, c2));
+        }
+
+        public static void F32Copysign(Instruction instruction, IMachine machine)
+        {
+            float c2 = machine.Pop<float>();
+            float c1 = machine.Pop<float>();
+            machine.Push(Math.Sign(c2) * Math.Abs(c1));
+        }
+
+        public static void F64Copysign(Instruction instruction, IMachine machine)
+        {
+            double c2 = machine.Pop<double>();
+            double c1 = machine.Pop<double>();
+            machine.Push(Math.Sign(c2) * Math.Abs(c1));
+        }
+
+        public static void F32Eq(Instruction instruction, IMachine machine)
+        {
+            float c2 = machine.Pop<float>();
+            float c1 = machine.Pop<float>();
+            machine.Push(c1 == c2);
+        }
+
+        public static void F64Eq(Instruction instruction, IMachine machine)
+        {
+            double c2 = machine.Pop<double>();
+            double c1 = machine.Pop<double>();
+            machine.Push(c1 == c2);
+        }
+
+        public static void F32Ne(Instruction instruction, IMachine machine)
+        {
+            float c2 = machine.Pop<float>();
+            float c1 = machine.Pop<float>();
+            machine.Push(c1 != c2);
+        }
+
+        public static void F64Ne(Instruction instruction, IMachine machine)
+        {
+            double c2 = machine.Pop<double>();
+            double c1 = machine.Pop<double>();
+            machine.Push(c1 != c2);
+        }
+
+        public static void F32Lt(Instruction instruction, IMachine machine)
+        {
+            float c2 = machine.Pop<float>();
+            float c1 = machine.Pop<float>();
+            machine.Push(c1 < c2);
+        }
+
+        public static void F64Lt(Instruction instruction, IMachine machine)
+        {
+            double c2 = machine.Pop<double>();
+            double c1 = machine.Pop<double>();
+            machine.Push(c1 < c2);
+        }
+
+        public static void F32Gt(Instruction instruction, IMachine machine)
+        {
+            float c2 = machine.Pop<float>();
+            float c1 = machine.Pop<float>();
+            machine.Push(c1 > c2);
+        }
+
+        public static void F64Gt(Instruction instruction, IMachine machine)
+        {
+            double c2 = machine.Pop<double>();
+            double c1 = machine.Pop<double>();
+            machine.Push(c1 > c2);
+        }
+
+        public static void F32Le(Instruction instruction, IMachine machine)
+        {
+            float c2 = machine.Pop<float>();
+            float c1 = machine.Pop<float>();
+            machine.Push(c1 <= c2);
+        }
+
+        public static void F64Le(Instruction instruction, IMachine machine)
+        {
+            double c2 = machine.Pop<double>();
+            double c1 = machine.Pop<double>();
+            machine.Push(c1 <= c2);
+        }
+
+        public static void F32Ge(Instruction instruction, IMachine machine)
+        {
+            float c2 = machine.Pop<float>();
+            float c1 = machine.Pop<float>();
+            machine.Push(c1 >= c2);
+        }
+
+        public static void F64Ge(Instruction instruction, IMachine machine)
+        {
+            double c2 = machine.Pop<double>();
+            double c1 = machine.Pop<double>();
+            machine.Push(c1 >= c2);
+        }
     }
 }
