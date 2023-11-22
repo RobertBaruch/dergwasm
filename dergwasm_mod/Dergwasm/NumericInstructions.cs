@@ -512,5 +512,47 @@ namespace Derg
 
         public static void I64ExtendI32U(Instruction instruction, IMachine machine) =>
             machine.Push((long)machine.Pop<uint>());
+
+        public static void F32Abs(Instruction instruction, IMachine machine) =>
+            machine.Push((float)Math.Abs(machine.Pop<float>()));
+
+        public static void F64Abs(Instruction instruction, IMachine machine) =>
+            machine.Push(Math.Abs(machine.Pop<double>()));
+
+        public static void F32Neg(Instruction instruction, IMachine machine) =>
+            machine.Push(-machine.Pop<float>());
+
+        public static void F64Neg(Instruction instruction, IMachine machine) =>
+            machine.Push(-machine.Pop<double>());
+
+        public static void F32Sqrt(Instruction instruction, IMachine machine) =>
+            machine.Push((float)Math.Sqrt(machine.Pop<float>()));
+
+        public static void F64Sqrt(Instruction instruction, IMachine machine) =>
+            machine.Push(Math.Sqrt(machine.Pop<double>()));
+
+        public static void F32Ceil(Instruction instruction, IMachine machine) =>
+            machine.Push((float)Math.Ceiling(machine.Pop<float>()));
+
+        public static void F64Ceil(Instruction instruction, IMachine machine) =>
+            machine.Push(Math.Ceiling(machine.Pop<double>()));
+
+        public static void F32Floor(Instruction instruction, IMachine machine) =>
+            machine.Push((float)Math.Floor(machine.Pop<float>()));
+
+        public static void F64Floor(Instruction instruction, IMachine machine) =>
+            machine.Push(Math.Floor(machine.Pop<double>()));
+
+        public static void F32Trunc(Instruction instruction, IMachine machine) =>
+            machine.Push((float)Math.Truncate(machine.Pop<float>()));
+
+        public static void F64Trunc(Instruction instruction, IMachine machine) =>
+            machine.Push(Math.Truncate(machine.Pop<double>()));
+
+        public static void F32Nearest(Instruction instruction, IMachine machine) =>
+            machine.Push((float)Math.Round(machine.Pop<float>()));
+
+        public static void F64Nearest(Instruction instruction, IMachine machine) =>
+            machine.Push(Math.Round(machine.Pop<double>()));
     }
 }
