@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using LEB128;
 
 namespace Derg
 {
@@ -274,6 +276,28 @@ namespace Derg
         {
             this.args = args;
             this.returns = returns;
+        }
+
+        public static FuncType Read(BinaryReader stream)
+        {
+            byte tag = stream.ReadByte();
+            if (tag != 0x60)
+            {
+                throw new Trap($"Expected 0x60 tag for functype, but got {tag:X2}");
+            }
+            int num_args = (int)stream.ReadLEB128Unsigned();
+            ValueType[] args = new ValueType[num_args];
+            for (int i = 0; i < num_args; i++)
+            {
+                args[i] = (ValueType)stream.ReadByte();
+            }
+            int num_returns = (int)stream.ReadLEB128Unsigned();
+            ValueType[] returns = new ValueType[num_returns];
+            for (int i = 0; i < num_returns; i++)
+            {
+                returns[i] = (ValueType)stream.ReadByte();
+            }
+            return new FuncType(args, returns);
         }
 
         public bool Equals(FuncType other)

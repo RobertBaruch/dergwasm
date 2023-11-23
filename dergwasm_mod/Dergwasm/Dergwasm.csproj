@@ -80,7 +80,10 @@
     <Compile Include="InstructionEvaluation.cs" />
     <Compile Include="Instructions.cs" />
     <Compile Include="LEB128.cs" />
+    <Compile Include="Machine.cs" />
     <Compile Include="MemoryInstructions.cs" />
+    <Compile Include="Module.cs" />
+    <Compile Include="ModuleInstance.cs" />
     <Compile Include="ParametricInstructions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReferenceInstructions.cs" />

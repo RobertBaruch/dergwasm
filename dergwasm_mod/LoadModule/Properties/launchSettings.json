@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "LoadModule": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware.wasm",
+      "workingDirectory": "F:\\dergwasm"
+    }
+  }
+}

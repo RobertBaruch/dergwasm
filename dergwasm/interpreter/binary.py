@@ -801,7 +801,9 @@ class ExportSection(ModuleSection):
         """Reads and returns an export section."""
         num_exports = _read_unsigned_int(f)
         exports = [Export.read(f) for _ in range(num_exports)]
-        print(f"Read exports: {exports}")
+        print(f"Read exports:")
+        for i, export in enumerate(exports):
+            print(f"  {i}: {export}")
         return ExportSection(exports)
 
 

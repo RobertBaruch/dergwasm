@@ -38,8 +38,10 @@ namespace LEB128
                 stream.WriteByte(chunk);
                 bytes += 1;
             }
-            ;
         }
+
+        public static void WriteLEB128Unsigned(this BinaryWriter writer, ulong value) =>
+            WriteLEB128Unsigned(writer.BaseStream, value, out _);
 
         public static void WriteLEB128Unsigned(this Stream stream, ulong value) =>
             WriteLEB128Unsigned(stream, value, out _);
@@ -63,7 +65,6 @@ namespace LEB128
                 stream.WriteByte(chunk);
                 bytes += 1;
             }
-            ;
         }
 
         public static long ReadLEB128Signed(this Stream stream) => ReadLEB128Signed(stream, out _);
@@ -98,7 +99,6 @@ namespace LEB128
                 value |= chunk << shift;
                 shift += 7;
             }
-            ;
 
             // extend the sign of shorter negative numbers
             if (shift < INT64_BITSIZE && signBitSet)

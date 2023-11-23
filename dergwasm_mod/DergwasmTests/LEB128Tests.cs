@@ -101,6 +101,27 @@ namespace DergwasmTests
             AssertStreamBytesEqual(ms, bytes);
         }
 
+        [Fact]
+        public void TestRoundTripThroughBinaryWriter()
+        {
+            var ms = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(ms);
+            writer.WriteLEB128Unsigned(4UL);
+            ms.Position = 0;
+            Assert.Equal(4UL, ms.ReadLEB128Unsigned());
+        }
+
+        [Fact]
+        public void TestRoundTripThroughBinaryReader()
+        {
+            var ms = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(ms);
+            writer.WriteLEB128Unsigned(4UL);
+            ms.Position = 0;
+            BinaryReader reader = new BinaryReader(ms);
+            Assert.Equal(4UL, reader.ReadLEB128Unsigned());
+        }
+
         private void AssertStreamBytesEqual(MemoryStream ms, params byte[] values)
         {
             ms.Position = 0;

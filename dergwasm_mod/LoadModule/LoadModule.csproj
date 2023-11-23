@@ -6,11 +6,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="BenchmarkDotNet" Version="0.13.10" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<ProjectReference Include="..\Dergwasm\Dergwasm.csproj" />
+	  <ProjectReference Include="..\Dergwasm\Dergwasm.csproj" />
 	</ItemGroup>
 
 </Project>

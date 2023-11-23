@@ -807,7 +807,7 @@ def run() -> None:
     add_host_funcs()
     machine_impl = MachineImpl()
 
-    module = binary.Module.from_file("F:/dergwasm/firmware.wasm")
+    module = binary.Module.from_file("F:/dergwasm/hello_world.wasm")
     types_section = cast(binary.TypeSection, module.sections[binary.TypeSection])
     import_section = cast(binary.ImportSection, module.sections[binary.ImportSection])
     func_section = cast(binary.FunctionSection, module.sections[binary.FunctionSection])
