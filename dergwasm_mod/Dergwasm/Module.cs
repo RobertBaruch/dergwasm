@@ -208,19 +208,19 @@ namespace Derg
                 switch (tag)
                 {
                     case 0x00:
-                        module.Exports[i] = new FuncExport(name, module.Funcs[desc_idx].Signature);
+                        module.Exports[i] = new FuncExport(name, desc_idx);
                         break;
 
                     case 0x01:
-                        module.Exports[i] = new TableExport(name, module.Tables[desc_idx]);
+                        module.Exports[i] = new TableExport(name, desc_idx);
                         break;
 
                     case 0x02:
-                        module.Exports[i] = new MemoryExport(name, module.Memories[desc_idx]);
+                        module.Exports[i] = new MemoryExport(name, desc_idx);
                         break;
 
                     case 0x03:
-                        module.Exports[i] = new GlobalExport(name, module.Globals[desc_idx].Type);
+                        module.Exports[i] = new GlobalExport(name, desc_idx);
                         break;
 
                     default:
@@ -385,45 +385,45 @@ namespace Derg
 
     public class FuncExport : Export
     {
-        public FuncType FuncType;
+        public int Idx;
 
-        public FuncExport(string name, FuncType func_type)
+        public FuncExport(string name, int idx)
             : base(name)
         {
-            FuncType = func_type;
+            Idx = idx;
         }
     }
 
     public class TableExport : Export
     {
-        public TableType TableType;
+        public int Idx;
 
-        public TableExport(string name, TableType table_type)
+        public TableExport(string name, int idx)
             : base(name)
         {
-            TableType = table_type;
+            Idx = idx;
         }
     }
 
     public class MemoryExport : Export
     {
-        public Limits MemoryLimits;
+        public int Idx;
 
-        public MemoryExport(string name, Limits memory_limits)
+        public MemoryExport(string name, int idx)
             : base(name)
         {
-            MemoryLimits = memory_limits;
+            Idx = idx;
         }
     }
 
     public class GlobalExport : Export
     {
-        public GlobalType GlobalType;
+        public int Idx;
 
-        public GlobalExport(string name, GlobalType global_type)
+        public GlobalExport(string name, int idx)
             : base(name)
         {
-            GlobalType = global_type;
+            Idx = idx;
         }
     }
 
@@ -448,24 +448,21 @@ namespace Derg
     public class ElementSegmentSpec
     {
         public ValueType ElemType;
+        public int[] ElemIndexes;
+        public List<Instruction>[] ElemIndexExprs;
 
-        public ElementSegmentSpec(ValueType elem_type)
+        public ElementSegmentSpec(ValueType elem_type, int[] elemIndexes)
         {
             ElemType = elem_type;
+            ElemIndexes = elemIndexes;
         }
 
-        //        elem_type: values.ValueType
+        public ElementSegmentSpec(ValueType elem_type, List<Instruction>[] elemIndexExprs)
+        {
+            ElemType = elem_type;
+            ElemIndexExprs = elemIndexExprs;
+        }
 
-        //        offset_expr: list[insn.Instruction] | None = None
-        //        tableidx: int | None = None
-
-        //# These are mutually exclusive.
-        //        elem_indexes: list[int] | None = None
-        //        elem_exprs: list[list[insn.Instruction]] | None = None
-
-        //        is_active: bool = False
-        //        is_passive: bool = False
-        //        is_declarative: bool = False
         public static ElementSegmentSpec Read(BinaryReader stream)
         {
             byte tag = stream.ReadByte();
@@ -619,8 +616,6 @@ namespace Derg
     {
         public List<Instruction> OffsetExpr;
         public int TableIdx;
-        public int[] ElemIndexes;
-        public List<Instruction>[] ElemIndexExprs;
 
         public ActiveElementSegmentSpec(
             ValueType elem_type,
@@ -628,11 +623,10 @@ namespace Derg
             int tableidx,
             int[] elem_indexes
         )
-            : base(elem_type)
+            : base(elem_type, elem_indexes)
         {
             OffsetExpr = offset_expr;
             TableIdx = tableidx;
-            ElemIndexes = elem_indexes;
         }
 
         public ActiveElementSegmentSpec(
@@ -641,51 +635,32 @@ namespace Derg
             int tableidx,
             List<Instruction>[] elem_index_exprs
         )
-            : base(elem_type)
+            : base(elem_type, elem_index_exprs)
         {
             OffsetExpr = offset_expr;
             TableIdx = tableidx;
-            ElemIndexExprs = elem_index_exprs;
         }
     }
 
     public class PassiveElementSegmentSpec : ElementSegmentSpec
     {
-        public int[] ElemIndexes;
-        public List<Instruction>[] ElemIndexExprs;
-
         public PassiveElementSegmentSpec(ValueType elem_type, int[] elem_indexes)
-            : base(elem_type)
-        {
-            ElemIndexes = elem_indexes;
-        }
+            : base(elem_type, elem_indexes) { }
 
         public PassiveElementSegmentSpec(ValueType elem_type, List<Instruction>[] elem_index_exprs)
-            : base(elem_type)
-        {
-            ElemIndexExprs = elem_index_exprs;
-        }
+            : base(elem_type, elem_index_exprs) { }
     }
 
     public class DeclarativeElementSegmentSpec : ElementSegmentSpec
     {
-        public int[] ElemIndexes;
-        public List<Instruction>[] ElemIndexExprs;
-
         public DeclarativeElementSegmentSpec(ValueType elem_type, int[] elem_indexes)
-            : base(elem_type)
-        {
-            ElemIndexes = elem_indexes;
-        }
+            : base(elem_type, elem_indexes) { }
 
         public DeclarativeElementSegmentSpec(
             ValueType elem_type,
             List<Instruction>[] elem_index_exprs
         )
-            : base(elem_type)
-        {
-            ElemIndexExprs = elem_index_exprs;
-        }
+            : base(elem_type, elem_index_exprs) { }
     }
 
     public class DataSegment
