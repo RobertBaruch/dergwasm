@@ -64,6 +64,58 @@ namespace Derg
 
         public static List<Instruction> ReadExpr(BinaryReader stream) =>
             Expr.Decode(stream).Flatten(0);
+
+        public int NumImportedFuncs()
+        {
+            int numImportedFuncs = 0;
+            foreach (Import import in Imports)
+            {
+                if (import is FuncImport)
+                {
+                    numImportedFuncs++;
+                }
+            }
+            return numImportedFuncs;
+        }
+
+        public int NumImportedTables()
+        {
+            int numImportedTables = 0;
+            foreach (Import import in Imports)
+            {
+                if (import is TableImport)
+                {
+                    numImportedTables++;
+                }
+            }
+            return numImportedTables;
+        }
+
+        public int NumImportedMemories()
+        {
+            int numImportedMemories = 0;
+            foreach (Import import in Imports)
+            {
+                if (import is MemoryImport)
+                {
+                    numImportedMemories++;
+                }
+            }
+            return numImportedMemories;
+        }
+
+        public int NumImportedGlobals()
+        {
+            int numImportedGlobals = 0;
+            foreach (Import import in Imports)
+            {
+                if (import is GlobalImport)
+                {
+                    numImportedGlobals++;
+                }
+            }
+            return numImportedGlobals;
+        }
     }
 
     public class Section
@@ -248,14 +300,7 @@ namespace Derg
         {
             // Count up the number of imported functions. These functions
             // come after those.
-            int numImportedFuncs = 0;
-            foreach (Import import in module.Imports)
-            {
-                if (import is FuncImport)
-                {
-                    numImportedFuncs++;
-                }
-            }
+            int numImportedFuncs = module.NumImportedFuncs();
 
             int numFuncs = (int)stream.ReadLEB128Unsigned();
             for (int i = 0; i < numFuncs; i++)

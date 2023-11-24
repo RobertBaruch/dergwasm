@@ -133,6 +133,7 @@ namespace Derg
 
     public class ModuleFunc : Func
     {
+        public ModuleInstance Module; // The instance of the module where this func was defined.
         public ValueType[] Locals;
         public List<Instruction> Code;
 

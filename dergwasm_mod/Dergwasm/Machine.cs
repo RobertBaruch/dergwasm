@@ -11,11 +11,11 @@ namespace Derg
     {
         public Stack<Frame> frameStack = new Stack<Frame>();
         public List<FuncType> funcTypes = new List<FuncType>();
-        public List<ModuleFunc> funcs = new List<ModuleFunc>();
+        public List<Func> funcs = new List<Func>();
         public List<Table> tables = new List<Table>();
         public List<ElementSegment> elementSegments = new List<ElementSegment>();
-        public Value[] Globals;
-        public Memory Memory = new Memory(new Limits(1));
+        public List<Value> Globals = new List<Value>();
+        public List<Memory> memories = new List<Memory>();
         public List<byte[]> dataSegments = new List<byte[]>();
 
         public Frame Frame
@@ -75,9 +75,15 @@ namespace Derg
 
         public Value[] Locals => Frame.Locals;
 
+        public int AddGlobal(Value global)
+        {
+            Globals.Add(global);
+            return Globals.Count - 1;
+        }
+
         public int GetGlobalAddrForIndex(int idx) => Frame.Module.GlobalsMap[idx];
 
-        Value[] IMachine.Globals => Globals;
+        Value[] IMachine.Globals => Globals.ToArray();
 
         public int StackLevel() => Frame.value_stack.Count;
 
@@ -94,18 +100,28 @@ namespace Derg
             set => Frame.label_stack.Push(value);
         }
 
+        public bool HasLabel() => Frame.label_stack.Count > 0;
+
+        public int AddMemory(Memory memory)
+        {
+            memories.Add(memory);
+            return memories.Count - 1;
+        }
+
+        public Memory GetMemory(int addr) => memories[addr];
+
         public Memory GetMemoryFromIndex(int idx)
         {
             if (idx != 0)
             {
                 throw new Trap($"Nonzero memory {idx} accessed.");
             }
-            return Memory;
+            return memories[0];
         }
 
-        public byte[] Memory0 => Memory.Data;
+        public byte[] Memory0 => memories[0].Data;
 
-        public Span<byte> Span0(int offset, int sz) => new Span<byte>(Memory.Data, offset, sz);
+        public Span<byte> Span0(int offset, int sz) => new Span<byte>(memories[0].Data, offset, sz);
 
         public FuncType GetFuncTypeFromIndex(int idx) => funcTypes[Frame.Module.FuncTypesMap[idx]];
 
@@ -113,7 +129,12 @@ namespace Derg
 
         public void InvokeFunc(int addr)
         {
-            ModuleFunc func = funcs[addr];
+            Func f = funcs[addr];
+            if (!(f is ModuleFunc))
+            {
+                throw new Trap($"Attempted to invoke a non-module func.");
+            }
+            ModuleFunc func = f as ModuleFunc;
             int arity = func.Signature.returns.Length;
             int args = func.Signature.args.Length;
 
@@ -123,25 +144,48 @@ namespace Derg
             Frame.value_stack.CopyTo(0, next_frame.Locals, Frame.value_stack.Count - args, args);
             Frame.value_stack.RemoveRange(Frame.value_stack.Count - args, args);
 
-            // Here we would initialize the other locals. But we assume they're I32, so they're
-            // already defaulted to zero.
-
             Frame = next_frame;
             PC = -1; // So that incrementing PC goes to beginning.
             Label = new Label(arity, func.Code.Count);
+        }
+
+        public int AddFunc(Func func)
+        {
+            funcs.Add(func);
+            return funcs.Count - 1;
         }
 
         public Func GetFunc(int addr) => funcs[addr];
 
         public int GetFuncAddrFromIndex(int idx) => Frame.Module.FuncsMap[idx];
 
+        public int AddTable(Table table)
+        {
+            tables.Add(table);
+            return tables.Count - 1;
+        }
+
+        public Table GetTable(int addr) => tables[addr];
+
         public Table GetTableFromIndex(int idx) => tables[Frame.Module.TablesMap[idx]];
+
+        public int AddElementSegment(ElementSegment elementSegment)
+        {
+            elementSegments.Add(elementSegment);
+            return elementSegments.Count - 1;
+        }
 
         public ElementSegment GetElementSegmentFromIndex(int idx) =>
             elementSegments[Frame.Module.ElementSegmentsMap[idx]];
 
         public void DropElementSegmentFromIndex(int idx) =>
             elementSegments.RemoveAt(Frame.Module.ElementSegmentsMap[idx]);
+
+        public int AddDataSegment(byte[] dataSegment)
+        {
+            dataSegments.Add(dataSegment);
+            return dataSegments.Count - 1;
+        }
 
         public int GetDataSegmentAddrFromIndex(int idx) => Frame.Module.DataSegmentsMap[idx];
 

@@ -16,6 +16,9 @@ namespace Derg
         // while setting will push a label.
         Label Label { get; set; }
 
+        // Whether there is at least one label on the current frame's label stack.
+        bool HasLabel();
+
         // The current program counter from the current frame.
         int PC { get; set; }
 
@@ -38,6 +41,9 @@ namespace Derg
 
         // Gets the locals for the current frame.
         Value[] Locals { get; }
+
+        // Adds the given global to the machine, returning its address.
+        int AddGlobal(Value global);
 
         // Gets the global address for the current module's index.
         int GetGlobalAddrForIndex(int idx);
@@ -63,9 +69,18 @@ namespace Derg
         // to map the index to the machine's type address.
         FuncType GetFuncTypeFromIndex(int idx);
 
+        // Adds the given table to the machine, returning its address.
+        int AddTable(Table table);
+
+        // Gets the Table for the given address.
+        Table GetTable(int addr);
+
         // Gets the Table for the given index, using the current frame's module
         // to map the index to the machine's table address.
         Table GetTableFromIndex(int idx);
+
+        // Adds the given element segment to the machine, returning its address.
+        int AddElementSegment(ElementSegment elementSegment);
 
         // Gets the ElementSegment for the given index, using the current frame's module
         // to map the index to the machine's element segment address.
@@ -74,6 +89,12 @@ namespace Derg
         // Nulls out the ElementSegment for the given index, using the current frame's module
         // to map the index to the machine's element segment address.
         void DropElementSegmentFromIndex(int idx);
+
+        // Adds the given memory to the machine, returning its address.
+        int AddMemory(Memory memory);
+
+        // Gets the Memory for the given address.
+        Memory GetMemory(int addr);
 
         // Gets the Memory for the given index, using the current frame's module
         // to map the index to the machine's memory address.
@@ -84,6 +105,9 @@ namespace Derg
 
         // Gets a span of bytes from Memory 0.
         Span<byte> Span0(int offset, int sz);
+
+        // Adds the given data segment to the machine, returning its address.
+        int AddDataSegment(byte[] data);
 
         // Gets the DataSegment for the given index, using the current frame's module
         // to map the index to the machine's data segment address.
@@ -97,8 +121,14 @@ namespace Derg
         // to map the index to the machine's data segment address.
         void DropDataSegmentFromIndex(int idx);
 
+        // Adds the given function to the machine, returning its address.
+        int AddFunc(Func func);
+
+        // Gets the function at the given address.
         Func GetFunc(int addr);
 
+        // Gets the function address for the given index, using the current frame's module
+        // to map the index to the machine's function address.
         int GetFuncAddrFromIndex(int idx);
 
         // Invokes the function at the given index, using the current frame's module
@@ -108,5 +138,7 @@ namespace Derg
         void InvokeFuncFromIndex(int idx);
 
         void InvokeFunc(int addr);
+
+        void Step(int n = 1);
     }
 }

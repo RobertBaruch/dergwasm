@@ -967,6 +967,11 @@ namespace DergwasmTests
                     Assert.Equal(TestGlobalType0, (e as GlobalImport).GlobalType);
                 }
             );
+
+            Assert.Equal(2, module.NumImportedFuncs());
+            Assert.Equal(1, module.NumImportedTables());
+            Assert.Equal(1, module.NumImportedMemories());
+            Assert.Equal(1, module.NumImportedGlobals());
         }
 
         [Fact]

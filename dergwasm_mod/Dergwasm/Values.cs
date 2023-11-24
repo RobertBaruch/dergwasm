@@ -189,54 +189,31 @@ namespace Derg
         public bool Bool => value_lo != 0 || value_hi != 0;
 
         // Only valid if the value is a block operand.
-        public int GetTarget()
-        {
-            return (int)(value_lo & 0xFFFFFFFF);
-        }
+        public int GetTarget() => (int)(value_lo & 0xFFFFFFFF);
 
         // Only valid if the value is a block operand.
-        public int GetElseTarget()
-        {
-            return (int)(value_lo >> 32);
-        }
+        public int GetElseTarget() => (int)(value_lo >> 32);
 
         // Only valid if the value is a block operand.
-        public BlockType GetBlockType()
-        {
-            return (BlockType)(value_hi & 0b11);
-        }
+        public BlockType GetBlockType() => (BlockType)(value_hi & 0b11);
 
         // Only valid if the value is a block operand with a TYPED_BLOCK signature.
-        public int GetReturningBlockTypeIndex()
-        {
-            return (int)((value_hi >> 2) & 0xFFFFFFFF);
-        }
+        public int GetReturningBlockTypeIndex() => (int)((value_hi >> 2) & 0xFFFFFFFF);
 
         // Only valid if the value is a block operand with a RETURNING_BLOCK signature.
-        public ValueType GetReturningBlockValueType()
-        {
-            return (ValueType)((value_hi >> 2) & 0xFF);
-        }
+        public ValueType GetReturningBlockValueType() => (ValueType)((value_hi >> 2) & 0xFF);
 
         // Only valid if the value is a reference type.
-        public ReferenceValueType GetRefType()
-        {
-            return (ReferenceValueType)value_hi;
-        }
+        public ReferenceValueType GetRefType() => (ReferenceValueType)value_hi;
 
         // Only valid if the value is a reference type.
-        public bool IsNullRef()
-        {
-            return value_lo == 0 && value_hi == 0;
-        }
+        public bool IsNullRef() => value_lo == 0 && value_hi == 0;
 
         // Only valid if the value is a reference type.
         public int RefAddr => (int)value_lo;
 
-        public static Value RefOfFuncAddr(int addr)
-        {
-            return new Value((ulong)addr, (ulong)ReferenceValueType.FUNCREF);
-        }
+        public static Value RefOfFuncAddr(int addr) =>
+            new Value((ulong)addr, (ulong)ReferenceValueType.FUNCREF);
 
         public override string ToString()
         {
