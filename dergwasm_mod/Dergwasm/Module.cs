@@ -127,7 +127,7 @@ namespace Derg
                     case 0x00:
                         // Since we've already read the FuncTypes, we can resolve the FuncType right away.
                         FuncType funcType = module.FuncTypes[(int)stream.ReadLEB128Unsigned()];
-                        module.Funcs.Add(new Func() { Signature = funcType });
+                        module.Funcs.Add(new ImportedFunc(funcType));
                         module.Imports[i] = new FuncImport(name, module_name, funcType);
                         break;
 
@@ -146,7 +146,7 @@ namespace Derg
                     case 0x03:
                         GlobalType globalType = GlobalType.Read(stream);
                         // Imported globals do not get initialized by modules.
-                        GlobalSpec globalSpec = new GlobalSpec(globalType, new List<Instruction>());
+                        GlobalSpec globalSpec = new GlobalSpec(globalType, null);
                         module.Globals.Add(globalSpec);
                         module.Imports[i] = new GlobalImport(name, module_name, globalType);
                         break;
@@ -163,7 +163,7 @@ namespace Derg
             for (int i = 0; i < numFuncs; i++)
             {
                 int funcTypeIdx = (int)stream.ReadLEB128Unsigned();
-                module.Funcs.Add(new Func() { Signature = module.FuncTypes[funcTypeIdx] });
+                module.Funcs.Add(new ModuleFunc(module.FuncTypes[funcTypeIdx]));
             }
         }
 
@@ -246,13 +246,24 @@ namespace Derg
 
         public static void ReadCodeSection(BinaryReader stream, Module module)
         {
+            // Count up the number of imported functions. These functions
+            // come after those.
+            int numImportedFuncs = 0;
+            foreach (Import import in module.Imports)
+            {
+                if (import is FuncImport)
+                {
+                    numImportedFuncs++;
+                }
+            }
+
             int numFuncs = (int)stream.ReadLEB128Unsigned();
             for (int i = 0; i < numFuncs; i++)
             {
                 int bodySize = (int)stream.ReadLEB128Unsigned(); // not needed
-                int numLocals = (int)stream.ReadLEB128Unsigned();
+                int numLocalSpecs = (int)stream.ReadLEB128Unsigned();
                 List<ValueType> localTypes = new List<ValueType>();
-                for (int j = 0; j < numLocals; j++)
+                for (int j = 0; j < numLocalSpecs; j++)
                 {
                     int howMany = (int)stream.ReadLEB128Unsigned();
                     ValueType valueType = (ValueType)stream.ReadByte();
@@ -262,11 +273,9 @@ namespace Derg
                     }
                 }
                 List<Instruction> body = Module.ReadExpr(stream);
-                module.Funcs[i] = new ModuleFunc(
-                    module.Funcs[i].Signature,
-                    localTypes.ToArray(),
-                    body
-                );
+                int funcIdx = numImportedFuncs + i;
+                (module.Funcs[funcIdx] as ModuleFunc).Locals = localTypes.ToArray();
+                (module.Funcs[funcIdx] as ModuleFunc).Code = body;
             }
         }
 

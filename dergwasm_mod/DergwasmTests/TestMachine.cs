@@ -182,11 +182,9 @@ namespace DergwasmTests
         public void SetProgram(int signature_idx, params UnflattenedInstruction[] instructions)
         {
             List<Instruction> program = new List<UnflattenedInstruction>(instructions).Flatten(0);
-            ModuleFunc func = new ModuleFunc(
-                GetFuncTypeFromIndex(signature_idx),
-                new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
-                program
-            );
+            ModuleFunc func = new ModuleFunc(GetFuncTypeFromIndex(signature_idx));
+            func.Locals = new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 };
+            func.Code = program;
             Frame = new Frame(func, null);
             Label = new Label(Frame.Arity, program.Count);
         }
@@ -196,11 +194,9 @@ namespace DergwasmTests
         public void AddFunction(int addr, params UnflattenedInstruction[] instructions)
         {
             List<Instruction> program = new List<UnflattenedInstruction>(instructions).Flatten(0);
-            funcs[addr] = new ModuleFunc(
-                GetFuncTypeFromIndex(addr - 10),
-                new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
-                program
-            );
+            funcs[addr] = new ModuleFunc(GetFuncTypeFromIndex(addr - 10));
+            funcs[addr].Locals = new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 };
+            funcs[addr].Code = program;
         }
 
         public void AddTable(int addr, Table table) => tables[addr] = table;

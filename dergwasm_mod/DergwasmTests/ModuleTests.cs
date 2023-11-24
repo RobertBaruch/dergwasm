@@ -809,13 +809,14 @@ namespace DergwasmTests
         }
 
         [Fact]
-        public void TestReadsFunctionSectionCorrectly()
+        public void ReadsFunctionSectionCorrectly()
         {
             MemoryStream memStream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(memStream);
             writer.Write(0x6D736100U);
             writer.Write(1U);
             WriteTestTypeSection(writer);
+            WriteTestImportSection(writer);
 
             WriteTestFunctionSection(writer);
 
@@ -824,8 +825,11 @@ namespace DergwasmTests
 
             Module module = Module.Read(reader);
 
+            // The 2 imports come first.
             Assert.Collection(
                 module.Funcs,
+                e => Assert.Equal(TestFuncType0, e.Signature),
+                e => Assert.Equal(TestFuncType1, e.Signature),
                 e => Assert.Equal(TestFuncType0, e.Signature),
                 e => Assert.Equal(TestFuncType0, e.Signature),
                 e => Assert.Equal(TestFuncType1, e.Signature),
@@ -834,13 +838,14 @@ namespace DergwasmTests
         }
 
         [Fact]
-        public void TestReadsTableSectionCorrectly()
+        public void ReadsTableSectionCorrectly()
         {
             MemoryStream memStream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(memStream);
             writer.Write(0x6D736100U);
             writer.Write(1U);
             WriteTestTypeSection(writer);
+            WriteTestImportSection(writer);
 
             WriteTestTableSection(writer);
 
@@ -849,17 +854,22 @@ namespace DergwasmTests
 
             Module module = Module.Read(reader);
 
-            Assert.Collection(module.Tables, e => Assert.Equal(TestTableType0, e));
+            Assert.Collection(
+                module.Tables,
+                e => Assert.Equal(TestTableType0, e),
+                e => Assert.Equal(TestTableType0, e)
+            );
         }
 
         [Fact]
-        public void TestReadsMemorySectionCorrectly()
+        public void ReadsMemorySectionCorrectly()
         {
             MemoryStream memStream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(memStream);
             writer.Write(0x6D736100U);
             writer.Write(1U);
             WriteTestTypeSection(writer);
+            WriteTestImportSection(writer);
 
             WriteTestMemorySection(writer);
 
@@ -868,17 +878,22 @@ namespace DergwasmTests
 
             Module module = Module.Read(reader);
 
-            Assert.Collection(module.Memories, e => Assert.Equal(TestMemoryType0, e));
+            Assert.Collection(
+                module.Memories,
+                e => Assert.Equal(TestMemoryType0, e),
+                e => Assert.Equal(TestMemoryType0, e)
+            );
         }
 
         [Fact]
-        public void TestReadsGlobalSectionCorrectly()
+        public void ReadsGlobalSectionCorrectly()
         {
             MemoryStream memStream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(memStream);
             writer.Write(0x6D736100U);
             writer.Write(1U);
             WriteTestTypeSection(writer);
+            WriteTestImportSection(writer);
 
             WriteTestGlobalSection(writer);
 
@@ -889,6 +904,11 @@ namespace DergwasmTests
 
             Assert.Collection(
                 module.Globals,
+                e =>
+                {
+                    Assert.Equal(TestGlobalType0, e.Type);
+                    Assert.Null(e.InitExpr);
+                },
                 e =>
                 {
                     Assert.Equal(TestGlobalType0, e.Type);
@@ -903,7 +923,7 @@ namespace DergwasmTests
         }
 
         [Fact]
-        public void TestReadsExportSectionCorrectly()
+        public void ReadsExportSectionCorrectly()
         {
             MemoryStream memStream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(memStream);
@@ -953,7 +973,7 @@ namespace DergwasmTests
         }
 
         [Fact]
-        public void TestReadsStartSectionCorrectly()
+        public void ReadsStartSectionCorrectly()
         {
             MemoryStream memStream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(memStream);
@@ -978,7 +998,7 @@ namespace DergwasmTests
         }
 
         [Fact]
-        public void TestReadsElementSegmentSectionCorrectly()
+        public void ReadsElementSegmentSectionCorrectly()
         {
             MemoryStream memStream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(memStream);
@@ -1018,6 +1038,124 @@ namespace DergwasmTests
                 module.ElementSegmentSpecs,
                 e => Assert.IsType<ActiveElementSegmentSpec>(e),
                 e => Assert.IsType<PassiveElementSegmentSpec>(e)
+            );
+        }
+
+        [Fact]
+        public void ReadsCodeSectionCorrectly()
+        {
+            MemoryStream memStream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(memStream);
+            writer.Write(0x6D736100U); // Magic
+            writer.Write(1U); // Version
+
+            WriteTestTypeSection(writer);
+            WriteTestImportSection(writer);
+            WriteTestFunctionSection(writer);
+
+            writer.Write((byte)10); // Code section
+            MemoryStream sectionStream = new MemoryStream();
+            BinaryWriter sectionWriter = new BinaryWriter(sectionStream);
+            sectionWriter.WriteLEB128Unsigned(4UL); // 4 functions
+
+            // There are 2 imported funcs, and four more funcs in the module.
+            for (int i = 0; i < 4; i++)
+            {
+                // Function 0
+                sectionWriter.WriteLEB128Unsigned(0UL); // Code size, not needed
+                sectionWriter.WriteLEB128Unsigned(2UL); // 2 local specs
+                sectionWriter.WriteLEB128Unsigned((ulong)i); // i locals of type I32
+                sectionWriter.Write((byte)ValueType.I32);
+                sectionWriter.WriteLEB128Unsigned(2UL); // 2 locals of type I64
+                sectionWriter.Write((byte)ValueType.I64);
+
+                // Code for function 0
+                sectionWriter.Write((byte)InstructionType.NOP);
+                sectionWriter.Write((byte)InstructionType.END);
+            }
+
+            writer.WriteLEB128Unsigned((ulong)sectionStream.Length);
+            writer.Write(sectionStream.ToArray());
+
+            memStream.Position = 0;
+            BinaryReader reader = new BinaryReader(memStream);
+
+            Module module = Module.Read(reader);
+
+            Assert.Collection(
+                module.Funcs,
+                e => Assert.IsNotType<ModuleFunc>(e),
+                e => Assert.IsNotType<ModuleFunc>(e),
+                e => Assert.IsType<ModuleFunc>(e),
+                e => Assert.IsType<ModuleFunc>(e),
+                e => Assert.IsType<ModuleFunc>(e),
+                e => Assert.IsType<ModuleFunc>(e)
+            );
+
+            Assert.Collection(
+                module.Funcs,
+                e => { },
+                e => { },
+                e =>
+                    Assert.Collection(
+                        (e as ModuleFunc).Locals,
+                        v => Assert.Equal(ValueType.I64, v),
+                        v => Assert.Equal(ValueType.I64, v)
+                    ),
+                e =>
+                    Assert.Collection(
+                        (e as ModuleFunc).Locals,
+                        v => Assert.Equal(ValueType.I32, v),
+                        v => Assert.Equal(ValueType.I64, v),
+                        v => Assert.Equal(ValueType.I64, v)
+                    ),
+                e =>
+                    Assert.Collection(
+                        (e as ModuleFunc).Locals,
+                        v => Assert.Equal(ValueType.I32, v),
+                        v => Assert.Equal(ValueType.I32, v),
+                        v => Assert.Equal(ValueType.I64, v),
+                        v => Assert.Equal(ValueType.I64, v)
+                    ),
+                e =>
+                    Assert.Collection(
+                        (e as ModuleFunc).Locals,
+                        v => Assert.Equal(ValueType.I32, v),
+                        v => Assert.Equal(ValueType.I32, v),
+                        v => Assert.Equal(ValueType.I32, v),
+                        v => Assert.Equal(ValueType.I64, v),
+                        v => Assert.Equal(ValueType.I64, v)
+                    )
+            );
+
+            Assert.Collection(
+                module.Funcs,
+                e => { },
+                e => { },
+                e =>
+                    Assert.Collection(
+                        (e as ModuleFunc).Code,
+                        c => Assert.Equal(InstructionType.NOP, c.Type),
+                        c => Assert.Equal(InstructionType.END, c.Type)
+                    ),
+                e =>
+                    Assert.Collection(
+                        (e as ModuleFunc).Code,
+                        c => Assert.Equal(InstructionType.NOP, c.Type),
+                        c => Assert.Equal(InstructionType.END, c.Type)
+                    ),
+                e =>
+                    Assert.Collection(
+                        (e as ModuleFunc).Code,
+                        c => Assert.Equal(InstructionType.NOP, c.Type),
+                        c => Assert.Equal(InstructionType.END, c.Type)
+                    ),
+                e =>
+                    Assert.Collection(
+                        (e as ModuleFunc).Code,
+                        c => Assert.Equal(InstructionType.NOP, c.Type),
+                        c => Assert.Equal(InstructionType.END, c.Type)
+                    )
             );
         }
     }

@@ -118,6 +118,17 @@ namespace Derg
     public class Func
     {
         public FuncType Signature;
+
+        public Func(FuncType signature)
+        {
+            Signature = signature;
+        }
+    }
+
+    public class ImportedFunc : Func
+    {
+        public ImportedFunc(FuncType signature)
+            : base(signature) { }
     }
 
     public class ModuleFunc : Func
@@ -125,12 +136,9 @@ namespace Derg
         public ValueType[] Locals;
         public List<Instruction> Code;
 
-        public ModuleFunc(FuncType signature, ValueType[] locals, List<Instruction> code)
-        {
-            Signature = signature;
-            Locals = locals;
-            Code = code;
-        }
+        // Locals and Code get set later, when reading the module's code section.
+        public ModuleFunc(FuncType signature)
+            : base(signature) { }
     }
 
     public struct GlobalType
