@@ -275,7 +275,6 @@ namespace DergwasmTests
             WriteString(sectionWriter, "custom section");
             sectionWriter.WriteLEB128Unsigned(4UL);
             sectionWriter.Write(0xF100FF1EU);
-            sectionStream.Position = 0;
 
             writer.WriteLEB128Unsigned((ulong)sectionStream.Length);
             writer.Write(sectionStream.ToArray());
@@ -495,6 +494,23 @@ namespace DergwasmTests
             Assert.Null(elementSegmentSpec.ElemIndexExprs);
         }
 
+        [Theory]
+        [InlineData(1)]
+        [InlineData(3)]
+        public void ReadElementSegmentTag1And3TrapsOnBadElementType(byte tag)
+        {
+            MemoryStream memStream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(memStream);
+            writer.Write(tag);
+
+            writer.WriteLEB128Unsigned(1UL); // Bad element type
+
+            memStream.Position = 0;
+            BinaryReader reader = new BinaryReader(memStream);
+
+            Assert.Throws<Trap>(() => ElementSegmentSpec.Read(reader));
+        }
+
         [Fact]
         public void ReadsElementSegmentTag2Correctly()
         {
@@ -533,6 +549,27 @@ namespace DergwasmTests
                 i => Assert.Equal(101, i)
             );
             Assert.Null(elementSegmentSpec.ElemIndexExprs);
+        }
+
+        [Fact]
+        public void ReadElementSegmentTag2TrapsOnBadElementType()
+        {
+            MemoryStream memStream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(memStream);
+            writer.Write((byte)2); // Tag 2
+
+            writer.WriteLEB128Unsigned(100UL); // Table idx 100
+
+            // Offset expr
+            writer.Write((byte)InstructionType.NOP);
+            writer.Write((byte)InstructionType.END);
+
+            writer.WriteLEB128Unsigned(1UL); // Bad element type
+
+            memStream.Position = 0;
+            BinaryReader reader = new BinaryReader(memStream);
+
+            Assert.Throws<Trap>(() => ElementSegmentSpec.Read(reader));
         }
 
         [Fact]
@@ -720,6 +757,130 @@ namespace DergwasmTests
         }
 
         [Fact]
+        public void ReadElementSegmentSpecTrapsOnBadTag()
+        {
+            MemoryStream memStream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(memStream);
+            writer.Write((byte)8); // Bad tag
+
+            memStream.Position = 0;
+            BinaryReader reader = new BinaryReader(memStream);
+
+            Assert.Throws<Trap>(() => ElementSegmentSpec.Read(reader));
+        }
+
+        [Fact]
+        public void ReadsDataSegmentTag0Correctly()
+        {
+            MemoryStream memStream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(memStream);
+            writer.Write((byte)0); // Tag 0
+
+            // Offset expr
+            writer.Write((byte)InstructionType.NOP);
+            writer.Write((byte)InstructionType.END);
+
+            // Data
+            writer.WriteLEB128Unsigned(2UL);
+            writer.Write((byte)0x01);
+            writer.Write((byte)0x02);
+
+            memStream.Position = 0;
+            BinaryReader reader = new BinaryReader(memStream);
+
+            DataSegment dataSegment = DataSegment.Read(reader);
+
+            Assert.Equal(0, dataSegment.MemIdx);
+            Assert.Collection(
+                dataSegment.Data,
+                e => Assert.Equal(0x01, e),
+                e => Assert.Equal(0x02, e)
+            );
+            Assert.IsType<ActiveDataSegment>(dataSegment);
+            Assert.Collection(
+                (dataSegment as ActiveDataSegment).OffsetExpr,
+                i => Assert.Equal(InstructionType.NOP, i.Type),
+                i => Assert.Equal(InstructionType.END, i.Type)
+            );
+        }
+
+        [Fact]
+        public void ReadsDataSegmentTag1Correctly()
+        {
+            MemoryStream memStream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(memStream);
+            writer.Write((byte)1); // Tag 1
+
+            // Data
+            writer.WriteLEB128Unsigned(2UL);
+            writer.Write((byte)0x01);
+            writer.Write((byte)0x02);
+
+            memStream.Position = 0;
+            BinaryReader reader = new BinaryReader(memStream);
+
+            DataSegment dataSegment = DataSegment.Read(reader);
+
+            Assert.Equal(0, dataSegment.MemIdx);
+            Assert.Collection(
+                dataSegment.Data,
+                e => Assert.Equal(0x01, e),
+                e => Assert.Equal(0x02, e)
+            );
+            Assert.IsType<PassiveDataSegment>(dataSegment);
+        }
+
+        [Fact]
+        public void ReadsDataSegmentTag2Correctly()
+        {
+            MemoryStream memStream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(memStream);
+            writer.Write((byte)2); // Tag 2
+
+            writer.WriteLEB128Unsigned(100UL); // Mem idx 100
+
+            // Offset expr
+            writer.Write((byte)InstructionType.NOP);
+            writer.Write((byte)InstructionType.END);
+
+            // Data
+            writer.WriteLEB128Unsigned(2UL);
+            writer.Write((byte)0x01);
+            writer.Write((byte)0x02);
+
+            memStream.Position = 0;
+            BinaryReader reader = new BinaryReader(memStream);
+
+            DataSegment dataSegment = DataSegment.Read(reader);
+
+            Assert.Equal(100, dataSegment.MemIdx);
+            Assert.Collection(
+                dataSegment.Data,
+                e => Assert.Equal(0x01, e),
+                e => Assert.Equal(0x02, e)
+            );
+            Assert.IsType<ActiveDataSegment>(dataSegment);
+            Assert.Collection(
+                (dataSegment as ActiveDataSegment).OffsetExpr,
+                i => Assert.Equal(InstructionType.NOP, i.Type),
+                i => Assert.Equal(InstructionType.END, i.Type)
+            );
+        }
+
+        [Fact]
+        public void ReadDataSegmentTrapsOnBadTag()
+        {
+            MemoryStream memStream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(memStream);
+            writer.Write((byte)3); // Bad tag
+
+            memStream.Position = 0;
+            BinaryReader reader = new BinaryReader(memStream);
+
+            Assert.Throws<Trap>(() => DataSegment.Read(reader));
+        }
+
+        [Fact]
         public void ReadsTypeSectionCorrectly()
         {
             MemoryStream memStream = new MemoryStream();
@@ -806,6 +967,30 @@ namespace DergwasmTests
                     Assert.Equal(TestGlobalType0, (e as GlobalImport).GlobalType);
                 }
             );
+        }
+
+        [Fact]
+        public void ReadImportSectionTrapsOnBadTag()
+        {
+            MemoryStream memStream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(memStream);
+            writer.Write((byte)2); // Import section
+
+            MemoryStream sectionStream = new MemoryStream();
+            BinaryWriter sectionWriter = new BinaryWriter(sectionStream);
+            sectionWriter.WriteLEB128Unsigned(4UL); // 4 imports
+
+            WriteString(sectionWriter, "module");
+            WriteString(sectionWriter, "name");
+            sectionWriter.Write((byte)4); // Bad tag
+
+            writer.WriteLEB128Unsigned((ulong)sectionStream.Length);
+            writer.Write(sectionStream.ToArray());
+
+            memStream.Position = 0;
+            BinaryReader reader = new BinaryReader(memStream);
+
+            Assert.Throws<Trap>(() => Module.Read(reader));
         }
 
         [Fact]
@@ -948,28 +1133,51 @@ namespace DergwasmTests
                 e =>
                 {
                     Assert.Equal("func1", e.Name);
+                    Assert.Equal(5, e.Idx);
                     Assert.IsType<FuncExport>(e);
-                    Assert.Equal(5, (e as FuncExport).Idx);
                 },
                 e =>
                 {
                     Assert.Equal("table1", e.Name);
+                    Assert.Equal(1, e.Idx);
                     Assert.IsType<TableExport>(e);
-                    Assert.Equal(1, (e as TableExport).Idx);
                 },
                 e =>
                 {
                     Assert.Equal("memory1", e.Name);
+                    Assert.Equal(1, e.Idx);
                     Assert.IsType<MemoryExport>(e);
-                    Assert.Equal(1, (e as MemoryExport).Idx);
                 },
                 e =>
                 {
                     Assert.Equal("global1", e.Name);
+                    Assert.Equal(1, e.Idx);
                     Assert.IsType<GlobalExport>(e);
-                    Assert.Equal(1, (e as GlobalExport).Idx);
                 }
             );
+        }
+
+        [Fact]
+        public void ReadExportSectionTrapsOnBadTag()
+        {
+            MemoryStream memStream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(memStream);
+            writer.Write((byte)7); // Export section
+
+            MemoryStream sectionStream = new MemoryStream();
+            BinaryWriter sectionWriter = new BinaryWriter(sectionStream);
+            sectionWriter.WriteLEB128Unsigned(4UL); // 4 exports
+
+            WriteString(sectionWriter, "func1");
+            sectionWriter.Write((byte)4); // Bad tag
+
+            writer.WriteLEB128Unsigned((ulong)sectionStream.Length);
+            writer.Write(sectionStream.ToArray());
+
+            memStream.Position = 0;
+            BinaryReader reader = new BinaryReader(memStream);
+
+            Assert.Throws<Trap>(() => Module.Read(reader));
         }
 
         [Fact]
@@ -1157,6 +1365,65 @@ namespace DergwasmTests
                         c => Assert.Equal(InstructionType.END, c.Type)
                     )
             );
+        }
+
+        [Fact]
+        public void ReadsDataSegmentSectionCorrectly()
+        {
+            MemoryStream memStream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(memStream);
+            writer.Write(0x6D736100U); // Magic
+            writer.Write(1U); // Version
+
+            writer.Write((byte)11); // Data segment section
+            MemoryStream sectionStream = new MemoryStream();
+            BinaryWriter sectionWriter = new BinaryWriter(sectionStream);
+            sectionWriter.WriteLEB128Unsigned(1UL); // 1 data segment
+
+            sectionWriter.Write((byte)0); // Tag 0
+
+            // Offset expr
+            sectionWriter.Write((byte)InstructionType.NOP);
+            sectionWriter.Write((byte)InstructionType.END);
+
+            // Data
+            sectionWriter.WriteLEB128Unsigned(2UL);
+            sectionWriter.Write((byte)0x01);
+            sectionWriter.Write((byte)0x02);
+
+            writer.WriteLEB128Unsigned((ulong)sectionStream.Length);
+            writer.Write(sectionStream.ToArray());
+
+            memStream.Position = 0;
+            BinaryReader reader = new BinaryReader(memStream);
+
+            Module module = Module.Read(reader);
+
+            Assert.Collection(module.DataSegments, e => Assert.IsType<ActiveDataSegment>(e));
+        }
+
+        [Fact]
+        public void ReadsDataCountSectionCorrectly()
+        {
+            MemoryStream memStream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(memStream);
+            writer.Write(0x6D736100U); // Magic
+            writer.Write(1U); // Version
+
+            writer.Write((byte)12); // Data count section
+            MemoryStream sectionStream = new MemoryStream();
+            BinaryWriter sectionWriter = new BinaryWriter(sectionStream);
+            sectionWriter.WriteLEB128Unsigned(2UL); // 2 data segments
+
+            writer.WriteLEB128Unsigned((ulong)sectionStream.Length);
+            writer.Write(sectionStream.ToArray());
+
+            memStream.Position = 0;
+            BinaryReader reader = new BinaryReader(memStream);
+
+            Module module = Module.Read(reader);
+
+            Assert.Equal(2, module.DataCount);
         }
     }
 }

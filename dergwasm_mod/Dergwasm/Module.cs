@@ -224,7 +224,7 @@ namespace Derg
                         break;
 
                     default:
-                        throw new Trap("Invalid export kind");
+                        throw new Trap($"Invalid export tag 0x{tag:2X}");
                 }
             }
         }
@@ -385,55 +385,37 @@ namespace Derg
     public class Export
     {
         public string Name;
+        public int Idx;
 
-        public Export(string name)
+        public Export(string name, int idx)
         {
             Name = name;
+            Idx = idx;
         }
     }
 
     public class FuncExport : Export
     {
-        public int Idx;
-
         public FuncExport(string name, int idx)
-            : base(name)
-        {
-            Idx = idx;
-        }
+            : base(name, idx) { }
     }
 
     public class TableExport : Export
     {
-        public int Idx;
-
         public TableExport(string name, int idx)
-            : base(name)
-        {
-            Idx = idx;
-        }
+            : base(name, idx) { }
     }
 
     public class MemoryExport : Export
     {
-        public int Idx;
-
         public MemoryExport(string name, int idx)
-            : base(name)
-        {
-            Idx = idx;
-        }
+            : base(name, idx) { }
     }
 
     public class GlobalExport : Export
     {
-        public int Idx;
-
         public GlobalExport(string name, int idx)
-            : base(name)
-        {
-            Idx = idx;
-        }
+            : base(name, idx) { }
     }
 
     // An element segment specification.
@@ -457,6 +439,8 @@ namespace Derg
     public class ElementSegmentSpec
     {
         public ValueType ElemType;
+
+        // ElemIndexes and ElemIdexExprs are mutually exclusive. One will be null.
         public int[] ElemIndexes;
         public List<Instruction>[] ElemIndexExprs;
 
@@ -674,8 +658,8 @@ namespace Derg
 
     public class DataSegment
     {
-        int MemIdx;
-        byte[] Data;
+        public int MemIdx;
+        public byte[] Data;
 
         public DataSegment(int mem_idx, List<Instruction> offset_expr, byte[] data)
         {
@@ -722,7 +706,7 @@ namespace Derg
 
     public class ActiveDataSegment : DataSegment
     {
-        List<Instruction> OffsetExpr;
+        public List<Instruction> OffsetExpr;
 
         public ActiveDataSegment(int mem_idx, List<Instruction> offset_expr, byte[] data)
             : base(mem_idx, offset_expr, data)
