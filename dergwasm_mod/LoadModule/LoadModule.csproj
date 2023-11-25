@@ -3,10 +3,15 @@
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
 		<TargetFramework>net472</TargetFramework>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Dergwasm\Dergwasm.csproj" />
+	  <PackageReference Include="System.Memory" Version="4.5.5" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Dergwasm\Dergwasm.csproj" />
 	</ItemGroup>
 
 </Project>

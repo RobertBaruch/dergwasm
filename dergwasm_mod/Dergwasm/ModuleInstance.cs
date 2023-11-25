@@ -116,9 +116,15 @@ namespace Derg
         {
             if (externalFuncAddrs.Length != module.NumImportedFuncs())
             {
+                List<string> importedFuncs = (
+                    from f in module.Imports
+                    where f is FuncImport
+                    select f.ToString()
+                ).ToList();
                 throw new Trap(
                     "Wrong number of external function addresses in instantiation of module: "
-                        + $"{externalFuncAddrs.Length} provided, but {module.NumImportedFuncs()} were needed."
+                        + $"{externalFuncAddrs.Length} provided, but {module.NumImportedFuncs()} were needed:\n"
+                        + $"{string.Join("\n", importedFuncs)}"
                 );
             }
             if (externalTableAddrs.Length != module.NumImportedTables())

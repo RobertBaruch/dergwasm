@@ -133,6 +133,8 @@ namespace DergwasmTests
             set => Frame.label_stack.Push(value);
         }
 
+        public Memory GetMemory(int addr) => Memory;
+
         public Memory GetMemoryFromIndex(int idx)
         {
             if (idx != 0)
@@ -201,6 +203,8 @@ namespace DergwasmTests
 
         public void AddTable(int addr, Table table) => tables[addr] = table;
 
+        public Table GetTable(int addr) => tables[addr];
+
         public Table GetTableFromIndex(int idx) => tables[idx + 30];
 
         public void AddElementSegment(int addr, ElementSegment segment) =>
@@ -234,5 +238,23 @@ namespace DergwasmTests
                 (from operand in operands select new UnflattenedOperand(operand)).ToArray()
             );
         }
+
+        //
+        // These methods are here just to satisfy the interface. They're not used in the tests.
+        //
+
+        public bool HasLabel() => Frame.label_stack.Count > 0;
+
+        public int AddGlobal(Value global) => 0;
+
+        public int AddMemory(Memory memory) => 0;
+
+        public int AddTable(Table table) => 0;
+
+        public int AddElementSegment(ElementSegment elementSegment) => 0;
+
+        public int AddDataSegment(byte[] dataSegment) => 0;
+
+        public int AddFunc(Func func) => 0;
     }
 }

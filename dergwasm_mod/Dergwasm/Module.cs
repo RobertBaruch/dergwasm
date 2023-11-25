@@ -65,6 +65,26 @@ namespace Derg
         public static List<Instruction> ReadExpr(BinaryReader stream) =>
             Expr.Decode(stream).Flatten(0);
 
+        public ModuleInstance Instantiate(
+            IMachine machine,
+            int[] externalFuncAddrs,
+            int[] externalTableAddrs,
+            int[] externalMemoryAddrs,
+            int[] externalGlobalAddrs
+        )
+        {
+            ModuleInstance instance = new ModuleInstance();
+            instance.Instantiate(
+                machine,
+                this,
+                externalFuncAddrs,
+                externalTableAddrs,
+                externalMemoryAddrs,
+                externalGlobalAddrs
+            );
+            return instance;
+        }
+
         public int NumImportedFuncs()
         {
             int numImportedFuncs = 0;
@@ -391,6 +411,11 @@ namespace Derg
             : base(name, module_name)
         {
             FuncType = func_type;
+        }
+
+        public override string ToString()
+        {
+            return $"{ModuleName}.{Name}{FuncType}";
         }
     }
 

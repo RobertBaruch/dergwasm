@@ -296,5 +296,10 @@ namespace Derg
         {
             return !lhs.Equals(rhs);
         }
+
+        public override string ToString()
+        {
+            return $"({string.Join(", ", args)}) -> ({string.Join(", ", returns)})";
+        }
     }
 } // namespace Derg
