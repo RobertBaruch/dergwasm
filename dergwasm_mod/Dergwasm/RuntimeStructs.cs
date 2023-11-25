@@ -47,7 +47,10 @@ namespace Derg
 
         public Frame(ModuleFunc func, ModuleInstance module)
         {
-            this.Locals = new Value[func.Signature.args.Length + func.Locals.Length];
+            if (func != null)
+            {
+                this.Locals = new Value[func.Signature.args.Length + func.Locals.Length];
+            }
             this.Module = module;
             this.pc = 0;
             this.label_stack = new Stack<Label>();
@@ -117,20 +120,32 @@ namespace Derg
 
     public class Func
     {
+        // In general, all Funcs have a module name.
+        public string ModuleName;
+
+        // In general, all Funcs have a name. Exported funcs have explicit names, but
+        // if a func is not exported, it will get a synthetic name $N where N is the
+        // index.
+        public string Name;
         public FuncType Signature;
 
-        public Func(FuncType signature)
+        public Func(string moduleName, string name, FuncType signature)
         {
+            ModuleName = moduleName;
+            Name = name;
             Signature = signature;
         }
     }
 
+    // This is just a temporary marker in non-instantiated modules, which will get
+    // matched with an external func.
     public class ImportedFunc : Func
     {
-        public ImportedFunc(FuncType signature)
-            : base(signature) { }
+        public ImportedFunc(string moduleName, string name, FuncType signature)
+            : base(moduleName, name, signature) { }
     }
 
+    // A WASM function.
     public class ModuleFunc : Func
     {
         public ModuleInstance Module; // The instance of the module where this func was defined.
@@ -138,8 +153,20 @@ namespace Derg
         public List<Instruction> Code;
 
         // Locals and Code get set later, when reading the module's code section.
-        public ModuleFunc(FuncType signature)
-            : base(signature) { }
+        public ModuleFunc(string moduleName, string name, FuncType signature)
+            : base(moduleName, name, signature) { }
+    }
+
+    // A function on the host.
+    public class HostFunc : Func
+    {
+        public HostProxy Proxy;
+
+        public HostFunc(string moduleName, string name, FuncType signature, HostProxy proxy)
+            : base(moduleName, name, signature)
+        {
+            this.Proxy = proxy;
+        }
     }
 
     public struct GlobalType

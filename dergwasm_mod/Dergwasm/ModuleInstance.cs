@@ -20,7 +20,8 @@ namespace Derg
 
         void AllocateFunctions(IMachine machine, Module module)
         {
-            // We only allocate non-imported functions.
+            // We only allocate non-imported functions. Imported functions have already
+            // been mapped.
             for (int i = module.NumImportedFuncs(); i < module.Funcs.Count; i++)
             {
                 ModuleFunc func = module.Funcs[i] as ModuleFunc;
@@ -31,7 +32,8 @@ namespace Derg
 
         void AllocateTables(IMachine machine, Module module)
         {
-            // We only allocate non-imported tables.
+            // We only allocate non-imported tables. Imported tables have already been
+            // mapped.
             for (int i = module.NumImportedTables(); i < module.Tables.Count; i++)
             {
                 TablesMap.Add(machine.AddTable(new Table(module.Tables[i])));
@@ -40,7 +42,8 @@ namespace Derg
 
         void AllocateMemories(IMachine machine, Module module)
         {
-            // We only allocate non-imported memories.
+            // We only allocate non-imported memories. Imported memories have already been
+            // mapped.
             for (int i = module.NumImportedMemories(); i < module.Memories.Count; i++)
             {
                 MemoriesMap.Add(machine.AddMemory(new Memory(module.Memories[i])));
@@ -49,7 +52,8 @@ namespace Derg
 
         void AllocateGlobals(IMachine machine, Module module)
         {
-            // We only allocate non-imported globals.
+            // We only allocate non-imported globals. Imported globals have already been
+            // mapped.
             for (int i = module.NumImportedGlobals(); i < module.Globals.Count; i++)
             {
                 GlobalSpec globalSpec = module.Globals[i];
@@ -82,21 +86,14 @@ namespace Derg
             }
         }
 
-        public void Allocate(
-            IMachine machine,
-            Module module,
-            int[] externalFuncAddrs,
-            int[] externalTableAddrs,
-            int[] externalMemoryAddrs,
-            int[] externalGlobalAddrs
-        )
+        public void Allocate(IMachine machine, Module module)
         {
             // Imported functions, tables, memories, and globals always come first in the
             // address maps.
-            FuncsMap.AddRange(externalFuncAddrs);
-            TablesMap.AddRange(externalTableAddrs);
-            MemoriesMap.AddRange(externalMemoryAddrs);
-            GlobalsMap.AddRange(externalGlobalAddrs);
+            FuncsMap.AddRange(module.ExternalFuncAddrs);
+            TablesMap.AddRange(module.ExternalTableAddrs);
+            MemoriesMap.AddRange(module.ExternalMemoryAddrs);
+            GlobalsMap.AddRange(module.ExternalGlobalAddrs);
 
             AllocateFunctions(machine, module);
             AllocateTables(machine, module);
@@ -106,15 +103,9 @@ namespace Derg
             AllocatedDataSegments(machine, module);
         }
 
-        void ValidateNumExternsVersusRequiredImports(
-            Module module,
-            int[] externalFuncAddrs,
-            int[] externalTableAddrs,
-            int[] externalMemoryAddrs,
-            int[] externalGlobalAddrs
-        )
+        void ValidateNumExternsVersusRequiredImports(Module module)
         {
-            if (externalFuncAddrs.Length != module.NumImportedFuncs())
+            if (module.ExternalFuncAddrs.Length != module.NumImportedFuncs())
             {
                 List<string> importedFuncs = (
                     from f in module.Imports
@@ -123,29 +114,29 @@ namespace Derg
                 ).ToList();
                 throw new Trap(
                     "Wrong number of external function addresses in instantiation of module: "
-                        + $"{externalFuncAddrs.Length} provided, but {module.NumImportedFuncs()} were needed:\n"
+                        + $"{module.ExternalFuncAddrs.Length} provided, but {module.NumImportedFuncs()} were needed:\n"
                         + $"{string.Join("\n", importedFuncs)}"
                 );
             }
-            if (externalTableAddrs.Length != module.NumImportedTables())
+            if (module.ExternalTableAddrs.Length != module.NumImportedTables())
             {
                 throw new Trap(
                     "Wrong number of external table addresses in instantiation of module: "
-                        + $"{externalTableAddrs.Length} provided, but {module.NumImportedTables()} were needed."
+                        + $"{module.ExternalTableAddrs.Length} provided, but {module.NumImportedTables()} were needed."
                 );
             }
-            if (externalMemoryAddrs.Length != module.NumImportedMemories())
+            if (module.ExternalMemoryAddrs.Length != module.NumImportedMemories())
             {
                 throw new Trap(
                     "Wrong number of external memory addresses in instantiation of module: "
-                        + $"{externalMemoryAddrs.Length} provided, but {module.NumImportedMemories()} were needed."
+                        + $"{module.ExternalMemoryAddrs.Length} provided, but {module.NumImportedMemories()} were needed."
                 );
             }
-            if (externalGlobalAddrs.Length != module.NumImportedGlobals())
+            if (module.ExternalGlobalAddrs.Length != module.NumImportedGlobals())
             {
                 throw new Trap(
                     "Wrong number of external global addresses in instantiation of module: "
-                        + $"{externalGlobalAddrs.Length} provided, but {module.NumImportedGlobals()} were needed."
+                        + $"{module.ExternalGlobalAddrs.Length} provided, but {module.NumImportedGlobals()} were needed."
                 );
             }
         }
@@ -159,6 +150,15 @@ namespace Derg
 
                 if (externalFunc.Signature != importedFunc.Signature)
                 {
+                    if (externalFunc is HostFunc hostFunc)
+                    {
+                        throw new Trap(
+                            $"Signature for provided external func {hostFunc.Name} for imported func "
+                                + $"does not match: \n"
+                                + $"Expected extern: {externalFunc.Signature}\n"
+                                + $"Actual imported: {importedFunc.Signature}"
+                        );
+                    }
                     throw new Trap(
                         $"Signature for provided external func for imported func does not match."
                     );
@@ -205,14 +205,19 @@ namespace Derg
             {
                 GlobalSpec globalSpec = module.Globals[i];
                 ModuleFunc syntheticFunc = new ModuleFunc(
+                    module.ModuleName,
+                    "",
                     new FuncType(new ValueType[] { }, new ValueType[] { globalSpec.Type.Type })
                 );
                 syntheticFunc.Module = this;
                 syntheticFunc.Locals = new ValueType[0];
                 syntheticFunc.Code = globalSpec.InitExpr;
 
+                // This frame collects any return values.
+                machine.Frame = new Frame(null, this);
+
                 machine.Frame = new Frame(syntheticFunc, this);
-                machine.PC = -1; // So that incrementing PC goes to beginning.
+                machine.PC = 0;
                 machine.Label = new Label(0, syntheticFunc.Code.Count);
 
                 while (machine.HasLabel())
@@ -233,36 +238,16 @@ namespace Derg
             }
         }
 
-        public void Instantiate(
-            IMachine machine,
-            Module module,
-            int[] externalFuncAddrs,
-            int[] externalTableAddrs,
-            int[] externalMemoryAddrs,
-            int[] externalGlobalAddrs
-        )
+        public void Instantiate(IMachine machine, Module module)
         {
-            ValidateNumExternsVersusRequiredImports(
-                module,
-                externalFuncAddrs,
-                externalTableAddrs,
-                externalMemoryAddrs,
-                externalGlobalAddrs
-            );
+            ValidateNumExternsVersusRequiredImports(module);
 
-            ValidateExternalFuncTypes(machine, module, externalFuncAddrs);
-            ValidateExternalTableTypes(machine, module, externalTableAddrs);
-            ValidateExternalMemoryTypes(machine, module, externalMemoryAddrs);
+            ValidateExternalFuncTypes(machine, module, module.ExternalFuncAddrs);
+            ValidateExternalTableTypes(machine, module, module.ExternalTableAddrs);
+            ValidateExternalMemoryTypes(machine, module, module.ExternalMemoryAddrs);
             // We don't keep type information for globals. We probably should.
 
-            Allocate(
-                machine,
-                module,
-                externalFuncAddrs,
-                externalTableAddrs,
-                externalMemoryAddrs,
-                externalGlobalAddrs
-            );
+            Allocate(machine, module);
 
             InitGlobals(machine, module);
         }

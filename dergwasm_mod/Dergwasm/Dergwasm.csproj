@@ -75,6 +75,7 @@
   <ItemGroup>
     <Compile Include="ControlInstructions.cs" />
     <Compile Include="Dergwasm.cs" />
+    <Compile Include="HostProxy.cs" />
     <Compile Include="IMachine.cs" />
     <Compile Include="IModule.cs" />
     <Compile Include="InstructionEvaluation.cs" />

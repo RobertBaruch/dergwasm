@@ -18,6 +18,7 @@ namespace Derg
         public static readonly uint Magic = 0x6D736100U;
         public static readonly uint Version = 1U;
 
+        public string ModuleName;
         public List<CustomData> customData = new List<CustomData>();
         public FuncType[] FuncTypes = new FuncType[0];
         public Import[] Imports = new Import[0];
@@ -31,7 +32,17 @@ namespace Derg
         public int StartIdx = -1;
         public int DataCount;
 
-        public static Module Read(BinaryReader stream)
+        public int[] ExternalFuncAddrs;
+        public int[] ExternalTableAddrs;
+        public int[] ExternalMemoryAddrs;
+        public int[] ExternalGlobalAddrs;
+
+        public Module(string moduleName)
+        {
+            moduleName = moduleName;
+        }
+
+        public static Module Read(string moduleName, BinaryReader stream)
         {
             if (stream.ReadUInt32() != Magic)
             {
@@ -42,7 +53,7 @@ namespace Derg
                 throw new Trap("Invalid version");
             }
 
-            Module module = new Module();
+            Module module = new Module(moduleName);
 
             while (true)
             {
@@ -65,23 +76,68 @@ namespace Derg
         public static List<Instruction> ReadExpr(BinaryReader stream) =>
             Expr.Decode(stream).Flatten(0);
 
-        public ModuleInstance Instantiate(
-            IMachine machine,
-            int[] externalFuncAddrs,
-            int[] externalTableAddrs,
-            int[] externalMemoryAddrs,
-            int[] externalGlobalAddrs
-        )
+        // You should resolve externs for all modules before instantiating any of them. This only
+        // matches names. The func types will be validated during instantiation.
+        public void ResolveExterns(IMachine machine)
+        {
+            ResolveExternFuncs(machine);
+            ResolveExternTables(machine);
+            ResolveExternMemories(machine);
+            ResolveExternGlobals(machine);
+        }
+
+        void ResolveExternFuncs(IMachine machine)
+        {
+            ExternalFuncAddrs = new int[NumImportedFuncs()];
+
+            // Match imported functions to their machine addresses.
+            for (int i = 0; i < NumImportedFuncs(); i++)
+            {
+                ImportedFunc importedFunc = (ImportedFunc)Funcs[i];
+                Func matchedFunc = null;
+
+                // O(N) for now. Ideally the module name and func name would be in a dictionary.
+                for (int addr = 0; addr < machine.NumFuncs; addr++)
+                {
+                    Func func = machine.GetFunc(addr);
+                    if (
+                        func.ModuleName == importedFunc.ModuleName && func.Name == importedFunc.Name
+                    )
+                    {
+                        matchedFunc = func;
+                        ExternalFuncAddrs[i] = addr;
+                        break;
+                    }
+                }
+
+                if (matchedFunc == null)
+                {
+                    throw new Trap(
+                        $"Could not resolve imported function {importedFunc.ModuleName}.{importedFunc.Name}"
+                    );
+                }
+            }
+        }
+
+        void ResolveExternTables(IMachine machine)
+        {
+            ExternalTableAddrs = new int[0];
+        }
+
+        void ResolveExternMemories(IMachine machine)
+        {
+            ExternalMemoryAddrs = new int[0];
+        }
+
+        void ResolveExternGlobals(IMachine machine)
+        {
+            ExternalGlobalAddrs = new int[0];
+        }
+
+        public ModuleInstance Instantiate(IMachine machine)
         {
             ModuleInstance instance = new ModuleInstance();
-            instance.Instantiate(
-                machine,
-                this,
-                externalFuncAddrs,
-                externalTableAddrs,
-                externalMemoryAddrs,
-                externalGlobalAddrs
-            );
+            instance.Instantiate(machine, this);
             return instance;
         }
 
@@ -199,20 +255,20 @@ namespace Derg
                     case 0x00:
                         // Since we've already read the FuncTypes, we can resolve the FuncType right away.
                         FuncType funcType = module.FuncTypes[(int)stream.ReadLEB128Unsigned()];
-                        module.Funcs.Add(new ImportedFunc(funcType));
+                        module.Funcs.Add(new ImportedFunc(module_name, name, funcType));
                         module.Imports[i] = new FuncImport(name, module_name, funcType);
                         break;
 
                     case 0x01:
                         TableType tableType = TableType.Read(stream);
                         module.Tables.Add(tableType);
-                        module.Imports[i] = new TableImport(name, module_name, tableType);
+                        module.Imports[i] = new TableImport(module_name, name, tableType);
                         break;
 
                     case 0x02:
                         Limits memoryType = Limits.Read(stream);
                         module.Memories.Add(memoryType);
-                        module.Imports[i] = new MemoryImport(name, module_name, memoryType);
+                        module.Imports[i] = new MemoryImport(module_name, name, memoryType);
                         break;
 
                     case 0x03:
@@ -220,7 +276,7 @@ namespace Derg
                         // Imported globals do not get initialized by modules.
                         GlobalSpec globalSpec = new GlobalSpec(globalType, null);
                         module.Globals.Add(globalSpec);
-                        module.Imports[i] = new GlobalImport(name, module_name, globalType);
+                        module.Imports[i] = new GlobalImport(module_name, name, globalType);
                         break;
 
                     default:
@@ -235,7 +291,9 @@ namespace Derg
             for (int i = 0; i < numFuncs; i++)
             {
                 int funcTypeIdx = (int)stream.ReadLEB128Unsigned();
-                module.Funcs.Add(new ModuleFunc(module.FuncTypes[funcTypeIdx]));
+                module.Funcs.Add(
+                    new ModuleFunc(module.ModuleName, $"${i}", module.FuncTypes[funcTypeIdx])
+                );
             }
         }
 

@@ -12,7 +12,7 @@ namespace DergwasmTests
         public InstructionTestFixture()
         {
             // This frame collects any return values.
-            ModuleFunc func = new ModuleFunc(machine.GetFuncTypeFromIndex(0));
+            ModuleFunc func = new ModuleFunc("test", "$-1", machine.GetFuncTypeFromIndex(0));
             func.Locals = new ValueType[] { ValueType.I32, ValueType.I32 };
             func.Code = new List<Instruction>();
             machine.Frame = new Frame(func, null);

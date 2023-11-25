@@ -67,7 +67,7 @@ namespace DergwasmTests
         [GlobalSetup]
         public void Setup()
         {
-            ModuleFunc func = new ModuleFunc(GetFuncTypeFromIndex(0));
+            ModuleFunc func = new ModuleFunc("test", "$-1", GetFuncTypeFromIndex(0));
             func.Locals = new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 };
             func.Code = new List<Instruction>();
             Frame = new Frame(func, null);

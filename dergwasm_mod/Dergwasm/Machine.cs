@@ -27,6 +27,10 @@ namespace Derg
         public void PopFrame()
         {
             Frame last_frame = frameStack.Pop();
+            if (frameStack.Count == 0)
+            {
+                return;
+            }
             Frame.value_stack.AddRange(
                 last_frame.value_stack.GetRange(
                     last_frame.value_stack.Count - last_frame.Arity,
@@ -72,6 +76,43 @@ namespace Derg
         public void Push(double val) => Push(new Value(val));
 
         public void Push(bool val) => Push(new Value(val));
+
+        public void Push<R>(R ret)
+        {
+            switch (ret)
+            {
+                case int r:
+                    Push(r);
+                    break;
+
+                case uint r:
+                    Push(r);
+                    break;
+
+                case long r:
+                    Push(r);
+                    break;
+
+                case ulong r:
+                    Push(r);
+                    break;
+
+                case float r:
+                    Push(r);
+                    break;
+
+                case double r:
+                    Push(r);
+                    break;
+
+                case bool r:
+                    Push(r);
+                    break;
+
+                default:
+                    throw new Trap($"Invalid push type {ret.GetType()}");
+            }
+        }
 
         public Value[] Locals => Frame.Locals;
 
@@ -130,10 +171,17 @@ namespace Derg
         public void InvokeFunc(int addr)
         {
             Func f = funcs[addr];
+            if (f is HostFunc host_func)
+            {
+                host_func.Proxy.Invoke(this);
+                return;
+            }
+
             if (!(f is ModuleFunc))
             {
-                throw new Trap($"Attempted to invoke a non-module func.");
+                throw new Trap($"Attempted to invoke a non-module func of type {f.GetType()}.");
             }
+
             ModuleFunc func = f as ModuleFunc;
             int arity = func.Signature.returns.Length;
             int args = func.Signature.args.Length;
@@ -154,6 +202,8 @@ namespace Derg
             funcs.Add(func);
             return funcs.Count - 1;
         }
+
+        public int NumFuncs => funcs.Count;
 
         public Func GetFunc(int addr) => funcs[addr];
 
@@ -202,6 +252,17 @@ namespace Derg
                 Instruction insn = Frame.Code[PC];
                 InstructionEvaluation.Execute(insn, this);
             }
+        }
+
+        public int RegisterHostFunc(
+            string moduleName,
+            string name,
+            FuncType signature,
+            HostProxy proxy
+        )
+        {
+            funcs.Add(new HostFunc(moduleName, name, signature, proxy));
+            return funcs.Count - 1;
         }
     }
 }

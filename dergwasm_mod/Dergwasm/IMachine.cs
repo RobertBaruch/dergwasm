@@ -25,6 +25,8 @@ namespace Derg
         // Pushes the given value onto the stack.
         void Push(Value val);
 
+        // We can't make these generic because we're not on .NET 7 or above yet. We are currently
+        // working with .NET Framework 4.7.2.
         void Push(bool val);
         void Push(int val);
         void Push(uint val);
@@ -38,6 +40,10 @@ namespace Derg
 
         unsafe T Pop<T>()
             where T : unmanaged;
+
+        // Pushes the given value onto the stack. Use only when you absolutely do not know
+        // the type, since this performs type checks at runtime.
+        void Push<R>(R val);
 
         // Gets the locals for the current frame.
         Value[] Locals { get; }
@@ -124,6 +130,9 @@ namespace Derg
         // Adds the given function to the machine, returning its address.
         int AddFunc(Func func);
 
+        // The number of funcs in the machine.
+        int NumFuncs { get; }
+
         // Gets the function at the given address.
         Func GetFunc(int addr);
 
@@ -134,11 +143,16 @@ namespace Derg
         // Invokes the function at the given index, using the current frame's module
         // to map the index to the machine's function address. Note that you can only
         // invoke a function in the current module or on the host using this. If you
-        // need to invoke a function outside the module, use InvokeExternalFunc().
+        // need to invoke a function outside the module, use InvokeFunc().
         void InvokeFuncFromIndex(int idx);
 
         void InvokeFunc(int addr);
 
+        // Steps the machine by n steps (default 1).
         void Step(int n = 1);
+
+        // Registers a host function with the given name, signature, and proxy.
+        // Returns the address of the host function.
+        int RegisterHostFunc(string moduleName, string name, FuncType signature, HostProxy proxy);
     }
 }

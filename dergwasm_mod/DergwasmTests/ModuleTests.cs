@@ -219,7 +219,7 @@ namespace DergwasmTests
             memStream.Position = 0;
             BinaryReader reader = new BinaryReader(memStream);
 
-            Module module = Module.Read(reader);
+            Module module = Module.Read("test", reader);
 
             Assert.Empty(module.customData);
             Assert.Empty(module.FuncTypes);
@@ -245,7 +245,7 @@ namespace DergwasmTests
             memStream.Position = 0;
             BinaryReader reader = new BinaryReader(memStream);
 
-            Assert.Throws<Trap>(() => Module.Read(reader));
+            Assert.Throws<Trap>(() => Module.Read("test", reader));
         }
 
         [Fact]
@@ -258,7 +258,7 @@ namespace DergwasmTests
             memStream.Position = 0;
             BinaryReader reader = new BinaryReader(memStream);
 
-            Assert.Throws<Trap>(() => Module.Read(reader));
+            Assert.Throws<Trap>(() => Module.Read("test", reader));
         }
 
         [Fact]
@@ -281,7 +281,7 @@ namespace DergwasmTests
             memStream.Position = 0;
             BinaryReader reader = new BinaryReader(memStream);
 
-            Module module = Module.Read(reader);
+            Module module = Module.Read("test", reader);
 
             Assert.Single(module.customData);
             Assert.Collection(module.customData, e => Assert.Equal("custom section", e.Name));
@@ -893,7 +893,7 @@ namespace DergwasmTests
             memStream.Position = 0;
             BinaryReader reader = new BinaryReader(memStream);
 
-            Module module = Module.Read(reader);
+            Module module = Module.Read("test", reader);
 
             Assert.Collection(
                 module.FuncTypes,
@@ -927,7 +927,7 @@ namespace DergwasmTests
             memStream.Position = 0;
             BinaryReader reader = new BinaryReader(memStream);
 
-            Module module = Module.Read(reader);
+            Module module = Module.Read("test", reader);
 
             Assert.Collection(
                 module.Imports,
@@ -995,7 +995,7 @@ namespace DergwasmTests
             memStream.Position = 0;
             BinaryReader reader = new BinaryReader(memStream);
 
-            Assert.Throws<Trap>(() => Module.Read(reader));
+            Assert.Throws<Trap>(() => Module.Read("test", reader));
         }
 
         [Fact]
@@ -1013,7 +1013,7 @@ namespace DergwasmTests
             memStream.Position = 0;
             BinaryReader reader = new BinaryReader(memStream);
 
-            Module module = Module.Read(reader);
+            Module module = Module.Read("test", reader);
 
             // The 2 imports come first.
             Assert.Collection(
@@ -1042,7 +1042,7 @@ namespace DergwasmTests
             memStream.Position = 0;
             BinaryReader reader = new BinaryReader(memStream);
 
-            Module module = Module.Read(reader);
+            Module module = Module.Read("test", reader);
 
             Assert.Collection(
                 module.Tables,
@@ -1066,7 +1066,7 @@ namespace DergwasmTests
             memStream.Position = 0;
             BinaryReader reader = new BinaryReader(memStream);
 
-            Module module = Module.Read(reader);
+            Module module = Module.Read("test", reader);
 
             Assert.Collection(
                 module.Memories,
@@ -1090,7 +1090,7 @@ namespace DergwasmTests
             memStream.Position = 0;
             BinaryReader reader = new BinaryReader(memStream);
 
-            Module module = Module.Read(reader);
+            Module module = Module.Read("test", reader);
 
             Assert.Collection(
                 module.Globals,
@@ -1131,7 +1131,7 @@ namespace DergwasmTests
             memStream.Position = 0;
             BinaryReader reader = new BinaryReader(memStream);
 
-            Module module = Module.Read(reader);
+            Module module = Module.Read("test", reader);
 
             Assert.Collection(
                 module.Exports,
@@ -1182,7 +1182,7 @@ namespace DergwasmTests
             memStream.Position = 0;
             BinaryReader reader = new BinaryReader(memStream);
 
-            Assert.Throws<Trap>(() => Module.Read(reader));
+            Assert.Throws<Trap>(() => Module.Read("test", reader));
         }
 
         [Fact]
@@ -1205,7 +1205,7 @@ namespace DergwasmTests
             memStream.Position = 0;
             BinaryReader reader = new BinaryReader(memStream);
 
-            Module module = Module.Read(reader);
+            Module module = Module.Read("test", reader);
 
             Assert.Equal(100, module.StartIdx);
         }
@@ -1245,7 +1245,7 @@ namespace DergwasmTests
             memStream.Position = 0;
             BinaryReader reader = new BinaryReader(memStream);
 
-            Module module = Module.Read(reader);
+            Module module = Module.Read("test", reader);
 
             Assert.Collection(
                 module.ElementSegmentSpecs,
@@ -1293,7 +1293,7 @@ namespace DergwasmTests
             memStream.Position = 0;
             BinaryReader reader = new BinaryReader(memStream);
 
-            Module module = Module.Read(reader);
+            Module module = Module.Read("test", reader);
 
             Assert.Collection(
                 module.Funcs,
@@ -1402,7 +1402,7 @@ namespace DergwasmTests
             memStream.Position = 0;
             BinaryReader reader = new BinaryReader(memStream);
 
-            Module module = Module.Read(reader);
+            Module module = Module.Read("test", reader);
 
             Assert.Collection(module.DataSegments, e => Assert.IsType<ActiveDataSegment>(e));
         }
@@ -1426,7 +1426,7 @@ namespace DergwasmTests
             memStream.Position = 0;
             BinaryReader reader = new BinaryReader(memStream);
 
-            Module module = Module.Read(reader);
+            Module module = Module.Read("test", reader);
 
             Assert.Equal(2, module.DataCount);
         }

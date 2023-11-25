@@ -184,7 +184,7 @@ namespace DergwasmTests
         public void SetProgram(int signature_idx, params UnflattenedInstruction[] instructions)
         {
             List<Instruction> program = new List<UnflattenedInstruction>(instructions).Flatten(0);
-            ModuleFunc func = new ModuleFunc(GetFuncTypeFromIndex(signature_idx));
+            ModuleFunc func = new ModuleFunc("test", "$0", GetFuncTypeFromIndex(signature_idx));
             func.Locals = new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 };
             func.Code = program;
             Frame = new Frame(func, null);
@@ -196,7 +196,7 @@ namespace DergwasmTests
         public void AddFunction(int addr, params UnflattenedInstruction[] instructions)
         {
             List<Instruction> program = new List<UnflattenedInstruction>(instructions).Flatten(0);
-            funcs[addr] = new ModuleFunc(GetFuncTypeFromIndex(addr - 10));
+            funcs[addr] = new ModuleFunc("test", $"${addr - 10}", GetFuncTypeFromIndex(addr - 10));
             funcs[addr].Locals = new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 };
             funcs[addr].Code = program;
         }
@@ -256,5 +256,51 @@ namespace DergwasmTests
         public int AddDataSegment(byte[] dataSegment) => 0;
 
         public int AddFunc(Func func) => 0;
+
+        public int RegisterHostFunc(
+            string moduleName,
+            string name,
+            FuncType signature,
+            HostProxy proxy
+        ) => 0;
+
+        public int NumFuncs => 0;
+
+        public void Push<R>(R ret)
+        {
+            switch (ret)
+            {
+                case int r:
+                    Push(r);
+                    break;
+
+                case uint r:
+                    Push(r);
+                    break;
+
+                case long r:
+                    Push(r);
+                    break;
+
+                case ulong r:
+                    Push(r);
+                    break;
+
+                case float r:
+                    Push(r);
+                    break;
+
+                case double r:
+                    Push(r);
+                    break;
+
+                case bool r:
+                    Push(r);
+                    break;
+
+                default:
+                    throw new Trap($"Invalid push type {ret.GetType()}");
+            }
+        }
     }
 }
