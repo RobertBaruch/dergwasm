@@ -256,7 +256,7 @@ namespace Derg
                         // Since we've already read the FuncTypes, we can resolve the FuncType right away.
                         FuncType funcType = module.FuncTypes[(int)stream.ReadLEB128Unsigned()];
                         module.Funcs.Add(new ImportedFunc(module_name, name, funcType));
-                        module.Imports[i] = new FuncImport(name, module_name, funcType);
+                        module.Imports[i] = new FuncImport(module_name, name, funcType);
                         break;
 
                     case 0x01:
@@ -451,13 +451,13 @@ namespace Derg
 
     public class Import
     {
-        public string Name;
         public string ModuleName;
+        public string Name;
 
-        public Import(string name, string module_name)
+        public Import(string module_name, string name)
         {
-            Name = name;
             ModuleName = module_name;
+            Name = name;
         }
     }
 
@@ -465,8 +465,8 @@ namespace Derg
     {
         public FuncType FuncType;
 
-        public FuncImport(string name, string module_name, FuncType func_type)
-            : base(name, module_name)
+        public FuncImport(string module_name, string name, FuncType func_type)
+            : base(module_name, name)
         {
             FuncType = func_type;
         }
@@ -481,8 +481,8 @@ namespace Derg
     {
         public TableType TableType;
 
-        public TableImport(string name, string module_name, TableType table_type)
-            : base(name, module_name)
+        public TableImport(string module_name, string name, TableType table_type)
+            : base(module_name, name)
         {
             TableType = table_type;
         }
@@ -492,8 +492,8 @@ namespace Derg
     {
         public Limits MemoryLimits;
 
-        public MemoryImport(string name, string module_name, Limits memory_limits)
-            : base(name, module_name)
+        public MemoryImport(string module_name, string name, Limits memory_limits)
+            : base(module_name, name)
         {
             MemoryLimits = memory_limits;
         }
@@ -503,8 +503,8 @@ namespace Derg
     {
         public GlobalType GlobalType;
 
-        public GlobalImport(string name, string module_name, GlobalType global_type)
-            : base(name, module_name)
+        public GlobalImport(string module_name, string name, GlobalType global_type)
+            : base(module_name, name)
         {
             GlobalType = global_type;
         }

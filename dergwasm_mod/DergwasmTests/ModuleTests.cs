@@ -262,6 +262,21 @@ namespace DergwasmTests
         }
 
         [Fact]
+        public void ReadModuleRetainsModuleName()
+        {
+            MemoryStream memStream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(memStream);
+            writer.Write(0x6D736100U);
+            writer.Write(1U);
+            memStream.Position = 0;
+            BinaryReader reader = new BinaryReader(memStream);
+
+            Module module = Module.Read("test", reader);
+
+            Assert.Equal("test", module.ModuleName);
+        }
+
+        [Fact]
         public void ReadsCustomSectionCorrectly()
         {
             MemoryStream memStream = new MemoryStream();
