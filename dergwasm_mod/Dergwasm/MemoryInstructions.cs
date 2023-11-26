@@ -139,6 +139,20 @@ namespace Derg
             Store<uint>(span, (uint)val);
         }
 
+        public static void F32Store(Instruction instruction, IMachine machine)
+        {
+            float val = machine.Pop().F32;
+            Span<byte> span = Span0(instruction, machine, 4);
+            Store<float>(span, val);
+        }
+
+        public static void F64Store(Instruction instruction, IMachine machine)
+        {
+            double val = machine.Pop().F64;
+            Span<byte> span = Span0(instruction, machine, 8);
+            Store<double>(span, val);
+        }
+
         public static void MemorySize(Instruction instruction, IMachine machine) =>
             machine.Push(new Value((uint)machine.Memory0.Length >> 16));
 

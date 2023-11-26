@@ -153,13 +153,37 @@ namespace DergwasmTests
         {
             // 0: I32_CONST offset
             // 1: I32_CONST val
-            // 1: I32_STORE _ base_addr
-            // 2: NOP
+            // 2: I32_STORE _ base_addr
+            // 3: NOP
             machine.SetProgram(
                 0,
                 I32Const(offset),
                 I32Const(val),
                 Insn(insn, new Value(0), new Value(base_addr)),
+                Nop()
+            );
+
+            machine.Step(3);
+
+            Assert.Empty(machine.Frame.value_stack);
+            Assert.Equal(expected, MemoryInstructions.Convert<ulong>(machine.Memory0, 0));
+        }
+
+        [Theory]
+        [InlineData(0, 0, 0x000000004048F5C3UL)]
+        [InlineData(1, 0, 0x0000004048F5C300UL)]
+        [InlineData(0, 1, 0x0000004048F5C300UL)]
+        public void TestF32Store(int offset, int base_addr, ulong expected)
+        {
+            // 0: I32_CONST offset
+            // 1: F32_CONST 3.14 // 0x4048F5C3
+            // 2: F32_STORE _ base_addr
+            // 3: NOP
+            machine.SetProgram(
+                0,
+                I32Const(offset),
+                F32Const(3.14f),
+                Insn(InstructionType.F32_STORE, new Value(0), new Value(base_addr)),
                 Nop()
             );
 
@@ -229,13 +253,38 @@ namespace DergwasmTests
         {
             // 0: I32_CONST offset
             // 1: I64_CONST val
-            // 1: I64_STORE _ base_addr
-            // 2: NOP
+            // 2: I64_STORE _ base_addr
+            // 3: NOP
             machine.SetProgram(
                 0,
                 I32Const(offset),
                 I64Const(val),
                 Insn(insn, new Value(0), new Value(base_addr)),
+                Nop()
+            );
+
+            machine.Step(3);
+
+            Assert.Empty(machine.Frame.value_stack);
+            Assert.Equal(expected, MemoryInstructions.Convert<ulong>(machine.Memory0, 0));
+            Assert.Equal(expected8, machine.Memory0[8]);
+        }
+
+        [Theory]
+        [InlineData(0, 0, 0x40091EB851EB851FUL, 0x00)]
+        [InlineData(1, 0, 0x091EB851EB851F00UL, 0x40)]
+        [InlineData(0, 1, 0x091EB851EB851F00UL, 0x40)]
+        public void TestF64Store(int offset, int base_addr, ulong expected, byte expected8)
+        {
+            // 0: I32_CONST offset
+            // 1: F64_CONST 3.14 // 0x40091EB851EB851F
+            // 2: F64_STORE _ base_addr
+            // 3: NOP
+            machine.SetProgram(
+                0,
+                I32Const(offset),
+                F64Const(3.14),
+                Insn(InstructionType.F64_STORE, new Value(0), new Value(base_addr)),
                 Nop()
             );
 

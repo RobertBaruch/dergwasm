@@ -25,7 +25,7 @@ namespace Derg
             }
         }
 
-        private static IReadOnlyDictionary<InstructionType, Action<Instruction, IMachine>> Map =
+        public static IReadOnlyDictionary<InstructionType, Action<Instruction, IMachine>> Map =
             new Dictionary<InstructionType, Action<Instruction, IMachine>>()
             {
                 // Please maintain these sorted alphanumerically by InstructionType.
@@ -66,6 +66,7 @@ namespace Derg
                 { InstructionType.F32_NEG, NumericInstructions.F32Neg },
                 { InstructionType.F32_REINTERPRET_I32, NumericInstructions.F32ReinterpretI32 },
                 { InstructionType.F32_SQRT, NumericInstructions.F32Sqrt },
+                { InstructionType.F32_STORE, MemoryInstructions.F32Store },
                 { InstructionType.F32_SUB, NumericInstructions.F32Sub },
                 { InstructionType.F32_TRUNC, NumericInstructions.F32Trunc },
                 { InstructionType.F64_ABS, NumericInstructions.F64Abs },
@@ -94,6 +95,7 @@ namespace Derg
                 { InstructionType.F64_PROMOTE_F32, NumericInstructions.F64PromoteF32 },
                 { InstructionType.F64_REINTERPRET_I64, NumericInstructions.F64ReinterpretI64 },
                 { InstructionType.F64_SQRT, NumericInstructions.F64Sqrt },
+                { InstructionType.F64_STORE, MemoryInstructions.F64Store },
                 { InstructionType.F64_SUB, NumericInstructions.F64Sub },
                 { InstructionType.F64_TRUNC, NumericInstructions.F64Trunc },
                 { InstructionType.GLOBAL_GET, VariableInstructions.GlobalGet },
