@@ -210,6 +210,8 @@ namespace DergwasmTests
         public void AddElementSegment(int addr, ElementSegment segment) =>
             elementSegments[addr] = segment;
 
+        public ElementSegment GetElementSegment(int addr) => elementSegments[addr];
+
         public ElementSegment GetElementSegmentFromIndex(int idx) => elementSegments[idx + 40];
 
         public void DropElementSegmentFromIndex(int idx) => elementSegments.Remove(idx + 40);
@@ -241,6 +243,7 @@ namespace DergwasmTests
 
         //
         // These methods are here just to satisfy the interface. They're not used in the tests.
+        // TODO: Make the test machine derive from machine.
         //
 
         public bool HasLabel() => Frame.label_stack.Count > 0;
@@ -253,9 +256,15 @@ namespace DergwasmTests
 
         public int AddElementSegment(ElementSegment elementSegment) => 0;
 
+        public void DropElementSegment(int addr) { }
+
         public int AddDataSegment(byte[] dataSegment) => 0;
 
+        public void DropDataSegment(int addr) { }
+
         public int AddFunc(Func func) => 0;
+
+        public void InvokeExpr(ModuleFunc func) { }
 
         public int RegisterHostFunc(
             string moduleName,

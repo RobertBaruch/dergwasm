@@ -51,7 +51,8 @@ namespace Derg
         // Adds the given global to the machine, returning its address.
         int AddGlobal(Value global);
 
-        // Gets the global address for the current module's index.
+        // Gets the global address for the current module's index. May only be used
+        // when the machine is actively running code.
         int GetGlobalAddrForIndex(int idx);
 
         // Gets the machine's globals.
@@ -72,7 +73,8 @@ namespace Derg
         Label PopLabel();
 
         // Gets the FuncType for the given index, using the current frame's module
-        // to map the index to the machine's type address.
+        // to map the index to the machine's type address. May only be used
+        // when the machine is actively running code.
         FuncType GetFuncTypeFromIndex(int idx);
 
         // Adds the given table to the machine, returning its address.
@@ -82,18 +84,27 @@ namespace Derg
         Table GetTable(int addr);
 
         // Gets the Table for the given index, using the current frame's module
-        // to map the index to the machine's table address.
+        // to map the index to the machine's table address. May only be used
+        // when the machine is actively running code.
         Table GetTableFromIndex(int idx);
 
         // Adds the given element segment to the machine, returning its address.
         int AddElementSegment(ElementSegment elementSegment);
 
+        // Nulls out the ElementSegment for the given address.
+        void DropElementSegment(int addr);
+
+        // Gets the ElementSegment for the given address.
+        ElementSegment GetElementSegment(int addr);
+
         // Gets the ElementSegment for the given index, using the current frame's module
-        // to map the index to the machine's element segment address.
+        // to map the index to the machine's element segment address. May only be used
+        // when the machine is actively running code.
         ElementSegment GetElementSegmentFromIndex(int idx);
 
         // Nulls out the ElementSegment for the given index, using the current frame's module
-        // to map the index to the machine's element segment address.
+        // to map the index to the machine's element segment address. May only be used
+        // when the machine is actively running code.
         void DropElementSegmentFromIndex(int idx);
 
         // Adds the given memory to the machine, returning its address.
@@ -115,16 +126,22 @@ namespace Derg
         // Adds the given data segment to the machine, returning its address.
         int AddDataSegment(byte[] data);
 
+        // Nulls out the DataSegment for the given address.
+        void DropDataSegment(int addr);
+
         // Gets the DataSegment for the given index, using the current frame's module
-        // to map the index to the machine's data segment address.
+        // to map the index to the machine's data segment address. May only be used
+        // when the machine is actively running code.
         byte[] GetDataSegmentFromIndex(int idx);
 
         // Gets the address of the data segment for the given index, using the current frame's module
-        // to map the index to the machine's data segment address.
+        // to map the index to the machine's data segment address. May only be used
+        // when the machine is actively running code.
         int GetDataSegmentAddrFromIndex(int idx);
 
         // Nulls out the DataSegment for the given index, using the current frame's module
-        // to map the index to the machine's data segment address.
+        // to map the index to the machine's data segment address. May only be used
+        // when the machine is actively running code.
         void DropDataSegmentFromIndex(int idx);
 
         // Adds the given function to the machine, returning its address.
@@ -137,16 +154,30 @@ namespace Derg
         Func GetFunc(int addr);
 
         // Gets the function address for the given index, using the current frame's module
-        // to map the index to the machine's function address.
+        // to map the index to the machine's function address. May only be used
+        // when the machine is actively running code.
         int GetFuncAddrFromIndex(int idx);
 
         // Invokes the function at the given index, using the current frame's module
         // to map the index to the machine's function address. Note that you can only
         // invoke a function in the current module or on the host using this. If you
         // need to invoke a function outside the module, use InvokeFunc().
+        //
+        // Used only by the machine when executing the CALL or CALL_INDIRECT instructions.
+        // This method relies on a machine that is already running.
         void InvokeFuncFromIndex(int idx);
 
+        // Invokes the function at the given address. Used only by the machine when
+        // executing the CALL or CALL_INDIRECT instructions. This method relies on
+        // a machine that is already running.
         void InvokeFunc(int addr);
+
+        // Invokes a ModuleFunc. The function is expected to have zero arguments.
+        // Only the host should use this, and only when the machine isn't running.
+        // A frame will be left on the machine's frame stack which contains any return
+        // values. The caller is responsible for popping this frame off the stack when
+        // the return values have been consumed.
+        void InvokeExpr(ModuleFunc func);
 
         // Steps the machine by n steps (default 1).
         void Step(int n = 1);

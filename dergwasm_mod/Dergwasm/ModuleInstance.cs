@@ -16,7 +16,6 @@ namespace Derg
         public List<int> ElementSegmentsMap = new List<int>();
         public List<int> GlobalsMap = new List<int>();
         public List<int> DataSegmentsMap = new List<int>();
-        public Dictionary<string, Value> ExportsMap = new Dictionary<string, Value>();
 
         void AllocateFunctions(IMachine machine, Module module)
         {
@@ -198,44 +197,173 @@ namespace Derg
             }
         }
 
+        // Evaluate an expression intended to return a single value. This must only be called
+        // during instantiation, when the machine is not running anything.
+        Value EvaluateExpr(
+            IMachine machine,
+            Module module,
+            ValueType returnType,
+            List<Instruction> expr
+        )
+        {
+            ModuleFunc syntheticFunc = new ModuleFunc(
+                module.ModuleName,
+                "",
+                new FuncType(new ValueType[] { }, new ValueType[] { returnType })
+            );
+            syntheticFunc.Module = this;
+            syntheticFunc.Locals = new ValueType[0];
+            syntheticFunc.Code = expr;
+
+            machine.InvokeExpr(syntheticFunc);
+            Value returnValue = machine.Pop();
+            machine.PopFrame();
+            return returnValue;
+        }
+
         void InitGlobals(IMachine machine, Module module)
         {
             // We do not initialize imported globals.
             for (int i = module.NumImportedGlobals(); i < module.Globals.Count; i++)
             {
                 GlobalSpec globalSpec = module.Globals[i];
-                ModuleFunc syntheticFunc = new ModuleFunc(
-                    module.ModuleName,
-                    "",
-                    new FuncType(new ValueType[] { }, new ValueType[] { globalSpec.Type.Type })
+                machine.Globals[GlobalsMap[i]] = EvaluateExpr(
+                    machine,
+                    module,
+                    globalSpec.Type.Type,
+                    globalSpec.InitExpr
                 );
-                syntheticFunc.Module = this;
-                syntheticFunc.Locals = new ValueType[0];
-                syntheticFunc.Code = globalSpec.InitExpr;
-
-                // This frame collects any return values.
-                machine.Frame = new Frame(null, this);
-
-                machine.Frame = new Frame(syntheticFunc, this);
-                machine.PC = 0;
-                machine.Label = new Label(0, syntheticFunc.Code.Count);
-
-                while (machine.HasLabel())
-                {
-                    machine.Step();
-                }
-
-                if (machine.StackLevel() != 1)
-                {
-                    throw new Trap(
-                        "Global init expr did not leave exactly one value on the stack: "
-                            + $"{machine.StackLevel()} values are on the stack."
-                    );
-                }
-
-                machine.Globals[GlobalsMap[i]] = machine.Pop();
-                machine.PopFrame();
             }
+        }
+
+        void InitElementSegments(IMachine machine, Module module)
+        {
+            // ElementSegments were added to the instance in the same order as their specs.
+            // Thus, ElementSegmentSpec[i] corresponds to ElementSegment[ElementSegmentsMap[i]].
+            for (int i = 0; i < module.ElementSegmentSpecs.Length; i++)
+            {
+                ElementSegmentSpec elementSegmentSpec = module.ElementSegmentSpecs[i];
+                ElementSegment elementSegment = machine.GetElementSegment(ElementSegmentsMap[i]);
+                // Get element indexes from expressions if necessary.
+                if (elementSegmentSpec.ElemIndexes == null)
+                {
+                    for (int j = 0; j < elementSegmentSpec.ElemIndexExprs.Length; j++)
+                    {
+                        elementSegment.Elements[j] = EvaluateExpr(
+                            machine,
+                            module,
+                            elementSegmentSpec.ElemType,
+                            elementSegmentSpec.ElemIndexExprs[i]
+                        );
+                    }
+                    continue;
+                }
+                // Otherwise, we have a list of indexes.
+                for (int j = 0; j < elementSegmentSpec.ElemIndexes.Length; j++)
+                {
+                    int addr = elementSegmentSpec.ElemIndexes[j];
+                    // The element type is guaranteed to be a reference type.
+                    Value refValue =
+                        elementSegmentSpec.ElemType == ValueType.FUNCREF
+                            ? Value.RefOfFuncAddr(addr)
+                            : Value.RefOfExternAddr(addr);
+                    elementSegment.Elements[j] = refValue;
+                }
+            }
+        }
+
+        // Initializes tables from element segments.
+        //
+        // If an element segment is active, it gets copied into a table during instantiation. But if an
+        // element segment is declarative, it is immediately dropped. And if an element segment
+        // is passive, nothing happens during instantiation (but tables can be initialized during
+        // the running of a module's func).
+        void InitTables(IMachine machine, Module module)
+        {
+            for (int i = 0; i < module.ElementSegmentSpecs.Length; i++)
+            {
+                ElementSegmentSpec elementSegmentSpec = module.ElementSegmentSpecs[i];
+                if (elementSegmentSpec is DeclarativeElementSegmentSpec)
+                {
+                    machine.DropElementSegmentFromIndex(i);
+                    continue;
+                }
+                if (elementSegmentSpec is PassiveDataSegment)
+                {
+                    continue;
+                }
+                ActiveElementSegmentSpec activeElementSegmentSpec =
+                    (ActiveElementSegmentSpec)elementSegmentSpec;
+                ElementSegment elementSegment = machine.GetElementSegment(ElementSegmentsMap[i]);
+                Table table = machine.GetTable(TablesMap[activeElementSegmentSpec.TableIdx]);
+                int d = EvaluateExpr(
+                    machine,
+                    module,
+                    ValueType.I32,
+                    activeElementSegmentSpec.OffsetExpr
+                ).S32;
+                int n = elementSegment.Elements.Length;
+                if (d + n > table.Elements.Length)
+                {
+                    throw new Trap("table.init during module instantiation: access out of bounds");
+                }
+                if (n > 0)
+                {
+                    Array.Copy(elementSegment.Elements, 0, table.Elements, d, n);
+                }
+                machine.DropElementSegment(ElementSegmentsMap[i]);
+            }
+        }
+
+        // Initializes memory from data segments.
+        //
+        // As with tables and element segments, if a data segment is active, it gets copied into
+        // memory. Otherwise nothing happens during instantiation (but memory can be initialized
+        // during the running of a module's func).
+        void InitMemory(IMachine machine, Module module)
+        {
+            for (int i = 0; i < module.DataSegments.Length; i++)
+            {
+                DataSegment dataSegment = module.DataSegments[i];
+                if (dataSegment is PassiveDataSegment)
+                {
+                    continue;
+                }
+                ActiveDataSegment activeDataSegment = (ActiveDataSegment)dataSegment;
+                Memory memory = machine.GetMemory(MemoriesMap[activeDataSegment.MemIdx]);
+                int d = EvaluateExpr(
+                    machine,
+                    module,
+                    ValueType.I32,
+                    activeDataSegment.OffsetExpr
+                ).S32;
+                int n = dataSegment.Data.Length;
+                if (d + n > memory.Data.Length)
+                {
+                    throw new Trap("memory.init during module instantiation: access out of bounds");
+                }
+                if (n > 0)
+                {
+                    Array.Copy(dataSegment.Data, 0, memory.Data, d, n);
+                }
+                machine.DropDataSegment(DataSegmentsMap[i]);
+            }
+        }
+
+        void MaybeExecuteStartFunc(IMachine machine, Module module)
+        {
+            if (module.StartIdx == -1)
+            {
+                return;
+            }
+            int startFuncAddr = FuncsMap[module.StartIdx];
+            Func startFunc = machine.GetFunc(startFuncAddr);
+            if (!(startFunc is ModuleFunc))
+            {
+                throw new Trap("Start function was not a module function, so is not executable.");
+            }
+            machine.InvokeExpr(startFunc as ModuleFunc);
+            machine.PopFrame();
         }
 
         public void Instantiate(IMachine machine, Module module)
@@ -250,6 +378,9 @@ namespace Derg
             Allocate(machine, module);
 
             InitGlobals(machine, module);
+            InitElementSegments(machine, module);
+            InitTables(machine, module);
+            MaybeExecuteStartFunc(machine, module);
         }
     }
 }

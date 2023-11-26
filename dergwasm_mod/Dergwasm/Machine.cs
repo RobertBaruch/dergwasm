@@ -197,6 +197,21 @@ namespace Derg
             Label = new Label(arity, func.Code.Count);
         }
 
+        public void InvokeExpr(ModuleFunc func)
+        {
+            // This frame collects any return values.
+            Frame = new Frame(null, func.Module);
+
+            Frame = new Frame(func, func.Module);
+            PC = 0;
+            Label = new Label(0, func.Code.Count);
+
+            while (HasLabel())
+            {
+                Step();
+            }
+        }
+
         public int AddFunc(Func func)
         {
             funcs.Add(func);
@@ -225,6 +240,10 @@ namespace Derg
             return elementSegments.Count - 1;
         }
 
+        public void DropElementSegment(int addr) => elementSegments[addr] = null;
+
+        public ElementSegment GetElementSegment(int addr) => elementSegments[addr];
+
         public ElementSegment GetElementSegmentFromIndex(int idx) =>
             elementSegments[Frame.Module.ElementSegmentsMap[idx]];
 
@@ -236,6 +255,8 @@ namespace Derg
             dataSegments.Add(dataSegment);
             return dataSegments.Count - 1;
         }
+
+        public void DropDataSegment(int addr) => dataSegments[addr] = null;
 
         public int GetDataSegmentAddrFromIndex(int idx) => Frame.Module.DataSegmentsMap[idx];
 

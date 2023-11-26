@@ -39,7 +39,7 @@ namespace Derg
 
         public Module(string moduleName)
         {
-            moduleName = moduleName;
+            ModuleName = moduleName;
         }
 
         public static Module Read(string moduleName, BinaryReader stream)
@@ -339,6 +339,7 @@ namespace Derg
                 {
                     case 0x00:
                         module.Exports[i] = new FuncExport(name, desc_idx);
+                        module.Funcs[desc_idx].Name = name;
                         break;
 
                     case 0x01:
@@ -687,6 +688,10 @@ namespace Derg
                 case 0x05:
                 {
                     ValueType elemType = (ValueType)stream.ReadLEB128Unsigned();
+                    if (!elemType.IsRefType())
+                    {
+                        throw new Trap($"Invalid element type: 0x{elemType:2X}");
+                    }
                     int numExprs = (int)stream.ReadLEB128Unsigned();
                     List<Instruction>[] elemIndexExprs = new List<Instruction>[numExprs];
                     for (int i = 0; i < numExprs; i++)
@@ -701,6 +706,11 @@ namespace Derg
                     int tableIdx = (int)stream.ReadLEB128Unsigned();
                     List<Instruction> offsetExpr = Module.ReadExpr(stream);
                     ValueType elemType = (ValueType)stream.ReadLEB128Unsigned();
+                    if (!elemType.IsRefType())
+                    {
+                        throw new Trap($"Invalid element type: 0x{elemType:2X}");
+                    }
+
                     int numExprs = (int)stream.ReadLEB128Unsigned();
                     List<Instruction>[] elemIndexExprs = new List<Instruction>[numExprs];
                     for (int i = 0; i < numExprs; i++)
@@ -718,6 +728,10 @@ namespace Derg
                 case 0x07:
                 {
                     ValueType elemType = (ValueType)stream.ReadLEB128Unsigned();
+                    if (!elemType.IsRefType())
+                    {
+                        throw new Trap($"Invalid element type: 0x{elemType:2X}");
+                    }
                     int numExprs = (int)stream.ReadLEB128Unsigned();
                     List<Instruction>[] elemIndexExprs = new List<Instruction>[numExprs];
                     for (int i = 0; i < numExprs; i++)

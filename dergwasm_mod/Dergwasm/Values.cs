@@ -15,7 +15,7 @@ namespace Derg
         F64 = 0x7C,
         V128 = 0x7B,
         FUNCREF = 0x70,
-        EXTERNREF = 0x6F,
+        EXTERNREF = 0x6F
     }
 
     // Reference value types. Note that a null ref is encoded as value_lo = 0, value_hi = 0.
@@ -215,6 +215,9 @@ namespace Derg
         public static Value RefOfFuncAddr(int addr) =>
             new Value((ulong)addr, (ulong)ReferenceValueType.FUNCREF);
 
+        public static Value RefOfExternAddr(int addr) =>
+            new Value((ulong)addr, (ulong)ReferenceValueType.EXTERNREF);
+
         public override string ToString()
         {
             return $"Value[hi={value_hi:X16}, lo={value_lo:X16}]";
@@ -300,6 +303,14 @@ namespace Derg
         public override string ToString()
         {
             return $"({string.Join(", ", args)}) -> ({string.Join(", ", returns)})";
+        }
+    }
+
+    public static class ValueExtensions
+    {
+        public static bool IsRefType(this ValueType v)
+        {
+            return v == ValueType.FUNCREF || v == ValueType.EXTERNREF;
         }
     }
 } // namespace Derg

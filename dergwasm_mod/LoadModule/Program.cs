@@ -5,7 +5,8 @@ using Derg;
 
 public class Program
 {
-    Machine machine;
+    public Machine machine;
+    public ModuleInstance moduleInstance;
 
     public Program(string filename)
     {
@@ -19,7 +20,7 @@ public class Program
 
             module.ResolveExterns(machine);
 
-            module.Instantiate(machine);
+            moduleInstance = module.Instantiate(machine);
         }
     }
 
@@ -114,5 +115,10 @@ public class Program
     {
         Console.WriteLine($"Reading WASM file '{args[0]}'");
         Program program = new Program(args[0]);
+
+        foreach (var f in program.machine.funcs)
+        {
+            Console.WriteLine($"{f.ModuleName}.{f.Name}");
+        }
     }
 }
