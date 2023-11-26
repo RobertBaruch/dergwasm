@@ -275,6 +275,8 @@ namespace DergwasmTests
 
         public int NumFuncs => 0;
 
+        public Func GetFunc(string moduleName, string name) => null;
+
         public void Push<R>(R ret)
         {
             switch (ret)

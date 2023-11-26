@@ -12,19 +12,79 @@ public class Program
     {
         machine = new Machine();
         int[] extern_funcs = RegisterHostFuncs(machine);
+        Module module;
 
         using (var stream = File.OpenRead(filename))
         {
             BinaryReader reader = new BinaryReader(stream);
-            var module = Module.Read("hello_world", reader);
+            module = Module.Read("hello_world", reader);
+        }
 
-            module.ResolveExterns(machine);
+        module.ResolveExterns(machine);
+        moduleInstance = module.Instantiate(machine);
+        CheckForUnimplementedInstructions();
+        MaybeRunEmscriptedCtors();
 
-            moduleInstance = module.Instantiate(machine);
+        RunMain();
+    }
+
+    void CheckForUnimplementedInstructions()
+    {
+        HashSet<InstructionType> needed = new HashSet<InstructionType>();
+        foreach (var f in machine.funcs)
+        {
+            if (f is HostFunc)
+            {
+                continue;
+            }
+            ModuleFunc func = (ModuleFunc)f;
+            foreach (var instr in func.Code)
+            {
+                if (!InstructionEvaluation.Map.ContainsKey(instr.Type))
+                {
+                    needed.Add(instr.Type);
+                }
+            }
+        }
+
+        if (needed.Count > 0)
+        {
+            Console.WriteLine("Unimplemented instructions:");
+            foreach (var instr in needed)
+            {
+                Console.WriteLine($"  {instr}");
+            }
+            throw new Trap("Unimplemented instructions");
         }
     }
 
-    public int[] RegisterHostFuncs(IMachine machine)
+    void MaybeRunEmscriptedCtors()
+    {
+        Func ctors = machine.GetFunc(moduleInstance.ModuleName, "__wasm_call_ctors");
+        if (ctors == null)
+        {
+            return;
+        }
+        Console.WriteLine("Running __wasm_call_ctors");
+        machine.InvokeExpr(ctors as ModuleFunc);
+    }
+
+    void RunMain()
+    {
+        Func main = machine.GetFunc(moduleInstance.ModuleName, "main");
+        if (main == null)
+        {
+            main = machine.GetFunc(moduleInstance.ModuleName, "_start");
+        }
+        if (main == null)
+        {
+            throw new Trap("No main or _start function found");
+        }
+        Console.WriteLine($"Running {main.Name}");
+        machine.InvokeExpr(main as ModuleFunc);
+    }
+
+    int[] RegisterHostFuncs(IMachine machine)
     {
         List<int> extern_funcs = new List<int>();
 
@@ -66,7 +126,7 @@ public class Program
         return extern_funcs.ToArray();
     }
 
-    public void EmscriptenMemcpyJs(int dest, int src, int len)
+    void EmscriptenMemcpyJs(int dest, int src, int len)
     {
         Console.WriteLine($"EmscriptenMemcpyJs({dest}, {src}, {len})");
         Memory mem = machine.GetMemoryFromIndex(0);
@@ -78,14 +138,14 @@ public class Program
         {
             throw new Trap(
                 "EmscriptenMemcpyJs: Access out of bounds: source offset "
-                    + $"0x{src:8X}, destination offset 0x{dest:8X}, length 0x{len:8X} bytes"
+                    + $"0x{src:X8}, destination offset 0x{dest:X8}, length 0x{len:X8} bytes"
             );
         }
     }
 
-    public int FdWrite(int fd, int iov, int iovcnt, int pnum)
+    int FdWrite(int fd, int iov, int iovcnt, int pnum)
     {
-        Console.WriteLine($"FdWrite({fd}, 0x{iov:8X}, {iovcnt}, 0x{pnum:8X})");
+        Console.WriteLine($"FdWrite({fd}, 0x{iov:X8}, {iovcnt}, 0x{pnum:X8})");
         Memory mem = machine.GetMemoryFromIndex(0);
 
         MemoryStream iovStream = new MemoryStream(mem.Data);

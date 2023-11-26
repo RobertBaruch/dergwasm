@@ -136,7 +136,7 @@ namespace Derg
 
         public ModuleInstance Instantiate(IMachine machine)
         {
-            ModuleInstance instance = new ModuleInstance();
+            ModuleInstance instance = new ModuleInstance(ModuleName);
             instance.Instantiate(machine, this);
             return instance;
         }

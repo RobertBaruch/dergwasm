@@ -121,7 +121,7 @@ namespace Derg
         byte[] Memory0 { get; }
 
         // Gets a span of bytes from Memory 0.
-        Span<byte> Span0(int offset, int sz);
+        Span<byte> Span0(uint offset, uint sz);
 
         // Adds the given data segment to the machine, returning its address.
         int AddDataSegment(byte[] data);
@@ -152,6 +152,9 @@ namespace Derg
 
         // Gets the function at the given address.
         Func GetFunc(int addr);
+
+        // Gets the function with the given module name and function name.
+        Func GetFunc(string moduleName, string name);
 
         // Gets the function address for the given index, using the current frame's module
         // to map the index to the machine's function address. May only be used

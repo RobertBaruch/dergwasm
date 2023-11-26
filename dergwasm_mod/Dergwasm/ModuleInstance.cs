@@ -9,6 +9,7 @@ namespace Derg
     // The runtime representation of a module.
     public class ModuleInstance
     {
+        public string ModuleName;
         public List<int> FuncTypesMap = new List<int>();
         public List<int> FuncsMap = new List<int>();
         public List<int> TablesMap = new List<int>();
@@ -16,6 +17,11 @@ namespace Derg
         public List<int> ElementSegmentsMap = new List<int>();
         public List<int> GlobalsMap = new List<int>();
         public List<int> DataSegmentsMap = new List<int>();
+
+        public ModuleInstance(string moduleName)
+        {
+            ModuleName = moduleName;
+        }
 
         void AllocateFunctions(IMachine machine, Module module)
         {

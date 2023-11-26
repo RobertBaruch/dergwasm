@@ -162,7 +162,9 @@ namespace Derg
 
         public byte[] Memory0 => memories[0].Data;
 
-        public Span<byte> Span0(int offset, int sz) => new Span<byte>(memories[0].Data, offset, sz);
+        // Span accepts ints, but converts them internally to uints.
+        public Span<byte> Span0(uint offset, uint sz) =>
+            new Span<byte>(memories[0].Data, (int)offset, (int)sz);
 
         public FuncType GetFuncTypeFromIndex(int idx) => funcTypes[Frame.Module.FuncTypesMap[idx]];
 
@@ -221,6 +223,19 @@ namespace Derg
         public int NumFuncs => funcs.Count;
 
         public Func GetFunc(int addr) => funcs[addr];
+
+        public Func GetFunc(string moduleName, string name)
+        {
+            // O(N) for now
+            foreach (var f in funcs)
+            {
+                if (f.ModuleName == moduleName && f.Name == name)
+                {
+                    return f;
+                }
+            }
+            return null;
+        }
 
         public int GetFuncAddrFromIndex(int idx) => Frame.Module.FuncsMap[idx];
 

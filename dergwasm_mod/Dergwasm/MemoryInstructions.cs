@@ -35,17 +35,17 @@ namespace Derg
 
         private static Span<byte> Span0(Instruction instruction, IMachine machine, int sz)
         {
-            int offset = machine.Pop().S32;
+            uint offset = machine.Pop().U32;
             // Ignore Operands[0], the alignment.
-            int base_addr = instruction.Operands[1].S32;
+            uint base_addr = instruction.Operands[1].U32;
             try
             {
-                return machine.Span0(base_addr + offset, sz);
+                return machine.Span0(base_addr + offset, (uint)sz);
             }
             catch (Exception e)
             {
                 throw new Trap(
-                    $"Memory access out of bounds: base {(uint)base_addr:8X} offset {(uint)offset:8X}"
+                    $"Memory access out of bounds: base 0x{(uint)base_addr:X8} offset 0x{(uint)offset:X8}"
                 );
             }
         }
@@ -201,7 +201,7 @@ namespace Derg
             catch (Exception e)
             {
                 throw new Trap(
-                    $"memory.fill: Access out of bounds: offset 0x{d:8X} length 0x{n:8X} bytes"
+                    $"memory.fill: Access out of bounds: offset 0x{d:X8} length 0x{n:X8} bytes"
                 );
             }
         }
@@ -224,7 +224,7 @@ namespace Derg
             catch (Exception e)
             {
                 throw new Trap(
-                    $"memory.copy: Access out of bounds: source offset 0x{s:8X}, destination offset 0x{d:8X}, length 0x{n:8X} bytes"
+                    $"memory.copy: Access out of bounds: source offset 0x{s:X8}, destination offset 0x{d:X8}, length 0x{n:X8} bytes"
                 );
             }
         }
@@ -252,7 +252,7 @@ namespace Derg
             catch (Exception e)
             {
                 throw new Trap(
-                    $"memory.init: Access out of bounds: source index {dataidx} offset 0x{s_offset:8X}, destination offset 0x{d_offset:8X}, length 0x{n:8X} bytes"
+                    $"memory.init: Access out of bounds: source index {dataidx} offset 0x{s_offset:X8}, destination offset 0x{d_offset:X8}, length 0x{n:X8} bytes"
                 );
             }
         }
