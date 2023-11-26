@@ -7,16 +7,18 @@ namespace DergwasmTests
 {
     public class NumericInstructionTests : InstructionTestFixture
     {
-        [Fact]
-        public void TestI32Const()
+        [Theory]
+        [InlineData(0x12345678U)]
+        [InlineData(0xFFFFFFFFU)]
+        public void TestI32Const(uint val)
         {
-            // 0: I32_CONST 1
+            // 0: I32_CONST val
             // 1: NOP
-            machine.SetProgram(0, I32Const(1), Nop());
+            machine.SetProgram(0, I32Const(val), Nop());
             machine.Step();
 
             Assert.Equal(1, machine.PC);
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(1, e.S32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(val, e.U32));
         }
 
         [Fact]

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Derg
 {
@@ -13,7 +14,33 @@ namespace Derg
         {
             if (!Map.TryGetValue(instruction.Type, out var implementation))
                 throw new ArgumentException($"Unimplemented instruction: {instruction.Type}");
+
+            if (machine.Debug)
+            {
+                Frame frame = machine.Frame;
+                ModuleFunc func = frame.Func;
+                string operands = string.Join(
+                    ", ",
+                    (from op in instruction.Operands select $"{op}")
+                );
+                Console.WriteLine(
+                    $"{func.ModuleName}.{func.Name} [{machine.PC}] {instruction.Type} {operands}"
+                );
+            }
+
             implementation(instruction, machine);
+
+            if (machine.Debug)
+            {
+                if (machine.StackLevel() > 0)
+                {
+                    Console.WriteLine($"   Top of stack: {machine.TopOfStack}");
+                }
+                else
+                {
+                    Console.WriteLine($"   Top of stack: <empty>");
+                }
+            }
             machine.PC++;
 
             // If we ran off the end of the function, we return from the function.

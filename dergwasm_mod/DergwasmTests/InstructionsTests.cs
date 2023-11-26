@@ -233,34 +233,38 @@ namespace DergwasmTests
             );
         }
 
-        [Fact]
-        public void TestDecodeI32Instruction()
+        [Theory]
+        [InlineData(0x12345678U)]
+        [InlineData(0xFFFFFFFFU)]
+        public void TestDecodeI32Instruction(uint data)
         {
             MemoryStream stream = new MemoryStream();
 
             stream.WriteOpcode(InstructionType.I32_CONST);
-            stream.WriteLEB128Unsigned(0x11223344U);
+            stream.WriteLEB128Signed((int)data);
             stream.Position = 0;
 
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.I32_CONST, insn.Type);
-            Assert.Collection(insn.Operands, e => Assert.Equal(0x11223344U, e.value.U32));
+            Assert.Collection(insn.Operands, e => Assert.Equal(data, e.value.U32));
         }
 
-        [Fact]
-        public void TestDecodeI64Instruction()
+        [Theory]
+        [InlineData(0x123456789ABCDEF0UL)]
+        [InlineData(0xFFFFFFFFFFFFFFFFUL)]
+        public void TestDecodeI64Instruction(ulong data)
         {
             MemoryStream stream = new MemoryStream();
 
             stream.WriteOpcode(InstructionType.I64_CONST);
-            stream.WriteLEB128Unsigned(0x1122334455667788UL);
+            stream.WriteLEB128Unsigned(data);
             stream.Position = 0;
 
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.I64_CONST, insn.Type);
-            Assert.Collection(insn.Operands, e => Assert.Equal(0x1122334455667788UL, e.value.U64));
+            Assert.Collection(insn.Operands, e => Assert.Equal(data, e.value.U64));
         }
 
         [Fact]

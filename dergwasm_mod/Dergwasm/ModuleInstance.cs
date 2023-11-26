@@ -208,13 +208,14 @@ namespace Derg
         Value EvaluateExpr(
             IMachine machine,
             Module module,
+            string name,
             ValueType returnType,
             List<Instruction> expr
         )
         {
             ModuleFunc syntheticFunc = new ModuleFunc(
                 module.ModuleName,
-                "",
+                name,
                 new FuncType(new ValueType[] { }, new ValueType[] { returnType })
             );
             syntheticFunc.Module = this;
@@ -236,9 +237,17 @@ namespace Derg
                 machine.Globals[GlobalsMap[i]] = EvaluateExpr(
                     machine,
                     module,
+                    $"<init_global_{GlobalsMap[i]}>",
                     globalSpec.Type.Type,
                     globalSpec.InitExpr
                 );
+
+                if (machine.Debug)
+                {
+                    Console.WriteLine(
+                        $"Initialized global {GlobalsMap[i]} to {machine.Globals[GlobalsMap[i]]}"
+                    );
+                }
             }
         }
 
@@ -258,6 +267,7 @@ namespace Derg
                         elementSegment.Elements[j] = EvaluateExpr(
                             machine,
                             module,
+                            $"<idx_for_element_seg_{i}_{j}>",
                             elementSegmentSpec.ElemType,
                             elementSegmentSpec.ElemIndexExprs[i]
                         );
@@ -301,10 +311,12 @@ namespace Derg
                 ActiveElementSegmentSpec activeElementSegmentSpec =
                     (ActiveElementSegmentSpec)elementSegmentSpec;
                 ElementSegment elementSegment = machine.GetElementSegment(ElementSegmentsMap[i]);
-                Table table = machine.GetTable(TablesMap[activeElementSegmentSpec.TableIdx]);
+                int tableAddr = TablesMap[activeElementSegmentSpec.TableIdx];
+                Table table = machine.GetTable(tableAddr);
                 int d = EvaluateExpr(
                     machine,
                     module,
+                    $"<offset_for_element_seg_{i}_into_table_{tableAddr}>",
                     ValueType.I32,
                     activeElementSegmentSpec.OffsetExpr
                 ).S32;
@@ -336,10 +348,12 @@ namespace Derg
                     continue;
                 }
                 ActiveDataSegment activeDataSegment = (ActiveDataSegment)dataSegment;
-                Memory memory = machine.GetMemory(MemoriesMap[activeDataSegment.MemIdx]);
+                int memAddr = MemoriesMap[activeDataSegment.MemIdx];
+                Memory memory = machine.GetMemory(memAddr);
                 int d = EvaluateExpr(
                     machine,
                     module,
+                    $"<offset_for_data_seg_{i}_into_memory_{memAddr}>",
                     ValueType.I32,
                     activeDataSegment.OffsetExpr
                 ).S32;

@@ -11,6 +11,7 @@ public class Program
     public Program(string filename)
     {
         machine = new Machine();
+        machine.Debug = true;
         int[] extern_funcs = RegisterHostFuncs(machine);
         Module module;
 
@@ -23,8 +24,13 @@ public class Program
         module.ResolveExterns(machine);
         moduleInstance = module.Instantiate(machine);
         CheckForUnimplementedInstructions();
-        MaybeRunEmscriptedCtors();
 
+        foreach (var f in machine.funcs)
+        {
+            Console.WriteLine($"Function defined: {f.ModuleName}.{f.Name}");
+        }
+
+        MaybeRunEmscriptedCtors();
         RunMain();
     }
 
@@ -175,10 +181,5 @@ public class Program
     {
         Console.WriteLine($"Reading WASM file '{args[0]}'");
         Program program = new Program(args[0]);
-
-        foreach (var f in program.machine.funcs)
-        {
-            Console.WriteLine($"{f.ModuleName}.{f.Name}");
-        }
     }
 }

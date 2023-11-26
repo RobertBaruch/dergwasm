@@ -9,6 +9,8 @@ namespace Derg
 {
     public class Machine : IMachine
     {
+        bool debug = false;
+        int stepBudget = 300;
         public Stack<Frame> frameStack = new Stack<Frame>();
         public List<FuncType> funcTypes = new List<FuncType>();
         public List<Func> funcs = new List<Func>();
@@ -17,6 +19,12 @@ namespace Derg
         public List<Value> Globals = new List<Value>();
         public List<Memory> memories = new List<Memory>();
         public List<byte[]> dataSegments = new List<byte[]>();
+
+        public bool Debug
+        {
+            get => debug;
+            set => debug = value;
+        }
 
         public Frame Frame
         {
@@ -124,7 +132,7 @@ namespace Derg
 
         public int GetGlobalAddrForIndex(int idx) => Frame.Module.GlobalsMap[idx];
 
-        Value[] IMachine.Globals => Globals.ToArray();
+        List<Value> IMachine.Globals => Globals;
 
         public int StackLevel() => Frame.value_stack.Count;
 
@@ -175,6 +183,7 @@ namespace Derg
             Func f = funcs[addr];
             if (f is HostFunc host_func)
             {
+                Console.Write($"Invoking host func {host_func.ModuleName}.{host_func.Name}");
                 host_func.Proxy.Invoke(this);
                 return;
             }
@@ -287,6 +296,11 @@ namespace Derg
             {
                 Instruction insn = Frame.Code[PC];
                 InstructionEvaluation.Execute(insn, this);
+                stepBudget--;
+                if (stepBudget == 0)
+                {
+                    throw new Trap("Step budget exceeded");
+                }
             }
         }
 

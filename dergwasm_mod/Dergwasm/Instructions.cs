@@ -525,7 +525,7 @@ namespace Derg
                 case InstructionOperandType.BYTE:
                     operands = new UnflattenedOperand[]
                     {
-                        new UnflattenedOperand(new Value((int)stream.ReadByte()))
+                        new UnflattenedOperand(new Value((uint)stream.ReadByte()))
                     };
                     break;
 
@@ -540,7 +540,7 @@ namespace Derg
                 case InstructionOperandType.LANE:
                     operands = new UnflattenedOperand[]
                     {
-                        new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned()))
+                        new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned()))
                     };
                     break;
 
@@ -548,17 +548,17 @@ namespace Derg
                 case InstructionOperandType.MEMARG:
                     operands = new UnflattenedOperand[]
                     {
-                        new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned())),
-                        new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned()))
+                        new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned())),
+                        new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned()))
                     };
                     break;
 
                 case InstructionOperandType.MEMARG_LANE:
                     operands = new UnflattenedOperand[]
                     {
-                        new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned())),
-                        new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned())),
-                        new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned()))
+                        new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned())),
+                        new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned())),
+                        new UnflattenedOperand(new Value((uint)stream.ReadLEB128Unsigned()))
                     };
                     break;
 
@@ -566,27 +566,27 @@ namespace Derg
                     operands = new UnflattenedOperand[16];
                     for (int i = 0; i < 16; i++)
                         operands[i] = new UnflattenedOperand(
-                            new Value((int)stream.ReadLEB128Unsigned())
+                            new Value((uint)stream.ReadLEB128Unsigned())
                         );
                     break;
 
                 case InstructionOperandType.VALTYPE_VECTOR:
-                    operands = new UnflattenedOperand[(int)stream.ReadLEB128Unsigned()];
+                    operands = new UnflattenedOperand[(uint)stream.ReadLEB128Unsigned()];
                     for (int i = 0; i < operands.Length; i++)
-                        operands[i] = new UnflattenedOperand(new Value((int)stream.ReadByte()));
+                        operands[i] = new UnflattenedOperand(new Value((uint)stream.ReadByte()));
                     break;
 
                 case InstructionOperandType.I32:
                     operands = new UnflattenedOperand[]
                     {
-                        new UnflattenedOperand(new Value((int)stream.ReadLEB128Unsigned()))
+                        new UnflattenedOperand(new Value(stream.ReadLEB128Signed()))
                     };
                     break;
 
                 case InstructionOperandType.I64:
                     operands = new UnflattenedOperand[]
                     {
-                        new UnflattenedOperand(new Value(stream.ReadLEB128Unsigned()))
+                        new UnflattenedOperand(new Value(stream.ReadLEB128Signed()))
                     };
                     break;
 
@@ -609,7 +609,7 @@ namespace Derg
                     operands = new UnflattenedOperand[tableSize + 1];
                     for (int i = 0; i < operands.Length; i++)
                         operands[i] = new UnflattenedOperand(
-                            new Value((int)stream.ReadLEB128Unsigned())
+                            new Value((uint)stream.ReadLEB128Unsigned())
                         );
                     break;
 
@@ -787,8 +787,7 @@ namespace Derg
 
                         pc += (int)block_insns.Count;
                         // The signature for the block.
-                        initial_instruction.Operands[0].value_hi = instruction
-                            .Operands[0]
+                        initial_instruction.Operands[0].value_hi = instruction.Operands[0]
                             .value
                             .value_hi;
                         // Where a BR 0 would go. Will be END+1.
@@ -803,8 +802,7 @@ namespace Derg
                         block_insns.AddRange(block_operand.instructions.Flatten(pc + 1));
 
                         // The signature for the block.
-                        initial_instruction.Operands[0].value_hi = instruction
-                            .Operands[0]
+                        initial_instruction.Operands[0].value_hi = instruction.Operands[0]
                             .value
                             .value_hi;
                         // Where a BR 0 would go. Will be the the LOOP instruction.
@@ -829,8 +827,7 @@ namespace Derg
                         pc += (int)false_insns.Count;
 
                         // The signature for the block.
-                        initial_instruction.Operands[0].value_hi = instruction
-                            .Operands[0]
+                        initial_instruction.Operands[0].value_hi = instruction.Operands[0]
                             .value
                             .value_hi;
                         // Where a BR 0 would go. Will be END+1.

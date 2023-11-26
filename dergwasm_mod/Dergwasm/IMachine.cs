@@ -1,11 +1,13 @@
-﻿using Elements.Core;
-using System;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Derg
 {
     // The interface to a WASM machine.
     public interface IMachine
     {
+        bool Debug { get; set; }
+
         // Gets the value at the top of the current frame's label stack.
         Value TopOfStack { get; }
 
@@ -56,7 +58,7 @@ namespace Derg
         int GetGlobalAddrForIndex(int idx);
 
         // Gets the machine's globals.
-        Value[] Globals { get; }
+        List<Value> Globals { get; }
 
         // Gets the number of values on the stack.
         int StackLevel();

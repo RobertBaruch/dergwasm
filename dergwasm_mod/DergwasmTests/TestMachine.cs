@@ -53,9 +53,17 @@ namespace DergwasmTests
         public Dictionary<int, Table> tables = new Dictionary<int, Table>();
         public Dictionary<int, ElementSegment> elementSegments =
             new Dictionary<int, ElementSegment>();
-        public Value[] Globals = new Value[2];
+        public List<Value> Globals = new List<Value>();
         public Memory Memory = new Memory(new Limits(1));
         public Dictionary<int, byte[]> dataSegments = new Dictionary<int, byte[]>();
+
+        public TestMachine()
+        {
+            Globals.Add(new Value(0));
+            Globals.Add(new Value(0));
+        }
+
+        public bool Debug { get; set; } = false;
 
         public int GetGlobalAddrForIndex(int idx) => idx - 10;
 
@@ -116,7 +124,7 @@ namespace DergwasmTests
 
         public Value[] Locals => Frame.Locals;
 
-        Value[] IMachine.Globals => Globals;
+        List<Value> IMachine.Globals => Globals;
 
         public int StackLevel() => Frame.value_stack.Count;
 
@@ -146,7 +154,8 @@ namespace DergwasmTests
 
         public byte[] Memory0 => Memory.Data;
 
-        public Span<byte> Span0(int offset, int sz) => new Span<byte>(Memory.Data, offset, sz);
+        public Span<byte> Span0(uint offset, uint sz) =>
+            new Span<byte>(Memory.Data, (int)offset, (int)sz);
 
         public FuncType GetFuncTypeFromIndex(int index)
         {
