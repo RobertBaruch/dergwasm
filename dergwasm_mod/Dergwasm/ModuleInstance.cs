@@ -10,7 +10,7 @@ namespace Derg
     public class ModuleInstance
     {
         public string ModuleName;
-        public List<int> FuncTypesMap = new List<int>();
+        public List<FuncType> FuncTypes = new List<FuncType>();
         public List<int> FuncsMap = new List<int>();
         public List<int> TablesMap = new List<int>();
         public List<int> MemoriesMap = new List<int>();
@@ -106,6 +106,8 @@ namespace Derg
             AllocateGlobals(machine, module);
             AllocateElementSegments(machine, module);
             AllocatedDataSegments(machine, module);
+
+            FuncTypes.AddRange(module.FuncTypes);
         }
 
         void ValidateNumExternsVersusRequiredImports(Module module)
@@ -400,6 +402,7 @@ namespace Derg
             InitGlobals(machine, module);
             InitElementSegments(machine, module);
             InitTables(machine, module);
+            InitMemory(machine, module);
             MaybeExecuteStartFunc(machine, module);
         }
     }

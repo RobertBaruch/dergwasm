@@ -10,7 +10,7 @@ namespace Derg
     public class Machine : IMachine
     {
         bool debug = false;
-        int stepBudget = 300;
+        int stepBudget = 1000;
         public Stack<Frame> frameStack = new Stack<Frame>();
         public List<FuncType> funcTypes = new List<FuncType>();
         public List<Func> funcs = new List<Func>();
@@ -174,7 +174,7 @@ namespace Derg
         public Span<byte> Span0(uint offset, uint sz) =>
             new Span<byte>(memories[0].Data, (int)offset, (int)sz);
 
-        public FuncType GetFuncTypeFromIndex(int idx) => funcTypes[Frame.Module.FuncTypesMap[idx]];
+        public FuncType GetFuncTypeFromIndex(int idx) => Frame.Module.FuncTypes[idx];
 
         public void InvokeFuncFromIndex(int idx) => InvokeFunc(GetFuncAddrFromIndex(idx));
 
@@ -200,7 +200,7 @@ namespace Derg
             Frame next_frame = new Frame(func, Frame.Module);
 
             // Remove args from stack and place in new frame's locals.
-            Frame.value_stack.CopyTo(0, next_frame.Locals, Frame.value_stack.Count - args, args);
+            Frame.value_stack.CopyTo(Frame.value_stack.Count - args, next_frame.Locals, 0, args);
             Frame.value_stack.RemoveRange(Frame.value_stack.Count - args, args);
 
             Frame = next_frame;

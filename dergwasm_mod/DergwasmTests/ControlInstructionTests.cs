@@ -571,21 +571,24 @@ namespace DergwasmTests
         [Fact]
         public void TestCallWithOneArg()
         {
-            // 0: I32_CONST 1
-            // 1: CALL 1
-            // 2: NOP
+            // 0: I32_CONST 100 // This should not be transfered.
+            // 1: I32_CONST 1 // This is the arg.
+            // 2: CALL 1
+            // 3: NOP
             //
             // Func 11 (= idx 1):
             // 0: NOP
             // 1: END
             machine.AddFunction(11, Nop(), End());
-            machine.SetProgram(0, I32Const(1), Call(1), Nop());
+            machine.SetProgram(0, I32Const(100), I32Const(1), Call(1), Nop());
 
-            machine.Step(2);
+            machine.Step(3);
 
             Assert.Equal(0, machine.PC);
             Assert.Equal(new Value(1), machine.Frame.Locals[0]);
             Assert.Empty(machine.Frame.value_stack);
+            machine.PopFrame();
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(100), e));
         }
 
         [Fact]

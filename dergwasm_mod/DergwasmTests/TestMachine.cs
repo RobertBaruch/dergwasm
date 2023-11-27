@@ -173,7 +173,7 @@ namespace DergwasmTests
             Frame next_frame = new Frame(func, Frame.Module);
 
             // Remove args from stack and place in new frame's locals.
-            Frame.value_stack.CopyTo(0, next_frame.Locals, Frame.value_stack.Count - args, args);
+            Frame.value_stack.CopyTo(Frame.value_stack.Count - args, next_frame.Locals, 0, args);
             Frame.value_stack.RemoveRange(Frame.value_stack.Count - args, args);
 
             // Here we would initialize the other locals. But we assume they're I32, so they're

@@ -34,7 +34,9 @@ namespace Derg
             {
                 if (machine.StackLevel() > 0)
                 {
-                    Console.WriteLine($"   Top of stack: {machine.TopOfStack}");
+                    Console.WriteLine(
+                        $"   Top of stack <{machine.StackLevel() - 1}>: {machine.TopOfStack}"
+                    );
                 }
                 else
                 {
