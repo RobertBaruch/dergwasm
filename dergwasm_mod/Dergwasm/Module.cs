@@ -90,32 +90,14 @@ namespace Derg
         {
             ExternalFuncAddrs = new int[NumImportedFuncs()];
 
-            // Match imported functions to their machine addresses.
+            // Match imported functions by their name to their machine address.
             for (int i = 0; i < NumImportedFuncs(); i++)
             {
                 ImportedFunc importedFunc = (ImportedFunc)Funcs[i];
-                Func matchedFunc = null;
-
-                // O(N) for now. Ideally the module name and func name would be in a dictionary.
-                for (int addr = 0; addr < machine.NumFuncs; addr++)
-                {
-                    Func func = machine.GetFunc(addr);
-                    if (
-                        func.ModuleName == importedFunc.ModuleName && func.Name == importedFunc.Name
-                    )
-                    {
-                        matchedFunc = func;
-                        ExternalFuncAddrs[i] = addr;
-                        break;
-                    }
-                }
-
-                if (matchedFunc == null)
-                {
-                    throw new Trap(
-                        $"Could not resolve imported function {importedFunc.ModuleName}.{importedFunc.Name}"
-                    );
-                }
+                ExternalFuncAddrs[i] = machine.ResolveHostFunc(
+                    importedFunc.ModuleName,
+                    importedFunc.Name
+                );
             }
         }
 

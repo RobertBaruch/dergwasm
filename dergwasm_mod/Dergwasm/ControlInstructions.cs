@@ -158,7 +158,11 @@ namespace Derg
             Func func = machine.GetFunc(funcAddr.RefAddr);
             if (func.Signature != funcType)
             {
-                throw new Trap("call_indirect: type mismatch");
+                throw new Trap(
+                    $"call_indirect: type mismatch calling function address {funcAddr.RefAddr} "
+                        + $"({func.ModuleName}.{func.Name}). "
+                        + $"Expected signature {funcType} but was {func.Signature}."
+                );
             }
             machine.InvokeFunc(funcAddr.RefAddr);
         }

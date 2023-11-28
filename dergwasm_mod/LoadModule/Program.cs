@@ -12,7 +12,7 @@ public class Program
     {
         machine = new Machine();
         // machine.Debug = true;
-        int[] extern_funcs = RegisterHostFuncs(machine);
+        RegisterHostFuncs(machine);
         Module module;
 
         using (var stream = File.OpenRead(filename))
@@ -25,9 +25,10 @@ public class Program
         moduleInstance = module.Instantiate(machine);
         CheckForUnimplementedInstructions();
 
-        foreach (var f in machine.funcs)
+        for (int i = 0; i < machine.funcs.Count; i++)
         {
-            Console.WriteLine($"Function defined: {f.ModuleName}.{f.Name}");
+            Func f = machine.funcs[i];
+            Console.WriteLine($"Func [{i}]: {f.ModuleName}.{f.Name}: {f.Signature}");
         }
 
         MaybeRunEmscriptedCtors();
@@ -90,46 +91,136 @@ public class Program
         machine.InvokeExpr(main as ModuleFunc);
     }
 
-    int[] RegisterHostFuncs(IMachine machine)
+    void RegisterHostFuncs(IMachine machine)
     {
-        List<int> extern_funcs = new List<int>();
-
-        extern_funcs.Add(
-            machine.RegisterHostFunc(
-                "env",
-                "emscripten_memcpy_js",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { }
-                ),
-                new HostProxy<int, int, int>(EmscriptenMemcpyJs)
-            )
+        machine.RegisterHostFunc(
+            "env",
+            "emscripten_memcpy_js",
+            new FuncType(
+                new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32, Derg.ValueType.I32 },
+                new Derg.ValueType[] { }
+            ),
+            new HostProxy<int, int, int>(EmscriptenMemcpyJs)
         );
 
-        extern_funcs.Add(
-            machine.RegisterHostFunc(
-                "wasi_snapshot_preview1",
-                "fd_write",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int, int, int>(FdWrite)
-            )
+        machine.RegisterHostFunc(
+            "wasi_snapshot_preview1",
+            "environ_get",
+            new FuncType(
+                new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
+                new Derg.ValueType[] { Derg.ValueType.I32 }
+            ),
+            new ReturningHostProxy<int, int, int>(EnvironGet)
         );
 
-        return extern_funcs.ToArray();
+        machine.RegisterHostFunc(
+            "wasi_snapshot_preview1",
+            "environ_sizes_get",
+            new FuncType(
+                new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
+                new Derg.ValueType[] { Derg.ValueType.I32 }
+            ),
+            new ReturningHostProxy<int, int, int>(EnvironSizesGet)
+        );
+
+        machine.RegisterHostFunc(
+            "wasi_snapshot_preview1",
+            "proc_exit",
+            new FuncType(new Derg.ValueType[] { Derg.ValueType.I32 }, new Derg.ValueType[] { }),
+            new HostProxy<int>(ProcExit)
+        );
+
+        machine.RegisterHostFunc(
+            "wasi_snapshot_preview1",
+            "fd_write",
+            new FuncType(
+                new Derg.ValueType[]
+                {
+                    Derg.ValueType.I32,
+                    Derg.ValueType.I32,
+                    Derg.ValueType.I32,
+                    Derg.ValueType.I32
+                },
+                new Derg.ValueType[] { Derg.ValueType.I32 }
+            ),
+            new ReturningHostProxy<int, int, int, int, int>(FdWrite)
+        );
+
+        machine.RegisterHostFunc(
+            "wasi_snapshot_preview1",
+            "fd_seek",
+            new FuncType(
+                new Derg.ValueType[]
+                {
+                    Derg.ValueType.I32,
+                    Derg.ValueType.I64,
+                    Derg.ValueType.I32,
+                    Derg.ValueType.I32
+                },
+                new Derg.ValueType[] { Derg.ValueType.I32 }
+            ),
+            new ReturningHostProxy<int, long, int, int, int>(FdSeek)
+        );
+
+        machine.RegisterHostFunc(
+            "wasi_snapshot_preview1",
+            "fd_read",
+            new FuncType(
+                new Derg.ValueType[]
+                {
+                    Derg.ValueType.I32,
+                    Derg.ValueType.I32,
+                    Derg.ValueType.I32,
+                    Derg.ValueType.I32
+                },
+                new Derg.ValueType[] { Derg.ValueType.I32 }
+            ),
+            new ReturningHostProxy<int, int, int, int, int>(FdRead)
+        );
+
+        machine.RegisterHostFunc(
+            "wasi_snapshot_preview1",
+            "fd_close",
+            new FuncType(
+                new Derg.ValueType[] { Derg.ValueType.I32 },
+                new Derg.ValueType[] { Derg.ValueType.I32 }
+            ),
+            new ReturningHostProxy<int, int>(FdClose)
+        );
+
+        machine.RegisterHostFunc(
+            "wasi_snapshot_preview1",
+            "fd_sync",
+            new FuncType(
+                new Derg.ValueType[] { Derg.ValueType.I32 },
+                new Derg.ValueType[] { Derg.ValueType.I32 }
+            ),
+            new ReturningHostProxy<int, int>(FdSync)
+        );
+    }
+
+    void ProcExit(int exit_code)
+    {
+        Console.WriteLine(
+            $"ProcExit called with exit_code={exit_code}. {100000 - ((Machine)machine).stepBudget} instructions executed."
+        );
+        Environment.Exit(exit_code);
+    }
+
+    int EnvironGet(int environPtrPtr, int environBufPtr)
+    {
+        //throw new Trap(
+        //    $"Unimplemented call to EnvironGet(0x{environPtrPtr:X8}, 0x{environBufPtr:X8})"
+        //);
+        return 0;
+    }
+
+    int EnvironSizesGet(int argcPtr, int argvBufSizePtr)
+    {
+        //throw new Trap(
+        //    $"Unimplemented call to EnvironSizesGet(0x{argcPtr:X8}, 0x{argvBufSizePtr:X8})"
+        //);
+        return 0;
     }
 
     void EmscriptenMemcpyJs(int dest, int src, int len)
@@ -175,6 +266,61 @@ public class Program
         BinaryWriter countWriter = new BinaryWriter(iovStream);
         countWriter.Write(count);
         return 0;
+    }
+
+    // Seeks to a position in a file descriptor.
+    //
+    // Args:
+    //    fd: The file descriptor to seek.
+    //    offset: The 64-bit offset to seek to.
+    //    whence: The origin of the seek.This is one of:
+    //        0: SEEK_SET(seek from the beginning of the file)
+    //        1: SEEK_CUR(seek from the current position in the file)
+    //        2: SEEK_END(seek from the end of the file)
+    //    newoffset_ptr: The address of an i64 to store the new offset.
+    //
+    // Returns:
+    //    0 on success, or -ERRNO on failure.
+    int FdSeek(int fd, long offset, int whence, int newOffsetPtr)
+    {
+        throw new Trap(
+            $"Unimplemented call to FdSeek({fd}, {offset}, {whence}, 0x{newOffsetPtr:X8})"
+        );
+    }
+
+    // Reads from a file descriptor.
+    //
+    // Args:
+    //    fd: The file descriptor to read from.
+    //    iovs: The address of an array of __wasi_ciovec_t structs. Such a struct is
+    //        simply a pointer and a length.
+    //    iovs_len: The length of the array pointed to by iovs.
+    //    nread_ptr: The address of an i32 to store the number of bytes read.
+    //
+    // Returns:
+    //    0 on success, or -ERRNO on failure.
+    int FdRead(int fd, int iovs, int iovs_len, int nreadPtr)
+    {
+        throw new Trap(
+            $"Unimplemented call to FdRead({fd}, 0x{iovs:X8}, {iovs_len}, 0x{nreadPtr:X8})"
+        );
+    }
+
+    // Closes a file descriptor.
+    //
+    // Args:
+    //    fd: The file descriptor to close.
+    //
+    // Returns:
+    //    0 on success, or -ERRNO on failure.
+    int FdClose(int fd)
+    {
+        throw new Trap($"Unimplemented call to FdClose({fd})");
+    }
+
+    int FdSync(int fd)
+    {
+        throw new Trap($"Unimplemented call to FdSync({fd})");
     }
 
     public static void Main(string[] args)

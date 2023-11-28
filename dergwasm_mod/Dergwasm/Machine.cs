@@ -10,7 +10,8 @@ namespace Derg
     public class Machine : IMachine
     {
         bool debug = false;
-        int stepBudget = 1000;
+        public int stepBudget = 100000;
+        public Dictionary<string, HostFunc> hostFuncs = new Dictionary<string, HostFunc>();
         public Stack<Frame> frameStack = new Stack<Frame>();
         public List<FuncType> funcTypes = new List<FuncType>();
         public List<Func> funcs = new List<Func>();
@@ -183,7 +184,7 @@ namespace Derg
             Func f = funcs[addr];
             if (f is HostFunc host_func)
             {
-                Console.Write($"Invoking host func {host_func.ModuleName}.{host_func.Name}");
+                Console.WriteLine($"Invoking host func {host_func.ModuleName}.{host_func.Name}");
                 host_func.Proxy.Invoke(this);
                 return;
             }
@@ -304,14 +305,24 @@ namespace Derg
             }
         }
 
-        public int RegisterHostFunc(
+        public void RegisterHostFunc(
             string moduleName,
             string name,
             FuncType signature,
             HostProxy proxy
         )
         {
-            funcs.Add(new HostFunc(moduleName, name, signature, proxy));
+            hostFuncs.Add($"{moduleName}.{name}", new HostFunc(moduleName, name, signature, proxy));
+        }
+
+        public int ResolveHostFunc(string moduleName, string name)
+        {
+            string key = $"{moduleName}.{name}";
+            if (!hostFuncs.ContainsKey(key))
+            {
+                throw new Trap($"Could not find host function {key}");
+            }
+            funcs.Add(hostFuncs[key]);
             return funcs.Count - 1;
         }
     }

@@ -188,7 +188,11 @@ namespace Derg
         void Step(int n = 1);
 
         // Registers a host function with the given name, signature, and proxy.
-        // Returns the address of the host function.
-        int RegisterHostFunc(string moduleName, string name, FuncType signature, HostProxy proxy);
+        void RegisterHostFunc(string moduleName, string name, FuncType signature, HostProxy proxy);
+
+        // Finds the host function with the given name and signature, adds it to the machine's
+        // functions, and returns its address. If the function is not found, throws a Trap.
+        // This should only be called during extern func resolution.
+        int ResolveHostFunc(string moduleName, string name);
     }
 }
