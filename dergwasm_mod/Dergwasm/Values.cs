@@ -263,7 +263,7 @@ namespace Derg
             byte tag = stream.ReadByte();
             if (tag != 0x60)
             {
-                throw new Trap($"Expected 0x60 tag for functype, but got {tag:X2}");
+                throw new Trap($"Expected 0x60 tag for functype, but got 0x{tag:X2}");
             }
             int num_args = (int)stream.ReadLEB128Unsigned();
             ValueType[] args = new ValueType[num_args];
@@ -277,7 +277,9 @@ namespace Derg
             {
                 returns[i] = (ValueType)stream.ReadByte();
             }
-            return new FuncType(args, returns);
+            FuncType funcType = new FuncType(args, returns);
+            Console.WriteLine($"Read functype: {funcType}");
+            return funcType;
         }
 
         public bool Equals(FuncType other)

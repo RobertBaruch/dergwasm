@@ -381,6 +381,12 @@ namespace Derg
             Type = type;
             Operands = operands;
         }
+
+        public override string ToString()
+        {
+            string ops = string.Join(", ", Operands.Select(o => o.ToString()));
+            return $"{Type} {ops}";
+        }
     }
 
     // Note: I am pretty certain that we can decode into List<Instruction> in one pass by decoding

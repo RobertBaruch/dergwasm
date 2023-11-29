@@ -67,7 +67,7 @@ namespace Derg
                     break;
                 }
                 int section_len = (int)stream.ReadLEB128Unsigned();
-                Section.SectionReaders[section_id](stream, module);
+                Section.SectionReaders[section_id](stream, module, section_len);
             }
 
             return module;
@@ -178,8 +178,8 @@ namespace Derg
 
     public class Section
     {
-        public static readonly Dictionary<byte, Action<BinaryReader, Module>> SectionReaders =
-            new Dictionary<byte, Action<BinaryReader, Module>>()
+        public static readonly Dictionary<byte, Action<BinaryReader, Module, int>> SectionReaders =
+            new Dictionary<byte, Action<BinaryReader, Module, int>>()
             {
                 { 0, ReadCustomSection },
                 { 1, ReadTypeSection },
@@ -202,18 +202,24 @@ namespace Derg
             return Encoding.UTF8.GetString(stream.ReadBytes(len));
         }
 
-        public static void ReadCustomSection(BinaryReader stream, Module module)
+        public static void ReadCustomSection(BinaryReader stream, Module module, int section_len)
         {
+            Console.WriteLine("Reading custom section");
+            long beginPos = stream.BaseStream.Position;
             int name_len = (int)stream.ReadLEB128Unsigned();
             string name = Encoding.UTF8.GetString(stream.ReadBytes(name_len));
-            int data_len = (int)stream.ReadLEB128Unsigned();
+            Console.WriteLine($"  name: {name}");
+            long currPos = stream.BaseStream.Position;
+            int data_len = (int)(section_len - (currPos - beginPos));
+            Console.WriteLine($"  len : 0x{data_len:X8}");
             byte[] data = stream.ReadBytes(data_len);
             module.customData.Add(new CustomData(name, data));
         }
 
-        public static void ReadTypeSection(BinaryReader stream, Module module)
+        public static void ReadTypeSection(BinaryReader stream, Module module, int section_len)
         {
             int num_types = (int)stream.ReadLEB128Unsigned();
+            Console.WriteLine($"Reading {num_types} types");
             module.FuncTypes = new FuncType[num_types];
             for (int i = 0; i < num_types; i++)
             {
@@ -221,9 +227,10 @@ namespace Derg
             }
         }
 
-        public static void ReadImportSection(BinaryReader stream, Module module)
+        public static void ReadImportSection(BinaryReader stream, Module module, int section_len)
         {
             int numImports = (int)stream.ReadLEB128Unsigned();
+            Console.WriteLine($"Reading {numImports} imports");
             module.Imports = new Import[numImports];
             // Note that in each index space (functions, tables, memories, globals), the indices of
             // the imports go before the first index of any definition contained in the module itself.
@@ -267,9 +274,10 @@ namespace Derg
             }
         }
 
-        public static void ReadFunctionSection(BinaryReader stream, Module module)
+        public static void ReadFunctionSection(BinaryReader stream, Module module, int section_len)
         {
             int numFuncs = (int)stream.ReadLEB128Unsigned();
+            Console.WriteLine($"Reading {numFuncs} functions");
             for (int i = 0; i < numFuncs; i++)
             {
                 int funcTypeIdx = (int)stream.ReadLEB128Unsigned();
@@ -279,36 +287,40 @@ namespace Derg
             }
         }
 
-        public static void ReadTableSection(BinaryReader stream, Module module)
+        public static void ReadTableSection(BinaryReader stream, Module module, int section_len)
         {
             int numTables = (int)stream.ReadLEB128Unsigned();
+            Console.WriteLine($"Reading {numTables} tables");
             for (int i = 0; i < numTables; i++)
             {
                 module.Tables.Add(TableType.Read(stream));
             }
         }
 
-        public static void ReadMemorySection(BinaryReader stream, Module module)
+        public static void ReadMemorySection(BinaryReader stream, Module module, int section_len)
         {
             int numMemories = (int)stream.ReadLEB128Unsigned();
+            Console.WriteLine($"Reading {numMemories} memories");
             for (int i = 0; i < numMemories; i++)
             {
                 module.Memories.Add(Limits.Read(stream));
             }
         }
 
-        public static void ReadGlobalSection(BinaryReader stream, Module module)
+        public static void ReadGlobalSection(BinaryReader stream, Module module, int section_len)
         {
             int numGlobals = (int)stream.ReadLEB128Unsigned();
+            Console.WriteLine($"Reading {numGlobals} globals");
             for (int i = 0; i < numGlobals; i++)
             {
                 module.Globals.Add(GlobalSpec.Read(stream));
             }
         }
 
-        public static void ReadExportSection(BinaryReader stream, Module module)
+        public static void ReadExportSection(BinaryReader stream, Module module, int section_len)
         {
             int numExports = (int)stream.ReadLEB128Unsigned();
+            Console.WriteLine($"Reading {numExports} exports");
             module.Exports = new Export[numExports];
             for (int i = 0; i < numExports; i++)
             {
@@ -321,6 +333,9 @@ namespace Derg
                 {
                     case 0x00:
                         module.Exports[i] = new FuncExport(name, desc_idx);
+                        Console.WriteLine(
+                            $"Exporting function {module.Funcs[desc_idx].Name} as {name}"
+                        );
                         module.Funcs[desc_idx].Name = name;
                         break;
 
@@ -342,14 +357,20 @@ namespace Derg
             }
         }
 
-        public static void ReadStartSection(BinaryReader stream, Module module)
+        public static void ReadStartSection(BinaryReader stream, Module module, int section_len)
         {
+            Console.WriteLine("Reading start section");
             module.StartIdx = (int)stream.ReadLEB128Unsigned();
         }
 
-        public static void ReadElementSegmentSection(BinaryReader stream, Module module)
+        public static void ReadElementSegmentSection(
+            BinaryReader stream,
+            Module module,
+            int section_len
+        )
         {
             int numSegments = (int)stream.ReadLEB128Unsigned();
+            Console.WriteLine($"Reading {numSegments} element segments");
             module.ElementSegmentSpecs = new ElementSegmentSpec[numSegments];
             for (int i = 0; i < numSegments; i++)
             {
@@ -357,13 +378,14 @@ namespace Derg
             }
         }
 
-        public static void ReadCodeSection(BinaryReader stream, Module module)
+        public static void ReadCodeSection(BinaryReader stream, Module module, int section_len)
         {
             // Count up the number of imported functions. These functions
             // come after those.
             int numImportedFuncs = module.NumImportedFuncs();
 
             int numFuncs = (int)stream.ReadLEB128Unsigned();
+            Console.WriteLine($"Reading {numFuncs} function bodies");
             for (int i = 0; i < numFuncs; i++)
             {
                 int bodySize = (int)stream.ReadLEB128Unsigned(); // not needed
@@ -385,9 +407,14 @@ namespace Derg
             }
         }
 
-        public static void ReadDataSegmentSection(BinaryReader stream, Module module)
+        public static void ReadDataSegmentSection(
+            BinaryReader stream,
+            Module module,
+            int section_len
+        )
         {
             int numSegments = (int)stream.ReadLEB128Unsigned();
+            Console.WriteLine($"Reading {numSegments} data segments");
             module.DataSegments = new DataSegment[numSegments];
             for (int i = 0; i < numSegments; i++)
             {
@@ -395,8 +422,9 @@ namespace Derg
             }
         }
 
-        public static void ReadDataCountSection(BinaryReader stream, Module module)
+        public static void ReadDataCountSection(BinaryReader stream, Module module, int section_len)
         {
+            Console.WriteLine("Reading data count section");
             module.DataCount = (int)stream.ReadLEB128Unsigned();
         }
     }
@@ -800,7 +828,12 @@ namespace Derg
                 {
                     int memIdx = 0;
                     List<Instruction> offsetExpr = Module.ReadExpr(stream);
+                    foreach (Instruction instr in offsetExpr)
+                    {
+                        Console.WriteLine($"Instruction: {instr}");
+                    }
                     int size = (int)stream.ReadLEB128Unsigned();
+                    Console.WriteLine($"Reading {size} bytes of data");
                     byte[] data = stream.ReadBytes(size);
                     return new ActiveDataSegment(memIdx, offsetExpr, data);
                 }
