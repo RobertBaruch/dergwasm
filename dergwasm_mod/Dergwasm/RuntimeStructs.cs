@@ -233,14 +233,32 @@ namespace Derg
 
     public class Table
     {
+        // In general, all Tables have a module name.
+        public string ModuleName;
+
+        // In general, all Tables have a name. Exported tables have explicit names, but
+        // if a table is not exported, it will get a synthetic name $N where N is the
+        // index.
+        public string Name;
+
         public TableType Type;
         public Value[] Elements;
 
-        public Table(TableType type)
+        public Table(string moduleName, string name, TableType type)
         {
+            ModuleName = moduleName;
+            Name = name;
             Type = type;
             Elements = new Value[Type.Limits.Minimum];
         }
+    }
+
+    // This is just a temporary marker in non-instantiated modules, which will get
+    // matched with an external func.
+    public class ImportedTable : Table
+    {
+        public ImportedTable(string moduleName, string name, TableType type)
+            : base(moduleName, name, type) { }
     }
 
     public class ElementSegment

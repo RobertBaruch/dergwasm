@@ -278,7 +278,7 @@ namespace Derg
                 returns[i] = (ValueType)stream.ReadByte();
             }
             FuncType funcType = new FuncType(args, returns);
-            Console.WriteLine($"Read functype: {funcType}");
+            // Console.WriteLine($"Read functype: {funcType}");
             return funcType;
         }
 

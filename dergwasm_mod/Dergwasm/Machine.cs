@@ -1,16 +1,13 @@
-﻿using Elements.Core;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Derg
 {
     public class Machine : IMachine
     {
         bool debug = false;
-        public int stepBudget = 100000;
+        public int stepBudget = -1;
         public Dictionary<string, HostFunc> hostFuncs = new Dictionary<string, HostFunc>();
         public Stack<Frame> frameStack = new Stack<Frame>();
         public List<FuncType> funcTypes = new List<FuncType>();
@@ -257,6 +254,19 @@ namespace Derg
 
         public Table GetTable(int addr) => tables[addr];
 
+        public Table GetTable(string moduleName, string name)
+        {
+            // O(N) for now
+            foreach (var t in tables)
+            {
+                if (t.ModuleName == moduleName && t.Name == name)
+                {
+                    return t;
+                }
+            }
+            return null;
+        }
+
         public Table GetTableFromIndex(int idx) => tables[Frame.Module.TablesMap[idx]];
 
         public int AddElementSegment(ElementSegment elementSegment)
@@ -297,10 +307,13 @@ namespace Derg
             {
                 Instruction insn = Frame.Code[PC];
                 InstructionEvaluation.Execute(insn, this);
-                stepBudget--;
-                if (stepBudget == 0)
+                if (stepBudget > 0)
                 {
-                    throw new Trap("Step budget exceeded");
+                    stepBudget--;
+                    if (stepBudget == 0)
+                    {
+                        throw new Trap("Step budget exceeded");
+                    }
                 }
             }
         }
