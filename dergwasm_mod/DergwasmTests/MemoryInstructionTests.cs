@@ -17,7 +17,7 @@ namespace DergwasmTests
         [InlineData(InstructionType.I32_LOAD16_U, 0, 0, 0xA6A8)]
         public void TestI32Load(InstructionType insn, int offset, int base_addr, uint expected)
         {
-            Array.Copy(new byte[] { 0xA8, 0xA6, 0x34, 0x12, 0xFF }, machine.Memory.Data, 5);
+            Array.Copy(new byte[] { 0xA8, 0xA6, 0x34, 0x12, 0xFF }, machine.Memory0, 5);
 
             // 0: I32_CONST offset
             // 1: I32_LOAD _ base_addr
@@ -70,11 +70,7 @@ namespace DergwasmTests
         [InlineData(InstructionType.I64_LOAD32_U, 0, 0, 0x00000000A4A3A2A1UL)]
         public void TestI64Load(InstructionType insn, int offset, int base_addr, ulong expected)
         {
-            Array.Copy(
-                new byte[] { 0xA1, 0xA2, 0xA3, 0xA4, 5, 6, 7, 8, 9 },
-                machine.Memory.Data,
-                9
-            );
+            Array.Copy(new byte[] { 0xA1, 0xA2, 0xA3, 0xA4, 5, 6, 7, 8, 9 }, machine.Memory0, 9);
 
             // 0: I32_CONST offset
             // 1: I64_LOAD _ base_addr
@@ -97,7 +93,7 @@ namespace DergwasmTests
         [InlineData(1, 0, -1.94339031E+38f)]
         public void TestF32Load(int offset, int base_addr, float expected)
         {
-            Array.Copy(new byte[] { 0x78, 0x56, 0x34, 0x12, 0xFF }, machine.Memory.Data, 5);
+            Array.Copy(new byte[] { 0x78, 0x56, 0x34, 0x12, 0xFF }, machine.Memory0, 5);
 
             // 0: I32_CONST offset
             // 1: F32_LOAD _ base_addr
@@ -120,7 +116,7 @@ namespace DergwasmTests
         [InlineData(1, 0, 3.7258146895053074E-265)]
         public void TestF64Load(int offset, int base_addr, double expected)
         {
-            Array.Copy(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 }, machine.Memory.Data, 9);
+            Array.Copy(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 }, machine.Memory0, 9);
 
             // 0: I32_CONST offset
             // 1: F64_LOAD _ base_addr
@@ -300,7 +296,7 @@ namespace DergwasmTests
         [InlineData(2)]
         public void TestMemorySize(int sz)
         {
-            machine.Memory.Data = new byte[sz << 16];
+            machine.memories[0].Data = new byte[sz << 16];
 
             // 0: MEMORY_SIZE 0
             // 1: NOP
@@ -323,7 +319,7 @@ namespace DergwasmTests
             int expected_size
         )
         {
-            machine.Memory.Limits.Maximum = max_limit;
+            machine.memories[0].Limits.Maximum = max_limit;
 
             // 0: I32_CONST delta
             // 1: MEMORY_GROW 0
@@ -452,8 +448,8 @@ namespace DergwasmTests
         [InlineData(1, 0, 0, 2, new byte[] { 6, 7, 0, 0, 0 })]
         public void TestMemoryInit(int dataidx, int s_offset, int d_offset, int sz, byte[] expected)
         {
-            machine.AddDataSegment(50, new byte[] { 1, 2, 3, 4, 5 });
-            machine.AddDataSegment(51, new byte[] { 6, 7 });
+            machine.SetDataSegmentAt(50, new byte[] { 1, 2, 3, 4, 5 });
+            machine.SetDataSegmentAt(51, new byte[] { 6, 7 });
 
             // 0: I32_CONST d_offset
             // 1: I32_CONST s_offset
@@ -488,8 +484,8 @@ namespace DergwasmTests
             int sz
         )
         {
-            machine.AddDataSegment(50, new byte[] { 1, 2, 3, 4, 5 });
-            machine.AddDataSegment(51, new byte[] { 6, 7 });
+            machine.SetDataSegmentAt(50, new byte[] { 1, 2, 3, 4, 5 });
+            machine.SetDataSegmentAt(51, new byte[] { 6, 7 });
 
             // 0: I32_CONST d_offset
             // 1: I32_CONST s_offset
@@ -509,12 +505,12 @@ namespace DergwasmTests
         }
 
         [Theory]
-        [InlineData(0)]
-        [InlineData(1)]
-        public void TestDataDrop(int dataidx)
+        [InlineData(0, 50)]
+        [InlineData(1, 51)]
+        public void TestDataDrop(int dataidx, int expected_addr)
         {
-            machine.AddDataSegment(50, new byte[] { 1, 2, 3, 4, 5 });
-            machine.AddDataSegment(51, new byte[] { 6, 7 });
+            machine.SetDataSegmentAt(50, new byte[] { 1, 2, 3, 4, 5 });
+            machine.SetDataSegmentAt(51, new byte[] { 6, 7 });
 
             // 0: DATA_DROP dataidx
             // 1: NOP
@@ -523,7 +519,7 @@ namespace DergwasmTests
             machine.Step();
 
             Assert.Empty(machine.Frame.value_stack);
-            Assert.DoesNotContain(dataidx + 50, machine.dataSegments.Keys);
+            Assert.Null(machine.dataSegments[expected_addr]);
         }
     }
 }

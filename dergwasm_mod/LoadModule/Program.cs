@@ -20,6 +20,7 @@ public class Program
             BinaryReader reader = new BinaryReader(stream);
             module = Module.Read("hello_world", reader);
         }
+        machine.MainModuleName = module.ModuleName;
 
         module.ResolveExterns(machine);
         moduleInstance = module.Instantiate(machine);

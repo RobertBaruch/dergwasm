@@ -41,7 +41,7 @@ namespace Derg
             // mapped.
             for (int i = module.NumImportedTables(); i < module.Tables.Count; i++)
             {
-                TablesMap.Add(machine.AddTable(new Table(ModuleName, $"${i}", module.Tables[i])));
+                TablesMap.Add(machine.AddTable(module.Tables[i]));
             }
         }
 
@@ -178,7 +178,7 @@ namespace Derg
             for (int i = 0; i < externalTableAddrs.Length; i++)
             {
                 Table externalTable = machine.GetTable(externalTableAddrs[i]);
-                TableType importedTableType = module.Tables[i];
+                TableType importedTableType = module.Tables[i].Type;
 
                 if (externalTable.Type != importedTableType)
                 {

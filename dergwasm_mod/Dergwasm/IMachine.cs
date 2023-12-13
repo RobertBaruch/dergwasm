@@ -6,6 +6,8 @@ namespace Derg
     // The interface to a WASM machine.
     public interface IMachine
     {
+        string MainModuleName { get; set; }
+
         bool Debug { get; set; }
 
         // Gets the value at the top of the current frame's label stack.

@@ -8,15 +8,22 @@ namespace Derg
     {
         bool debug = false;
         public int stepBudget = -1;
+        public string mainModuleName;
         public Dictionary<string, HostFunc> hostFuncs = new Dictionary<string, HostFunc>();
         public Stack<Frame> frameStack = new Stack<Frame>();
-        public List<FuncType> funcTypes = new List<FuncType>();
+        public List<FuncType> funcTypes = new List<FuncType>(); // is this even used?
         public List<Func> funcs = new List<Func>();
         public List<Table> tables = new List<Table>();
         public List<ElementSegment> elementSegments = new List<ElementSegment>();
         public List<Value> Globals = new List<Value>();
         public List<Memory> memories = new List<Memory>();
         public List<byte[]> dataSegments = new List<byte[]>();
+
+        public string MainModuleName
+        {
+            get => mainModuleName;
+            set => mainModuleName = value;
+        }
 
         public bool Debug
         {
@@ -176,9 +183,10 @@ namespace Derg
 
         public void InvokeFuncFromIndex(int idx) => InvokeFunc(GetFuncAddrFromIndex(idx));
 
-        public void InvokeFunc(int addr)
+        public void InvokeFunc(int addr) => InvokeFunc(funcs[addr]);
+
+        public void InvokeFunc(Func f)
         {
-            Func f = funcs[addr];
             if (f is HostFunc host_func)
             {
                 Console.WriteLine($"Invoking host func {host_func.ModuleName}.{host_func.Name}");
@@ -283,7 +291,7 @@ namespace Derg
             elementSegments[Frame.Module.ElementSegmentsMap[idx]];
 
         public void DropElementSegmentFromIndex(int idx) =>
-            elementSegments.RemoveAt(Frame.Module.ElementSegmentsMap[idx]);
+            elementSegments[Frame.Module.ElementSegmentsMap[idx]] = null;
 
         public int AddDataSegment(byte[] dataSegment)
         {
@@ -299,7 +307,7 @@ namespace Derg
             dataSegments[GetDataSegmentAddrFromIndex(idx)];
 
         public void DropDataSegmentFromIndex(int idx) =>
-            dataSegments.RemoveAt(GetDataSegmentAddrFromIndex(idx));
+            dataSegments[GetDataSegmentAddrFromIndex(idx)] = null;
 
         public void Step(int n = 1)
         {

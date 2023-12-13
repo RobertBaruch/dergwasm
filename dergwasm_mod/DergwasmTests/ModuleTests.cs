@@ -288,7 +288,6 @@ namespace DergwasmTests
             MemoryStream sectionStream = new MemoryStream();
             BinaryWriter sectionWriter = new BinaryWriter(sectionStream);
             WriteString(sectionWriter, "custom section");
-            sectionWriter.WriteLEB128Unsigned(4UL);
             sectionWriter.Write(0xF100FF1EU);
 
             writer.WriteLEB128Unsigned((ulong)sectionStream.Length);
@@ -1061,8 +1060,8 @@ namespace DergwasmTests
 
             Assert.Collection(
                 module.Tables,
-                e => Assert.Equal(TestTableType0, e),
-                e => Assert.Equal(TestTableType0, e)
+                e => Assert.Equal(TestTableType0, e.Type),
+                e => Assert.Equal(TestTableType0, e.Type)
             );
         }
 

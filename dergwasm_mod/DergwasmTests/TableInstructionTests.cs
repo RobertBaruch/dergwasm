@@ -13,8 +13,14 @@ namespace DergwasmTests
         [InlineData(1, 1, 4)]
         public void TestTableGet(int tableidx, int elemidx, int expected)
         {
-            machine.AddTable(30, new Table(new TableType(new Limits(2), ValueType.FUNCREF)));
-            machine.AddTable(31, new Table(new TableType(new Limits(2), ValueType.FUNCREF)));
+            machine.SetTableAt(
+                30,
+                new Table("test", "$table0", new TableType(new Limits(2), ValueType.FUNCREF))
+            );
+            machine.SetTableAt(
+                31,
+                new Table("test", "$table1", new TableType(new Limits(2), ValueType.FUNCREF))
+            );
             machine.tables[30].Elements[0] = Value.RefOfFuncAddr(1);
             machine.tables[30].Elements[1] = Value.RefOfFuncAddr(2);
             machine.tables[31].Elements[0] = Value.RefOfFuncAddr(3);
@@ -41,7 +47,10 @@ namespace DergwasmTests
         [Fact]
         public void TestTableGetTrapsOnOutOfBounds()
         {
-            machine.AddTable(30, new Table(new TableType(new Limits(2), ValueType.FUNCREF)));
+            machine.SetTableAt(
+                30,
+                new Table("test", "$table0", new TableType(new Limits(2), ValueType.FUNCREF))
+            );
 
             // 0: I32_CONST 2
             // 1: TABLE_GET 0
@@ -63,8 +72,14 @@ namespace DergwasmTests
         [InlineData(1, 1)]
         public void TestTableSet(int tableidx, int elemidx)
         {
-            machine.AddTable(30, new Table(new TableType(new Limits(2), ValueType.FUNCREF)));
-            machine.AddTable(31, new Table(new TableType(new Limits(2), ValueType.FUNCREF)));
+            machine.SetTableAt(
+                30,
+                new Table("test", "$table0", new TableType(new Limits(2), ValueType.FUNCREF))
+            );
+            machine.SetTableAt(
+                31,
+                new Table("test", "$table1", new TableType(new Limits(2), ValueType.FUNCREF))
+            );
 
             // 0: I32_CONST elemidx
             // 1: REF_FUNC 10
@@ -87,7 +102,10 @@ namespace DergwasmTests
         [Fact]
         public void TestTableSetTrapsOnOutOfBounds()
         {
-            machine.AddTable(30, new Table(new TableType(new Limits(2), ValueType.FUNCREF)));
+            machine.SetTableAt(
+                30,
+                new Table("test", "$table0", new TableType(new Limits(2), ValueType.FUNCREF))
+            );
 
             // 0: I32_CONST 2
             // 1: REF_FUNC 10
@@ -109,8 +127,14 @@ namespace DergwasmTests
         [InlineData(1, 3)]
         public void TestTableSize(int tableidx, int expected)
         {
-            machine.AddTable(30, new Table(new TableType(new Limits(2), ValueType.FUNCREF)));
-            machine.AddTable(31, new Table(new TableType(new Limits(3), ValueType.FUNCREF)));
+            machine.SetTableAt(
+                30,
+                new Table("test", "$table0", new TableType(new Limits(2), ValueType.FUNCREF))
+            );
+            machine.SetTableAt(
+                31,
+                new Table("test", "$table1", new TableType(new Limits(3), ValueType.FUNCREF))
+            );
 
             // 0: TABLE_SIZE tableidx
             // 1: NOP
@@ -132,8 +156,14 @@ namespace DergwasmTests
         [InlineData(1, 4, -1, 3)]
         public void TestTableGrow(int tableidx, int n, int expected, int expected_new_size)
         {
-            machine.AddTable(30, new Table(new TableType(new Limits(2), ValueType.FUNCREF)));
-            machine.AddTable(31, new Table(new TableType(new Limits(3, 6), ValueType.FUNCREF)));
+            machine.SetTableAt(
+                30,
+                new Table("test", "$table0", new TableType(new Limits(2), ValueType.FUNCREF))
+            );
+            machine.SetTableAt(
+                31,
+                new Table("test", "$table1", new TableType(new Limits(3, 6), ValueType.FUNCREF))
+            );
 
             // 0: REF_FUNC 10
             // 1: I32_CONST n
@@ -171,15 +201,21 @@ namespace DergwasmTests
             int[] expected_content
         )
         {
-            machine.AddElementSegment(40, new ElementSegment(ValueType.FUNCREF, new Value[5]));
-            machine.AddElementSegment(41, new ElementSegment(ValueType.FUNCREF, new Value[5]));
+            machine.SetElementSegmentAt(40, new ElementSegment(ValueType.FUNCREF, new Value[5]));
+            machine.SetElementSegmentAt(41, new ElementSegment(ValueType.FUNCREF, new Value[5]));
             for (int i = 0; i < 5; i++)
             {
                 machine.elementSegments[40].Elements[i] = Value.RefOfFuncAddr(30 + i);
                 machine.elementSegments[41].Elements[i] = Value.RefOfFuncAddr(40 + i);
             }
-            machine.AddTable(30, new Table(new TableType(new Limits(5), ValueType.FUNCREF)));
-            machine.AddTable(31, new Table(new TableType(new Limits(5), ValueType.FUNCREF)));
+            machine.SetTableAt(
+                30,
+                new Table("test", "$table0", new TableType(new Limits(5), ValueType.FUNCREF))
+            );
+            machine.SetTableAt(
+                31,
+                new Table("test", "$table1", new TableType(new Limits(5), ValueType.FUNCREF))
+            );
             for (int i = 0; i < 5; i++)
             {
                 machine.tables[30].Elements[i] = Value.RefOfFuncAddr(10 + i);
@@ -219,8 +255,11 @@ namespace DergwasmTests
             int n
         )
         {
-            machine.AddElementSegment(40, new ElementSegment(ValueType.FUNCREF, new Value[5]));
-            machine.AddTable(30, new Table(new TableType(new Limits(5), ValueType.FUNCREF)));
+            machine.SetElementSegmentAt(40, new ElementSegment(ValueType.FUNCREF, new Value[5]));
+            machine.SetTableAt(
+                30,
+                new Table("test", "$table0", new TableType(new Limits(5), ValueType.FUNCREF))
+            );
 
             // 0: I32_CONST d_offset
             // 1: I32_CONST s_offset
@@ -251,8 +290,14 @@ namespace DergwasmTests
             int[] expected_content
         )
         {
-            machine.AddTable(30, new Table(new TableType(new Limits(5), ValueType.FUNCREF)));
-            machine.AddTable(31, new Table(new TableType(new Limits(5), ValueType.FUNCREF)));
+            machine.SetTableAt(
+                30,
+                new Table("test", "$table0", new TableType(new Limits(5), ValueType.FUNCREF))
+            );
+            machine.SetTableAt(
+                31,
+                new Table("test", "$table1", new TableType(new Limits(5), ValueType.FUNCREF))
+            );
             for (int i = 0; i < 5; i++)
             {
                 machine.tables[30].Elements[i] = Value.RefOfFuncAddr(10 + i);
@@ -286,7 +331,10 @@ namespace DergwasmTests
         [InlineData(0, 4, 2)]
         public void TestTableFillTrapsOnOutOfBounds(int tableidx, int offset, int n)
         {
-            machine.AddTable(30, new Table(new TableType(new Limits(5), ValueType.FUNCREF)));
+            machine.SetTableAt(
+                30,
+                new Table("test", "$table0", new TableType(new Limits(5), ValueType.FUNCREF))
+            );
 
             // 0: I32_CONST offset
             // 1: REF_FUNC 50
@@ -321,8 +369,14 @@ namespace DergwasmTests
             int[] expected_content
         )
         {
-            machine.AddTable(30, new Table(new TableType(new Limits(5), ValueType.FUNCREF)));
-            machine.AddTable(31, new Table(new TableType(new Limits(5), ValueType.FUNCREF)));
+            machine.SetTableAt(
+                30,
+                new Table("test", "$table0", new TableType(new Limits(5), ValueType.FUNCREF))
+            );
+            machine.SetTableAt(
+                31,
+                new Table("test", "$table1", new TableType(new Limits(5), ValueType.FUNCREF))
+            );
             for (int i = 0; i < 5; i++)
             {
                 machine.tables[30].Elements[i] = Value.RefOfFuncAddr(10 + i);
@@ -362,7 +416,10 @@ namespace DergwasmTests
             int n
         )
         {
-            machine.AddTable(30, new Table(new TableType(new Limits(5), ValueType.FUNCREF)));
+            machine.SetTableAt(
+                30,
+                new Table("test", "$table0", new TableType(new Limits(5), ValueType.FUNCREF))
+            );
 
             // 0: I32_CONST d_offset
             // 1: I32_CONST s_offset
@@ -386,8 +443,8 @@ namespace DergwasmTests
         [InlineData(1, 41)]
         public void TestElemDrop(int elemidx, int expected_elem_segment)
         {
-            machine.AddElementSegment(40, new ElementSegment(ValueType.FUNCREF, new Value[5]));
-            machine.AddElementSegment(41, new ElementSegment(ValueType.FUNCREF, new Value[5]));
+            machine.SetElementSegmentAt(40, new ElementSegment(ValueType.FUNCREF, new Value[5]));
+            machine.SetElementSegmentAt(41, new ElementSegment(ValueType.FUNCREF, new Value[5]));
 
             // 0: ELEM_DROP elemidx
             // 1: NOP
@@ -395,7 +452,7 @@ namespace DergwasmTests
 
             machine.Step();
 
-            Assert.DoesNotContain(expected_elem_segment, machine.elementSegments.Keys);
+            Assert.Null(machine.elementSegments[expected_elem_segment]);
         }
     }
 }
