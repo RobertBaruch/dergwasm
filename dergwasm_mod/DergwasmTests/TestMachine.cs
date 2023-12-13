@@ -62,6 +62,18 @@ namespace DergwasmTests
             funcs[addr] = func;
         }
 
+        // Sets a host function at the given addr. The index is also used to determine the function's
+        // signature (see GetFuncTypeFromIndex).
+        public void SetHostFuncAt(int addr, HostProxy proxy)
+        {
+            funcs[addr] = new HostFunc(
+                "test",
+                $"${addr - 10}",
+                GetFuncTypeFromIndex(addr - 10),
+                proxy
+            );
+        }
+
         public UnflattenedInstruction Insn(InstructionType type, params Value[] operands)
         {
             return new UnflattenedInstruction(
@@ -127,6 +139,7 @@ namespace DergwasmTests
         // 1: (i32) -> ()
         // 2: () -> (i32)
         // 3: (i32, i32) -> (i32, i32)
+        // 4: (i32, i32) -> (i32)
         public Dictionary<int, FuncType> funcTypes = new Dictionary<int, FuncType>()
         {
             { 0, new FuncType(new Derg.ValueType[] { }, new Derg.ValueType[] { }) },
@@ -143,6 +156,13 @@ namespace DergwasmTests
                 new FuncType(
                     new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
                     new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 }
+                )
+            },
+            {
+                4,
+                new FuncType(
+                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
                 )
             },
         };

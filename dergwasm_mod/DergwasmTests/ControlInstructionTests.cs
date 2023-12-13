@@ -657,6 +657,27 @@ namespace DergwasmTests
         }
 
         [Fact]
+        public void TestCallHostFunc()
+        {
+            // 0: I32_CONST 10
+            // 1: I32_CONST 20
+            // 2: CALL 4
+            // 3: NOP
+            //
+            // Func 14 (= idx 4): host func
+            machine.SetHostFuncAt(
+                14,
+                new ReturningHostProxy<int, int, int>((int a, int b) => a - b)
+            );
+            machine.SetProgram(0, I32Const(10), I32Const(20), Call(4), Nop());
+
+            machine.Step(3);
+
+            Assert.Equal(3, machine.PC);
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(-10), e));
+        }
+
+        [Fact]
         public void TestCallIndirect()
         {
             // 0: I32_CONST 1
