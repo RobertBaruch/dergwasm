@@ -188,6 +188,15 @@ namespace Derg
 
         public bool Bool => value_lo != 0 || value_hi != 0;
 
+        public unsafe T As<T>()
+            where T : unmanaged
+        {
+            fixed (ulong* ptr = &value_lo)
+            {
+                return *(T*)ptr;
+            }
+        }
+
         // Only valid if the value is a block operand.
         public int GetTarget() => (int)(value_lo & 0xFFFFFFFF);
 

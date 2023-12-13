@@ -5,6 +5,10 @@ namespace Derg
     public class HostProxy
     {
         public virtual void Invoke(IMachine machine) { }
+
+        public virtual int NumArgs() => 0;
+
+        public virtual int Arity() => 0;
     }
 
     public class VoidHostProxy : HostProxy
@@ -34,9 +38,10 @@ namespace Derg
 
         public override void Invoke(IMachine machine)
         {
-            T1 arg1 = machine.Pop<T1>();
-            func(arg1);
+            func(machine.Frame.Locals[0].As<T1>());
         }
+
+        public override int NumArgs() => 1;
     }
 
     public class HostProxy<T1, T2> : HostProxy
@@ -52,10 +57,10 @@ namespace Derg
 
         public override void Invoke(IMachine machine)
         {
-            T2 arg2 = machine.Pop<T2>();
-            T1 arg1 = machine.Pop<T1>();
-            func(arg1, arg2);
+            func(machine.Frame.Locals[0].As<T1>(), machine.Frame.Locals[1].As<T2>());
         }
+
+        public override int NumArgs() => 2;
     }
 
     public class HostProxy<T1, T2, T3> : HostProxy
@@ -72,11 +77,14 @@ namespace Derg
 
         public override void Invoke(IMachine machine)
         {
-            T3 arg3 = machine.Pop<T3>();
-            T2 arg2 = machine.Pop<T2>();
-            T1 arg1 = machine.Pop<T1>();
-            func(arg1, arg2, arg3);
+            func(
+                machine.Frame.Locals[0].As<T1>(),
+                machine.Frame.Locals[1].As<T2>(),
+                machine.Frame.Locals[2].As<T3>()
+            );
         }
+
+        public override int NumArgs() => 3;
     }
 
     public class HostProxy<T1, T2, T3, T4> : HostProxy
@@ -94,12 +102,15 @@ namespace Derg
 
         public override void Invoke(IMachine machine)
         {
-            T4 arg4 = machine.Pop<T4>();
-            T3 arg3 = machine.Pop<T3>();
-            T2 arg2 = machine.Pop<T2>();
-            T1 arg1 = machine.Pop<T1>();
-            func(arg1, arg2, arg3, arg4);
+            func(
+                machine.Frame.Locals[0].As<T1>(),
+                machine.Frame.Locals[1].As<T2>(),
+                machine.Frame.Locals[2].As<T3>(),
+                machine.Frame.Locals[3].As<T4>()
+            );
         }
+
+        public override int NumArgs() => 4;
     }
 
     public class HostProxy<T1, T2, T3, T4, T5> : HostProxy
@@ -118,13 +129,16 @@ namespace Derg
 
         public override void Invoke(IMachine machine)
         {
-            T5 arg5 = machine.Pop<T5>();
-            T4 arg4 = machine.Pop<T4>();
-            T3 arg3 = machine.Pop<T3>();
-            T2 arg2 = machine.Pop<T2>();
-            T1 arg1 = machine.Pop<T1>();
-            func(arg1, arg2, arg3, arg4, arg5);
+            func(
+                machine.Frame.Locals[0].As<T1>(),
+                machine.Frame.Locals[1].As<T2>(),
+                machine.Frame.Locals[2].As<T3>(),
+                machine.Frame.Locals[3].As<T4>(),
+                machine.Frame.Locals[4].As<T5>()
+            );
         }
+
+        public override int NumArgs() => 5;
     }
 
     public class HostProxy<T1, T2, T3, T4, T5, T6> : HostProxy
@@ -144,14 +158,17 @@ namespace Derg
 
         public override void Invoke(IMachine machine)
         {
-            T6 arg6 = machine.Pop<T6>();
-            T5 arg5 = machine.Pop<T5>();
-            T4 arg4 = machine.Pop<T4>();
-            T3 arg3 = machine.Pop<T3>();
-            T2 arg2 = machine.Pop<T2>();
-            T1 arg1 = machine.Pop<T1>();
-            func(arg1, arg2, arg3, arg4, arg5, arg6);
+            func(
+                machine.Frame.Locals[0].As<T1>(),
+                machine.Frame.Locals[1].As<T2>(),
+                machine.Frame.Locals[2].As<T3>(),
+                machine.Frame.Locals[3].As<T4>(),
+                machine.Frame.Locals[4].As<T5>(),
+                machine.Frame.Locals[5].As<T6>()
+            );
         }
+
+        public override int NumArgs() => 6;
     }
 
     public class ReturningVoidHostProxy<R> : HostProxy
@@ -168,6 +185,8 @@ namespace Derg
         {
             machine.Push(func());
         }
+
+        public override int Arity() => 1;
     }
 
     public class ReturningHostProxy<T1, R> : HostProxy
@@ -183,9 +202,12 @@ namespace Derg
 
         public override void Invoke(IMachine machine)
         {
-            T1 arg1 = machine.Pop<T1>();
-            machine.Push(func(arg1));
+            machine.Push(func(machine.Frame.Locals[0].As<T1>()));
         }
+
+        public override int NumArgs() => 1;
+
+        public override int Arity() => 1;
     }
 
     public class ReturningHostProxy<T1, T2, R> : HostProxy
@@ -202,10 +224,12 @@ namespace Derg
 
         public override void Invoke(IMachine machine)
         {
-            T2 arg2 = machine.Pop<T2>();
-            T1 arg1 = machine.Pop<T1>();
-            machine.Push(func(arg1, arg2));
+            machine.Push(func(machine.Frame.Locals[0].As<T1>(), machine.Frame.Locals[1].As<T2>()));
         }
+
+        public override int NumArgs() => 2;
+
+        public override int Arity() => 1;
     }
 
     public class ReturningHostProxy<T1, T2, T3, R> : HostProxy
@@ -223,11 +247,18 @@ namespace Derg
 
         public override void Invoke(IMachine machine)
         {
-            T3 arg3 = machine.Pop<T3>();
-            T2 arg2 = machine.Pop<T2>();
-            T1 arg1 = machine.Pop<T1>();
-            machine.Push(func(arg1, arg2, arg3));
+            machine.Push(
+                func(
+                    machine.Frame.Locals[0].As<T1>(),
+                    machine.Frame.Locals[1].As<T2>(),
+                    machine.Frame.Locals[2].As<T3>()
+                )
+            );
         }
+
+        public override int NumArgs() => 3;
+
+        public override int Arity() => 1;
     }
 
     public class ReturningHostProxy<T1, T2, T3, T4, R> : HostProxy
@@ -246,12 +277,19 @@ namespace Derg
 
         public override void Invoke(IMachine machine)
         {
-            T4 arg4 = machine.Pop<T4>();
-            T3 arg3 = machine.Pop<T3>();
-            T2 arg2 = machine.Pop<T2>();
-            T1 arg1 = machine.Pop<T1>();
-            machine.Push(func(arg1, arg2, arg3, arg4));
+            machine.Push(
+                func(
+                    machine.Frame.Locals[0].As<T1>(),
+                    machine.Frame.Locals[1].As<T2>(),
+                    machine.Frame.Locals[2].As<T3>(),
+                    machine.Frame.Locals[3].As<T4>()
+                )
+            );
         }
+
+        public override int NumArgs() => 4;
+
+        public override int Arity() => 1;
     }
 
     public class ReturningHostProxy<T1, T2, T3, T4, T5, R> : HostProxy
@@ -271,13 +309,20 @@ namespace Derg
 
         public override void Invoke(IMachine machine)
         {
-            T5 arg5 = machine.Pop<T5>();
-            T4 arg4 = machine.Pop<T4>();
-            T3 arg3 = machine.Pop<T3>();
-            T2 arg2 = machine.Pop<T2>();
-            T1 arg1 = machine.Pop<T1>();
-            machine.Push(func(arg1, arg2, arg3, arg4, arg5));
+            machine.Push(
+                func(
+                    machine.Frame.Locals[0].As<T1>(),
+                    machine.Frame.Locals[1].As<T2>(),
+                    machine.Frame.Locals[2].As<T3>(),
+                    machine.Frame.Locals[3].As<T4>(),
+                    machine.Frame.Locals[4].As<T5>()
+                )
+            );
         }
+
+        public override int NumArgs() => 5;
+
+        public override int Arity() => 1;
     }
 
     public class ReturningHostProxy<T1, T2, T3, T4, T5, T6, R> : HostProxy
@@ -298,13 +343,20 @@ namespace Derg
 
         public override void Invoke(IMachine machine)
         {
-            T6 arg6 = machine.Pop<T6>();
-            T5 arg5 = machine.Pop<T5>();
-            T4 arg4 = machine.Pop<T4>();
-            T3 arg3 = machine.Pop<T3>();
-            T2 arg2 = machine.Pop<T2>();
-            T1 arg1 = machine.Pop<T1>();
-            machine.Push(func(arg1, arg2, arg3, arg4, arg5, arg6));
+            machine.Push(
+                func(
+                    machine.Frame.Locals[0].As<T1>(),
+                    machine.Frame.Locals[1].As<T2>(),
+                    machine.Frame.Locals[2].As<T3>(),
+                    machine.Frame.Locals[3].As<T4>(),
+                    machine.Frame.Locals[4].As<T5>(),
+                    machine.Frame.Locals[5].As<T6>()
+                )
+            );
         }
+
+        public override int NumArgs() => 6;
+
+        public override int Arity() => 1;
     }
 }

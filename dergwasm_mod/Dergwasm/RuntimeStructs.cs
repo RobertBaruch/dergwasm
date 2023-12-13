@@ -35,7 +35,7 @@ namespace Derg
         // from the caller's stack.
         public List<Value> value_stack;
 
-        public int Arity
+        public virtual int Arity
         {
             get => Func.Signature.returns.Length;
         }
@@ -56,6 +56,28 @@ namespace Derg
             this.label_stack = new Stack<Label>();
             this.value_stack = new List<Value>();
             this.Func = func;
+        }
+    }
+
+    // A call frame for when we're calling a host function.
+    public class HostFrame : Frame
+    {
+        // The function currently executing.
+        public HostFunc HostFunc;
+
+        public HostFrame(HostFunc func, ModuleInstance module)
+            : base(null, module)
+        {
+            if (func != null)
+            {
+                this.Locals = new Value[func.Proxy.NumArgs()];
+            }
+            this.HostFunc = func;
+        }
+
+        public override int Arity
+        {
+            get => HostFunc.Proxy.Arity();
         }
     }
 

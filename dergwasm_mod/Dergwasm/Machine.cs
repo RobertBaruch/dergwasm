@@ -185,25 +185,37 @@ namespace Derg
 
         public void InvokeFunc(int addr) => InvokeFunc(funcs[addr]);
 
-        public void InvokeFunc(Func f)
+        void InvokeHostFunc(HostFunc f)
         {
-            if (f is HostFunc host_func)
-            {
-                Console.WriteLine($"Invoking host func {host_func.ModuleName}.{host_func.Name}");
-                host_func.Proxy.Invoke(this);
-                return;
-            }
+            Console.WriteLine($"Invoking host func {f.ModuleName}.{f.Name}");
 
-            if (!(f is ModuleFunc))
-            {
-                throw new Trap($"Attempted to invoke a non-module func of type {f.GetType()}.");
-            }
+            Frame next_frame_host = new HostFrame(f, Frame.Module);
+            int numArgs = f.Proxy.NumArgs();
 
-            ModuleFunc func = f as ModuleFunc;
-            int arity = func.Signature.returns.Length;
-            int args = func.Signature.args.Length;
+            // Remove args from stack and place in new frame's locals.
+            Frame.value_stack.CopyTo(
+                Frame.value_stack.Count - numArgs,
+                next_frame_host.Locals,
+                0,
+                numArgs
+            );
+            Frame.value_stack.RemoveRange(Frame.value_stack.Count - numArgs, numArgs);
 
-            Frame next_frame = new Frame(func, Frame.Module);
+            Frame = next_frame_host;
+            // For consistency, we also stick a label in.
+            Label = new Label(f.Proxy.Arity(), 0);
+
+            f.Proxy.Invoke(this);
+
+            PopFrame();
+        }
+
+        void InvokeModuleFunc(ModuleFunc f)
+        {
+            int arity = f.Signature.returns.Length;
+            int args = f.Signature.args.Length;
+
+            Frame next_frame = new Frame(f, Frame.Module);
 
             // Remove args from stack and place in new frame's locals.
             Frame.value_stack.CopyTo(Frame.value_stack.Count - args, next_frame.Locals, 0, args);
@@ -211,7 +223,24 @@ namespace Derg
 
             Frame = next_frame;
             PC = -1; // So that incrementing PC goes to beginning.
-            Label = new Label(arity, func.Code.Count);
+            Label = new Label(arity, f.Code.Count);
+        }
+
+        public void InvokeFunc(Func f)
+        {
+            if (f is HostFunc host_func)
+            {
+                InvokeHostFunc(host_func);
+                return;
+            }
+
+            if (f is ModuleFunc module_func)
+            {
+                InvokeModuleFunc(module_func);
+                return;
+            }
+
+            throw new Trap($"Attempted to invoke a non-module func of type {f.GetType()}.");
         }
 
         public void InvokeExpr(ModuleFunc func)
