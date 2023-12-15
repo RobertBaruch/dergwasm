@@ -10,7 +10,7 @@ namespace Derg
         // frame's program counter will be incremented. Therefore, instructions that don't
         // do that (e.g. branches) must set the program counter to the desired program counter
         // minus one.
-        public static void Execute(Instruction instruction, IMachine machine, Frame frame)
+        public static void Execute(Instruction instruction, Machine machine, Frame frame)
         {
             if (!Map.TryGetValue(instruction.Type, out var implementation))
                 throw new ArgumentException($"Unimplemented instruction: {instruction.Type}");
@@ -55,8 +55,8 @@ namespace Derg
 
         public static IReadOnlyDictionary<
             InstructionType,
-            Action<Instruction, IMachine, Frame>
-        > Map = new Dictionary<InstructionType, Action<Instruction, IMachine, Frame>>()
+            Action<Instruction, Machine, Frame>
+        > Map = new Dictionary<InstructionType, Action<Instruction, Machine, Frame>>()
         {
             // Please maintain these sorted alphanumerically by InstructionType.
             { InstructionType.BR, ControlInstructions.Br },

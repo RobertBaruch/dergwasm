@@ -110,7 +110,6 @@
     <Compile Include="EmscriptenWasi.cs" />
     <Compile Include="Heap.cs" />
     <Compile Include="HostProxy.cs" />
-    <Compile Include="IMachine.cs" />
     <Compile Include="IModule.cs" />
     <Compile Include="InstructionEvaluation.cs" />
     <Compile Include="Instructions.cs" />

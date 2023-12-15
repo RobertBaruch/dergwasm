@@ -76,7 +76,7 @@ namespace Derg
 
         // You should resolve externs for all modules before instantiating any of them. This only
         // matches names. The func types will be validated during instantiation.
-        public void ResolveExterns(IMachine machine)
+        public void ResolveExterns(Machine machine)
         {
             ResolveExternFuncs(machine);
             ResolveExternTables(machine);
@@ -84,7 +84,7 @@ namespace Derg
             ResolveExternGlobals(machine);
         }
 
-        void ResolveExternFuncs(IMachine machine)
+        void ResolveExternFuncs(Machine machine)
         {
             ExternalFuncAddrs = new int[NumImportedFuncs()];
 
@@ -99,22 +99,22 @@ namespace Derg
             }
         }
 
-        void ResolveExternTables(IMachine machine)
+        void ResolveExternTables(Machine machine)
         {
             ExternalTableAddrs = new int[0];
         }
 
-        void ResolveExternMemories(IMachine machine)
+        void ResolveExternMemories(Machine machine)
         {
             ExternalMemoryAddrs = new int[0];
         }
 
-        void ResolveExternGlobals(IMachine machine)
+        void ResolveExternGlobals(Machine machine)
         {
             ExternalGlobalAddrs = new int[0];
         }
 
-        public ModuleInstance Instantiate(IMachine machine)
+        public ModuleInstance Instantiate(Machine machine)
         {
             ModuleInstance instance = new ModuleInstance(ModuleName);
             instance.Instantiate(machine, this);

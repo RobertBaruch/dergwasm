@@ -23,7 +23,7 @@ namespace Derg
             ModuleName = moduleName;
         }
 
-        void AllocateFunctions(IMachine machine, Module module)
+        void AllocateFunctions(Machine machine, Module module)
         {
             // We only allocate non-imported functions. Imported functions have already
             // been mapped.
@@ -35,7 +35,7 @@ namespace Derg
             }
         }
 
-        void AllocateTables(IMachine machine, Module module)
+        void AllocateTables(Machine machine, Module module)
         {
             // We only allocate non-imported tables. Imported tables have already been
             // mapped.
@@ -45,7 +45,7 @@ namespace Derg
             }
         }
 
-        void AllocateMemories(IMachine machine, Module module)
+        void AllocateMemories(Machine machine, Module module)
         {
             // We only allocate non-imported memories. Imported memories have already been
             // mapped.
@@ -55,7 +55,7 @@ namespace Derg
             }
         }
 
-        void AllocateGlobals(IMachine machine, Module module)
+        void AllocateGlobals(Machine machine, Module module)
         {
             // We only allocate non-imported globals. Imported globals have already been
             // mapped.
@@ -67,7 +67,7 @@ namespace Derg
             }
         }
 
-        void AllocateElementSegments(IMachine machine, Module module)
+        void AllocateElementSegments(Machine machine, Module module)
         {
             foreach (ElementSegmentSpec elementSegmentSpec in module.ElementSegmentSpecs)
             {
@@ -83,7 +83,7 @@ namespace Derg
             }
         }
 
-        void AllocatedDataSegments(IMachine machine, Module module)
+        void AllocatedDataSegments(Machine machine, Module module)
         {
             foreach (DataSegment dataSegment in module.DataSegments)
             {
@@ -91,7 +91,7 @@ namespace Derg
             }
         }
 
-        public void Allocate(IMachine machine, Module module)
+        public void Allocate(Machine machine, Module module)
         {
             // Imported functions, tables, memories, and globals always come first in the
             // address maps.
@@ -148,7 +148,7 @@ namespace Derg
             }
         }
 
-        void ValidateExternalFuncTypes(IMachine machine, Module module, int[] externalFuncAddrs)
+        void ValidateExternalFuncTypes(Machine machine, Module module, int[] externalFuncAddrs)
         {
             for (int i = 0; i < externalFuncAddrs.Length; i++)
             {
@@ -173,7 +173,7 @@ namespace Derg
             }
         }
 
-        void ValidateExternalTableTypes(IMachine machine, Module module, int[] externalTableAddrs)
+        void ValidateExternalTableTypes(Machine machine, Module module, int[] externalTableAddrs)
         {
             for (int i = 0; i < externalTableAddrs.Length; i++)
             {
@@ -189,7 +189,7 @@ namespace Derg
             }
         }
 
-        void ValidateExternalMemoryTypes(IMachine machine, Module module, int[] externalMemoryAddrs)
+        void ValidateExternalMemoryTypes(Machine machine, Module module, int[] externalMemoryAddrs)
         {
             for (int i = 0; i < externalMemoryAddrs.Length; i++)
             {
@@ -208,7 +208,7 @@ namespace Derg
         // Evaluate an expression intended to return a single value. This must only be called
         // during instantiation, when the machine is not running anything.
         Value EvaluateExpr(
-            IMachine machine,
+            Machine machine,
             Module module,
             string name,
             ValueType returnType,
@@ -230,7 +230,7 @@ namespace Derg
             return returnValue;
         }
 
-        void InitGlobals(IMachine machine, Module module)
+        void InitGlobals(Machine machine, Module module)
         {
             // We do not initialize imported globals.
             for (int i = module.NumImportedGlobals(); i < module.Globals.Count; i++)
@@ -253,7 +253,7 @@ namespace Derg
             }
         }
 
-        void InitElementSegments(IMachine machine, Module module)
+        void InitElementSegments(Machine machine, Module module)
         {
             // ElementSegments were added to the instance in the same order as their specs.
             // Thus, ElementSegmentSpec[i] corresponds to ElementSegment[ElementSegmentsMap[i]].
@@ -296,7 +296,7 @@ namespace Derg
         // element segment is declarative, it is immediately dropped. And if an element segment
         // is passive, nothing happens during instantiation (but tables can be initialized during
         // the running of a module's func).
-        void InitTables(IMachine machine, Module module)
+        void InitTables(Machine machine, Module module)
         {
             for (int i = 0; i < module.ElementSegmentSpecs.Length; i++)
             {
@@ -340,7 +340,7 @@ namespace Derg
         // As with tables and element segments, if a data segment is active, it gets copied into
         // memory. Otherwise nothing happens during instantiation (but memory can be initialized
         // during the running of a module's func).
-        void InitMemory(IMachine machine, Module module)
+        void InitMemory(Machine machine, Module module)
         {
             for (int i = 0; i < module.DataSegments.Length; i++)
             {
@@ -372,7 +372,7 @@ namespace Derg
             }
         }
 
-        void MaybeExecuteStartFunc(IMachine machine, Module module)
+        void MaybeExecuteStartFunc(Machine machine, Module module)
         {
             if (module.StartIdx == -1)
             {
@@ -388,7 +388,7 @@ namespace Derg
             machine.PopFrame();
         }
 
-        public void Instantiate(IMachine machine, Module module)
+        public void Instantiate(Machine machine, Module module)
         {
             ValidateNumExternsVersusRequiredImports(module);
 

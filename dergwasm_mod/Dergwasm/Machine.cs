@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Derg
 {
-    public class Machine : IMachine
+    public class Machine
     {
         bool debug = false;
         public int stepBudget = -1;
@@ -134,8 +134,6 @@ namespace Derg
         }
 
         public int GetGlobalAddrForIndex(int idx) => Frame.Module.GlobalsMap[idx];
-
-        List<Value> IMachine.Globals => Globals;
 
         public int StackLevel() => Frame.value_stack.Count;
 

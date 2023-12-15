@@ -4,7 +4,7 @@ namespace Derg
 {
     public class HostProxy
     {
-        public virtual void Invoke(IMachine machine) { }
+        public virtual void Invoke(Machine machine) { }
 
         public virtual int NumArgs() => 0;
 
@@ -20,7 +20,7 @@ namespace Derg
             this.func = func;
         }
 
-        public override void Invoke(IMachine machine)
+        public override void Invoke(Machine machine)
         {
             func();
         }
@@ -36,7 +36,7 @@ namespace Derg
             this.func = func;
         }
 
-        public override void Invoke(IMachine machine)
+        public override void Invoke(Machine machine)
         {
             func(machine.Frame.Locals[0].As<T1>());
         }
@@ -55,7 +55,7 @@ namespace Derg
             this.func = func;
         }
 
-        public override void Invoke(IMachine machine)
+        public override void Invoke(Machine machine)
         {
             func(machine.Frame.Locals[0].As<T1>(), machine.Frame.Locals[1].As<T2>());
         }
@@ -75,7 +75,7 @@ namespace Derg
             this.func = func;
         }
 
-        public override void Invoke(IMachine machine)
+        public override void Invoke(Machine machine)
         {
             func(
                 machine.Frame.Locals[0].As<T1>(),
@@ -100,7 +100,7 @@ namespace Derg
             this.func = func;
         }
 
-        public override void Invoke(IMachine machine)
+        public override void Invoke(Machine machine)
         {
             func(
                 machine.Frame.Locals[0].As<T1>(),
@@ -127,7 +127,7 @@ namespace Derg
             this.func = func;
         }
 
-        public override void Invoke(IMachine machine)
+        public override void Invoke(Machine machine)
         {
             func(
                 machine.Frame.Locals[0].As<T1>(),
@@ -156,7 +156,7 @@ namespace Derg
             this.func = func;
         }
 
-        public override void Invoke(IMachine machine)
+        public override void Invoke(Machine machine)
         {
             func(
                 machine.Frame.Locals[0].As<T1>(),
@@ -181,7 +181,7 @@ namespace Derg
             this.func = func;
         }
 
-        public override void Invoke(IMachine machine)
+        public override void Invoke(Machine machine)
         {
             machine.Push(func());
         }
@@ -200,7 +200,7 @@ namespace Derg
             this.func = func;
         }
 
-        public override void Invoke(IMachine machine)
+        public override void Invoke(Machine machine)
         {
             machine.Push(func(machine.Frame.Locals[0].As<T1>()));
         }
@@ -222,7 +222,7 @@ namespace Derg
             this.func = func;
         }
 
-        public override void Invoke(IMachine machine)
+        public override void Invoke(Machine machine)
         {
             machine.Push(func(machine.Frame.Locals[0].As<T1>(), machine.Frame.Locals[1].As<T2>()));
         }
@@ -245,7 +245,7 @@ namespace Derg
             this.func = func;
         }
 
-        public override void Invoke(IMachine machine)
+        public override void Invoke(Machine machine)
         {
             machine.Push(
                 func(
@@ -275,7 +275,7 @@ namespace Derg
             this.func = func;
         }
 
-        public override void Invoke(IMachine machine)
+        public override void Invoke(Machine machine)
         {
             machine.Push(
                 func(
@@ -307,7 +307,7 @@ namespace Derg
             this.func = func;
         }
 
-        public override void Invoke(IMachine machine)
+        public override void Invoke(Machine machine)
         {
             machine.Push(
                 func(
@@ -341,7 +341,7 @@ namespace Derg
             this.func = func;
         }
 
-        public override void Invoke(IMachine machine)
+        public override void Invoke(Machine machine)
         {
             machine.Push(
                 func(
