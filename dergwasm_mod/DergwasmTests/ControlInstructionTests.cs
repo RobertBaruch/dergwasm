@@ -45,7 +45,7 @@ namespace DergwasmTests
 
             Assert.Equal(1, machine.Frame.PC);
             Assert.Empty(machine.Frame.value_stack);
-            Assert.Equal(new Label(0, 3), machine.Label);
+            Assert.Equal(new Label(0, 3), machine.Frame.Label);
         }
 
         [Fact]
@@ -77,7 +77,7 @@ namespace DergwasmTests
 
             Assert.Equal(1, machine.Frame.PC);
             Assert.Empty(machine.Frame.value_stack);
-            Assert.Equal(new Label(1, 3), machine.Label);
+            Assert.Equal(new Label(1, 3), machine.Frame.Label);
         }
 
         [Fact]
@@ -154,7 +154,7 @@ namespace DergwasmTests
 
             Assert.Equal(2, machine.Frame.PC);
             Assert.Empty(machine.Frame.value_stack);
-            Assert.Equal(new Label(0, 4), machine.Label);
+            Assert.Equal(new Label(0, 4), machine.Frame.Label);
         }
 
         [Fact]
@@ -198,7 +198,7 @@ namespace DergwasmTests
 
             Assert.Equal(4, machine.Frame.PC);
             Assert.Empty(machine.Frame.value_stack);
-            Assert.Equal(new Label(0, 6), machine.Label);
+            Assert.Equal(new Label(0, 6), machine.Frame.Label);
         }
 
         [Fact]
@@ -377,7 +377,7 @@ namespace DergwasmTests
 
             Assert.Equal(1, machine.Frame.PC);
             Assert.Empty(machine.Frame.value_stack);
-            Assert.Equal(new Label(0, 0), machine.Label);
+            Assert.Equal(new Label(0, 0), machine.Frame.Label);
         }
 
         [Fact]
@@ -426,7 +426,7 @@ namespace DergwasmTests
 
             Assert.Equal(2, machine.Frame.PC);
             Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(1), e));
-            Assert.Equal(new Label(1, 1), machine.Label);
+            Assert.Equal(new Label(1, 1), machine.Frame.Label);
         }
 
         [Fact]

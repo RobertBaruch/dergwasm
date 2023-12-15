@@ -48,7 +48,7 @@ namespace Derg
             machine.InvokeExpr(f);
             frame.PC = 0;
 
-            while (machine.HasLabel())
+            while (frame.HasLabel())
             {
                 machine.Step();
             }
@@ -61,7 +61,7 @@ namespace Derg
             machine.InvokeExpr(f);
             frame.PC = 0;
 
-            while (machine.HasLabel())
+            while (frame.HasLabel())
             {
                 machine.Step();
             }

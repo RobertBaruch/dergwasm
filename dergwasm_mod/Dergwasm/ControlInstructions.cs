@@ -37,7 +37,7 @@ namespace Derg
                     arity = func_type.returns.Length;
                     break;
             }
-            machine.Label = new Label(arity, operand.GetTarget());
+            frame.Label = new Label(arity, operand.GetTarget());
         }
 
         public static void Loop(Instruction instruction, Machine machine, Frame frame)
@@ -67,7 +67,7 @@ namespace Derg
                     arity = func_type.args.Length;
                     break;
             }
-            machine.Label = new Label(
+            frame.Label = new Label(
                 arity, /*arity*/
                 operand.GetTarget()
             );
@@ -95,7 +95,7 @@ namespace Derg
 
         public static void JumpToTopLabel(Machine machine, Frame frame)
         {
-            Label label = machine.PopLabel();
+            Label label = frame.PopLabel();
             frame.PC = label.target - 1;
         }
 
@@ -103,12 +103,12 @@ namespace Derg
             JumpToTopLabel(machine, frame);
 
         public static void End(Instruction instruction, Machine machine, Frame frame) =>
-            machine.PopLabel();
+            frame.PopLabel();
 
         public static void BrLevels(Machine machine, Frame frame, int levels)
         {
             for (; levels > 0; levels--)
-                machine.PopLabel();
+                frame.PopLabel();
             JumpToTopLabel(machine, frame);
         }
 

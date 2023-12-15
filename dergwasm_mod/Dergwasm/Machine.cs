@@ -60,16 +60,6 @@ namespace Derg
 
         public int GetGlobalAddrForIndex(int idx) => Frame.Module.GlobalsMap[idx];
 
-        public Label PopLabel() => Frame.label_stack.Pop();
-
-        public Label Label
-        {
-            get => Frame.label_stack.Peek();
-            set => Frame.label_stack.Push(value);
-        }
-
-        public bool HasLabel() => Frame.label_stack.Count > 0;
-
         public int AddMemory(Memory memory)
         {
             memories.Add(memory);
@@ -118,7 +108,7 @@ namespace Derg
 
             Frame = next_frame_host;
             // For consistency, we also stick a label in.
-            Label = new Label(f.Proxy.Arity(), 0);
+            Frame.Label = new Label(f.Proxy.Arity(), 0);
 
             f.Proxy.Invoke(this, Frame);
 
@@ -138,7 +128,7 @@ namespace Derg
 
             Frame = next_frame;
             Frame.PC = -1; // So that incrementing PC goes to beginning.
-            Label = new Label(arity, f.Code.Count);
+            Frame.Label = new Label(arity, f.Code.Count);
         }
 
         public void InvokeFunc(Frame frame, Func f)
@@ -165,9 +155,9 @@ namespace Derg
 
             Frame = new Frame(func, func.Module);
             Frame.PC = 0;
-            Label = new Label(0, func.Code.Count);
+            Frame.Label = new Label(0, func.Code.Count);
 
-            while (HasLabel())
+            while (Frame.HasLabel())
             {
                 Step();
             }

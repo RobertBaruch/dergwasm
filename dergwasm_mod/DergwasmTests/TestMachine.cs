@@ -44,7 +44,7 @@ namespace DergwasmTests
             func.Code = program;
             Frame.Func = func;
             Frame.Locals = new Value[func.Signature.args.Length + func.Locals.Length];
-            Label = new Label(Frame.Arity, program.Count);
+            Frame.Label = new Label(Frame.Arity, program.Count);
         }
 
         // Sets the function at the given addr. The index is also used to determine the function's

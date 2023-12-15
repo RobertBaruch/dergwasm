@@ -133,6 +133,16 @@ namespace Derg
         {
             value_stack.RemoveRange(from_level, value_stack.Count - from_level - arity);
         }
+
+        public Label PopLabel() => label_stack.Pop();
+
+        public Label Label
+        {
+            get => label_stack.Peek();
+            set => label_stack.Push(value);
+        }
+
+        public bool HasLabel() => label_stack.Count > 0;
     }
 
     // A call frame for when we're calling a host function.
