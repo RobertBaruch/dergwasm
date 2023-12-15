@@ -64,7 +64,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Equal(1, machine.TopOfStack.S32);
+            Assert.Equal(1, machine.Frame.TopOfStack.S32);
             Assert.Equal(1, machine.Frame.Locals[localidx].S32);
         }
 

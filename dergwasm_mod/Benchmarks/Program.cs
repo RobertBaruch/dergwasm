@@ -91,20 +91,20 @@ namespace DergwasmTests
         public Value I32Add()
         {
             PC = 0;
-            Push(new Value(0x0F));
-            Push(new Value(0xFFFFFFFF));
+            Frame.Push(new Value(0x0F));
+            Frame.Push(new Value(0xFFFFFFFF));
             Step();
-            return Pop();
+            return Frame.Pop();
         }
 
         [Benchmark]
         public Value I32AddOverhead()
         {
             PC = 0;
-            Push(new Value(0x0F));
-            Push(new Value(0xFFFFFFFF));
-            Pop();
-            return Pop();
+            Frame.Push(new Value(0x0F));
+            Frame.Push(new Value(0xFFFFFFFF));
+            Frame.Pop();
+            return Frame.Pop();
         }
     }
 
@@ -124,8 +124,8 @@ namespace DergwasmTests
         [Benchmark]
         public Value PushPopInt()
         {
-            Push(new Value(1));
-            return Pop();
+            Frame.Push(new Value(1));
+            return Frame.Pop();
         }
     }
 

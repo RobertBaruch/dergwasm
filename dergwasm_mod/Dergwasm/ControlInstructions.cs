@@ -75,7 +75,7 @@ namespace Derg
 
         public static void If(Instruction instruction, Machine machine, Frame frame)
         {
-            bool cond = machine.Pop().Int != 0;
+            bool cond = frame.Pop().Int != 0;
             if (cond)
             {
                 Block(instruction, machine, frame);
@@ -120,14 +120,14 @@ namespace Derg
 
         public static void BrIf(Instruction instruction, Machine machine, Frame frame)
         {
-            bool cond = machine.Pop().Int != 0;
+            bool cond = frame.Pop().Int != 0;
             if (cond)
                 Br(instruction, machine, frame);
         }
 
         public static void BrTable(Instruction instruction, Machine machine, Frame frame)
         {
-            int idx = (int)Math.Min(machine.Pop().U32, (uint)instruction.Operands.Length - 1);
+            int idx = (int)Math.Min(frame.Pop().U32, (uint)instruction.Operands.Length - 1);
             int levels = instruction.Operands[idx].Int;
             BrLevels(machine, frame, levels);
         }
@@ -137,7 +137,7 @@ namespace Derg
             int idx = instruction.Operands[0].Int;
             // I think this should actually do the call. This way, we can throw an exception
             // and have the machine's frame stack automatically unwind.
-            machine.InvokeFuncFromIndex(idx);
+            machine.InvokeFuncFromIndex(frame, idx);
         }
 
         public static void CallIndirect(Instruction instruction, Machine machine, Frame frame)
@@ -146,7 +146,7 @@ namespace Derg
             int typeidx = instruction.Operands[0].Int;
             Table table = machine.GetTableFromIndex(tableidx);
             FuncType funcType = machine.GetFuncTypeFromIndex(typeidx);
-            uint i = machine.Pop().U32;
+            uint i = frame.Pop().U32;
             if (i >= table.Elements.LongLength)
             {
                 throw new Trap(
@@ -167,7 +167,7 @@ namespace Derg
                         + $"Expected signature {funcType} but was {func.Signature}."
                 );
             }
-            machine.InvokeFunc(funcAddr.RefAddr);
+            machine.InvokeFunc(frame, funcAddr.RefAddr);
         }
 
         public static void Return(Instruction instruction, Machine machine, Frame frame)

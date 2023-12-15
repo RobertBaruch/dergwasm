@@ -58,75 +58,6 @@ namespace Derg
             set => Frame.pc = value;
         }
 
-        public Value TopOfStack => Frame.value_stack.Last();
-
-        public Value Pop()
-        {
-            Value top = Frame.value_stack.Last();
-            Frame.value_stack.RemoveAt(Frame.value_stack.Count - 1);
-            return top;
-        }
-
-        public unsafe T Pop<T>()
-            where T : unmanaged
-        {
-            Value top = Pop();
-            return *(T*)&top.value_lo;
-        }
-
-        public void Push(Value val) => Frame.value_stack.Add(val);
-
-        public void Push(int val) => Push(new Value(val));
-
-        public void Push(uint val) => Push(new Value(val));
-
-        public void Push(long val) => Push(new Value(val));
-
-        public void Push(ulong val) => Push(new Value(val));
-
-        public void Push(float val) => Push(new Value(val));
-
-        public void Push(double val) => Push(new Value(val));
-
-        public void Push(bool val) => Push(new Value(val));
-
-        public void Push<R>(R ret)
-        {
-            switch (ret)
-            {
-                case int r:
-                    Push(r);
-                    break;
-
-                case uint r:
-                    Push(r);
-                    break;
-
-                case long r:
-                    Push(r);
-                    break;
-
-                case ulong r:
-                    Push(r);
-                    break;
-
-                case float r:
-                    Push(r);
-                    break;
-
-                case double r:
-                    Push(r);
-                    break;
-
-                case bool r:
-                    Push(r);
-                    break;
-
-                default:
-                    throw new Trap($"Invalid push type {ret.GetType()}");
-            }
-        }
-
         public int AddGlobal(Value global)
         {
             Globals.Add(global);
@@ -134,13 +65,6 @@ namespace Derg
         }
 
         public int GetGlobalAddrForIndex(int idx) => Frame.Module.GlobalsMap[idx];
-
-        public int StackLevel() => Frame.value_stack.Count;
-
-        public void RemoveStack(int from_level, int arity)
-        {
-            Frame.value_stack.RemoveRange(from_level, Frame.value_stack.Count - from_level - arity);
-        }
 
         public Label PopLabel() => Frame.label_stack.Pop();
 
@@ -177,11 +101,12 @@ namespace Derg
 
         public FuncType GetFuncTypeFromIndex(int idx) => Frame.Module.FuncTypes[idx];
 
-        public void InvokeFuncFromIndex(int idx) => InvokeFunc(GetFuncAddrFromIndex(idx));
+        public void InvokeFuncFromIndex(Frame frame, int idx) =>
+            InvokeFunc(frame, GetFuncAddrFromIndex(idx));
 
-        public void InvokeFunc(int addr) => InvokeFunc(funcs[addr]);
+        public void InvokeFunc(Frame frame, int addr) => InvokeFunc(frame, funcs[addr]);
 
-        void InvokeHostFunc(HostFunc f)
+        void InvokeHostFunc(Frame frame, HostFunc f)
         {
             Console.WriteLine($"Invoking host func {f.ModuleName}.{f.Name}");
 
@@ -201,7 +126,7 @@ namespace Derg
             // For consistency, we also stick a label in.
             Label = new Label(f.Proxy.Arity(), 0);
 
-            f.Proxy.Invoke(this);
+            f.Proxy.Invoke(this, Frame);
 
             PopFrame();
         }
@@ -222,11 +147,11 @@ namespace Derg
             Label = new Label(arity, f.Code.Count);
         }
 
-        public void InvokeFunc(Func f)
+        public void InvokeFunc(Frame frame, Func f)
         {
             if (f is HostFunc host_func)
             {
-                InvokeHostFunc(host_func);
+                InvokeHostFunc(frame, host_func);
                 return;
             }
 

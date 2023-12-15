@@ -57,6 +57,82 @@ namespace Derg
             this.value_stack = new List<Value>();
             this.Func = func;
         }
+
+        public Value TopOfStack => value_stack.Last();
+
+        public Value Pop()
+        {
+            Value top = value_stack.Last();
+            value_stack.RemoveAt(value_stack.Count - 1);
+            return top;
+        }
+
+        public unsafe T Pop<T>()
+            where T : unmanaged
+        {
+            Value top = Pop();
+            return *(T*)&top.value_lo;
+        }
+
+        public void Push(Value val) => value_stack.Add(val);
+
+        public void Push(int val) => Push(new Value(val));
+
+        public void Push(uint val) => Push(new Value(val));
+
+        public void Push(long val) => Push(new Value(val));
+
+        public void Push(ulong val) => Push(new Value(val));
+
+        public void Push(float val) => Push(new Value(val));
+
+        public void Push(double val) => Push(new Value(val));
+
+        public void Push(bool val) => Push(new Value(val));
+
+        public void Push<R>(R ret)
+        {
+            switch (ret)
+            {
+                case int r:
+                    Push(r);
+                    break;
+
+                case uint r:
+                    Push(r);
+                    break;
+
+                case long r:
+                    Push(r);
+                    break;
+
+                case ulong r:
+                    Push(r);
+                    break;
+
+                case float r:
+                    Push(r);
+                    break;
+
+                case double r:
+                    Push(r);
+                    break;
+
+                case bool r:
+                    Push(r);
+                    break;
+
+                default:
+                    throw new Trap($"Invalid push type {ret.GetType()}");
+            }
+        }
+
+        public int StackLevel() => value_stack.Count;
+
+        public void RemoveStack(int from_level, int arity)
+        {
+            value_stack.RemoveRange(from_level, value_stack.Count - from_level - arity);
+        }
     }
 
     // A call frame for when we're calling a host function.

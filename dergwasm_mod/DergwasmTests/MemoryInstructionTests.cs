@@ -31,7 +31,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Equal(expected, machine.TopOfStack.U32);
+            Assert.Equal(expected, machine.Frame.TopOfStack.U32);
         }
 
         [Theory]
@@ -84,7 +84,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Equal(expected, machine.TopOfStack.U64);
+            Assert.Equal(expected, machine.Frame.TopOfStack.U64);
         }
 
         [Theory]
@@ -107,7 +107,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Equal(expected, machine.TopOfStack.F32);
+            Assert.Equal(expected, machine.Frame.TopOfStack.F32);
         }
 
         [Theory]
@@ -130,7 +130,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Equal(expected, machine.TopOfStack.F64);
+            Assert.Equal(expected, machine.Frame.TopOfStack.F64);
         }
 
         [Theory]

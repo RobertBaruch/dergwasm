@@ -33,9 +33,14 @@ namespace Derg
             }
         }
 
-        private static Span<byte> Span0(Instruction instruction, Machine machine, int sz)
+        private static Span<byte> Span0(
+            Instruction instruction,
+            Machine machine,
+            Frame frame,
+            int sz
+        )
         {
-            uint offset = machine.Pop().U32;
+            uint offset = frame.Pop().U32;
             // Ignore Operands[0], the alignment.
             uint base_addr = instruction.Operands[1].U32;
             try
@@ -51,110 +56,110 @@ namespace Derg
         }
 
         public static void I32Load(Instruction instruction, Machine machine, Frame frame) =>
-            machine.Push(new Value(Convert<uint>(Span0(instruction, machine, 4))));
+            frame.Push(new Value(Convert<uint>(Span0(instruction, machine, frame, 4))));
 
         public static void I32Load8_S(Instruction instruction, Machine machine, Frame frame) =>
-            machine.Push(new Value((int)(sbyte)Span0(instruction, machine, 1)[0]));
+            frame.Push(new Value((int)(sbyte)Span0(instruction, machine, frame, 1)[0]));
 
         public static void I32Load8_U(Instruction instruction, Machine machine, Frame frame) =>
-            machine.Push(new Value((uint)Span0(instruction, machine, 1)[0]));
+            frame.Push(new Value((uint)Span0(instruction, machine, frame, 1)[0]));
 
         public static void I32Load16_S(Instruction instruction, Machine machine, Frame frame) =>
-            machine.Push(new Value((int)Convert<short>(Span0(instruction, machine, 2))));
+            frame.Push(new Value((int)Convert<short>(Span0(instruction, machine, frame, 2))));
 
         public static void I32Load16_U(Instruction instruction, Machine machine, Frame frame) =>
-            machine.Push(new Value((uint)Convert<ushort>(Span0(instruction, machine, 2))));
+            frame.Push(new Value((uint)Convert<ushort>(Span0(instruction, machine, frame, 2))));
 
         public static void I64Load(Instruction instruction, Machine machine, Frame frame) =>
-            machine.Push(new Value(Convert<ulong>(Span0(instruction, machine, 8))));
+            frame.Push(new Value(Convert<ulong>(Span0(instruction, machine, frame, 8))));
 
         public static void I64Load8_S(Instruction instruction, Machine machine, Frame frame) =>
-            machine.Push(new Value((long)(sbyte)Span0(instruction, machine, 1)[0]));
+            frame.Push(new Value((long)(sbyte)Span0(instruction, machine, frame, 1)[0]));
 
         public static void I64Load8_U(Instruction instruction, Machine machine, Frame frame) =>
-            machine.Push(new Value((ulong)Span0(instruction, machine, 1)[0]));
+            frame.Push(new Value((ulong)Span0(instruction, machine, frame, 1)[0]));
 
         public static void I64Load16_S(Instruction instruction, Machine machine, Frame frame) =>
-            machine.Push(new Value((long)Convert<short>(Span0(instruction, machine, 2))));
+            frame.Push(new Value((long)Convert<short>(Span0(instruction, machine, frame, 2))));
 
         public static void I64Load16_U(Instruction instruction, Machine machine, Frame frame) =>
-            machine.Push(new Value((ulong)Convert<ushort>(Span0(instruction, machine, 2))));
+            frame.Push(new Value((ulong)Convert<ushort>(Span0(instruction, machine, frame, 2))));
 
         public static void I64Load32_S(Instruction instruction, Machine machine, Frame frame) =>
-            machine.Push(new Value((long)Convert<int>(Span0(instruction, machine, 2))));
+            frame.Push(new Value((long)Convert<int>(Span0(instruction, machine, frame, 2))));
 
         public static void I64Load32_U(Instruction instruction, Machine machine, Frame frame) =>
-            machine.Push(new Value((ulong)Convert<uint>(Span0(instruction, machine, 2))));
+            frame.Push(new Value((ulong)Convert<uint>(Span0(instruction, machine, frame, 2))));
 
         public static void F32Load(Instruction instruction, Machine machine, Frame frame) =>
-            machine.Push(new Value(Convert<float>(Span0(instruction, machine, 4))));
+            frame.Push(new Value(Convert<float>(Span0(instruction, machine, frame, 4))));
 
         public static void F64Load(Instruction instruction, Machine machine, Frame frame) =>
-            machine.Push(new Value(Convert<double>(Span0(instruction, machine, 8))));
+            frame.Push(new Value(Convert<double>(Span0(instruction, machine, frame, 8))));
 
         public static void I32Store(Instruction instruction, Machine machine, Frame frame)
         {
-            uint val = machine.Pop().U32;
-            Span<byte> span = Span0(instruction, machine, 4);
+            uint val = frame.Pop().U32;
+            Span<byte> span = Span0(instruction, machine, frame, 4);
             Store<uint>(span, val);
         }
 
         public static void I32Store8(Instruction instruction, Machine machine, Frame frame)
         {
-            uint val = machine.Pop().U32;
-            Span0(instruction, machine, 1)[0] = (byte)val;
+            uint val = frame.Pop().U32;
+            Span0(instruction, machine, frame, 1)[0] = (byte)val;
         }
 
         public static void I32Store16(Instruction instruction, Machine machine, Frame frame)
         {
-            uint val = machine.Pop().U32;
-            Span<byte> span = Span0(instruction, machine, 2);
+            uint val = frame.Pop().U32;
+            Span<byte> span = Span0(instruction, machine, frame, 2);
             Store<ushort>(span, (ushort)val);
         }
 
         public static void I64Store(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong val = machine.Pop().U64;
-            Span<byte> span = Span0(instruction, machine, 8);
+            ulong val = frame.Pop().U64;
+            Span<byte> span = Span0(instruction, machine, frame, 8);
             Store<ulong>(span, val);
         }
 
         public static void I64Store8(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong val = machine.Pop().U64;
-            Span0(instruction, machine, 1)[0] = (byte)val;
+            ulong val = frame.Pop().U64;
+            Span0(instruction, machine, frame, 1)[0] = (byte)val;
         }
 
         public static void I64Store16(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong val = machine.Pop().U64;
-            Span<byte> span = Span0(instruction, machine, 2);
+            ulong val = frame.Pop().U64;
+            Span<byte> span = Span0(instruction, machine, frame, 2);
             Store<ushort>(span, (ushort)val);
         }
 
         public static void I64Store32(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong val = machine.Pop().U64;
-            Span<byte> span = Span0(instruction, machine, 4);
+            ulong val = frame.Pop().U64;
+            Span<byte> span = Span0(instruction, machine, frame, 4);
             Store<uint>(span, (uint)val);
         }
 
         public static void F32Store(Instruction instruction, Machine machine, Frame frame)
         {
-            float val = machine.Pop().F32;
-            Span<byte> span = Span0(instruction, machine, 4);
+            float val = frame.Pop().F32;
+            Span<byte> span = Span0(instruction, machine, frame, 4);
             Store<float>(span, val);
         }
 
         public static void F64Store(Instruction instruction, Machine machine, Frame frame)
         {
-            double val = machine.Pop().F64;
-            Span<byte> span = Span0(instruction, machine, 8);
+            double val = frame.Pop().F64;
+            Span<byte> span = Span0(instruction, machine, frame, 8);
             Store<double>(span, val);
         }
 
         public static void MemorySize(Instruction instruction, Machine machine, Frame frame) =>
-            machine.Push(new Value((uint)machine.Memory0.Length >> 16));
+            frame.Push(new Value((uint)machine.Memory0.Length >> 16));
 
         public static void MemoryGrow(Instruction instruction, Machine machine, Frame frame)
         {
@@ -163,24 +168,24 @@ namespace Derg
             {
                 throw new Trap("memory.grow: Non-zero memory segment accessed");
             }
-            uint delta = machine.Pop().U32;
+            uint delta = frame.Pop().U32;
             Memory mem = machine.GetMemoryFromIndex(0);
             uint oldSize = (uint)mem.Data.Length >> 16;
             uint newSize = oldSize + delta;
             if (mem.Limits.Maximum.HasValue && newSize > mem.Limits.Maximum)
             {
-                machine.Push(new Value(-1));
+                frame.Push(new Value(-1));
                 return;
             }
             // .NET has a limitation on value sizes to about 0x80000000 bytes.
             if (newSize > 0x7FFF)
             {
-                machine.Push(new Value(-1));
+                frame.Push(new Value(-1));
                 return;
             }
             Array.Resize(ref mem.Data, (int)newSize << 16);
             mem.Limits.Minimum = newSize;
-            machine.Push(new Value(oldSize));
+            frame.Push(new Value(oldSize));
         }
 
         public static void MemoryFill(Instruction instruction, Machine machine, Frame frame)
@@ -190,9 +195,9 @@ namespace Derg
             {
                 throw new Trap("memory.fill: Non-zero memory segment accessed");
             }
-            uint n = machine.Pop().U32;
-            byte val = (byte)machine.Pop().U32;
-            uint d = machine.Pop().U32;
+            uint n = frame.Pop().U32;
+            byte val = (byte)frame.Pop().U32;
+            uint d = frame.Pop().U32;
             Memory mem = machine.GetMemoryFromIndex(0);
             try
             {
@@ -213,9 +218,9 @@ namespace Derg
             {
                 throw new Trap("memory.copy: Non-zero memory segment accessed");
             }
-            uint n = machine.Pop().U32;
-            uint s = machine.Pop().U32;
-            uint d = machine.Pop().U32;
+            uint n = frame.Pop().U32;
+            uint s = frame.Pop().U32;
+            uint d = frame.Pop().U32;
             Memory mem = machine.GetMemoryFromIndex(0);
             try
             {
@@ -242,9 +247,9 @@ namespace Derg
             {
                 throw new Trap($"memory.init: dropped data segment accessed (index {dataidx})");
             }
-            uint n = machine.Pop().U32;
-            uint s_offset = machine.Pop().U32;
-            uint d_offset = machine.Pop().U32;
+            uint n = frame.Pop().U32;
+            uint s_offset = frame.Pop().U32;
+            uint d_offset = frame.Pop().U32;
             try
             {
                 Array.Copy(data, s_offset, machine.Memory0, d_offset, n);

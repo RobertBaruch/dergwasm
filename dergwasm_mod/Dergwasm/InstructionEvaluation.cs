@@ -31,10 +31,10 @@ namespace Derg
 
             if (machine.Debug)
             {
-                if (machine.StackLevel() > 0)
+                if (frame.StackLevel() > 0)
                 {
                     Console.WriteLine(
-                        $"   Top of stack <{machine.StackLevel() - 1}>: {machine.TopOfStack}"
+                        $"   Top of stack <{frame.StackLevel() - 1}>: {frame.TopOfStack}"
                     );
                 }
                 else

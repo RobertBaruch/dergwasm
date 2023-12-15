@@ -146,7 +146,7 @@ namespace DergwasmTests
 
             machine.Step();
 
-            Assert.Equal(expected, machine.TopOfStack.Int);
+            Assert.Equal(expected, machine.Frame.TopOfStack.Int);
         }
 
         [Theory]
@@ -179,7 +179,7 @@ namespace DergwasmTests
 
             machine.Step(3);
 
-            Assert.Equal(expected, machine.TopOfStack.Int);
+            Assert.Equal(expected, machine.Frame.TopOfStack.Int);
             Assert.Equal(expected_new_size, machine.tables[30 + tableidx].Elements.Length);
         }
 

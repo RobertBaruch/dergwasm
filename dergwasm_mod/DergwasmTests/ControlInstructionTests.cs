@@ -560,7 +560,7 @@ namespace DergwasmTests
             machine.Step();
 
             Assert.Equal(1, machine.PC);
-            Assert.Equal(1, machine.TopOfStack.S32);
+            Assert.Equal(1, machine.Frame.TopOfStack.S32);
 
             machine.Step();
 
@@ -627,8 +627,10 @@ namespace DergwasmTests
 
             machine.Step(3);
 
+            Frame frame = machine.Frame;
+
             Assert.Equal(1, machine.PC);
-            Assert.Equal(new Value(1), machine.TopOfStack);
+            Assert.Equal(new Value(1), frame.TopOfStack);
         }
 
         [Fact]
@@ -671,7 +673,8 @@ namespace DergwasmTests
             );
             machine.SetProgram(0, I32Const(10), I32Const(20), Call(4), Nop());
 
-            machine.Step(3);
+            machine.Step(2);
+            machine.Step();
 
             Assert.Equal(3, machine.PC);
             Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(-10), e));
@@ -703,8 +706,10 @@ namespace DergwasmTests
 
             machine.Step(3);
 
+            Frame frame = machine.Frame;
+
             Assert.Equal(1, machine.PC);
-            Assert.Equal(new Value(2), machine.TopOfStack);
+            Assert.Equal(new Value(2), frame.TopOfStack);
         }
     }
 }
