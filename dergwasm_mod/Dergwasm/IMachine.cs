@@ -49,9 +49,6 @@ namespace Derg
         // the type, since this performs type checks at runtime.
         void Push<R>(R val);
 
-        // Gets the locals for the current frame.
-        Value[] Locals { get; }
-
         // Adds the given global to the machine, returning its address.
         int AddGlobal(Value global);
 

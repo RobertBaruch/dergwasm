@@ -18,8 +18,8 @@ namespace DergwasmTests
                 Nop()
             );
 
-            machine.Locals[0] = new Value(1);
-            machine.Locals[1] = new Value(2);
+            machine.Frame.Locals[0] = new Value(1);
+            machine.Frame.Locals[1] = new Value(2);
 
             machine.Step();
 
@@ -44,7 +44,7 @@ namespace DergwasmTests
             machine.Step(2);
 
             Assert.Empty(machine.Frame.value_stack);
-            Assert.Equal(1, machine.Locals[localidx].S32);
+            Assert.Equal(1, machine.Frame.Locals[localidx].S32);
         }
 
         [Theory]
@@ -65,7 +65,7 @@ namespace DergwasmTests
             machine.Step(2);
 
             Assert.Equal(1, machine.TopOfStack.S32);
-            Assert.Equal(1, machine.Locals[localidx].S32);
+            Assert.Equal(1, machine.Frame.Locals[localidx].S32);
         }
 
         [Theory]

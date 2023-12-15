@@ -127,8 +127,6 @@ namespace Derg
             }
         }
 
-        public Value[] Locals => Frame.Locals;
-
         public int AddGlobal(Value global)
         {
             Globals.Add(global);

@@ -173,7 +173,7 @@ namespace Derg
         public static void Return(Instruction instruction, IMachine machine, Frame frame)
         {
             // This guarantees we pop the current frame.
-            machine.PC = machine.Frame.Code.Count;
+            machine.PC = frame.Code.Count;
         }
     }
 }
