@@ -4,12 +4,12 @@ namespace Derg
 {
     public static class ControlInstructions
     {
-        public static void Nop(Instruction instruction, IMachine machine) { }
+        public static void Nop(Instruction instruction, IMachine machine, Frame frame) { }
 
-        public static void Unreachable(Instruction instruction, IMachine machine) =>
+        public static void Unreachable(Instruction instruction, IMachine machine, Frame frame) =>
             throw new Trap("Unreachable instruction reached!");
 
-        public static void Block(Instruction instruction, IMachine machine)
+        public static void Block(Instruction instruction, IMachine machine, Frame frame)
         {
             // A block's args are what it expects to be on the stack upon entry.
             // A block's arity are what it leaves on the stack upon exit.
@@ -40,7 +40,7 @@ namespace Derg
             machine.Label = new Label(arity, operand.GetTarget());
         }
 
-        public static void Loop(Instruction instruction, IMachine machine)
+        public static void Loop(Instruction instruction, IMachine machine, Frame frame)
         {
             // A loop differs from a block in that:
             // 1. BR 0 branches to the beginning of the loop.
@@ -73,12 +73,12 @@ namespace Derg
             );
         }
 
-        public static void If(Instruction instruction, IMachine machine)
+        public static void If(Instruction instruction, IMachine machine, Frame frame)
         {
             bool cond = machine.Pop().Int != 0;
             if (cond)
             {
-                Block(instruction, machine);
+                Block(instruction, machine, frame);
                 return;
             }
             // Start a new block if and only if there's an else clause.
@@ -86,58 +86,61 @@ namespace Derg
             // not the same as the instruction's else_target.
             Value operand = instruction.Operands[0];
             if (operand.GetTarget() != operand.GetElseTarget())
-                Block(instruction, machine);
+                Block(instruction, machine, frame);
             // Jump to the else target (minus one because we always add one at the
             // end of an instruction). This is equal to the instruction's target
             // if there was no else clause.
             machine.PC = operand.GetElseTarget() - 1;
         }
 
-        public static void JumpToTopLabel(IMachine machine)
+        public static void JumpToTopLabel(IMachine machine, Frame frame)
         {
             Label label = machine.PopLabel();
             machine.PC = label.target - 1;
         }
 
-        public static void Else(Instruction instruction, IMachine machine) =>
-            JumpToTopLabel(machine);
+        public static void Else(Instruction instruction, IMachine machine, Frame frame) =>
+            JumpToTopLabel(machine, frame);
 
-        public static void End(Instruction instruction, IMachine machine) => machine.PopLabel();
+        public static void End(Instruction instruction, IMachine machine, Frame frame) =>
+            machine.PopLabel();
 
-        public static void BrLevels(IMachine machine, int levels)
+        public static void BrLevels(IMachine machine, Frame frame, int levels)
         {
             for (; levels > 0; levels--)
                 machine.PopLabel();
-            JumpToTopLabel(machine);
+            JumpToTopLabel(machine, frame);
         }
 
-        public static void Br(Instruction instruction, IMachine machine)
+        public static void Br(Instruction instruction, IMachine machine, Frame frame)
         {
             int levels = instruction.Operands[0].Int;
-            BrLevels(machine, levels);
+            BrLevels(machine, frame, levels);
         }
 
-        public static void BrIf(Instruction instruction, IMachine machine)
+        public static void BrIf(Instruction instruction, IMachine machine, Frame frame)
         {
             bool cond = machine.Pop().Int != 0;
             if (cond)
-                Br(instruction, machine);
+                Br(instruction, machine, frame);
         }
 
-        public static void BrTable(Instruction instruction, IMachine machine)
+        public static void BrTable(Instruction instruction, IMachine machine, Frame frame)
         {
             int idx = (int)Math.Min(machine.Pop().U32, (uint)instruction.Operands.Length - 1);
             int levels = instruction.Operands[idx].Int;
-            BrLevels(machine, levels);
+            BrLevels(machine, frame, levels);
         }
 
-        public static void Call(Instruction instruction, IMachine machine)
+        public static void Call(Instruction instruction, IMachine machine, Frame frame)
         {
             int idx = instruction.Operands[0].Int;
+            // I think this should actually do the call. This way, we can throw an exception
+            // and have the machine's frame stack automatically unwind.
             machine.InvokeFuncFromIndex(idx);
         }
 
-        public static void CallIndirect(Instruction instruction, IMachine machine)
+        public static void CallIndirect(Instruction instruction, IMachine machine, Frame frame)
         {
             int tableidx = instruction.Operands[1].Int;
             int typeidx = instruction.Operands[0].Int;
@@ -167,7 +170,7 @@ namespace Derg
             machine.InvokeFunc(funcAddr.RefAddr);
         }
 
-        public static void Return(Instruction instruction, IMachine machine)
+        public static void Return(Instruction instruction, IMachine machine, Frame frame)
         {
             // This guarantees we pop the current frame.
             machine.PC = machine.Frame.Code.Count;

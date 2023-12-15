@@ -343,7 +343,7 @@ namespace Derg
             for (int i = 0; i < n; i++)
             {
                 Instruction insn = Frame.Code[PC];
-                InstructionEvaluation.Execute(insn, this);
+                InstructionEvaluation.Execute(insn, this, Frame);
                 if (stepBudget > 0)
                 {
                     stepBudget--;

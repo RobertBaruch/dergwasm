@@ -2,9 +2,10 @@
 {
     public static class ParametricInstructions
     {
-        public static void Drop(Instruction instruction, IMachine machine) => machine.Pop();
+        public static void Drop(Instruction instruction, IMachine machine, Frame frame) =>
+            machine.Pop();
 
-        public static void Select(Instruction instruction, IMachine machine)
+        public static void Select(Instruction instruction, IMachine machine, Frame frame)
         {
             bool cond = machine.Pop().Bool;
             Value v2 = machine.Pop();

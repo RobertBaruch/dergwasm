@@ -4,7 +4,7 @@ namespace Derg
 {
     public static class TableInstructions
     {
-        public static void TableGet(Instruction instruction, IMachine machine)
+        public static void TableGet(Instruction instruction, IMachine machine, Frame frame)
         {
             int tableidx = instruction.Operands[0].Int;
             uint elemidx = machine.Pop().U32;
@@ -16,7 +16,7 @@ namespace Derg
             machine.Push(table.Elements[elemidx]);
         }
 
-        public static void TableSet(Instruction instruction, IMachine machine)
+        public static void TableSet(Instruction instruction, IMachine machine, Frame frame)
         {
             Value val = machine.Pop();
             int tableidx = instruction.Operands[0].Int;
@@ -29,14 +29,14 @@ namespace Derg
             table.Elements[elemidx] = val;
         }
 
-        public static void TableSize(Instruction instruction, IMachine machine)
+        public static void TableSize(Instruction instruction, IMachine machine, Frame frame)
         {
             int tableidx = instruction.Operands[0].Int;
             Table table = machine.GetTableFromIndex(tableidx);
             machine.Push(new Value(table.Elements.Length));
         }
 
-        public static void TableGrow(Instruction instruction, IMachine machine)
+        public static void TableGrow(Instruction instruction, IMachine machine, Frame frame)
         {
             int tableidx = instruction.Operands[0].Int;
             Table table = machine.GetTableFromIndex(tableidx);
@@ -62,7 +62,7 @@ namespace Derg
             machine.Push(new Value(oldSize));
         }
 
-        public static void TableInit(Instruction instruction, IMachine machine)
+        public static void TableInit(Instruction instruction, IMachine machine, Frame frame)
         {
             int tableidx = instruction.Operands[0].Int;
             Table table = machine.GetTableFromIndex(tableidx);
@@ -81,7 +81,7 @@ namespace Derg
             }
         }
 
-        public static void TableFill(Instruction instruction, IMachine machine)
+        public static void TableFill(Instruction instruction, IMachine machine, Frame frame)
         {
             int tableidx = instruction.Operands[0].Int;
             Table table = machine.GetTableFromIndex(tableidx);
@@ -99,7 +99,7 @@ namespace Derg
             }
         }
 
-        public static void TableCopy(Instruction instruction, IMachine machine)
+        public static void TableCopy(Instruction instruction, IMachine machine, Frame frame)
         {
             int dtableidx = instruction.Operands[0].Int;
             Table dtable = machine.GetTableFromIndex(dtableidx);
@@ -118,7 +118,7 @@ namespace Derg
             }
         }
 
-        public static void ElemDrop(Instruction instruction, IMachine machine)
+        public static void ElemDrop(Instruction instruction, IMachine machine, Frame frame)
         {
             int elemidx = instruction.Operands[0].Int;
             machine.DropElementSegmentFromIndex(elemidx);
