@@ -8,7 +8,7 @@ namespace Derg
         {
             int tableidx = instruction.Operands[0].Int;
             uint elemidx = frame.Pop().U32;
-            Table table = machine.GetTableFromIndex(tableidx);
+            Table table = machine.GetTable(frame.GetTableAddrForIndex(tableidx));
             if (elemidx >= table.Elements.LongLength)
             {
                 throw new Trap($"table_get: element index {elemidx} out of bounds");
@@ -21,7 +21,7 @@ namespace Derg
             Value val = frame.Pop();
             int tableidx = instruction.Operands[0].Int;
             uint elemidx = frame.Pop().U32;
-            Table table = machine.GetTableFromIndex(tableidx);
+            Table table = machine.GetTable(frame.GetTableAddrForIndex(tableidx));
             if (elemidx >= table.Elements.LongLength)
             {
                 throw new Trap($"table_set: element index {elemidx} out of bounds");
@@ -32,14 +32,14 @@ namespace Derg
         public static void TableSize(Instruction instruction, Machine machine, Frame frame)
         {
             int tableidx = instruction.Operands[0].Int;
-            Table table = machine.GetTableFromIndex(tableidx);
+            Table table = machine.GetTable(frame.GetTableAddrForIndex(tableidx));
             frame.Push(new Value(table.Elements.Length));
         }
 
         public static void TableGrow(Instruction instruction, Machine machine, Frame frame)
         {
             int tableidx = instruction.Operands[0].Int;
-            Table table = machine.GetTableFromIndex(tableidx);
+            Table table = machine.GetTable(frame.GetTableAddrForIndex(tableidx));
             uint delta = frame.Pop().U32;
             Value val = frame.Pop();
             uint oldSize = (uint)table.Elements.Length;
@@ -65,9 +65,11 @@ namespace Derg
         public static void TableInit(Instruction instruction, Machine machine, Frame frame)
         {
             int tableidx = instruction.Operands[0].Int;
-            Table table = machine.GetTableFromIndex(tableidx);
+            Table table = machine.GetTable(frame.GetTableAddrForIndex(tableidx));
             int elemidx = instruction.Operands[1].Int;
-            ElementSegment element = machine.GetElementSegmentFromIndex(elemidx);
+            ElementSegment element = machine.GetElementSegment(
+                frame.GetElementSegmentAddrForIndex(elemidx)
+            );
             uint n = frame.Pop().U32;
             uint s = frame.Pop().U32;
             uint d = frame.Pop().U32;
@@ -84,7 +86,7 @@ namespace Derg
         public static void TableFill(Instruction instruction, Machine machine, Frame frame)
         {
             int tableidx = instruction.Operands[0].Int;
-            Table table = machine.GetTableFromIndex(tableidx);
+            Table table = machine.GetTable(frame.GetTableAddrForIndex(tableidx));
             uint n = frame.Pop().U32;
             Value val = frame.Pop();
             uint i = frame.Pop().U32;
@@ -102,9 +104,9 @@ namespace Derg
         public static void TableCopy(Instruction instruction, Machine machine, Frame frame)
         {
             int dtableidx = instruction.Operands[0].Int;
-            Table dtable = machine.GetTableFromIndex(dtableidx);
+            Table dtable = machine.GetTable(frame.GetTableAddrForIndex(dtableidx));
             int stableidx = instruction.Operands[1].Int;
-            Table stable = machine.GetTableFromIndex(stableidx);
+            Table stable = machine.GetTable(frame.GetTableAddrForIndex(stableidx));
             uint n = frame.Pop().U32;
             uint s = frame.Pop().U32;
             uint d = frame.Pop().U32;
@@ -121,7 +123,7 @@ namespace Derg
         public static void ElemDrop(Instruction instruction, Machine machine, Frame frame)
         {
             int elemidx = instruction.Operands[0].Int;
-            machine.DropElementSegmentFromIndex(elemidx);
+            machine.DropElementSegment(frame.GetElementSegmentAddrForIndex(elemidx));
         }
     }
 }

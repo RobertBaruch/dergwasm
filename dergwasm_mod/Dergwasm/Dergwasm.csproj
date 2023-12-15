@@ -108,6 +108,7 @@
     <Compile Include="Dergwasm.cs" />
     <Compile Include="EmscriptenEnv.cs" />
     <Compile Include="EmscriptenWasi.cs" />
+    <Compile Include="Frame.cs" />
     <Compile Include="Heap.cs" />
     <Compile Include="HostProxy.cs" />
     <Compile Include="IModule.cs" />

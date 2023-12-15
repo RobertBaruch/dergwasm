@@ -11,13 +11,13 @@ namespace DergwasmTests
 
         public InstructionTestFixture()
         {
-            machine.Frame = new Frame(null, machine.FakeModuleInstance);
-            // This frame collects any return values.
-            ModuleFunc func = new ModuleFunc("test", "$-1", machine.GetFuncTypeFromIndex(0));
-            func.Locals = new ValueType[] { ValueType.I32, ValueType.I32 };
-            func.Code = new List<Instruction>();
-            machine.Frame.Func = func;
-            machine.Frame.Locals = new Value[func.Signature.args.Length + func.Locals.Length];
+            //machine.Frame = new Frame(null, machine.FakeModuleInstance);
+            //// This frame collects any return values.
+            //ModuleFunc func = new ModuleFunc("test", "$-1", machine.GetFuncTypeFromIndex(0));
+            //func.Locals = new ValueType[] { ValueType.I32, ValueType.I32 };
+            //func.Code = new List<Instruction>();
+            //machine.Frame.Func = func;
+            //machine.Frame.Locals = new Value[func.Signature.args.Length + func.Locals.Length];
         }
 
         public UnflattenedInstruction Insn(InstructionType type, params Value[] operands)

@@ -242,7 +242,7 @@ namespace Derg
                 throw new Trap("memory.init: Non-zero memory segment accessed");
             }
             int dataidx = instruction.Operands[0].Int;
-            byte[] data = machine.GetDataSegmentFromIndex(dataidx);
+            byte[] data = machine.GetDataSegment(frame.GetDataSegmentAddrForIndex(dataidx));
             if (data == null)
             {
                 throw new Trap($"memory.init: dropped data segment accessed (index {dataidx})");
@@ -265,7 +265,7 @@ namespace Derg
         public static void DataDrop(Instruction instruction, Machine machine, Frame frame)
         {
             int elemidx = instruction.Operands[0].Int;
-            machine.DropDataSegmentFromIndex(elemidx);
+            machine.DropDataSegment(frame.GetDataSegmentAddrForIndex(elemidx));
         }
     }
 }

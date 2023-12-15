@@ -32,7 +32,7 @@ public class Program
             // Console.WriteLine($"Func [{i}]: {f.ModuleName}.{f.Name}: {f.Signature}");
         }
 
-        MaybeRunEmscriptedCtors();
+        MaybeRunEmscriptenCtors();
         RunMain();
     }
 
@@ -66,7 +66,7 @@ public class Program
         }
     }
 
-    void MaybeRunEmscriptedCtors()
+    void MaybeRunEmscriptenCtors()
     {
         Func ctors = machine.GetFunc(moduleInstance.ModuleName, "__wasm_call_ctors");
         if (ctors == null)
@@ -74,7 +74,8 @@ public class Program
             return;
         }
         Console.WriteLine("Running __wasm_call_ctors");
-        machine.InvokeExpr(ctors as ModuleFunc);
+        Frame frame = new Frame(ctors as ModuleFunc, moduleInstance, null);
+        frame.InvokeFunc(machine, ctors);
     }
 
     void RunMain()
@@ -91,7 +92,8 @@ public class Program
         Console.WriteLine($"Running {main.Name}");
         try
         {
-            machine.InvokeExpr(main as ModuleFunc);
+            Frame frame = new Frame(main as ModuleFunc, moduleInstance, null);
+            frame.InvokeFunc(machine, main);
         }
         catch (ExitTrap) { }
     }

@@ -28,7 +28,6 @@ namespace Derg
             }
 
             implementation(instruction, machine, frame);
-            frame = machine.Frame;
 
             if (machine.Debug)
             {
@@ -45,13 +44,14 @@ namespace Derg
             }
             frame.PC++;
 
-            // If we ran off the end of the function, we return from the function.
+            // If we ran off the end of the function, we pop any frame labels.
 
             if (frame.PC >= frame.Code.Count)
             {
-                machine.PopFrame();
-                frame = machine.Frame;
-                frame.PC++;
+                while (frame.HasLabel())
+                {
+                    frame.PopLabel();
+                }
             }
         }
 

@@ -30,7 +30,7 @@ namespace Derg
                     break;
 
                 default:
-                    FuncType func_type = machine.GetFuncTypeFromIndex(
+                    FuncType func_type = frame.GetFuncTypeForIndex(
                         operand.GetReturningBlockTypeIndex()
                     );
                     args = func_type.args.Length;
@@ -61,7 +61,7 @@ namespace Derg
                     break;
 
                 default:
-                    FuncType func_type = machine.GetFuncTypeFromIndex(
+                    FuncType func_type = frame.GetFuncTypeForIndex(
                         operand.GetReturningBlockTypeIndex()
                     );
                     arity = func_type.args.Length;
@@ -135,17 +135,17 @@ namespace Derg
         public static void Call(Instruction instruction, Machine machine, Frame frame)
         {
             int idx = instruction.Operands[0].Int;
-            // I think this should actually do the call. This way, we can throw an exception
+            // This fully executes the call. This way, we can throw an exception
             // and have the machine's frame stack automatically unwind.
-            machine.InvokeFuncFromIndex(frame, idx);
+            frame.InvokeFuncFromIndex(machine, idx);
         }
 
         public static void CallIndirect(Instruction instruction, Machine machine, Frame frame)
         {
             int tableidx = instruction.Operands[1].Int;
             int typeidx = instruction.Operands[0].Int;
-            Table table = machine.GetTableFromIndex(tableidx);
-            FuncType funcType = machine.GetFuncTypeFromIndex(typeidx);
+            Table table = machine.GetTable(frame.GetTableAddrForIndex(tableidx));
+            FuncType funcType = frame.GetFuncTypeForIndex(typeidx);
             uint i = frame.Pop().U32;
             if (i >= table.Elements.LongLength)
             {
@@ -167,7 +167,9 @@ namespace Derg
                         + $"Expected signature {funcType} but was {func.Signature}."
                 );
             }
-            machine.InvokeFunc(frame, funcAddr.RefAddr);
+            // This fully executes the call. This way, we can throw an exception
+            // and have the machine's frame stack automatically unwind.
+            frame.InvokeFunc(machine, funcAddr.RefAddr);
         }
 
         public static void Return(Instruction instruction, Machine machine, Frame frame)

@@ -17,6 +17,7 @@ namespace DergwasmTests
         public const int OneReturnType = 2;
         public const int TwoArgTwoReturnType = 3;
         public FakeModuleInstance FakeModuleInstance = new FakeModuleInstance();
+        public Frame programFrame;
 
         // Allocates enough space for 2 globals, 500 funcs, tables, element segments, and data segments,
         // and one memory (with one page).
@@ -32,19 +33,35 @@ namespace DergwasmTests
             dataSegments = new List<byte[]>(new byte[500][]);
         }
 
+        public Frame CreateFrame()
+        {
+            return new Frame(null, FakeModuleInstance, null);
+        }
+
+        public void Step(int n = 1)
+        {
+            programFrame.Step(this, n);
+        }
+
+        public Frame Frame => programFrame;
+
         // Sets the program up for execution, with a signature given by the signature_idx (see GetFuncTypeFromIndex).
         // The program always has two I32 locals.
         public void SetProgram(int signature_idx, params UnflattenedInstruction[] instructions)
         {
             List<Instruction> program = new List<UnflattenedInstruction>(instructions).Flatten(0);
 
-            Frame = new Frame(null, FakeModuleInstance);
-            ModuleFunc func = new ModuleFunc("test", "$0", GetFuncTypeFromIndex(signature_idx));
+            programFrame = CreateFrame();
+            ModuleFunc func = new ModuleFunc(
+                "test",
+                "$0",
+                programFrame.GetFuncTypeForIndex(signature_idx)
+            );
             func.Locals = new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 };
             func.Code = program;
-            Frame.Func = func;
-            Frame.Locals = new Value[func.Signature.args.Length + func.Locals.Length];
-            Frame.Label = new Label(Frame.Arity, program.Count);
+            programFrame.Func = func;
+            programFrame.Locals = new Value[func.Signature.args.Length + func.Locals.Length];
+            programFrame.Label = new Label(programFrame.Arity, program.Count);
         }
 
         // Sets the function at the given addr. The index is also used to determine the function's
@@ -55,7 +72,7 @@ namespace DergwasmTests
             ModuleFunc func = new ModuleFunc(
                 "test",
                 $"${addr - 10}",
-                GetFuncTypeFromIndex(addr - 10)
+                programFrame.GetFuncTypeForIndex(addr - 10)
             );
             func.Locals = new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 };
             func.Code = program;
@@ -69,7 +86,7 @@ namespace DergwasmTests
             funcs[addr] = new HostFunc(
                 "test",
                 $"${addr - 10}",
-                GetFuncTypeFromIndex(addr - 10),
+                programFrame.GetFuncTypeForIndex(addr - 10),
                 proxy
             );
         }
@@ -140,6 +157,7 @@ namespace DergwasmTests
         // 2: () -> (i32)
         // 3: (i32, i32) -> (i32, i32)
         // 4: (i32, i32) -> (i32)
+        // 5: (i32) -> (i32)
         public Dictionary<int, FuncType> funcTypes = new Dictionary<int, FuncType>()
         {
             { 0, new FuncType(new Derg.ValueType[] { }, new Derg.ValueType[] { }) },
@@ -162,6 +180,13 @@ namespace DergwasmTests
                 4,
                 new FuncType(
                     new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                )
+            },
+            {
+                5,
+                new FuncType(
+                    new Derg.ValueType[] { Derg.ValueType.I32 },
                     new Derg.ValueType[] { Derg.ValueType.I32 }
                 )
             },

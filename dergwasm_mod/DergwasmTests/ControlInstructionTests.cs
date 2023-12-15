@@ -501,8 +501,10 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Equal(1, machine.Frame.PC);
-            Assert.Single(machine.frameStack);
+            // The RETURN instruction sets the PC to end+1 (=3), and then the postamble of
+            // step increments it again.
+            Assert.Equal(4, machine.Frame.PC);
+            Assert.Empty(machine.Frame.label_stack);
         }
 
         [Fact]
@@ -511,14 +513,16 @@ namespace DergwasmTests
             // 0: BLOCK
             // 1:   RETURN
             // 2:   NOP
-            // 3: END
+            // 3:   END
             // 4: NOP
             machine.SetProgram(0, VoidBlock(Return(), Nop(), End()), Nop());
 
             machine.Step(2);
 
-            Assert.Equal(1, machine.Frame.PC);
-            Assert.Single(machine.frameStack);
+            // The RETURN instruction sets the PC to end+1 (=5), and then the postamble of
+            // step increments it again.
+            Assert.Equal(6, machine.Frame.PC);
+            Assert.Empty(machine.Frame.label_stack);
         }
 
         [Fact]
@@ -531,8 +535,9 @@ namespace DergwasmTests
 
             machine.Step(3);
 
-            Assert.Equal(1, machine.Frame.PC);
-            Assert.Single(machine.frameStack);
+            // The RETURN instruction sets the PC to end+1 (=3), and then the postamble of
+            // step increments it again.
+            Assert.Equal(4, machine.Frame.PC);
             Assert.Collection(
                 machine.Frame.value_stack,
                 e => Assert.Equal(new Value(1), e),
@@ -549,23 +554,12 @@ namespace DergwasmTests
             // Func 10 (= idx 0):
             // 0: I32_CONST 1
             // 1: END
-            machine.SetFuncAt(10, I32Const(1), End());
             machine.SetProgram(0, Call(0), Nop());
-
-            machine.Step();
-
-            Assert.Equal(0, machine.Frame.PC);
-            Assert.Empty(machine.Frame.value_stack);
+            machine.SetFuncAt(10, I32Const(1), End());
 
             machine.Step();
 
             Assert.Equal(1, machine.Frame.PC);
-            Assert.Equal(1, machine.Frame.TopOfStack.S32);
-
-            machine.Step();
-
-            Assert.Equal(1, machine.Frame.PC);
-            Assert.Empty(machine.Frame.value_stack);
         }
 
         [Fact]
@@ -573,22 +567,31 @@ namespace DergwasmTests
         {
             // 0: I32_CONST 100 // This should not be transfered.
             // 1: I32_CONST 1 // This is the arg.
-            // 2: CALL 1
+            // 2: CALL 5
             // 3: NOP
             //
-            // Func 11 (= idx 1):
-            // 0: NOP
-            // 1: END
-            machine.SetFuncAt(11, Nop(), End());
-            machine.SetProgram(0, I32Const(100), I32Const(1), Call(1), Nop());
+            // Func 15 (= idx 5):
+            // 0: I32_CONST 0
+            // 1: LOCAL_GET 0
+            // 2: I32_SUB
+            // 3: END
+            machine.SetProgram(0, I32Const(100), I32Const(1), Call(5), Nop());
+            machine.SetFuncAt(
+                15,
+                I32Const(0),
+                Insn(InstructionType.LOCAL_GET, new Value(0)),
+                Insn(InstructionType.I32_SUB),
+                End()
+            );
 
             machine.Step(3);
 
-            Assert.Equal(0, machine.Frame.PC);
-            Assert.Equal(new Value(1), machine.Frame.Locals[0]);
-            Assert.Empty(machine.Frame.value_stack);
-            machine.PopFrame();
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(100), e));
+            Assert.Equal(3, machine.Frame.PC);
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(new Value(100), e),
+                e => Assert.Equal(new Value(-1), e)
+            );
         }
 
         [Fact]
@@ -596,21 +599,27 @@ namespace DergwasmTests
         {
             // 0: I32_CONST 1
             // 1: I32_CONST 2
-            // 2: CALL 3
+            // 2: CALL 4
             // 3: NOP
             //
-            // Func 13 (= idx 3):
-            // 0: NOP
-            // 1: END
-            machine.SetFuncAt(13, Nop(), End());
-            machine.SetProgram(0, I32Const(1), I32Const(2), Call(3), Nop());
+            // Func 14 (= idx 4):
+            // 0: LOCAL_GET 0
+            // 1: LOCAL_GET 1
+            // 2: I32.SUB
+            // 3: END
+            machine.SetProgram(0, I32Const(1), I32Const(2), Call(4), Nop());
+            machine.SetFuncAt(
+                14,
+                Insn(InstructionType.LOCAL_GET, new Value(0)),
+                Insn(InstructionType.LOCAL_GET, new Value(1)),
+                Insn(InstructionType.I32_SUB),
+                End()
+            );
 
             machine.Step(3);
 
-            Assert.Equal(0, machine.Frame.PC);
-            Assert.Equal(new Value(1), machine.Frame.Locals[0]);
-            Assert.Equal(new Value(2), machine.Frame.Locals[1]);
-            Assert.Empty(machine.Frame.value_stack);
+            Assert.Equal(3, machine.Frame.PC);
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(-1), e));
         }
 
         [Fact]
@@ -622,15 +631,13 @@ namespace DergwasmTests
             // Func 12 (= idx 2):
             // 0: I32_CONST 1
             // 1: END
-            machine.SetFuncAt(12, I32Const(1), End());
             machine.SetProgram(0, Call(2), Nop());
+            machine.SetFuncAt(12, I32Const(1), End());
 
-            machine.Step(3);
-
-            Frame frame = machine.Frame;
+            machine.Step(1);
 
             Assert.Equal(1, machine.Frame.PC);
-            Assert.Equal(new Value(1), frame.TopOfStack);
+            Assert.Equal(new Value(1), machine.Frame.TopOfStack);
         }
 
         [Fact]
@@ -645,10 +652,10 @@ namespace DergwasmTests
             // 0: I32_CONST 1
             // 1: I32_CONST 2
             // 2: END
-            machine.SetFuncAt(13, I32Const(1), I32Const(2), End());
             machine.SetProgram(0, I32Const(10), I32Const(20), Call(3), Nop());
+            machine.SetFuncAt(13, I32Const(1), I32Const(2), End());
 
-            machine.Step(6);
+            machine.Step(3);
 
             Assert.Equal(3, machine.Frame.PC);
             Assert.Collection(
@@ -667,11 +674,11 @@ namespace DergwasmTests
             // 3: NOP
             //
             // Func 14 (= idx 4): host func
+            machine.SetProgram(0, I32Const(10), I32Const(20), Call(4), Nop());
             machine.SetHostFuncAt(
                 14,
                 new ReturningHostProxy<int, int, int>((int a, int b) => a - b)
             );
-            machine.SetProgram(0, I32Const(10), I32Const(20), Call(4), Nop());
 
             machine.Step(2);
             machine.Step();
@@ -694,9 +701,9 @@ namespace DergwasmTests
             // Func 211 (= idx 201, type 2):
             // 0: I32_CONST 2
             // 1: END
+            machine.SetProgram(0, I32Const(1), CallIndirect(2, 3), End());
             machine.SetFuncAt(210, I32Const(1), End());
             machine.SetFuncAt(211, I32Const(2), End());
-            machine.SetProgram(0, I32Const(1), CallIndirect(2, 3), End());
             machine.SetTableAt(
                 33,
                 new Table("test", "$table0", new TableType(new Limits(2), ValueType.FUNCREF))
@@ -704,12 +711,10 @@ namespace DergwasmTests
             machine.tables[33].Elements[0] = Value.RefOfFuncAddr(210);
             machine.tables[33].Elements[1] = Value.RefOfFuncAddr(211);
 
-            machine.Step(3);
+            machine.Step(2);
 
-            Frame frame = machine.Frame;
-
-            Assert.Equal(1, machine.Frame.PC);
-            Assert.Equal(new Value(2), frame.TopOfStack);
+            Assert.Equal(2, machine.Frame.PC);
+            Assert.Equal(new Value(2), machine.Frame.TopOfStack);
         }
     }
 }

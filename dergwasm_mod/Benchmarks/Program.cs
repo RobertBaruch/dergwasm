@@ -64,13 +64,16 @@ namespace DergwasmTests
     [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
     public class I32AddBenchmark : TestMachine
     {
+        Frame frame;
+
         [GlobalSetup]
         public void Setup()
         {
-            ModuleFunc func = new ModuleFunc("test", "$-1", GetFuncTypeFromIndex(0));
+            frame = CreateFrame();
+            ModuleFunc func = new ModuleFunc("test", "$-1", frame.GetFuncTypeForIndex(0));
             func.Locals = new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 };
             func.Code = new List<Instruction>();
-            Frame = new Frame(func, null);
+            frame.Func = func;
 
             SetProgram(0, Insn(InstructionType.I32_ADD), Insn(InstructionType.NOP));
         }
@@ -90,21 +93,19 @@ namespace DergwasmTests
         [Benchmark]
         public Value I32Add()
         {
-            Frame.PC = 0;
-            Frame.Push(new Value(0x0F));
-            Frame.Push(new Value(0xFFFFFFFF));
-            Step();
-            return Frame.Pop();
+            frame.Push(new Value(0x0F));
+            frame.Push(new Value(0xFFFFFFFF));
+            frame.Step(this);
+            return frame.Pop();
         }
 
         [Benchmark]
         public Value I32AddOverhead()
         {
-            Frame.PC = 0;
-            Frame.Push(new Value(0x0F));
-            Frame.Push(new Value(0xFFFFFFFF));
-            Frame.Pop();
-            return Frame.Pop();
+            frame.Push(new Value(0x0F));
+            frame.Push(new Value(0xFFFFFFFF));
+            frame.Pop();
+            return frame.Pop();
         }
     }
 
@@ -124,8 +125,9 @@ namespace DergwasmTests
         [Benchmark]
         public Value PushPopInt()
         {
-            Frame.Push(new Value(1));
-            return Frame.Pop();
+            Frame frame = CreateFrame();
+            frame.Push(new Value(1));
+            return frame.Pop();
         }
     }
 

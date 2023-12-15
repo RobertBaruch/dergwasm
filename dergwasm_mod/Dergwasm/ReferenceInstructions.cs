@@ -14,7 +14,7 @@
         public static void Ref(Instruction instruction, Machine machine, Frame frame)
         {
             int idx = instruction.Operands[0].Int;
-            int addr = machine.GetFuncAddrFromIndex(idx);
+            int addr = frame.GetFuncAddrForIndex(idx);
             frame.Push(Value.RefOfFuncAddr(addr));
         }
     }

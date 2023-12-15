@@ -138,9 +138,9 @@ namespace Derg
         // Does not return.
         void ProcExit(int exit_code)
         {
-            Console.WriteLine(
-                $"ProcExit called with exit_code={exit_code}. {100000 - ((Machine)machine).stepBudget} instructions executed."
-            );
+            //Console.WriteLine(
+            //    $"ProcExit called with exit_code={exit_code}. {100000 - ((Machine)machine).stepBudget} instructions executed."
+            //);
             //Environment.Exit(exit_code);
             throw new ExitTrap(exit_code);
         }

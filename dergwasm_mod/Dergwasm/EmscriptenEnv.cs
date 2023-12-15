@@ -36,68 +36,25 @@ namespace Derg
             return wasmTable.Elements[index];
         }
 
-        ModuleFunc SetUpExportedFuncCall(string name)
-        {
-            Frame returning_frame = new Frame(null, machine.Frame.Module);
-            machine.Frame = returning_frame;
-            return machine.GetFunc(machine.MainModuleName, name) as ModuleFunc;
-        }
-
-        void ExecuteFunc(ModuleFunc f, Frame frame)
-        {
-            machine.InvokeExpr(f);
-            frame.PC = 0;
-
-            while (frame.HasLabel())
-            {
-                machine.Step();
-            }
-            machine.PopFrame();
-        }
-
-        R ExecuteFunc<R>(ModuleFunc f, Frame frame)
-            where R : unmanaged
-        {
-            machine.InvokeExpr(f);
-            frame.PC = 0;
-
-            while (frame.HasLabel())
-            {
-                machine.Step();
-            }
-            R retval = frame.Pop<R>();
-            machine.PopFrame();
-            return retval;
-        }
-
-        void SetUpFuncCall()
-        {
-            Frame returning_frame = new Frame(null, machine.Frame.Module);
-            machine.Frame = returning_frame;
-        }
-
         public void CallFunc(ModuleFunc f, Frame frame)
         {
-            SetUpFuncCall();
-            ExecuteFunc(f, frame);
+            frame.InvokeFunc(machine, f);
         }
 
         public void CallFunc<T1>(ModuleFunc f, Frame frame, T1 arg1)
             where T1 : unmanaged
         {
-            SetUpFuncCall();
             frame.Push(arg1);
-            ExecuteFunc(f, frame);
+            frame.InvokeFunc(machine, f);
         }
 
         public void CallFunc<T1, T2>(ModuleFunc f, Frame frame, T1 arg1, T2 arg2)
             where T1 : unmanaged
             where T2 : unmanaged
         {
-            SetUpFuncCall();
             frame.Push(arg2);
             frame.Push(arg1);
-            ExecuteFunc(f, frame);
+            frame.InvokeFunc(machine, f);
         }
 
         public void CallFunc<T1, T2, T3>(ModuleFunc f, Frame frame, T1 arg1, T2 arg2, T3 arg3)
@@ -105,11 +62,10 @@ namespace Derg
             where T2 : unmanaged
             where T3 : unmanaged
         {
-            SetUpFuncCall();
             frame.Push(arg3);
             frame.Push(arg2);
             frame.Push(arg1);
-            ExecuteFunc(f, frame);
+            frame.InvokeFunc(machine, f);
         }
 
         public void CallFunc<T1, T2, T3, T4>(
@@ -125,12 +81,11 @@ namespace Derg
             where T3 : unmanaged
             where T4 : unmanaged
         {
-            SetUpFuncCall();
             frame.Push(arg4);
             frame.Push(arg3);
             frame.Push(arg2);
             frame.Push(arg1);
-            ExecuteFunc(f, frame);
+            frame.InvokeFunc(machine, f);
         }
 
         public void CallFunc<T1, T2, T3, T4, T5>(
@@ -148,29 +103,28 @@ namespace Derg
             where T4 : unmanaged
             where T5 : unmanaged
         {
-            SetUpFuncCall();
             frame.Push(arg5);
             frame.Push(arg4);
             frame.Push(arg3);
             frame.Push(arg2);
             frame.Push(arg1);
-            ExecuteFunc(f, frame);
+            frame.InvokeFunc(machine, f);
         }
 
         public R CallFunc<R>(ModuleFunc f, Frame frame)
             where R : unmanaged
         {
-            SetUpFuncCall();
-            return ExecuteFunc<R>(f, frame);
+            frame.InvokeFunc(machine, f);
+            return frame.Pop<R>();
         }
 
         public R CallFunc<R, T1>(ModuleFunc f, Frame frame, T1 arg1)
             where R : unmanaged
             where T1 : unmanaged
         {
-            SetUpFuncCall();
             frame.Push(arg1);
-            return ExecuteFunc<R>(f, frame);
+            frame.InvokeFunc(machine, f);
+            return frame.Pop<R>();
         }
 
         public R CallFunc<R, T1, T2>(ModuleFunc f, Frame frame, T1 arg1, T2 arg2)
@@ -178,10 +132,10 @@ namespace Derg
             where T1 : unmanaged
             where T2 : unmanaged
         {
-            SetUpFuncCall();
             frame.Push(arg2);
             frame.Push(arg1);
-            return ExecuteFunc<R>(f, frame);
+            frame.InvokeFunc(machine, f);
+            return frame.Pop<R>();
         }
 
         public R CallFunc<R, T1, T2, T3>(ModuleFunc f, Frame frame, T1 arg1, T2 arg2, T3 arg3)
@@ -190,11 +144,11 @@ namespace Derg
             where T2 : unmanaged
             where T3 : unmanaged
         {
-            SetUpFuncCall();
             frame.Push(arg3);
             frame.Push(arg2);
             frame.Push(arg1);
-            return ExecuteFunc<R>(f, frame);
+            frame.InvokeFunc(machine, f);
+            return frame.Pop<R>();
         }
 
         public R CallFunc<R, T1, T2, T3, T4>(
@@ -211,12 +165,12 @@ namespace Derg
             where T3 : unmanaged
             where T4 : unmanaged
         {
-            SetUpFuncCall();
             frame.Push(arg4);
             frame.Push(arg3);
             frame.Push(arg2);
             frame.Push(arg1);
-            return ExecuteFunc<R>(f, frame);
+            frame.InvokeFunc(machine, f);
+            return frame.Pop<R>();
         }
 
         public R CallFunc<R, T1, T2, T3, T4, T5>(
@@ -235,13 +189,13 @@ namespace Derg
             where T4 : unmanaged
             where T5 : unmanaged
         {
-            SetUpFuncCall();
             frame.Push(arg5);
             frame.Push(arg4);
             frame.Push(arg3);
             frame.Push(arg2);
             frame.Push(arg1);
-            return ExecuteFunc<R>(f, frame);
+            frame.InvokeFunc(machine, f);
+            return frame.Pop<R>();
         }
 
         public void CallExportedFunc(string name, Frame frame) =>
@@ -595,7 +549,7 @@ namespace Derg
         public void __wasm_call_ctors(Frame frame)
         {
             Func f = machine.GetFunc(machine.MainModuleName, "__wasm_call_ctors");
-            machine.InvokeExpr(f as ModuleFunc);
+            CallFunc(f as ModuleFunc, frame);
         }
 
         // Called for a C program. Runs the main function.

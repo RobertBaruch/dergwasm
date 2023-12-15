@@ -25,14 +25,14 @@
         public static void GlobalGet(Instruction instruction, Machine machine, Frame frame)
         {
             int idx = instruction.Operands[0].Int;
-            frame.Push(machine.Globals[machine.GetGlobalAddrForIndex(idx)]);
+            frame.Push(machine.Globals[frame.GetGlobalAddrForIndex(idx)]);
         }
 
         public static void GlobalSet(Instruction instruction, Machine machine, Frame frame)
         {
             int idx = instruction.Operands[0].Int;
             Value val = frame.Pop();
-            machine.Globals[machine.GetGlobalAddrForIndex(idx)] = val;
+            machine.Globals[frame.GetGlobalAddrForIndex(idx)] = val;
         }
     }
 }

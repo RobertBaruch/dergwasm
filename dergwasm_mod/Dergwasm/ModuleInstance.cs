@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO.Ports;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Derg
 {
@@ -209,7 +209,6 @@ namespace Derg
         // during instantiation, when the machine is not running anything.
         Value EvaluateExpr(
             Machine machine,
-            Frame frame,
             Module module,
             string name,
             ValueType returnType,
@@ -225,13 +224,12 @@ namespace Derg
             syntheticFunc.Locals = new ValueType[0];
             syntheticFunc.Code = expr;
 
-            machine.InvokeExpr(syntheticFunc);
-            Value returnValue = frame.Pop();
-            machine.PopFrame();
-            return returnValue;
+            Frame frame = new Frame(syntheticFunc, this, null);
+            frame.Execute(machine);
+            return frame.Pop();
         }
 
-        void InitGlobals(Machine machine, Frame frame, Module module)
+        void InitGlobals(Machine machine, Module module)
         {
             // We do not initialize imported globals.
             for (int i = module.NumImportedGlobals(); i < module.Globals.Count; i++)
@@ -239,7 +237,6 @@ namespace Derg
                 GlobalSpec globalSpec = module.Globals[i];
                 machine.Globals[GlobalsMap[i]] = EvaluateExpr(
                     machine,
-                    frame,
                     module,
                     $"<init_global_{GlobalsMap[i]}>",
                     globalSpec.Type.Type,
@@ -255,7 +252,7 @@ namespace Derg
             }
         }
 
-        void InitElementSegments(Machine machine, Frame frame, Module module)
+        void InitElementSegments(Machine machine, Module module)
         {
             // ElementSegments were added to the instance in the same order as their specs.
             // Thus, ElementSegmentSpec[i] corresponds to ElementSegment[ElementSegmentsMap[i]].
@@ -270,7 +267,6 @@ namespace Derg
                     {
                         elementSegment.Elements[j] = EvaluateExpr(
                             machine,
-                            frame,
                             module,
                             $"<idx_for_element_seg_{i}_{j}>",
                             elementSegmentSpec.ElemType,
@@ -299,14 +295,14 @@ namespace Derg
         // element segment is declarative, it is immediately dropped. And if an element segment
         // is passive, nothing happens during instantiation (but tables can be initialized during
         // the running of a module's func).
-        void InitTables(Machine machine, Frame frame, Module module)
+        void InitTables(Machine machine, Module module)
         {
             for (int i = 0; i < module.ElementSegmentSpecs.Length; i++)
             {
                 ElementSegmentSpec elementSegmentSpec = module.ElementSegmentSpecs[i];
                 if (elementSegmentSpec is DeclarativeElementSegmentSpec)
                 {
-                    machine.DropElementSegmentFromIndex(i);
+                    machine.DropElementSegment(ElementSegmentsMap[i]);
                     continue;
                 }
                 if (elementSegmentSpec is PassiveDataSegment)
@@ -320,7 +316,6 @@ namespace Derg
                 Table table = machine.GetTable(tableAddr);
                 int d = EvaluateExpr(
                     machine,
-                    frame,
                     module,
                     $"<offset_for_element_seg_{i}_into_table_{tableAddr}>",
                     ValueType.I32,
@@ -344,7 +339,7 @@ namespace Derg
         // As with tables and element segments, if a data segment is active, it gets copied into
         // memory. Otherwise nothing happens during instantiation (but memory can be initialized
         // during the running of a module's func).
-        void InitMemory(Machine machine, Frame frame, Module module)
+        void InitMemory(Machine machine, Module module)
         {
             for (int i = 0; i < module.DataSegments.Length; i++)
             {
@@ -358,7 +353,6 @@ namespace Derg
                 Memory memory = machine.GetMemory(memAddr);
                 int d = EvaluateExpr(
                     machine,
-                    frame,
                     module,
                     $"<offset_for_data_seg_{i}_into_memory_{memAddr}>",
                     ValueType.I32,
@@ -384,13 +378,11 @@ namespace Derg
                 return;
             }
             int startFuncAddr = FuncsMap[module.StartIdx];
-            Func startFunc = machine.GetFunc(startFuncAddr);
-            if (!(startFunc is ModuleFunc))
-            {
-                throw new Trap("Start function was not a module function, so is not executable.");
-            }
-            machine.InvokeExpr(startFunc as ModuleFunc);
-            machine.PopFrame();
+            ModuleFunc startFunc = machine.GetFunc(startFuncAddr) as ModuleFunc;
+
+            Frame frame = new Frame(startFunc, this, null);
+            frame.Label = new Label(0, startFunc.Code.Count);
+            frame.Execute(machine);
         }
 
         public void Instantiate(Machine machine, Module module)
@@ -404,12 +396,10 @@ namespace Derg
 
             Allocate(machine, module);
 
-            Frame frame = new Frame(null, null);
-
-            InitGlobals(machine, frame, module);
-            InitElementSegments(machine, frame, module);
-            InitTables(machine, frame, module);
-            InitMemory(machine, frame, module);
+            InitGlobals(machine, module);
+            InitElementSegments(machine, module);
+            InitTables(machine, module);
+            InitMemory(machine, module);
             MaybeExecuteStartFunc(machine, module);
         }
     }
