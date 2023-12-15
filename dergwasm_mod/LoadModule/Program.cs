@@ -75,6 +75,7 @@ public class Program
         }
         Console.WriteLine("Running __wasm_call_ctors");
         Frame frame = new Frame(ctors as ModuleFunc, moduleInstance, null);
+        frame.Label = new Label(0, 0);
         frame.InvokeFunc(machine, ctors);
     }
 
@@ -93,6 +94,9 @@ public class Program
         try
         {
             Frame frame = new Frame(main as ModuleFunc, moduleInstance, null);
+            frame.Label = new Label(1, 0);
+            frame.Push(new Value(0)); // argc
+            frame.Push(new Value(0)); // argv
             frame.InvokeFunc(machine, main);
         }
         catch (ExitTrap) { }

@@ -70,7 +70,9 @@ namespace Derg
         }
 
         // Continually steps the machine until the current frame is done. This is detected
-        // when there are no labels on the label stack.
+        // when there are no labels on the label stack. Thus, before entering this function,
+        // the frame should have a label on the stack. The first label is typically a label
+        // pointing to the end of the function, and containing the function's arity.
         public void Execute(Machine machine)
         {
             while (HasLabel())

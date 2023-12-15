@@ -225,6 +225,7 @@ namespace Derg
             syntheticFunc.Code = expr;
 
             Frame frame = new Frame(syntheticFunc, this, null);
+            frame.Label = new Label(1, expr.Count);
             frame.Execute(machine);
             return frame.Pop();
         }
