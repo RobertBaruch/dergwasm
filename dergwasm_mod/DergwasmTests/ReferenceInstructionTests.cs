@@ -14,7 +14,7 @@ namespace DergwasmTests
 
             machine.Step();
 
-            Assert.Equal(1, machine.PC);
+            Assert.Equal(1, machine.Frame.PC);
             Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(0, 0), e));
         }
 
@@ -27,7 +27,7 @@ namespace DergwasmTests
 
             machine.Step();
 
-            Assert.Equal(1, machine.PC);
+            Assert.Equal(1, machine.Frame.PC);
             Assert.Collection(
                 machine.Frame.value_stack,
                 e => Assert.Equal(new Value(11UL, (ulong)ReferenceValueType.FUNCREF), e)
@@ -49,7 +49,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Equal(2, machine.PC);
+            Assert.Equal(2, machine.Frame.PC);
             Assert.Collection(machine.Frame.value_stack, e => Assert.True(e.Bool));
         }
 
@@ -68,7 +68,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Equal(2, machine.PC);
+            Assert.Equal(2, machine.Frame.PC);
             Assert.Collection(machine.Frame.value_stack, e => Assert.False(e.Bool));
         }
     }

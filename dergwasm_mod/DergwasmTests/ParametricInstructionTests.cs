@@ -14,7 +14,7 @@ namespace DergwasmTests
             machine.SetProgram(0, I32Const(1), Drop(), Nop());
             machine.Step(2);
 
-            Assert.Equal(2, machine.PC);
+            Assert.Equal(2, machine.Frame.PC);
             Assert.Empty(machine.Frame.value_stack);
         }
 
@@ -38,7 +38,7 @@ namespace DergwasmTests
             );
             machine.Step(4);
 
-            Assert.Equal(4, machine.PC);
+            Assert.Equal(4, machine.Frame.PC);
             Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.S32));
         }
     }

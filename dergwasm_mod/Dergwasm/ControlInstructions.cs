@@ -90,13 +90,13 @@ namespace Derg
             // Jump to the else target (minus one because we always add one at the
             // end of an instruction). This is equal to the instruction's target
             // if there was no else clause.
-            machine.PC = operand.GetElseTarget() - 1;
+            frame.PC = operand.GetElseTarget() - 1;
         }
 
         public static void JumpToTopLabel(Machine machine, Frame frame)
         {
             Label label = machine.PopLabel();
-            machine.PC = label.target - 1;
+            frame.PC = label.target - 1;
         }
 
         public static void Else(Instruction instruction, Machine machine, Frame frame) =>
@@ -173,7 +173,7 @@ namespace Derg
         public static void Return(Instruction instruction, Machine machine, Frame frame)
         {
             // This guarantees we pop the current frame.
-            machine.PC = frame.Code.Count;
+            frame.PC = frame.Code.Count;
         }
     }
 }

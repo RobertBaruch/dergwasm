@@ -90,7 +90,7 @@ namespace DergwasmTests
         [Benchmark]
         public Value I32Add()
         {
-            PC = 0;
+            Frame.PC = 0;
             Frame.Push(new Value(0x0F));
             Frame.Push(new Value(0xFFFFFFFF));
             Step();
@@ -100,7 +100,7 @@ namespace DergwasmTests
         [Benchmark]
         public Value I32AddOverhead()
         {
-            PC = 0;
+            Frame.PC = 0;
             Frame.Push(new Value(0x0F));
             Frame.Push(new Value(0xFFFFFFFF));
             Frame.Pop();

@@ -46,7 +46,7 @@ namespace Derg
         void ExecuteFunc(ModuleFunc f, Frame frame)
         {
             machine.InvokeExpr(f);
-            machine.PC = 0;
+            frame.PC = 0;
 
             while (machine.HasLabel())
             {
@@ -59,7 +59,7 @@ namespace Derg
             where R : unmanaged
         {
             machine.InvokeExpr(f);
-            machine.PC = 0;
+            frame.PC = 0;
 
             while (machine.HasLabel())
             {

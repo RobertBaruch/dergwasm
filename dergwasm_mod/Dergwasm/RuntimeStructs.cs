@@ -25,7 +25,7 @@ namespace Derg
         public ModuleInstance Module;
 
         // The current program counter.
-        public int pc;
+        public int PC;
 
         // The label stack. Labels never apply across function boundaries.
         public Stack<Label> label_stack;
@@ -35,6 +35,19 @@ namespace Derg
         // from the caller's stack.
         public List<Value> value_stack;
 
+        public Frame(ModuleFunc func, ModuleInstance module)
+        {
+            if (func != null)
+            {
+                this.Locals = new Value[func.Signature.args.Length + func.Locals.Length];
+            }
+            this.Module = module;
+            this.PC = 0;
+            this.label_stack = new Stack<Label>();
+            this.value_stack = new List<Value>();
+            this.Func = func;
+        }
+
         public virtual int Arity
         {
             get => Func.Signature.returns.Length;
@@ -43,19 +56,6 @@ namespace Derg
         public List<Instruction> Code
         {
             get => Func.Code;
-        }
-
-        public Frame(ModuleFunc func, ModuleInstance module)
-        {
-            if (func != null)
-            {
-                this.Locals = new Value[func.Signature.args.Length + func.Locals.Length];
-            }
-            this.Module = module;
-            this.pc = 0;
-            this.label_stack = new Stack<Label>();
-            this.value_stack = new List<Value>();
-            this.Func = func;
         }
 
         public Value TopOfStack => value_stack.Last();

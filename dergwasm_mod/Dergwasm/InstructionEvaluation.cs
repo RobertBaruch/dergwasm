@@ -23,11 +23,12 @@ namespace Derg
                     (from op in instruction.Operands select $"{op}")
                 );
                 Console.WriteLine(
-                    $"{func.ModuleName}.{func.Name} [{machine.PC}] {instruction.Type} {operands}"
+                    $"{func.ModuleName}.{func.Name} [{frame.PC}] {instruction.Type} {operands}"
                 );
             }
 
             implementation(instruction, machine, frame);
+            frame = machine.Frame;
 
             if (machine.Debug)
             {
@@ -42,14 +43,15 @@ namespace Derg
                     Console.WriteLine($"   Top of stack: <empty>");
                 }
             }
-            machine.PC++;
+            frame.PC++;
 
             // If we ran off the end of the function, we return from the function.
 
-            if (machine.PC >= frame.Code.Count)
+            if (frame.PC >= frame.Code.Count)
             {
                 machine.PopFrame();
-                machine.PC++;
+                frame = machine.Frame;
+                frame.PC++;
             }
         }
 

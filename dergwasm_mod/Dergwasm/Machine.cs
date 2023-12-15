@@ -52,12 +52,6 @@ namespace Derg
             );
         }
 
-        public int PC
-        {
-            get => Frame.pc;
-            set => Frame.pc = value;
-        }
-
         public int AddGlobal(Value global)
         {
             Globals.Add(global);
@@ -143,7 +137,7 @@ namespace Derg
             Frame.value_stack.RemoveRange(Frame.value_stack.Count - args, args);
 
             Frame = next_frame;
-            PC = -1; // So that incrementing PC goes to beginning.
+            Frame.PC = -1; // So that incrementing PC goes to beginning.
             Label = new Label(arity, f.Code.Count);
         }
 
@@ -170,7 +164,7 @@ namespace Derg
             Frame = new Frame(null, func.Module);
 
             Frame = new Frame(func, func.Module);
-            PC = 0;
+            Frame.PC = 0;
             Label = new Label(0, func.Code.Count);
 
             while (HasLabel())
@@ -263,7 +257,7 @@ namespace Derg
         {
             for (int i = 0; i < n; i++)
             {
-                Instruction insn = Frame.Code[PC];
+                Instruction insn = Frame.Code[Frame.PC];
                 InstructionEvaluation.Execute(insn, this, Frame);
                 if (stepBudget > 0)
                 {
