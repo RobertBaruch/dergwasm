@@ -123,7 +123,7 @@ namespace Derg
             {
                 frame.Push(c1 / c2);
             }
-            catch (Exception e)
+            catch (Exception e) when (e is DivideByZeroException || e is OverflowException)
             {
                 throw new Trap($"i32.div_u: {e.Message}");
             }
@@ -137,7 +137,7 @@ namespace Derg
             {
                 frame.Push(c1 / c2);
             }
-            catch (Exception e)
+            catch (Exception e) when (e is DivideByZeroException || e is OverflowException)
             {
                 throw new Trap($"i64.div_u: {e.Message}");
             }
@@ -151,7 +151,7 @@ namespace Derg
             {
                 frame.Push(c1 / c2);
             }
-            catch (Exception e)
+            catch (Exception e) when (e is DivideByZeroException || e is OverflowException)
             {
                 throw new Trap($"i32.div_s: {e.Message}");
             }
@@ -165,7 +165,7 @@ namespace Derg
             {
                 frame.Push(c1 / c2);
             }
-            catch (Exception e)
+            catch (Exception e) when (e is DivideByZeroException || e is OverflowException)
             {
                 throw new Trap($"i64.div_s: {e.Message}");
             }
@@ -179,7 +179,7 @@ namespace Derg
             {
                 frame.Push(c1 % c2);
             }
-            catch (Exception e)
+            catch (Exception e) when (e is DivideByZeroException || e is OverflowException)
             {
                 throw new Trap($"i32.rem_u: {e.Message}");
             }
@@ -193,7 +193,7 @@ namespace Derg
             {
                 frame.Push(c1 % c2);
             }
-            catch (Exception e)
+            catch (Exception e) when (e is DivideByZeroException || e is OverflowException)
             {
                 throw new Trap($"i64.rem_u: {e.Message}");
             }
@@ -207,7 +207,7 @@ namespace Derg
             {
                 frame.Push(c1 % c2);
             }
-            catch (Exception e)
+            catch (Exception e) when (e is DivideByZeroException || e is OverflowException)
             {
                 throw new Trap($"i32.rem_s: {e.Message}");
             }
@@ -221,7 +221,7 @@ namespace Derg
             {
                 frame.Push(c1 % c2);
             }
-            catch (Exception e)
+            catch (Exception e) when (e is DivideByZeroException || e is OverflowException)
             {
                 throw new Trap($"i64.rem_s: {e.Message}");
             }

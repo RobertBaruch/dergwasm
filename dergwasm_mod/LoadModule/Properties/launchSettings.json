@@ -2,7 +2,7 @@
   "profiles": {
     "LoadModule": {
       "commandName": "Project",
-      "commandLineArgs": "hello_world.wasm",
+      "commandLineArgs": "hello_world_cpp.wasm",
       "workingDirectory": "F:\\dergwasm"
     }
   }
