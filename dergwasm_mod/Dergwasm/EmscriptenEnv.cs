@@ -26,7 +26,7 @@ namespace Derg
         }
 
         // Returns a funcref.
-        public Value GetWasmTableEntry(int index, Frame frame)
+        public Value GetWasmTableEntry(Frame frame, int index)
         {
             Table wasmTable = __indirect_function_table(frame);
             if (index < 0 || index >= wasmTable.Elements.Length)
@@ -36,40 +36,40 @@ namespace Derg
             return wasmTable.Elements[index];
         }
 
-        public void CallFunc(ModuleFunc f, Frame frame)
+        public void CallFunc(Func f, Frame frame)
         {
             frame.InvokeFunc(machine, f);
         }
 
-        public void CallFunc<T1>(ModuleFunc f, Frame frame, T1 arg1)
+        public void CallFunc<T1>(Func f, Frame frame, T1 arg1)
             where T1 : unmanaged
         {
             frame.Push(arg1);
             frame.InvokeFunc(machine, f);
         }
 
-        public void CallFunc<T1, T2>(ModuleFunc f, Frame frame, T1 arg1, T2 arg2)
+        public void CallFunc<T1, T2>(Func f, Frame frame, T1 arg1, T2 arg2)
             where T1 : unmanaged
             where T2 : unmanaged
         {
-            frame.Push(arg2);
             frame.Push(arg1);
+            frame.Push(arg2);
             frame.InvokeFunc(machine, f);
         }
 
-        public void CallFunc<T1, T2, T3>(ModuleFunc f, Frame frame, T1 arg1, T2 arg2, T3 arg3)
+        public void CallFunc<T1, T2, T3>(Func f, Frame frame, T1 arg1, T2 arg2, T3 arg3)
             where T1 : unmanaged
             where T2 : unmanaged
             where T3 : unmanaged
         {
-            frame.Push(arg3);
-            frame.Push(arg2);
             frame.Push(arg1);
+            frame.Push(arg2);
+            frame.Push(arg3);
             frame.InvokeFunc(machine, f);
         }
 
         public void CallFunc<T1, T2, T3, T4>(
-            ModuleFunc f,
+            Func f,
             Frame frame,
             T1 arg1,
             T2 arg2,
@@ -81,15 +81,15 @@ namespace Derg
             where T3 : unmanaged
             where T4 : unmanaged
         {
-            frame.Push(arg4);
-            frame.Push(arg3);
-            frame.Push(arg2);
             frame.Push(arg1);
+            frame.Push(arg2);
+            frame.Push(arg3);
+            frame.Push(arg4);
             frame.InvokeFunc(machine, f);
         }
 
         public void CallFunc<T1, T2, T3, T4, T5>(
-            ModuleFunc f,
+            Func f,
             Frame frame,
             T1 arg1,
             T2 arg2,
@@ -103,22 +103,22 @@ namespace Derg
             where T4 : unmanaged
             where T5 : unmanaged
         {
-            frame.Push(arg5);
-            frame.Push(arg4);
-            frame.Push(arg3);
-            frame.Push(arg2);
             frame.Push(arg1);
+            frame.Push(arg2);
+            frame.Push(arg3);
+            frame.Push(arg4);
+            frame.Push(arg5);
             frame.InvokeFunc(machine, f);
         }
 
-        public R CallFunc<R>(ModuleFunc f, Frame frame)
+        public R CallFunc<R>(Func f, Frame frame)
             where R : unmanaged
         {
             frame.InvokeFunc(machine, f);
             return frame.Pop<R>();
         }
 
-        public R CallFunc<R, T1>(ModuleFunc f, Frame frame, T1 arg1)
+        public R CallFunc<R, T1>(Func f, Frame frame, T1 arg1)
             where R : unmanaged
             where T1 : unmanaged
         {
@@ -127,32 +127,32 @@ namespace Derg
             return frame.Pop<R>();
         }
 
-        public R CallFunc<R, T1, T2>(ModuleFunc f, Frame frame, T1 arg1, T2 arg2)
+        public R CallFunc<R, T1, T2>(Func f, Frame frame, T1 arg1, T2 arg2)
             where R : unmanaged
             where T1 : unmanaged
             where T2 : unmanaged
         {
-            frame.Push(arg2);
             frame.Push(arg1);
+            frame.Push(arg2);
             frame.InvokeFunc(machine, f);
             return frame.Pop<R>();
         }
 
-        public R CallFunc<R, T1, T2, T3>(ModuleFunc f, Frame frame, T1 arg1, T2 arg2, T3 arg3)
+        public R CallFunc<R, T1, T2, T3>(Func f, Frame frame, T1 arg1, T2 arg2, T3 arg3)
             where R : unmanaged
             where T1 : unmanaged
             where T2 : unmanaged
             where T3 : unmanaged
         {
-            frame.Push(arg3);
-            frame.Push(arg2);
             frame.Push(arg1);
+            frame.Push(arg2);
+            frame.Push(arg3);
             frame.InvokeFunc(machine, f);
             return frame.Pop<R>();
         }
 
         public R CallFunc<R, T1, T2, T3, T4>(
-            ModuleFunc f,
+            Func f,
             Frame frame,
             T1 arg1,
             T2 arg2,
@@ -165,16 +165,16 @@ namespace Derg
             where T3 : unmanaged
             where T4 : unmanaged
         {
-            frame.Push(arg4);
-            frame.Push(arg3);
-            frame.Push(arg2);
             frame.Push(arg1);
+            frame.Push(arg2);
+            frame.Push(arg3);
+            frame.Push(arg4);
             frame.InvokeFunc(machine, f);
             return frame.Pop<R>();
         }
 
         public R CallFunc<R, T1, T2, T3, T4, T5>(
-            ModuleFunc f,
+            Func f,
             Frame frame,
             T1 arg1,
             T2 arg2,
@@ -189,31 +189,26 @@ namespace Derg
             where T4 : unmanaged
             where T5 : unmanaged
         {
-            frame.Push(arg5);
-            frame.Push(arg4);
-            frame.Push(arg3);
-            frame.Push(arg2);
             frame.Push(arg1);
+            frame.Push(arg2);
+            frame.Push(arg3);
+            frame.Push(arg4);
+            frame.Push(arg5);
             frame.InvokeFunc(machine, f);
             return frame.Pop<R>();
         }
 
         public void CallExportedFunc(string name, Frame frame) =>
-            CallFunc(machine.GetFunc(machine.MainModuleName, name) as ModuleFunc, frame);
+            CallFunc(machine.GetFunc(machine.MainModuleName, name), frame);
 
         public void CallExportedFunc<T1>(string name, Frame frame, T1 arg1)
             where T1 : unmanaged =>
-            CallFunc(machine.GetFunc(machine.MainModuleName, name) as ModuleFunc, frame, arg1);
+            CallFunc(machine.GetFunc(machine.MainModuleName, name), frame, arg1);
 
         public void CallExportedFunc<T1, T2>(string name, Frame frame, T1 arg1, T2 arg2)
             where T1 : unmanaged
             where T2 : unmanaged =>
-            CallFunc(
-                machine.GetFunc(machine.MainModuleName, name) as ModuleFunc,
-                frame,
-                arg1,
-                arg2
-            );
+            CallFunc(machine.GetFunc(machine.MainModuleName, name), frame, arg1, arg2);
 
         public void CallExportedFunc<T1, T2, T3>(
             string name,
@@ -225,13 +220,7 @@ namespace Derg
             where T1 : unmanaged
             where T2 : unmanaged
             where T3 : unmanaged =>
-            CallFunc(
-                machine.GetFunc(machine.MainModuleName, name) as ModuleFunc,
-                frame,
-                arg1,
-                arg2,
-                arg3
-            );
+            CallFunc(machine.GetFunc(machine.MainModuleName, name), frame, arg1, arg2, arg3);
 
         public void CallExportedFunc<T1, T2, T3, T4>(
             string name,
@@ -245,14 +234,7 @@ namespace Derg
             where T2 : unmanaged
             where T3 : unmanaged
             where T4 : unmanaged =>
-            CallFunc(
-                machine.GetFunc(machine.MainModuleName, name) as ModuleFunc,
-                frame,
-                arg1,
-                arg2,
-                arg3,
-                arg4
-            );
+            CallFunc(machine.GetFunc(machine.MainModuleName, name), frame, arg1, arg2, arg3, arg4);
 
         public void CallExportedFunc<T1, T2, T3, T4, T5>(
             string name,
@@ -269,7 +251,7 @@ namespace Derg
             where T4 : unmanaged
             where T5 : unmanaged =>
             CallFunc(
-                machine.GetFunc(machine.MainModuleName, name) as ModuleFunc,
+                machine.GetFunc(machine.MainModuleName, name),
                 frame,
                 arg1,
                 arg2,
@@ -280,27 +262,18 @@ namespace Derg
 
         public R CallExportedFunc<R>(string name, Frame frame)
             where R : unmanaged =>
-            CallFunc<R>(machine.GetFunc(machine.MainModuleName, name) as ModuleFunc, frame);
+            CallFunc<R>(machine.GetFunc(machine.MainModuleName, name), frame);
 
         public R CallExportedFunc<R, T1>(string name, Frame frame, T1 arg1)
             where R : unmanaged
             where T1 : unmanaged =>
-            CallFunc<R, T1>(
-                machine.GetFunc(machine.MainModuleName, name) as ModuleFunc,
-                frame,
-                arg1
-            );
+            CallFunc<R, T1>(machine.GetFunc(machine.MainModuleName, name), frame, arg1);
 
         public R CallExportedFunc<R, T1, T2>(string name, Frame frame, T1 arg1, T2 arg2)
             where R : unmanaged
             where T1 : unmanaged
             where T2 : unmanaged =>
-            CallFunc<R, T1, T2>(
-                machine.GetFunc(machine.MainModuleName, name) as ModuleFunc,
-                frame,
-                arg1,
-                arg2
-            );
+            CallFunc<R, T1, T2>(machine.GetFunc(machine.MainModuleName, name), frame, arg1, arg2);
 
         public R CallExportedFunc<R, T1, T2, T3>(
             string name,
@@ -314,7 +287,7 @@ namespace Derg
             where T2 : unmanaged
             where T3 : unmanaged =>
             CallFunc<R, T1, T2, T3>(
-                machine.GetFunc(machine.MainModuleName, name) as ModuleFunc,
+                machine.GetFunc(machine.MainModuleName, name),
                 frame,
                 arg1,
                 arg2,
@@ -335,7 +308,7 @@ namespace Derg
             where T3 : unmanaged
             where T4 : unmanaged =>
             CallFunc<R, T1, T2, T3, T4>(
-                machine.GetFunc(machine.MainModuleName, name) as ModuleFunc,
+                machine.GetFunc(machine.MainModuleName, name),
                 frame,
                 arg1,
                 arg2,
@@ -359,7 +332,7 @@ namespace Derg
             where T4 : unmanaged
             where T5 : unmanaged =>
             CallFunc<R, T1, T2, T3, T4, T5>(
-                machine.GetFunc(machine.MainModuleName, name) as ModuleFunc,
+                machine.GetFunc(machine.MainModuleName, name),
                 frame,
                 arg1,
                 arg2,
@@ -369,32 +342,23 @@ namespace Derg
             );
 
         public void CallIndirectFunc(int index, Frame frame) =>
-            CallFunc(machine.GetFunc(GetWasmTableEntry(index, frame).RefAddr) as ModuleFunc, frame);
+            CallFunc(machine.GetFunc(GetWasmTableEntry(frame, index).RefAddr), frame);
 
         public void CallIndirectFunc<T1>(int index, Frame frame, T1 arg1)
             where T1 : unmanaged =>
-            CallFunc(
-                machine.GetFunc(GetWasmTableEntry(index, frame).RefAddr) as ModuleFunc,
-                frame,
-                arg1
-            );
+            CallFunc(machine.GetFunc(GetWasmTableEntry(frame, index).RefAddr), frame, arg1);
 
         public void CallIndirectFunc<T1, T2>(int index, Frame frame, T1 arg1, T2 arg2)
             where T1 : unmanaged
             where T2 : unmanaged =>
-            CallFunc(
-                machine.GetFunc(GetWasmTableEntry(index, frame).RefAddr) as ModuleFunc,
-                frame,
-                arg1,
-                arg2
-            );
+            CallFunc(machine.GetFunc(GetWasmTableEntry(frame, index).RefAddr), frame, arg1, arg2);
 
         public void CallIndirectFunc<T1, T2, T3>(int index, Frame frame, T1 arg1, T2 arg2, T3 arg3)
             where T1 : unmanaged
             where T2 : unmanaged
             where T3 : unmanaged =>
             CallFunc(
-                machine.GetFunc(GetWasmTableEntry(index, frame).RefAddr) as ModuleFunc,
+                machine.GetFunc(GetWasmTableEntry(frame, index).RefAddr),
                 frame,
                 arg1,
                 arg2,
@@ -414,7 +378,7 @@ namespace Derg
             where T3 : unmanaged
             where T4 : unmanaged =>
             CallFunc(
-                machine.GetFunc(GetWasmTableEntry(index, frame).RefAddr) as ModuleFunc,
+                machine.GetFunc(GetWasmTableEntry(frame, index).RefAddr),
                 frame,
                 arg1,
                 arg2,
@@ -437,7 +401,7 @@ namespace Derg
             where T4 : unmanaged
             where T5 : unmanaged =>
             CallFunc(
-                machine.GetFunc(GetWasmTableEntry(index, frame).RefAddr) as ModuleFunc,
+                machine.GetFunc(GetWasmTableEntry(frame, index).RefAddr),
                 frame,
                 arg1,
                 arg2,
@@ -448,26 +412,19 @@ namespace Derg
 
         public R CallIndirectFunc<R>(int index, Frame frame)
             where R : unmanaged =>
-            CallFunc<R>(
-                machine.GetFunc(GetWasmTableEntry(index, frame).RefAddr) as ModuleFunc,
-                frame
-            );
+            CallFunc<R>(machine.GetFunc(GetWasmTableEntry(frame, index).RefAddr), frame);
 
         public R CallIndirectFunc<R, T1>(int index, Frame frame, T1 arg1)
             where R : unmanaged
             where T1 : unmanaged =>
-            CallFunc<R, T1>(
-                machine.GetFunc(GetWasmTableEntry(index, frame).RefAddr) as ModuleFunc,
-                frame,
-                arg1
-            );
+            CallFunc<R, T1>(machine.GetFunc(GetWasmTableEntry(frame, index).RefAddr), frame, arg1);
 
         public R CallIndirectFunc<R, T1, T2>(int index, Frame frame, T1 arg1, T2 arg2)
             where R : unmanaged
             where T1 : unmanaged
             where T2 : unmanaged =>
             CallFunc<R, T1, T2>(
-                machine.GetFunc(GetWasmTableEntry(index, frame).RefAddr) as ModuleFunc,
+                machine.GetFunc(GetWasmTableEntry(frame, index).RefAddr),
                 frame,
                 arg1,
                 arg2
@@ -479,7 +436,7 @@ namespace Derg
             where T2 : unmanaged
             where T3 : unmanaged =>
             CallFunc<R, T1, T2, T3>(
-                machine.GetFunc(GetWasmTableEntry(index, frame).RefAddr) as ModuleFunc,
+                machine.GetFunc(GetWasmTableEntry(frame, index).RefAddr),
                 frame,
                 arg1,
                 arg2,
@@ -500,7 +457,7 @@ namespace Derg
             where T3 : unmanaged
             where T4 : unmanaged =>
             CallFunc<R, T1, T2, T3, T4>(
-                machine.GetFunc(GetWasmTableEntry(index, frame).RefAddr) as ModuleFunc,
+                machine.GetFunc(GetWasmTableEntry(frame, index).RefAddr),
                 frame,
                 arg1,
                 arg2,
@@ -524,7 +481,7 @@ namespace Derg
             where T4 : unmanaged
             where T5 : unmanaged =>
             CallFunc<R, T1, T2, T3, T4, T5>(
-                machine.GetFunc(GetWasmTableEntry(index, frame).RefAddr) as ModuleFunc,
+                machine.GetFunc(GetWasmTableEntry(frame, index).RefAddr),
                 frame,
                 arg1,
                 arg2,
@@ -686,6 +643,82 @@ namespace Derg
         // Imports to WASM
         //
 
+        public void RegisterHostFuncs()
+        {
+            machine.RegisterHostFunc(
+                "env",
+                "emscripten_memcpy_js",
+                new FuncType(
+                    new Derg.ValueType[]
+                    {
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32
+                    },
+                    new Derg.ValueType[] { }
+                ),
+                new HostProxy<int, int, int>(emscripten_memcpy_js)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "exit",
+                new FuncType(new Derg.ValueType[] { Derg.ValueType.I32 }, new Derg.ValueType[] { }),
+                new HostProxy<int>(emscripten_exit)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "emscripten_resize_heap",
+                new FuncType(
+                    new Derg.ValueType[] { Derg.ValueType.I32 },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int>(emscripten_resize_heap)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "_emscripten_throw_longjmp",
+                new FuncType(new Derg.ValueType[] { }, new Derg.ValueType[] { }),
+                new VoidHostProxy(_emscripten_throw_longjmp)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "invoke_iii",
+                new FuncType(
+                    new Derg.ValueType[]
+                    {
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32
+                    },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int, int, int>(invoke_iii)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "invoke_vi",
+                new FuncType(
+                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
+                    new Derg.ValueType[] { }
+                ),
+                new HostProxy<int, int>(invoke_vi)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "invoke_vii",
+                new FuncType(
+                    new Derg.ValueType[]
+                    {
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32
+                    },
+                    new Derg.ValueType[] { }
+                ),
+                new HostProxy<int, int, int>(invoke_vii)
+            );
+        }
+
         public void __assert_fail(
             int conditionStrPtr,
             int filenameStrPtr,
@@ -695,7 +728,13 @@ namespace Derg
 
         public void abort() => throw new NotImplementedException();
 
-        public void emscripten_memcpy_js(int dest, int src, int len)
+        public void _emscripten_throw_longjmp(Frame frame)
+        {
+            Console.WriteLine("=============== Throwing a longjmp");
+            throw new LongjmpException();
+        }
+
+        public void emscripten_memcpy_js(Frame frame, int dest, int src, int len)
         {
             Console.WriteLine($"emscripten_memcpy_js({dest}, {src}, {len})");
             byte[] mem = machine.Memory0;
@@ -712,8 +751,10 @@ namespace Derg
             }
         }
 
-        public void emscripten_resize_heap(int requestedSize) =>
+        public int emscripten_resize_heap(Frame frame, int requestedSize) =>
             throw new NotImplementedException();
+
+        public void emscripten_exit(Frame frame, int exit_code) => throw new ExitTrap(exit_code);
 
         // Implementation of exceptions when not supported in WASM.
         public int __cxa_begin_catch(int excPtr) => throw new NotImplementedException();
@@ -744,33 +785,41 @@ namespace Derg
         //    }
         //}
 
-        //public void invoke_vi(int index, int a0)
-        //{
-        //    int sp = stackSave();
-        //    try
-        //    {
-        //        CallIndirectFunc<int>(index, a0);
-        //    }
-        //    catch (LongjmpException)
-        //    {
-        //        stackRestore(sp);
-        //        setThrew(1, 0);
-        //    }
-        //}
+        public void invoke_vi(Frame frame, int index, int a0)
+        {
+            Console.WriteLine($"===============invoke_vi({index}, {a0})");
+            int sp = stackSave(frame);
+            try
+            {
+                Console.WriteLine("===============invoke_vi: Calling indirect func");
+                CallIndirectFunc<int>(index, frame, a0);
+                Console.WriteLine("===============invoke_vi: Indirect func didn't throw longjmp");
+            }
+            catch (LongjmpException)
+            {
+                Console.WriteLine("===============invoke_vi: Longjmp caught!");
+                stackRestore(frame, sp);
+                setThrew(frame, 1, 0);
+            }
+        }
 
-        //public void invoke_vii(int index, int a0, int a1)
-        //{
-        //    int sp = stackSave();
-        //    try
-        //    {
-        //        CallIndirectFunc<int, int>(index, a0, a1);
-        //    }
-        //    catch (LongjmpException)
-        //    {
-        //        stackRestore(sp);
-        //        setThrew(1, 0);
-        //    }
-        //}
+        public void invoke_vii(Frame frame, int index, int a0, int a1)
+        {
+            Console.Out.WriteLine($"===============invoke_vii({index}, {a0}, {a1})");
+            int sp = stackSave(frame);
+            try
+            {
+                Console.WriteLine("===============invoke_vii: Calling indirect func");
+                CallIndirectFunc<int, int>(index, frame, a0, a1);
+                Console.WriteLine("===============invoke_vii: Indirect func didn't throw longjmp");
+            }
+            catch (LongjmpException)
+            {
+                Console.WriteLine("===============invoke_vii: Longjmp caught!");
+                stackRestore(frame, sp);
+                setThrew(frame, 1, 0);
+            }
+        }
 
         //public int invoke_i(int index)
         //{
@@ -804,20 +853,27 @@ namespace Derg
         //    }
         //}
 
-        //public int invoke_iii(int index, int a0, int a1)
-        //{
-        //    int sp = stackSave();
-        //    try
-        //    {
-        //        return CallIndirectFunc<int, int, int>(index, a0, a1);
-        //    }
-        //    catch (LongjmpException)
-        //    {
-        //        stackRestore(sp);
-        //        setThrew(1, 0);
-        //        return 0; // ????
-        //    }
-        //}
+        public int invoke_iii(Frame frame, int index, int a0, int a1)
+        {
+            Console.WriteLine($"===============invoke_iii({index}, {a0}, {a1})");
+            int sp = stackSave(frame);
+            try
+            {
+                Console.WriteLine("===============invoke_iii: Calling indirect func");
+                int retval = CallIndirectFunc<int, int, int>(index, frame, a0, a1);
+                Console.WriteLine(
+                    $"===============invoke_iii: Indirect func didn't throw longjmp, retval={retval}"
+                );
+                return retval;
+            }
+            catch (LongjmpException)
+            {
+                Console.WriteLine("===============invoke_iii: Longjmp caught!");
+                stackRestore(frame, sp);
+                setThrew(frame, 1, 0);
+                return 0; // ????
+            }
+        }
     }
 
     // Ported from the Emscripted JavaScript output.

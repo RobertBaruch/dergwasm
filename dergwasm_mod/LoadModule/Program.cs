@@ -13,6 +13,7 @@ public class Program
         machine = new Machine();
         // machine.Debug = true;
         new EmscriptenWasi(machine).RegisterHostFuncs();
+        new EmscriptenEnv(machine).RegisterHostFuncs();
         Module module;
 
         using (var stream = File.OpenRead(filename))

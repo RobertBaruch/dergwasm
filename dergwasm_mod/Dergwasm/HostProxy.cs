@@ -4,6 +4,8 @@ namespace Derg
 {
     public class HostProxy
     {
+        // Invokes a host function. The given frame contains the arguments to the function in its locals,
+        // and the return value will be pushed onto the frame's stack.
         public virtual void Invoke(Machine machine, Frame frame) { }
 
         public virtual int NumArgs() => 0;
@@ -13,32 +15,32 @@ namespace Derg
 
     public class VoidHostProxy : HostProxy
     {
-        Action func;
+        Action<Frame> func;
 
-        public VoidHostProxy(Action func)
+        public VoidHostProxy(Action<Frame> func)
         {
             this.func = func;
         }
 
         public override void Invoke(Machine machine, Frame frame)
         {
-            func();
+            func(frame);
         }
     }
 
     public class HostProxy<T1> : HostProxy
         where T1 : unmanaged
     {
-        Action<T1> func;
+        Action<Frame, T1> func;
 
-        public HostProxy(Action<T1> func)
+        public HostProxy(Action<Frame, T1> func)
         {
             this.func = func;
         }
 
         public override void Invoke(Machine machine, Frame frame)
         {
-            func(frame.Locals[0].As<T1>());
+            func(frame, frame.Locals[0].As<T1>());
         }
 
         public override int NumArgs() => 1;
@@ -48,16 +50,16 @@ namespace Derg
         where T1 : unmanaged
         where T2 : unmanaged
     {
-        Action<T1, T2> func;
+        Action<Frame, T1, T2> func;
 
-        public HostProxy(Action<T1, T2> func)
+        public HostProxy(Action<Frame, T1, T2> func)
         {
             this.func = func;
         }
 
         public override void Invoke(Machine machine, Frame frame)
         {
-            func(frame.Locals[0].As<T1>(), frame.Locals[1].As<T2>());
+            func(frame, frame.Locals[0].As<T1>(), frame.Locals[1].As<T2>());
         }
 
         public override int NumArgs() => 2;
@@ -68,16 +70,21 @@ namespace Derg
         where T2 : unmanaged
         where T3 : unmanaged
     {
-        Action<T1, T2, T3> func;
+        Action<Frame, T1, T2, T3> func;
 
-        public HostProxy(Action<T1, T2, T3> func)
+        public HostProxy(Action<Frame, T1, T2, T3> func)
         {
             this.func = func;
         }
 
         public override void Invoke(Machine machine, Frame frame)
         {
-            func(frame.Locals[0].As<T1>(), frame.Locals[1].As<T2>(), frame.Locals[2].As<T3>());
+            func(
+                frame,
+                frame.Locals[0].As<T1>(),
+                frame.Locals[1].As<T2>(),
+                frame.Locals[2].As<T3>()
+            );
         }
 
         public override int NumArgs() => 3;
@@ -89,9 +96,9 @@ namespace Derg
         where T3 : unmanaged
         where T4 : unmanaged
     {
-        Action<T1, T2, T3, T4> func;
+        Action<Frame, T1, T2, T3, T4> func;
 
-        public HostProxy(Action<T1, T2, T3, T4> func)
+        public HostProxy(Action<Frame, T1, T2, T3, T4> func)
         {
             this.func = func;
         }
@@ -99,6 +106,7 @@ namespace Derg
         public override void Invoke(Machine machine, Frame frame)
         {
             func(
+                frame,
                 frame.Locals[0].As<T1>(),
                 frame.Locals[1].As<T2>(),
                 frame.Locals[2].As<T3>(),
@@ -116,9 +124,9 @@ namespace Derg
         where T4 : unmanaged
         where T5 : unmanaged
     {
-        Action<T1, T2, T3, T4, T5> func;
+        Action<Frame, T1, T2, T3, T4, T5> func;
 
-        public HostProxy(Action<T1, T2, T3, T4, T5> func)
+        public HostProxy(Action<Frame, T1, T2, T3, T4, T5> func)
         {
             this.func = func;
         }
@@ -126,6 +134,7 @@ namespace Derg
         public override void Invoke(Machine machine, Frame frame)
         {
             func(
+                frame,
                 frame.Locals[0].As<T1>(),
                 frame.Locals[1].As<T2>(),
                 frame.Locals[2].As<T3>(),
@@ -145,9 +154,9 @@ namespace Derg
         where T5 : unmanaged
         where T6 : unmanaged
     {
-        Action<T1, T2, T3, T4, T5, T6> func;
+        Action<Frame, T1, T2, T3, T4, T5, T6> func;
 
-        public HostProxy(Action<T1, T2, T3, T4, T5, T6> func)
+        public HostProxy(Action<Frame, T1, T2, T3, T4, T5, T6> func)
         {
             this.func = func;
         }
@@ -155,6 +164,7 @@ namespace Derg
         public override void Invoke(Machine machine, Frame frame)
         {
             func(
+                frame,
                 frame.Locals[0].As<T1>(),
                 frame.Locals[1].As<T2>(),
                 frame.Locals[2].As<T3>(),
@@ -170,16 +180,16 @@ namespace Derg
     public class ReturningVoidHostProxy<R> : HostProxy
         where R : unmanaged
     {
-        Func<R> func;
+        Func<Frame, R> func;
 
-        public ReturningVoidHostProxy(Func<R> func)
+        public ReturningVoidHostProxy(Func<Frame, R> func)
         {
             this.func = func;
         }
 
         public override void Invoke(Machine machine, Frame frame)
         {
-            frame.Push(func());
+            frame.Push(func(frame));
         }
 
         public override int Arity() => 1;
@@ -189,16 +199,16 @@ namespace Derg
         where T1 : unmanaged
         where R : unmanaged
     {
-        Func<T1, R> func;
+        Func<Frame, T1, R> func;
 
-        public ReturningHostProxy(Func<T1, R> func)
+        public ReturningHostProxy(Func<Frame, T1, R> func)
         {
             this.func = func;
         }
 
         public override void Invoke(Machine machine, Frame frame)
         {
-            frame.Push(func(frame.Locals[0].As<T1>()));
+            frame.Push(func(frame, frame.Locals[0].As<T1>()));
         }
 
         public override int NumArgs() => 1;
@@ -211,16 +221,16 @@ namespace Derg
         where T2 : unmanaged
         where R : unmanaged
     {
-        Func<T1, T2, R> func;
+        Func<Frame, T1, T2, R> func;
 
-        public ReturningHostProxy(Func<T1, T2, R> func)
+        public ReturningHostProxy(Func<Frame, T1, T2, R> func)
         {
             this.func = func;
         }
 
         public override void Invoke(Machine machine, Frame frame)
         {
-            frame.Push(func(frame.Locals[0].As<T1>(), frame.Locals[1].As<T2>()));
+            frame.Push(func(frame, frame.Locals[0].As<T1>(), frame.Locals[1].As<T2>()));
         }
 
         public override int NumArgs() => 2;
@@ -234,9 +244,9 @@ namespace Derg
         where T3 : unmanaged
         where R : unmanaged
     {
-        Func<T1, T2, T3, R> func;
+        Func<Frame, T1, T2, T3, R> func;
 
-        public ReturningHostProxy(Func<T1, T2, T3, R> func)
+        public ReturningHostProxy(Func<Frame, T1, T2, T3, R> func)
         {
             this.func = func;
         }
@@ -244,7 +254,12 @@ namespace Derg
         public override void Invoke(Machine machine, Frame frame)
         {
             frame.Push(
-                func(frame.Locals[0].As<T1>(), frame.Locals[1].As<T2>(), frame.Locals[2].As<T3>())
+                func(
+                    frame,
+                    frame.Locals[0].As<T1>(),
+                    frame.Locals[1].As<T2>(),
+                    frame.Locals[2].As<T3>()
+                )
             );
         }
 
@@ -260,9 +275,9 @@ namespace Derg
         where T4 : unmanaged
         where R : unmanaged
     {
-        Func<T1, T2, T3, T4, R> func;
+        Func<Frame, T1, T2, T3, T4, R> func;
 
-        public ReturningHostProxy(Func<T1, T2, T3, T4, R> func)
+        public ReturningHostProxy(Func<Frame, T1, T2, T3, T4, R> func)
         {
             this.func = func;
         }
@@ -271,6 +286,7 @@ namespace Derg
         {
             frame.Push(
                 func(
+                    frame,
                     frame.Locals[0].As<T1>(),
                     frame.Locals[1].As<T2>(),
                     frame.Locals[2].As<T3>(),
@@ -292,9 +308,9 @@ namespace Derg
         where T5 : unmanaged
         where R : unmanaged
     {
-        Func<T1, T2, T3, T4, T5, R> func;
+        Func<Frame, T1, T2, T3, T4, T5, R> func;
 
-        public ReturningHostProxy(Func<T1, T2, T3, T4, T5, R> func)
+        public ReturningHostProxy(Func<Frame, T1, T2, T3, T4, T5, R> func)
         {
             this.func = func;
         }
@@ -303,6 +319,7 @@ namespace Derg
         {
             frame.Push(
                 func(
+                    frame,
                     frame.Locals[0].As<T1>(),
                     frame.Locals[1].As<T2>(),
                     frame.Locals[2].As<T3>(),
@@ -326,9 +343,9 @@ namespace Derg
         where T6 : unmanaged
         where R : unmanaged
     {
-        Func<T1, T2, T3, T4, T5, T6, R> func;
+        Func<Frame, T1, T2, T3, T4, T5, T6, R> func;
 
-        public ReturningHostProxy(Func<T1, T2, T3, T4, T5, T6, R> func)
+        public ReturningHostProxy(Func<Frame, T1, T2, T3, T4, T5, T6, R> func)
         {
             this.func = func;
         }
@@ -337,6 +354,7 @@ namespace Derg
         {
             frame.Push(
                 func(
+                    frame,
                     frame.Locals[0].As<T1>(),
                     frame.Locals[1].As<T2>(),
                     frame.Locals[2].As<T3>(),

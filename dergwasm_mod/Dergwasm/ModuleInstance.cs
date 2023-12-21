@@ -162,8 +162,8 @@ namespace Derg
                         throw new Trap(
                             $"Signature for provided external func {hostFunc.Name} for imported func "
                                 + $"does not match: \n"
-                                + $"Expected extern: {externalFunc.Signature}\n"
-                                + $"Actual imported: {importedFunc.Signature}"
+                                + $"Extern provided: {externalFunc.Signature}\n"
+                                + $"Module expected: {importedFunc.Signature}"
                         );
                     }
                     throw new Trap(

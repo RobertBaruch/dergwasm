@@ -19,21 +19,6 @@ namespace Derg
         public void RegisterHostFuncs()
         {
             machine.RegisterHostFunc(
-                "env",
-                "emscripten_memcpy_js",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { }
-                ),
-                new HostProxy<int, int, int>(EmscriptenMemcpyJs)
-            );
-
-            machine.RegisterHostFunc(
                 "wasi_snapshot_preview1",
                 "environ_get",
                 new FuncType(
@@ -136,7 +121,7 @@ namespace Derg
         //      termination of the program. Any other values are dependent on the environment.
         //
         // Does not return.
-        void ProcExit(int exit_code)
+        void ProcExit(Frame frame, int exit_code)
         {
             //Console.WriteLine(
             //    $"ProcExit called with exit_code={exit_code}. {100000 - ((Machine)machine).stepBudget} instructions executed."
@@ -145,7 +130,7 @@ namespace Derg
             throw new ExitTrap(exit_code);
         }
 
-        int EnvironGet(int environPtrPtr, int environBufPtr)
+        int EnvironGet(Frame frame, int environPtrPtr, int environBufPtr)
         {
             //throw new Trap(
             //    $"Unimplemented call to EnvironGet(0x{environPtrPtr:X8}, 0x{environBufPtr:X8})"
@@ -153,7 +138,7 @@ namespace Derg
             return 0;
         }
 
-        int EnvironSizesGet(int argcPtr, int argvBufSizePtr)
+        int EnvironSizesGet(Frame frame, int argcPtr, int argvBufSizePtr)
         {
             //throw new Trap(
             //    $"Unimplemented call to EnvironSizesGet(0x{argcPtr:X8}, 0x{argvBufSizePtr:X8})"
@@ -161,7 +146,7 @@ namespace Derg
             return 0;
         }
 
-        void EmscriptenMemcpyJs(int dest, int src, int len)
+        void EmscriptenMemcpyJs(Frame frame, int dest, int src, int len)
         {
             Console.WriteLine($"EmscriptenMemcpyJs({dest}, {src}, {len})");
             Memory mem = machine.GetMemoryFromIndex(0);
@@ -189,8 +174,10 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdWrite(int fd, int iov, int iovcnt, int pnum)
+        int FdWrite(Frame frame, int fd, int iov, int iovcnt, int pnum)
         {
+            Console.WriteLine("=================================================");
+            Console.WriteLine("=================================================");
             Console.WriteLine($"FdWrite({fd}, 0x{iov:X8}, {iovcnt}, 0x{pnum:X8})");
             Memory mem = machine.GetMemoryFromIndex(0);
 
@@ -214,6 +201,8 @@ namespace Derg
             iovStream.Position = pnum;
             BinaryWriter countWriter = new BinaryWriter(iovStream);
             countWriter.Write(count);
+            Console.WriteLine("=================================================");
+            Console.WriteLine("=================================================");
             return 0;
         }
 
@@ -230,7 +219,7 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdSeek(int fd, long offset, int whence, int newOffsetPtr)
+        int FdSeek(Frame frame, int fd, long offset, int whence, int newOffsetPtr)
         {
             throw new Trap(
                 $"Unimplemented call to FdSeek({fd}, {offset}, {whence}, 0x{newOffsetPtr:X8})"
@@ -248,7 +237,7 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdRead(int fd, int iovs, int iovs_len, int nreadPtr)
+        int FdRead(Frame frame, int fd, int iovs, int iovs_len, int nreadPtr)
         {
             throw new Trap(
                 $"Unimplemented call to FdRead({fd}, 0x{iovs:X8}, {iovs_len}, 0x{nreadPtr:X8})"
@@ -262,7 +251,7 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdClose(int fd)
+        int FdClose(Frame frame, int fd)
         {
             throw new Trap($"Unimplemented call to FdClose({fd})");
         }
@@ -274,45 +263,9 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdSync(int fd)
+        int FdSync(Frame frame, int fd)
         {
             throw new Trap($"Unimplemented call to FdSync({fd})");
         }
-
-        // The various invoke_* functions are used to handle exceptions. The format of
-        // such a function is invoke_{r}{p}* where {r} is the return type (v = void, i = i32),
-        // and {p} is the parameter type. For example, invoke_iiii is a function that takes
-        // four i32 parameters and returns an i32.
-        //
-        // The implementation in JavaScript looks like this:
-        //
-        // function invoke_iiii(index,a1,a2,a3) {
-        //   var sp = stackSave();
-        //   try {
-        //     return dynCall_iiii(index, a1, a2, a3);
-        //   } catch(e) {
-        //     stackRestore(sp);
-        //     if (e !== e+0) throw e;
-        //     _setThrew(1, 0);
-        //   }
-        // }
-        //
-        // The dynCall_iiii function is an exported function in the WASM code, while the
-        // invoke_iiii function is an imported function in the WASM code.
-        //
-        // _setThrew is just a call to the WASM exported function setThrew.
-        //
-        // From what I can tell, exceptions are implemented by having the WASM code call an
-        // invoke_* function for the try portion of a try/catch block, where the index parameter
-        // is an index for the particular try/catch block. invoke_* first saves the current
-        // stack pointer, then calls a dynCall_* function, which actually is the try portion.
-        // If an exception gets thrown, the stack is restored, and a call is made to setThrew.
-        // This seems to set a specific memory location. Presumably this then allows continuation
-        // of the function that called the invoke_* function in the first place.
-        //
-        // Because we maintain a separate stack for each function, saving and restoring the stack
-        // pointer sounds like a no-op. However, the "stack" referred to is actually emscripten's
-        // stack structure, which is a memory location pointer stored in $global0. stackSave and
-        // stackRestore are functions in the WASM code, so they do need to be called.
     }
 }

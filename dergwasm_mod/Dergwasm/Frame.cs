@@ -195,7 +195,9 @@ namespace Derg
         public void InvokeFunc(Machine machine, int addr) =>
             InvokeFunc(machine, machine.funcs[addr]);
 
-        // Executes a host function call.
+        // Executes a host function call. This sets up a new frame, pops the args off the current frame and
+        // places them in the new frame's locals, and then invokes the host function. After the invokation,
+        // any return values are popped off the new frame and placed on the current frame's stack.
         void InvokeHostFunc(Machine machine, HostFunc f)
         {
             Console.WriteLine($"Invoking host func {f.ModuleName}.{f.Name}");
@@ -217,9 +219,16 @@ namespace Derg
             next_frame.EndFrame();
         }
 
-        // Executes a module function call.
+        // Executes a module function call. This sets up a new frame, pops the args off the current frame and
+        // places them in the new frame's locals, and then invokes the host function. After the invokation,
+        // any return values are popped off the new frame and placed on the current frame's stack.
         void InvokeModuleFunc(Machine machine, ModuleFunc f)
         {
+            if (machine.Debug)
+            {
+                Console.WriteLine($"Invoking module func {f.ModuleName}.{f.Name}");
+            }
+
             int arity = f.Signature.returns.Length;
             int args = f.Signature.args.Length;
 
@@ -229,12 +238,22 @@ namespace Derg
             value_stack.CopyTo(value_stack.Count - args, next_frame.Locals, 0, args);
             value_stack.RemoveRange(value_stack.Count - args, args);
 
+            if (machine.Debug)
+            {
+                for (int i = 0; i < args; i++)
+                {
+                    Console.WriteLine($"  arg {i}: {next_frame.Locals[i]}");
+                }
+            }
+
             next_frame.Label = new Label(arity, f.Code.Count);
             next_frame.Execute(machine);
             next_frame.EndFrame();
         }
 
-        // Executes a function call.
+        // Executes a function call. This sets up a new frame, pops the args off the current frame and
+        // places them in the new frame's locals, and then invokes the host function. After the invokation,
+        // any return values are popped off the new frame and placed on the current frame's stack.
         public void InvokeFunc(Machine machine, Func f)
         {
             if (f is HostFunc host_func)

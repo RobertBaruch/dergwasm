@@ -94,7 +94,8 @@ namespace Derg
                 ImportedFunc importedFunc = (ImportedFunc)Funcs[i];
                 ExternalFuncAddrs[i] = machine.ResolveHostFunc(
                     importedFunc.ModuleName,
-                    importedFunc.Name
+                    importedFunc.Name,
+                    importedFunc.Signature
                 );
             }
         }

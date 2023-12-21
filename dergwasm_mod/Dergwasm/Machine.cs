@@ -132,12 +132,12 @@ namespace Derg
             hostFuncs.Add($"{moduleName}.{name}", new HostFunc(moduleName, name, signature, proxy));
         }
 
-        public int ResolveHostFunc(string moduleName, string name)
+        public int ResolveHostFunc(string moduleName, string name, FuncType signature)
         {
             string key = $"{moduleName}.{name}";
             if (!hostFuncs.ContainsKey(key))
             {
-                throw new Trap($"Could not find host function {key}");
+                throw new Trap($"Could not find host function {key} {signature}");
             }
             funcs.Add(hostFuncs[key]);
             return funcs.Count - 1;
