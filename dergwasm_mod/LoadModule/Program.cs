@@ -13,7 +13,8 @@ public class Program
         machine = new Machine();
         // machine.Debug = true;
         new EmscriptenWasi(machine).RegisterHostFuncs();
-        new EmscriptenEnv(machine).RegisterHostFuncs();
+        EmscriptenEnv emscriptenEnv = new EmscriptenEnv(machine);
+        emscriptenEnv.RegisterHostFuncs();
         Module module;
 
         using (var stream = File.OpenRead(filename))
@@ -34,7 +35,8 @@ public class Program
         }
 
         MaybeRunEmscriptenCtors();
-        RunMain();
+        // RunMain();
+        RunMicropython(emscriptenEnv);
     }
 
     void CheckForUnimplementedInstructions()
@@ -101,6 +103,66 @@ public class Program
             frame.InvokeFunc(machine, main);
         }
         catch (ExitTrap) { }
+    }
+
+    int AddUTF8StringToStack(EmscriptenEnv emscriptenEnv, string s)
+    {
+        byte[] utf = System.Text.Encoding.UTF8.GetBytes(s);
+        int size = utf.Length + 1;
+        Frame frame = new Frame(null, moduleInstance, null);
+        frame.Label = new Label(1, 0);
+        int stackPtr = emscriptenEnv.stackAlloc(frame, size);
+
+        Array.Copy(utf, 0, machine.Memory0, stackPtr, utf.Length);
+        machine.Memory0[stackPtr + utf.Length] = 0; // NUL-termination
+
+        return stackPtr;
+    }
+
+    void MicropythonDoStr(EmscriptenEnv emscriptenEnv, int stackPtr)
+    {
+        Func mp_js_do_str = machine.GetFunc(moduleInstance.ModuleName, "mp_js_do_str");
+        if (mp_js_do_str == null)
+        {
+            throw new Trap("No mp_js_do_str function found");
+        }
+        Console.WriteLine($"Running {mp_js_do_str.Name}");
+        try
+        {
+            Frame frame = new Frame(mp_js_do_str as ModuleFunc, moduleInstance, null);
+            frame.Label = new Label(1, 0);
+            frame.Push(new Value(stackPtr)); // source
+            frame.InvokeFunc(machine, mp_js_do_str);
+        }
+        catch (ExitTrap) { }
+    }
+
+    void InitMicropython(EmscriptenEnv emscriptenEnv, int stackSizeBytes)
+    {
+        Func mp_js_init = machine.GetFunc(moduleInstance.ModuleName, "mp_js_init");
+        if (mp_js_init == null)
+        {
+            throw new Trap("No mp_js_init function found");
+        }
+        Console.WriteLine($"Running {mp_js_init.Name}");
+        try
+        {
+            Frame frame = new Frame(mp_js_init as ModuleFunc, moduleInstance, null);
+            frame.Label = new Label(1, 0);
+            frame.Push(new Value(stackSizeBytes));
+            frame.InvokeFunc(machine, mp_js_init);
+        }
+        catch (ExitTrap) { }
+    }
+
+    void RunMicropython(EmscriptenEnv emscriptenEnv)
+    {
+        InitMicropython(emscriptenEnv, 64 * 1024);
+
+        string s = "print('hello world!')\n"; // The Python code to run
+
+        int stackPtr = AddUTF8StringToStack(emscriptenEnv, s);
+        MicropythonDoStr(emscriptenEnv, stackPtr);
     }
 
     public static void Main(string[] args)
