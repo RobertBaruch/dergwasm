@@ -68,13 +68,14 @@ namespace Derg
                     new Derg.ValueType[]
                     {
                         Derg.ValueType.I32,
-                        Derg.ValueType.I64,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
                         Derg.ValueType.I32,
                         Derg.ValueType.I32
                     },
                     new Derg.ValueType[] { Derg.ValueType.I32 }
                 ),
-                new ReturningHostProxy<int, long, int, int, int>(FdSeek)
+                new ReturningHostProxy<int, int, int, int, int, int>(FdSeek)
             );
 
             machine.RegisterHostFunc(
@@ -219,10 +220,10 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdSeek(Frame frame, int fd, long offset, int whence, int newOffsetPtr)
+        int FdSeek(Frame frame, int fd, int offset_lo, int offset_hi, int whence, int newOffsetPtr)
         {
             throw new Trap(
-                $"Unimplemented call to FdSeek({fd}, {offset}, {whence}, 0x{newOffsetPtr:X8})"
+                $"Unimplemented call to FdSeek({fd}, {offset_lo}, {offset_hi}, {whence}, 0x{newOffsetPtr:X8})"
             );
         }
 

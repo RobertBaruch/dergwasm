@@ -2,7 +2,7 @@
   "profiles": {
     "LoadModule": {
       "commandName": "Project",
-      "commandLineArgs": "setjmp_example.wasm",
+      "commandLineArgs": "firmware.wasm",
       "workingDirectory": "F:\\dergwasm"
     }
   }

@@ -14,7 +14,7 @@ namespace Derg
     {
         public static readonly uint Magic = 0x6D736100U;
         public static readonly uint Version = 1U;
-        public static readonly bool Debug = false;
+        public static readonly bool Debug = true;
 
         public string ModuleName;
         public List<CustomData> customData = new List<CustomData>();
@@ -250,6 +250,10 @@ namespace Derg
                         FuncType funcType = module.FuncTypes[(int)stream.ReadLEB128Unsigned()];
                         module.Funcs.Add(new ImportedFunc(module_name, name, funcType));
                         module.Imports[i] = new FuncImport(module_name, name, funcType);
+                        if (Module.Debug)
+                            Console.WriteLine(
+                                $"Module requires imported function[{module.Funcs.Count - 1}] {module_name}.{name} {funcType}"
+                            );
                         break;
 
                     case 0x01:
@@ -344,7 +348,7 @@ namespace Derg
                         module.Exports[i] = new FuncExport(name, desc_idx);
                         if (Module.Debug)
                             Console.WriteLine(
-                                $"Exporting function {module.Funcs[desc_idx].Name} as {name}"
+                                $"Exporting function {module.Funcs[desc_idx].Name} as {name} {module.Funcs[desc_idx].Signature}"
                             );
                         module.Funcs[desc_idx].Name = name;
                         break;

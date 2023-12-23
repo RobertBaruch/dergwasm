@@ -503,11 +503,7 @@ namespace Derg
         public void _start(Frame frame) => CallExportedFunc("_start", frame);
 
         // Called for a C program, before calling main.
-        public void __wasm_call_ctors(Frame frame)
-        {
-            Func f = machine.GetFunc(machine.MainModuleName, "__wasm_call_ctors");
-            CallFunc(f as ModuleFunc, frame);
-        }
+        public void __wasm_call_ctors(Frame frame) => CallExportedFunc("__wasm_call_ctors", frame);
 
         // Called for a C program. Runs the main function.
         //
@@ -531,6 +527,8 @@ namespace Derg
             CallExportedFunc<int>("__errno_location", frame);
 
         public int fflush(Frame frame, int fd) => CallExportedFunc<int, int>("fflush", frame, fd);
+
+        public int malloc(Frame frame, int amt) => CallExportedFunc<int, int>("malloc", frame, amt);
 
         public void free(Frame frame, int ptr) => CallExportedFunc<int>("free", frame, ptr);
 
@@ -562,6 +560,27 @@ namespace Derg
 
         public int stackAlloc(Frame frame, int size) =>
             CallExportedFunc<int, int>("stackAlloc", frame, size);
+
+        //
+        // Micropython-specific functions.
+        //
+
+        public void mp_sched_keyboard_interrupt(Frame frame) =>
+            CallExportedFunc("mp_sched_keyboard_interrupt", frame);
+
+        public int mp_js_do_str(Frame frame, int a) =>
+            CallExportedFunc<int, int>("mp_js_do_str", frame, a);
+
+        public int mp_js_process_char(Frame frame, int a) =>
+            CallExportedFunc<int, int>("mp_js_process_char", frame, a);
+
+        public void mp_js_init(Frame frame, int a) => CallExportedFunc<int>("mp_js_init", frame, a);
+
+        public void mp_js_init_repl(Frame frame) => CallExportedFunc("mp_js_init_repl", frame);
+
+        //
+        // C++ exception handling functions.
+        //
 
         public void __cxa_free_exception(Frame frame, int excPtr) =>
             CallExportedFunc<int>("__cxa_free_exception", frame, excPtr);
@@ -627,17 +646,51 @@ namespace Derg
         // d = f64
         // e = externref
         // p = i32 (a pointer)
-        public void dynCall_v(int index) => throw new NotImplementedException();
+        public void dynCall_v(Frame frame, int index) =>
+            CallExportedFunc<int>("dynCall_v", frame, index);
 
-        public void dynCall_vi(int index, int a0) => throw new NotImplementedException();
+        public void dynCall_vi(Frame frame, int index, int a0) =>
+            CallExportedFunc<int, int>("dynCall_vi", frame, index, a0);
 
-        public void dynCall_vii(int index, int a0, int a1) => throw new NotImplementedException();
+        public void dynCall_vii(Frame frame, int index, int a0, int a1) =>
+            CallExportedFunc<int, int, int>("dynCall_vii", frame, index, a0, a1);
 
-        public int dynCall_i(int index) => throw new NotImplementedException();
+        public void dynCall_viii(Frame frame, int index, int a0, int a1, int a2) =>
+            CallExportedFunc<int, int, int, int>("dynCall_viii", frame, index, a0, a1, a2);
 
-        public int dynCall_ii(int index, int a0) => throw new NotImplementedException();
+        public void dynCall_viiii(Frame frame, int index, int a0, int a1, int a2, int a3) =>
+            CallExportedFunc<int, int, int, int, int>(
+                "dynCall_viiii",
+                frame,
+                index,
+                a0,
+                a1,
+                a2,
+                a3
+            );
 
-        public int dynCall_iii(int index, int a0, int a1) => throw new NotImplementedException();
+        public int dynCall_i(Frame frame, int index) =>
+            CallExportedFunc<int, int>("dynCall_i", frame, index);
+
+        public int dynCall_ii(Frame frame, int index, int a0) =>
+            CallExportedFunc<int, int, int>("dynCall_ii", frame, index, a0);
+
+        public int dynCall_iii(Frame frame, int index, int a0, int a1) =>
+            CallExportedFunc<int, int, int, int>("dynCall_iii", frame, index, a0, a1);
+
+        public int dynCall_iiii(Frame frame, int index, int a0, int a1, int a2) =>
+            CallExportedFunc<int, int, int, int, int>("dynCall_iiii", frame, index, a0, a1, a2);
+
+        public int dynCall_iiiii(Frame frame, int index, int a0, int a1, int a2, int a3) =>
+            CallExportedFunc<int, int, int, int, int, int>(
+                "dynCall_iiiii",
+                frame,
+                index,
+                a0,
+                a1,
+                a2,
+                a3
+            );
 
         //
         // Imports to WASM
@@ -682,6 +735,30 @@ namespace Derg
             );
             machine.RegisterHostFunc(
                 "env",
+                "emscripten_scan_registers",
+                new FuncType(new Derg.ValueType[] { Derg.ValueType.I32 }, new Derg.ValueType[] { }),
+                new HostProxy<int>(emscripten_scan_registers)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "invoke_i",
+                new FuncType(
+                    new Derg.ValueType[] { Derg.ValueType.I32 },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int>(invoke_i)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "invoke_ii",
+                new FuncType(
+                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int, int>(invoke_ii)
+            );
+            machine.RegisterHostFunc(
+                "env",
                 "invoke_iii",
                 new FuncType(
                     new Derg.ValueType[]
@@ -693,6 +770,43 @@ namespace Derg
                     new Derg.ValueType[] { Derg.ValueType.I32 }
                 ),
                 new ReturningHostProxy<int, int, int, int>(invoke_iii)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "invoke_iiii",
+                new FuncType(
+                    new Derg.ValueType[]
+                    {
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32
+                    },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int, int, int, int>(invoke_iiii)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "invoke_iiiii",
+                new FuncType(
+                    new Derg.ValueType[]
+                    {
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32
+                    },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int, int, int, int, int>(invoke_iiiii)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "invoke_v",
+                new FuncType(new Derg.ValueType[] { Derg.ValueType.I32 }, new Derg.ValueType[] { }),
+                new HostProxy<int>(invoke_v)
             );
             machine.RegisterHostFunc(
                 "env",
@@ -716,6 +830,227 @@ namespace Derg
                     new Derg.ValueType[] { }
                 ),
                 new HostProxy<int, int, int>(invoke_vii)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "invoke_viii",
+                new FuncType(
+                    new Derg.ValueType[]
+                    {
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32
+                    },
+                    new Derg.ValueType[] { }
+                ),
+                new HostProxy<int, int, int, int>(invoke_viii)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "invoke_viiii",
+                new FuncType(
+                    new Derg.ValueType[]
+                    {
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32
+                    },
+                    new Derg.ValueType[] { }
+                ),
+                new HostProxy<int, int, int, int, int>(invoke_viiii)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "mp_js_hook",
+                new FuncType(new Derg.ValueType[] { }, new Derg.ValueType[] { }),
+                new VoidHostProxy(mp_js_hook)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "mp_js_ticks_ms",
+                new FuncType(new Derg.ValueType[] { }, new Derg.ValueType[] { Derg.ValueType.I32 }),
+                new ReturningVoidHostProxy<int>(mp_js_ticks_ms)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "mp_js_write",
+                new FuncType(
+                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
+                    new Derg.ValueType[] { }
+                ),
+                new HostProxy<int, int>(mp_js_write)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "__syscall_chdir",
+                new FuncType(
+                    new Derg.ValueType[] { Derg.ValueType.I32 },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int>(__syscall_chdir)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "__syscall_rmdir",
+                new FuncType(
+                    new Derg.ValueType[] { Derg.ValueType.I32 },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int>(__syscall_rmdir)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "__syscall_getcwd",
+                new FuncType(
+                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int, int>(__syscall_getcwd)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "__syscall_mkdirat",
+                new FuncType(
+                    new Derg.ValueType[]
+                    {
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32
+                    },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int, int, int>(__syscall_mkdirat)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "__syscall_openat",
+                new FuncType(
+                    new Derg.ValueType[]
+                    {
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32
+                    },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int, int, int, int>(__syscall_openat)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "__syscall_renameat",
+                new FuncType(
+                    new Derg.ValueType[]
+                    {
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32
+                    },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int, int, int, int>(__syscall_renameat)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "__syscall_unlinkat",
+                new FuncType(
+                    new Derg.ValueType[]
+                    {
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32
+                    },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int, int, int>(__syscall_unlinkat)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "__syscall_newfstatat",
+                new FuncType(
+                    new Derg.ValueType[]
+                    {
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32
+                    },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int, int, int, int>(__syscall_newfstatat)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "__syscall_poll",
+                new FuncType(
+                    new Derg.ValueType[]
+                    {
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32
+                    },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int, int, int>(__syscall_poll)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "__syscall_getdents64",
+                new FuncType(
+                    new Derg.ValueType[]
+                    {
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32
+                    },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int, int, int>(__syscall_getdents64)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "__syscall_fstat64",
+                new FuncType(
+                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int, int>(__syscall_fstat64)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "__syscall_stat64",
+                new FuncType(
+                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int, int>(__syscall_stat64)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "__syscall_lstat64",
+                new FuncType(
+                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int, int>(__syscall_lstat64)
+            );
+            machine.RegisterHostFunc(
+                "env",
+                "__syscall_statfs64",
+                new FuncType(
+                    new Derg.ValueType[]
+                    {
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32,
+                        Derg.ValueType.I32
+                    },
+                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                ),
+                new ReturningHostProxy<int, int, int, int>(__syscall_statfs64)
             );
         }
 
@@ -751,10 +1086,62 @@ namespace Derg
             }
         }
 
+        public void emscripten_scan_registers(Frame frame, int scanPtr)
+        {
+            Console.WriteLine($"emscripten_scan_registers({scanPtr})");
+            throw new NotImplementedException();
+        }
+
         public int emscripten_resize_heap(Frame frame, int requestedSize) =>
             throw new NotImplementedException();
 
         public void emscripten_exit(Frame frame, int exit_code) => throw new ExitTrap(exit_code);
+
+        // syscalls
+        public int __syscall_chdir(Frame frame, int pathPtr) => throw new NotImplementedException();
+
+        public int __syscall_rmdir(Frame frame, int pathPtr) => throw new NotImplementedException();
+
+        public int __syscall_getcwd(Frame frame, int buf, int size) =>
+            throw new NotImplementedException();
+
+        public int __syscall_mkdirat(Frame frame, int dirfd, int pathPtr, int mode) =>
+            throw new NotImplementedException();
+
+        public int __syscall_openat(Frame frame, int dirfd, int pathPtr, int flags, int mode) =>
+            throw new NotImplementedException();
+
+        public int __syscall_renameat(
+            Frame frame,
+            int olddirfd,
+            int oldpathPtr,
+            int newdirfd,
+            int newpathPtr
+        ) => throw new NotImplementedException();
+
+        public int __syscall_unlinkat(Frame frame, int dirfd, int pathPtr, int flags) =>
+            throw new NotImplementedException();
+
+        public int __syscall_newfstatat(Frame frame, int dirfd, int pathPtr, int buf, int flags) =>
+            throw new NotImplementedException();
+
+        public int __syscall_poll(Frame frame, int fdsPtr, int nfds, int timeout) =>
+            throw new NotImplementedException();
+
+        public int __syscall_getdents64(Frame frame, int fd, int dirp, int count) =>
+            throw new NotImplementedException();
+
+        public int __syscall_fstat64(Frame frame, int fd, int buf) =>
+            throw new NotImplementedException();
+
+        public int __syscall_stat64(Frame frame, int pathPtr, int buf) =>
+            throw new NotImplementedException();
+
+        public int __syscall_lstat64(Frame frame, int pathPtr, int buf) =>
+            throw new NotImplementedException();
+
+        public int __syscall_statfs64(Frame frame, int pathPtr, int size, int buf) =>
+            throw new NotImplementedException();
 
         // Implementation of exceptions when not supported in WASM.
         public int __cxa_begin_catch(int excPtr) => throw new NotImplementedException();
@@ -770,34 +1157,31 @@ namespace Derg
 
         public void __resumeException(int excPtr) => throw new NotImplementedException();
 
-        // The various invoke_* functions for setjmp/longjmp.
-        //public void invoke_v(int index)
-        //{
-        //    int sp = stackSave();
-        //    try
-        //    {
-        //        CallIndirectFunc(index);
-        //    }
-        //    catch (LongjmpException)
-        //    {
-        //        stackRestore(sp);
-        //        setThrew(1, 0);
-        //    }
-        //}
-
-        public void invoke_vi(Frame frame, int index, int a0)
+        public void invoke_v(Frame frame, int index)
         {
-            Console.WriteLine($"===============invoke_vi({index}, {a0})");
             int sp = stackSave(frame);
             try
             {
-                Console.WriteLine("===============invoke_vi: Calling indirect func");
-                CallIndirectFunc<int>(index, frame, a0);
-                Console.WriteLine("===============invoke_vi: Indirect func didn't throw longjmp");
+                // CallIndirectFunc(index, frame);
+                dynCall_v(frame, index);
             }
             catch (LongjmpException)
             {
-                Console.WriteLine("===============invoke_vi: Longjmp caught!");
+                stackRestore(frame, sp);
+                setThrew(frame, 1, 0);
+            }
+        }
+
+        public void invoke_vi(Frame frame, int index, int a0)
+        {
+            int sp = stackSave(frame);
+            try
+            {
+                // CallIndirectFunc<int>(index, frame, a0);
+                dynCall_vi(frame, index, a0);
+            }
+            catch (LongjmpException)
+            {
                 stackRestore(frame, sp);
                 setThrew(frame, 1, 0);
             }
@@ -805,74 +1189,149 @@ namespace Derg
 
         public void invoke_vii(Frame frame, int index, int a0, int a1)
         {
-            Console.Out.WriteLine($"===============invoke_vii({index}, {a0}, {a1})");
             int sp = stackSave(frame);
             try
             {
-                Console.WriteLine("===============invoke_vii: Calling indirect func");
-                CallIndirectFunc<int, int>(index, frame, a0, a1);
-                Console.WriteLine("===============invoke_vii: Indirect func didn't throw longjmp");
+                // CallIndirectFunc<int, int>(index, frame, a0, a1);
+                dynCall_vii(frame, index, a0, a1);
             }
             catch (LongjmpException)
             {
-                Console.WriteLine("===============invoke_vii: Longjmp caught!");
                 stackRestore(frame, sp);
                 setThrew(frame, 1, 0);
             }
         }
 
-        //public int invoke_i(int index)
-        //{
-        //    int sp = stackSave();
-        //    try
-        //    {
-        //        return CallIndirectFunc<int>(index);
-        //    }
-        //    catch (LongjmpException)
-        //    {
-        //        stackRestore(sp);
-        //        setThrew(1, 0);
-        //        // In the JavaScript version, the function doesn't have an explicit return, which
-        //        // means it returns undefined.
-        //        return 0; // ????
-        //    }
-        //}
-
-        //public int invoke_ii(int index, int a0)
-        //{
-        //    int sp = stackSave();
-        //    try
-        //    {
-        //        return CallIndirectFunc<int, int>(index, a0);
-        //    }
-        //    catch (LongjmpException)
-        //    {
-        //        stackRestore(sp);
-        //        setThrew(1, 0);
-        //        return 0; // ????
-        //    }
-        //}
-
-        public int invoke_iii(Frame frame, int index, int a0, int a1)
+        public void invoke_viii(Frame frame, int index, int a0, int a1, int a2)
         {
-            Console.WriteLine($"===============invoke_iii({index}, {a0}, {a1})");
             int sp = stackSave(frame);
             try
             {
-                Console.WriteLine("===============invoke_iii: Calling indirect func");
-                int retval = CallIndirectFunc<int, int, int>(index, frame, a0, a1);
-                Console.WriteLine(
-                    $"===============invoke_iii: Indirect func didn't throw longjmp, retval={retval}"
-                );
-                return retval;
+                // CallIndirectFunc<int, int, int>(index, frame, a0, a1, a2);
+                dynCall_viii(frame, index, a0, a1, a2);
             }
             catch (LongjmpException)
             {
-                Console.WriteLine("===============invoke_iii: Longjmp caught!");
+                stackRestore(frame, sp);
+                setThrew(frame, 1, 0);
+            }
+        }
+
+        public void invoke_viiii(Frame frame, int index, int a0, int a1, int a2, int a3)
+        {
+            int sp = stackSave(frame);
+            try
+            {
+                // CallIndirectFunc<int, int, int, int>(index, frame, a0, a1, a2, a3);
+                dynCall_viiii(frame, index, a0, a1, a2, a3);
+            }
+            catch (LongjmpException)
+            {
+                stackRestore(frame, sp);
+                setThrew(frame, 1, 0);
+            }
+        }
+
+        public int invoke_i(Frame frame, int index)
+        {
+            int sp = stackSave(frame);
+            try
+            {
+                // return CallIndirectFunc<int>(index, frame);
+                return dynCall_i(frame, index);
+            }
+            catch (LongjmpException)
+            {
                 stackRestore(frame, sp);
                 setThrew(frame, 1, 0);
                 return 0; // ????
             }
+        }
+
+        public int invoke_ii(Frame frame, int index, int a0)
+        {
+            int sp = stackSave(frame);
+            try
+            {
+                // return CallIndirectFunc<int, int>(index, frame, a0);
+                return dynCall_ii(frame, index, a0);
+            }
+            catch (LongjmpException)
+            {
+                stackRestore(frame, sp);
+                setThrew(frame, 1, 0);
+                return 0; // ????
+            }
+        }
+
+        public int invoke_iii(Frame frame, int index, int a0, int a1)
+        {
+            int sp = stackSave(frame);
+            try
+            {
+                // return CallIndirectFunc<int, int, int>(index, frame, a0, a1);
+                return dynCall_iii(frame, index, a0, a1);
+            }
+            catch (LongjmpException)
+            {
+                stackRestore(frame, sp);
+                setThrew(frame, 1, 0);
+                return 0; // ????
+            }
+        }
+
+        public int invoke_iiii(Frame frame, int index, int a0, int a1, int a2)
+        {
+            int sp = stackSave(frame);
+            try
+            {
+                // return CallIndirectFunc<int, int, int, int>(index, frame, a0, a1, a2);
+                return dynCall_iiii(frame, index, a0, a1, a2);
+            }
+            catch (LongjmpException)
+            {
+                stackRestore(frame, sp);
+                setThrew(frame, 1, 0);
+                return 0; // ????
+            }
+        }
+
+        public int invoke_iiiii(Frame frame, int index, int a0, int a1, int a2, int a3)
+        {
+            int sp = stackSave(frame);
+            try
+            {
+                // return CallIndirectFunc<int, int, int, int, int>(index, frame, a0, a1, a2, a3);
+                return dynCall_iiiii(frame, index, a0, a1, a2, a3);
+            }
+            catch (LongjmpException)
+            {
+                stackRestore(frame, sp);
+                setThrew(frame, 1, 0);
+                return 0; // ????
+            }
+        }
+
+        //
+        // MicroPython-specific functions.
+        //
+
+        // Seems to read a char from stdin, writing it to stdout, unless it's a ctrl-C, in which
+        // case mp_sched_keyboard_interrupt() is called.
+        public void mp_js_hook(Frame frame) { }
+
+        // Returns the number of milliseconds since the interpreter started.
+        public int mp_js_ticks_ms(Frame frame)
+        {
+            return 0;
+        }
+
+        // Writes a string to the console.
+        public void mp_js_write(Frame frame, int ptr, int len)
+        {
+            byte[] data = new byte[len];
+            Array.Copy(machine.Memory0, ptr, data, 0, len);
+            Console.WriteLine($"  MicroPython wrote: {System.Text.Encoding.UTF8.GetString(data)}");
         }
     }
 
