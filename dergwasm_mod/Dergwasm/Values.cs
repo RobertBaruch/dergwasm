@@ -127,6 +127,37 @@ namespace Derg
             value_hi = 0;
         }
 
+        public static ValueType ValueType<T>()
+        {
+            switch (Type.GetTypeCode(typeof(T)))
+            {
+                case TypeCode.Boolean:
+                    return Derg.ValueType.I32;
+                case TypeCode.Byte:
+                    return Derg.ValueType.I32;
+                case TypeCode.SByte:
+                    return Derg.ValueType.I32;
+                case TypeCode.Int16:
+                    return Derg.ValueType.I32;
+                case TypeCode.UInt16:
+                    return Derg.ValueType.I32;
+                case TypeCode.Int32:
+                    return Derg.ValueType.I32;
+                case TypeCode.UInt32:
+                    return Derg.ValueType.I32;
+                case TypeCode.Int64:
+                    return Derg.ValueType.I64;
+                case TypeCode.UInt64:
+                    return Derg.ValueType.I64;
+                case TypeCode.Single:
+                    return Derg.ValueType.F32;
+                case TypeCode.Double:
+                    return Derg.ValueType.F64;
+                default:
+                    throw new Exception($"Unknown type {typeof(T)}");
+            }
+        }
+
         public unsafe float F32
         {
             get

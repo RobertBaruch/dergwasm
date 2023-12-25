@@ -18,100 +18,42 @@ namespace Derg
 
         public void RegisterHostFuncs()
         {
-            machine.RegisterHostFunc(
+            machine.RegisterReturningHostFunc<int, int, int>(
                 "wasi_snapshot_preview1",
                 "environ_get",
-                new FuncType(
-                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int>(EnvironGet)
+                EnvironGet
             );
-
-            machine.RegisterHostFunc(
+            machine.RegisterReturningHostFunc<int, int, int>(
                 "wasi_snapshot_preview1",
                 "environ_sizes_get",
-                new FuncType(
-                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int>(EnvironSizesGet)
+                EnvironSizesGet
             );
 
-            machine.RegisterHostFunc(
-                "wasi_snapshot_preview1",
-                "proc_exit",
-                new FuncType(new Derg.ValueType[] { Derg.ValueType.I32 }, new Derg.ValueType[] { }),
-                new HostProxy<int>(ProcExit)
-            );
-
-            machine.RegisterHostFunc(
+            machine.RegisterVoidHostFunc<int>("wasi_snapshot_preview1", "proc_exit", ProcExit);
+            machine.RegisterReturningHostFunc<int, int, int, int, int>(
                 "wasi_snapshot_preview1",
                 "fd_write",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int, int, int>(FdWrite)
+                FdWrite
             );
-
-            machine.RegisterHostFunc(
+            machine.RegisterReturningHostFunc<int, int, int, int, int, int>(
                 "wasi_snapshot_preview1",
                 "fd_seek",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int, int, int, int>(FdSeek)
+                FdSeek
             );
-
-            machine.RegisterHostFunc(
+            machine.RegisterReturningHostFunc<int, int, int, int, int>(
                 "wasi_snapshot_preview1",
                 "fd_read",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int, int, int>(FdRead)
+                FdRead
             );
-
-            machine.RegisterHostFunc(
+            machine.RegisterReturningHostFunc<int, int>(
                 "wasi_snapshot_preview1",
                 "fd_close",
-                new FuncType(
-                    new Derg.ValueType[] { Derg.ValueType.I32 },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int>(FdClose)
+                FdClose
             );
-
-            machine.RegisterHostFunc(
+            machine.RegisterReturningHostFunc<int, int>(
                 "wasi_snapshot_preview1",
                 "fd_sync",
-                new FuncType(
-                    new Derg.ValueType[] { Derg.ValueType.I32 },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int>(FdSync)
+                FdSync
             );
         }
 

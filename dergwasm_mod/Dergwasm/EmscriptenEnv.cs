@@ -698,359 +698,113 @@ namespace Derg
 
         public void RegisterHostFuncs()
         {
-            machine.RegisterHostFunc(
+            machine.RegisterVoidHostFunc<int, int, int>(
                 "env",
                 "emscripten_memcpy_js",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { }
-                ),
-                new HostProxy<int, int, int>(emscripten_memcpy_js)
+                emscripten_memcpy_js
             );
-            machine.RegisterHostFunc(
-                "env",
-                "exit",
-                new FuncType(new Derg.ValueType[] { Derg.ValueType.I32 }, new Derg.ValueType[] { }),
-                new HostProxy<int>(emscripten_exit)
-            );
-            machine.RegisterHostFunc(
+            machine.RegisterVoidHostFunc<int>("env", "exit", emscripten_exit);
+            machine.RegisterReturningHostFunc<int, int>(
                 "env",
                 "emscripten_resize_heap",
-                new FuncType(
-                    new Derg.ValueType[] { Derg.ValueType.I32 },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int>(emscripten_resize_heap)
+                emscripten_resize_heap
             );
-            machine.RegisterHostFunc(
+            machine.RegisterVoidHostFunc(
                 "env",
                 "_emscripten_throw_longjmp",
-                new FuncType(new Derg.ValueType[] { }, new Derg.ValueType[] { }),
-                new VoidHostProxy(_emscripten_throw_longjmp)
+                _emscripten_throw_longjmp
             );
-            machine.RegisterHostFunc(
+            machine.RegisterVoidHostFunc<int>(
                 "env",
                 "emscripten_scan_registers",
-                new FuncType(new Derg.ValueType[] { Derg.ValueType.I32 }, new Derg.ValueType[] { }),
-                new HostProxy<int>(emscripten_scan_registers)
+                emscripten_scan_registers
             );
-            machine.RegisterHostFunc(
-                "env",
-                "invoke_i",
-                new FuncType(
-                    new Derg.ValueType[] { Derg.ValueType.I32 },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int>(invoke_i)
-            );
-            machine.RegisterHostFunc(
-                "env",
-                "invoke_ii",
-                new FuncType(
-                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int>(invoke_ii)
-            );
-            machine.RegisterHostFunc(
-                "env",
-                "invoke_iii",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int, int>(invoke_iii)
-            );
-            machine.RegisterHostFunc(
+            machine.RegisterReturningHostFunc<int, int>("env", "invoke_i", invoke_i);
+            machine.RegisterReturningHostFunc<int, int, int>("env", "invoke_ii", invoke_ii);
+            machine.RegisterReturningHostFunc<int, int, int, int>("env", "invoke_iii", invoke_iii);
+            machine.RegisterReturningHostFunc<int, int, int, int, int>(
                 "env",
                 "invoke_iiii",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int, int, int>(invoke_iiii)
+                invoke_iiii
             );
-            machine.RegisterHostFunc(
+            machine.RegisterReturningHostFunc<int, int, int, int, int, int>(
                 "env",
                 "invoke_iiiii",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int, int, int, int>(invoke_iiiii)
+                invoke_iiiii
             );
-            machine.RegisterHostFunc(
-                "env",
-                "invoke_v",
-                new FuncType(new Derg.ValueType[] { Derg.ValueType.I32 }, new Derg.ValueType[] { }),
-                new HostProxy<int>(invoke_v)
-            );
-            machine.RegisterHostFunc(
-                "env",
-                "invoke_vi",
-                new FuncType(
-                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
-                    new Derg.ValueType[] { }
-                ),
-                new HostProxy<int, int>(invoke_vi)
-            );
-            machine.RegisterHostFunc(
-                "env",
-                "invoke_vii",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { }
-                ),
-                new HostProxy<int, int, int>(invoke_vii)
-            );
-            machine.RegisterHostFunc(
-                "env",
-                "invoke_viii",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { }
-                ),
-                new HostProxy<int, int, int, int>(invoke_viii)
-            );
-            machine.RegisterHostFunc(
+            machine.RegisterVoidHostFunc<int>("env", "invoke_v", invoke_v);
+            machine.RegisterVoidHostFunc<int, int>("env", "invoke_vi", invoke_vi);
+            machine.RegisterVoidHostFunc<int, int, int>("env", "invoke_vii", invoke_vii);
+            machine.RegisterVoidHostFunc<int, int, int, int>("env", "invoke_viii", invoke_viii);
+            machine.RegisterVoidHostFunc<int, int, int, int, int>(
                 "env",
                 "invoke_viiii",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { }
-                ),
-                new HostProxy<int, int, int, int, int>(invoke_viiii)
+                invoke_viiii
             );
-            machine.RegisterHostFunc(
-                "env",
-                "mp_js_hook",
-                new FuncType(new Derg.ValueType[] { }, new Derg.ValueType[] { }),
-                new VoidHostProxy(mp_js_hook)
-            );
-            machine.RegisterHostFunc(
-                "env",
-                "mp_js_ticks_ms",
-                new FuncType(new Derg.ValueType[] { }, new Derg.ValueType[] { Derg.ValueType.I32 }),
-                new ReturningVoidHostProxy<int>(mp_js_ticks_ms)
-            );
-            machine.RegisterHostFunc(
-                "env",
-                "mp_js_write",
-                new FuncType(
-                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
-                    new Derg.ValueType[] { }
-                ),
-                new HostProxy<int, int>(mp_js_write)
-            );
-            machine.RegisterHostFunc(
-                "env",
-                "__syscall_chdir",
-                new FuncType(
-                    new Derg.ValueType[] { Derg.ValueType.I32 },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int>(__syscall_chdir)
-            );
-            machine.RegisterHostFunc(
-                "env",
-                "__syscall_rmdir",
-                new FuncType(
-                    new Derg.ValueType[] { Derg.ValueType.I32 },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int>(__syscall_rmdir)
-            );
-            machine.RegisterHostFunc(
+            machine.RegisterVoidHostFunc("env", "mp_js_hook", mp_js_hook);
+            machine.RegisterReturningHostFunc<int>("env", "mp_js_ticks_ms", mp_js_ticks_ms);
+            machine.RegisterVoidHostFunc<int, int>("env", "mp_js_write", mp_js_write);
+            machine.RegisterReturningHostFunc<int, int>("env", "__syscall_chdir", __syscall_chdir);
+            machine.RegisterReturningHostFunc<int, int>("env", "__syscall_rmdir", __syscall_rmdir);
+            machine.RegisterReturningHostFunc<int, int, int>(
                 "env",
                 "__syscall_getcwd",
-                new FuncType(
-                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int>(__syscall_getcwd)
+                __syscall_getcwd
             );
-            machine.RegisterHostFunc(
+            machine.RegisterReturningHostFunc<int, int, int, int>(
                 "env",
                 "__syscall_mkdirat",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int, int>(__syscall_mkdirat)
+                __syscall_mkdirat
             );
-            machine.RegisterHostFunc(
+            machine.RegisterReturningHostFunc<int, int, int, int, int>(
                 "env",
                 "__syscall_openat",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int, int, int>(__syscall_openat)
+                __syscall_openat
             );
-            machine.RegisterHostFunc(
+            machine.RegisterReturningHostFunc<int, int, int, int, int>(
                 "env",
                 "__syscall_renameat",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int, int, int>(__syscall_renameat)
+                __syscall_renameat
             );
-            machine.RegisterHostFunc(
+            machine.RegisterReturningHostFunc<int, int, int, int>(
                 "env",
                 "__syscall_unlinkat",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int, int>(__syscall_unlinkat)
+                __syscall_unlinkat
             );
-            machine.RegisterHostFunc(
+            machine.RegisterReturningHostFunc<int, int, int, int, int>(
                 "env",
                 "__syscall_newfstatat",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int, int, int>(__syscall_newfstatat)
+                __syscall_newfstatat
             );
-            machine.RegisterHostFunc(
+            machine.RegisterReturningHostFunc<int, int, int, int>(
                 "env",
                 "__syscall_poll",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int, int>(__syscall_poll)
+                __syscall_poll
             );
-            machine.RegisterHostFunc(
+            machine.RegisterReturningHostFunc<int, int, int, int>(
                 "env",
                 "__syscall_getdents64",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int, int>(__syscall_getdents64)
+                __syscall_getdents64
             );
-            machine.RegisterHostFunc(
+            machine.RegisterReturningHostFunc<int, int, int>(
                 "env",
                 "__syscall_fstat64",
-                new FuncType(
-                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int>(__syscall_fstat64)
+                __syscall_fstat64
             );
-            machine.RegisterHostFunc(
+            machine.RegisterReturningHostFunc<int, int, int>(
                 "env",
                 "__syscall_stat64",
-                new FuncType(
-                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int>(__syscall_stat64)
+                __syscall_stat64
             );
-            machine.RegisterHostFunc(
+            machine.RegisterReturningHostFunc<int, int, int>(
                 "env",
                 "__syscall_lstat64",
-                new FuncType(
-                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int>(__syscall_lstat64)
+                __syscall_lstat64
             );
-            machine.RegisterHostFunc(
+            machine.RegisterReturningHostFunc<int, int, int, int>(
                 "env",
                 "__syscall_statfs64",
-                new FuncType(
-                    new Derg.ValueType[]
-                    {
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32,
-                        Derg.ValueType.I32
-                    },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                ),
-                new ReturningHostProxy<int, int, int, int>(__syscall_statfs64)
+                __syscall_statfs64
             );
         }
 
