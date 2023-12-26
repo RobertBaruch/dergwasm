@@ -1,4 +1,5 @@
-﻿using FrooxEngine;
+﻿using Elements.Core;
+using FrooxEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,19 +9,27 @@ namespace Derg
 {
     // Provides the functions in resonite_api.h. A ResoniteEnv, like a Machine, is specific
     // to a World.
-    //
-    // FrooxEngine.World doesn't provide any methods to find objects by their ReferenceID.
-    // Therefore, those have to be patched in.
     public class ResoniteEnv
     {
         public Machine machine;
         public World world;
 
+        // Could these be persistent across calls? If we could patch into Resonite so that
+        // we get told if any of these are disposed, then we could remove them from the
+        // dictionaries.
+        //
+        // This would enable us to have collections of slots and users.
+        public Dictionary<RefID, Slot> slotDict;
+        public Dictionary<RefID, User> userDict;
+
         public ResoniteEnv(Machine machine, World world)
         {
             this.machine = machine;
+            slotDict = new Dictionary<RefID, Slot>();
+            userDict = new Dictionary<RefID, User>();
         }
 
+        // This only needs to be called once, when the WASM Machine is initialized and loaded.
         public void RegisterHostFuncs()
         {
             machine.RegisterReturningHostFunc<ulong, ulong>(
@@ -45,10 +54,66 @@ namespace Derg
             );
         }
 
+        // Calls a WASM function, where the function to call and its arguments are stored in
+        // the given argsSlot.
+        public void CallWasmFunction(Slot argsSlot)
+        {
+            if (argsSlot.Tag != "dergwasm_args")
+            {
+                throw new Exception("CallWasmFunction: argsSlot.Tag must be 'dergwasm_args'");
+            }
+
+            string funcName = null;
+            List<Value> args = new List<Value>();
+
+            // The ValueField components in the argsSlot are the function name and its arguments.
+            // TODO: Should this be Children or LocalChildren? Children calls EnsureChildOrder, which
+            // seems like a good thing.
+            foreach (Slot child in argsSlot.Children)
+            {
+                foreach (Component c in child.Components)
+                {
+                    if (c is ValueField<string> stringField)
+                    {
+                        if (funcName == null)
+                        {
+                            funcName = stringField.Value;
+                            break;
+                        }
+                        // TODO: Allocate a string
+                        break;
+                    }
+                    if (c is ValueField<Slot> slotField)
+                    {
+                        slotDict.Add(slotField.Value.ReferenceID, slotField.Value);
+                        args.Add(new Value((ulong)slotField.Value.ReferenceID));
+                        break;
+                    }
+                    if (c is ValueField<User> userField)
+                    {
+                        userDict.Add(userField.Value.ReferenceID, userField.Value);
+                        args.Add(new Value((ulong)userField.Value.ReferenceID));
+                        break;
+                    }
+                    if (c is ValueField<bool> boolField)
+                    {
+                        args.Add(new Value(boolField.Value));
+                        break;
+                    }
+                    // TODO: The rest of the types
+                }
+            }
+
+            // TODO: Execute the exported function.
+
+            slotDict.Clear();
+            userDict.Clear();
+        }
+
         public ulong slot__get_active_user(Frame frame, ulong slot_id)
         {
-            Slot slot = world.GetSlotByReferenceID(slot_id); // TODO: Implement.
-            if (slot == null)
+            Slot slot = null;
+            if (!slotDict.TryGetValue(slot_id, out slot))
             {
                 return 0;
             }
@@ -57,8 +122,8 @@ namespace Derg
 
         public ulong slot__get_active_user_root(Frame frame, ulong slot_id)
         {
-            Slot slot = world.GetSlotByReferenceID(slot_id);
-            if (slot == null)
+            Slot slot = null;
+            if (!slotDict.TryGetValue(slot_id, out slot))
             {
                 return 0;
             }
@@ -67,22 +132,34 @@ namespace Derg
 
         public ulong slot__get_object_root(Frame frame, ulong slot_id, int only_explicit)
         {
-            Slot slot = world.GetSlotByReferenceID(slot_id);
-            if (slot == null)
+            Slot slot = null;
+            if (!slotDict.TryGetValue(slot_id, out slot))
             {
                 return 0;
             }
-            return (ulong)slot.GetObjectRoot(only_explicit != 0).ReferenceID;
+            Slot root = slot.GetObjectRoot(only_explicit != 0);
+            if (root == null)
+            {
+                return 0;
+            }
+            slotDict.Add(root.ReferenceID, root);
+            return (ulong)root.ReferenceID;
         }
 
         public ulong slot__get_parent(Frame frame, ulong slot_id)
         {
-            Slot slot = world.GetSlotByReferenceID(slot_id);
-            if (slot == null)
+            Slot slot = null;
+            if (!slotDict.TryGetValue(slot_id, out slot))
             {
                 return 0;
             }
-            return (ulong)slot.Parent.ReferenceID;
+            Slot parent = slot.Parent;
+            if (parent == null)
+            {
+                return 0;
+            }
+            slotDict.Add(parent.ReferenceID, parent);
+            return (ulong)parent.ReferenceID;
         }
     }
 }
