@@ -13,6 +13,7 @@ namespace Derg
     {
         public Machine machine;
         public World world;
+        public EmscriptenEnv emscriptenEnv;
 
         // Could these be persistent across calls? If we could patch into Resonite so that
         // we get told if any of these are disposed, then we could remove them from the
@@ -22,9 +23,11 @@ namespace Derg
         public Dictionary<RefID, Slot> slotDict;
         public Dictionary<RefID, User> userDict;
 
-        public ResoniteEnv(Machine machine, World world)
+        public ResoniteEnv(Machine machine, World world, EmscriptenEnv emscriptenEnv)
         {
             this.machine = machine;
+            this.world = world;
+            this.emscriptenEnv = emscriptenEnv;
             slotDict = new Dictionary<RefID, Slot>();
             userDict = new Dictionary<RefID, User>();
         }
@@ -63,8 +66,14 @@ namespace Derg
                 throw new Exception("CallWasmFunction: argsSlot.Tag must be 'dergwasm_args'");
             }
 
+            Frame frame = new Frame(null, null, null);
+            frame.Label = new Label(1, 0);
             string funcName = null;
             List<Value> args = new List<Value>();
+
+            // The list of stuff we have to free after the call.
+            // TODO: What happens if WASM traps? Is the machine even valid anymore?
+            List<int> allocations = new List<int>();
 
             // The ValueField components in the argsSlot are the function name and its arguments.
             // TODO: Should this be Children or LocalChildren? Children calls EnsureChildOrder, which
@@ -80,21 +89,28 @@ namespace Derg
                             funcName = stringField.Value;
                             break;
                         }
-                        // TODO: Allocate a string
+                        byte[] stringData = Encoding.UTF8.GetBytes(stringField.Value);
+                        int stringPtr = emscriptenEnv.malloc(frame, stringData.Length + 1);
+                        allocations.Add(stringPtr);
+                        Array.Copy(stringData, 0, machine.Memory0, stringPtr, stringData.Length);
+                        machine.Memory0[stringPtr + stringData.Length] = 0; // NUL-termination
                         break;
                     }
+
                     if (c is ValueField<Slot> slotField)
                     {
                         slotDict.Add(slotField.Value.ReferenceID, slotField.Value);
                         args.Add(new Value((ulong)slotField.Value.ReferenceID));
                         break;
                     }
+
                     if (c is ValueField<User> userField)
                     {
                         userDict.Add(userField.Value.ReferenceID, userField.Value);
                         args.Add(new Value((ulong)userField.Value.ReferenceID));
                         break;
                     }
+
                     if (c is ValueField<bool> boolField)
                     {
                         args.Add(new Value(boolField.Value));
@@ -108,6 +124,10 @@ namespace Derg
 
             slotDict.Clear();
             userDict.Clear();
+            foreach (int ptr in allocations)
+            {
+                emscriptenEnv.free(frame, ptr);
+            }
         }
 
         public ulong slot__get_active_user(Frame frame, ulong slot_id)

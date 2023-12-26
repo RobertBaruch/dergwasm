@@ -7,6 +7,11 @@ typedef unsigned long resonite_slot_refid_t;
 typedef unsigned long resonite_user_refid_t;
 typedef unsigned long resonite_user_root_refid_t;
 typedef unsigned long resonite_component_refid_t;
+// A NUL-terminated UTF-8-encoded string. The "pointer" is the index into WASM's heap where
+// the string has been malloced.
+//
+// TODO: Export malloc and free.
+typedef unsigned int string_ptr_t;
 
 //----------------------------------------------------------------------
 // Slot functions.
