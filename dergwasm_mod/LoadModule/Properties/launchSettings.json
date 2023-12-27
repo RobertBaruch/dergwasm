@@ -2,7 +2,7 @@
   "profiles": {
     "LoadModule": {
       "commandName": "Project",
-      "commandLineArgs": "firmware.wasm",
+      "commandLineArgs": "test_import.wasm",
       "workingDirectory": "F:\\dergwasm"
     }
   }

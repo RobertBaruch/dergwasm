@@ -61,11 +61,6 @@ namespace Derg
         // the given argsSlot.
         public void CallWasmFunction(Slot argsSlot)
         {
-            if (argsSlot.Tag != "dergwasm_args")
-            {
-                throw new Exception("CallWasmFunction: argsSlot.Tag must be 'dergwasm_args'");
-            }
-
             Frame frame = new Frame(null, null, null);
             frame.Label = new Label(1, 0);
             string funcName = null;
