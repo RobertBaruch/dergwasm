@@ -36,22 +36,22 @@ namespace Derg
         public void RegisterHostFuncs()
         {
             machine.RegisterReturningHostFunc<ulong, ulong>(
-                "resonite_api", // TODO: Is this right?
+                "env",
                 "slot__get_active_user",
                 slot__get_active_user
             );
             machine.RegisterReturningHostFunc<ulong, ulong>(
-                "resonite_api",
+                "env",
                 "slot__get_active_user_root",
                 slot__get_active_user_root
             );
             machine.RegisterReturningHostFunc<ulong, int, ulong>(
-                "resonite_api",
+                "env",
                 "slot__get_object_root",
                 slot__get_object_root
             );
             machine.RegisterReturningHostFunc<ulong, ulong>(
-                "resonite_api",
+                "env",
                 "slot__get_parent",
                 slot__get_parent
             );

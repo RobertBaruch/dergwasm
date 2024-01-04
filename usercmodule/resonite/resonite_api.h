@@ -1,17 +1,19 @@
 #ifndef __RESONITE_RESONITE_API_H__
 #define __RESONITE_RESONITE_API_H__
 
+#include <stdint.h>
+
 // Reference IDs cannot be converted back to their objects unless they exist
 // in the ResoniteEnv dictionaries.
-typedef unsigned long resonite_slot_refid_t;
-typedef unsigned long resonite_user_refid_t;
-typedef unsigned long resonite_user_root_refid_t;
-typedef unsigned long resonite_component_refid_t;
+typedef uint64_t resonite_slot_refid_t;
+typedef uint64_t resonite_user_refid_t;
+typedef uint64_t resonite_user_root_refid_t;
+typedef uint64_t resonite_component_refid_t;
 // A NUL-terminated UTF-8-encoded string. The "pointer" is the index into WASM's heap where
 // the string has been malloced.
 //
 // TODO: Export malloc and free.
-typedef unsigned int string_ptr_t;
+typedef uint32_t string_ptr_t;
 
 //----------------------------------------------------------------------
 // Slot functions.

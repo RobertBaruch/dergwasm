@@ -677,7 +677,7 @@ namespace DergwasmTests
             machine.SetProgram(0, I32Const(10), I32Const(20), Call(4), Nop());
             machine.SetHostFuncAt(
                 14,
-                new ReturningHostProxy<int, int, int>((int a, int b) => a - b)
+                new ReturningHostProxy<int, int, int>((Frame f, int a, int b) => a - b)
             );
 
             machine.Step(2);

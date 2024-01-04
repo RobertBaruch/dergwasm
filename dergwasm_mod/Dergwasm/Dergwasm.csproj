@@ -37,6 +37,10 @@
     <Reference Include="0Harmony">
       <HintPath>..\..\..\Steam\steamapps\common\Resonite\rml_libs\0Harmony.dll</HintPath>
     </Reference>
+    <Reference Include="Elements.Assets, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Steam\steamapps\common\Resonite\Resonite_Data\Managed\Elements.Assets.dll</HintPath>
+    </Reference>
     <Reference Include="Elements.Core">
       <HintPath>..\..\..\Steam\steamapps\common\Resonite\Resonite_Data\Managed\Elements.Core.dll</HintPath>
     </Reference>
@@ -64,11 +68,19 @@
     <Reference Include="Microsoft.Extensions.Primitives, Version=8.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.Extensions.Primitives.8.0.0\lib\net462\Microsoft.Extensions.Primitives.dll</HintPath>
     </Reference>
+    <Reference Include="ProtoFlux.Core, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Steam\steamapps\common\Resonite\Resonite_Data\Managed\ProtoFlux.Core.dll</HintPath>
+    </Reference>
     <Reference Include="ProtoFlux.Nodes.FrooxEngine">
       <HintPath>..\..\..\Steam\steamapps\common\Resonite\Resonite_Data\Managed\ProtoFlux.Nodes.FrooxEngine.dll</HintPath>
     </Reference>
     <Reference Include="ResoniteModLoader">
       <HintPath>..\..\..\Steam\steamapps\common\Resonite\Libraries\ResoniteModLoader.dll</HintPath>
+    </Reference>
+    <Reference Include="SkyFrost.Base, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Steam\steamapps\common\Resonite\Resonite_Data\Managed\SkyFrost.Base.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
@@ -107,6 +119,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BinaryAssetLoader.cs" />
     <Compile Include="ControlInstructions.cs" />
     <Compile Include="Dergwasm.cs" />
     <Compile Include="EmscriptenEnv.cs" />

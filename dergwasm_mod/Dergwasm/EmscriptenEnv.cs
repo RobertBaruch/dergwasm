@@ -19,6 +19,7 @@ namespace Derg
     public class EmscriptenEnv
     {
         public Machine machine;
+        public Action<string> outputWriter = null;
 
         public EmscriptenEnv(Machine machine)
         {
@@ -1086,6 +1087,10 @@ namespace Derg
             byte[] data = new byte[len];
             Array.Copy(machine.Memory0, ptr, data, 0, len);
             Console.WriteLine($"  MicroPython wrote: {System.Text.Encoding.UTF8.GetString(data)}");
+            if (outputWriter != null)
+            {
+                outputWriter(System.Text.Encoding.UTF8.GetString(data));
+            }
         }
     }
 
