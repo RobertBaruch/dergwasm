@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Elements.Core; // For UniLog
@@ -111,7 +112,7 @@ namespace Derg
             {
                 if (tag != "_dergwasm" || hierarchy == null || hierarchy.Tag != "_dergwasm_args")
                     return;
-                DergwasmEnv.Msg("_dergwasm called on DynamicImpulseTrigger");
+                DergwasmMachine.Msg("_dergwasm called on DynamicImpulseTrigger");
                 // TODO: Call ResoniteEnv.CallWasmFunction(hierarchy)
 
                 Slot programSlot = hierarchy.FindChild(
@@ -119,17 +120,17 @@ namespace Derg
                 );
                 if (programSlot == null)
                 {
-                    DergwasmEnv.Msg("Couldn't find program slot");
+                    DergwasmMachine.Msg("Couldn't find program slot");
                     return;
                 }
                 string program = programSlot.GetComponent<TextRenderer>().Text.Value;
                 try
                 {
-                    DergwasmEnv.MicropythonDoStr(program);
+                    DergwasmMachine.MicropythonDoStr(program);
                 }
                 catch (Exception e)
                 {
-                    DergwasmEnv.Msg($"Exception: {e}");
+                    DergwasmMachine.Msg($"Exception: {e}");
                 }
 
                 //Slot child = hierarchy[0];
@@ -147,7 +148,7 @@ namespace Derg
         }
     }
 
-    public static class DergwasmEnv
+    public static class DergwasmMachine
     {
         public static World world = null;
         public static Machine machine = null;
@@ -184,16 +185,22 @@ namespace Derg
 
         public static void Init(World world, string filename)
         {
-            DergwasmEnv.world = world;
+            DergwasmMachine.world = world;
             try
             {
                 Msg("Init called");
                 machine = new Machine();
                 // machine.Debug = true;
+
                 new EmscriptenWasi(machine).RegisterHostFuncs();
+
                 emscriptenEnv = new EmscriptenEnv(machine);
                 emscriptenEnv.RegisterHostFuncs();
                 emscriptenEnv.outputWriter = Output;
+
+                DergwasmEnv dergwasmEnv = new DergwasmEnv(machine, world);
+                dergwasmEnv.RegisterHostFuncs();
+
                 Module module;
 
                 Msg("Opening WASM file");
@@ -325,6 +332,97 @@ namespace Derg
             {
                 Msg($"mp_js_init exited");
             }
+        }
+    }
+
+    public class DergwasmEnv
+    {
+        public Machine machine;
+        public World world;
+
+        // Could these be persistent across calls? If we could patch into Resonite so that
+        // we get told if any of these are disposed, then we could remove them from the
+        // dictionaries.
+        //
+        // This would enable us to have collections of slots and users.
+        public Dictionary<RefID, Slot> slotDict;
+        public Dictionary<RefID, User> userDict;
+
+        public DergwasmEnv(Machine machine, World world)
+        {
+            this.machine = machine;
+            this.world = world;
+            slotDict = new Dictionary<RefID, Slot>();
+            userDict = new Dictionary<RefID, User>();
+        }
+
+        public void RegisterHostFuncs()
+        {
+            machine.RegisterVoidHostFunc<uint>("env", "slot__root_slot", slot__root_slot);
+            machine.RegisterVoidHostFunc<uint, uint, uint>(
+                "env",
+                "slot__get_parent",
+                slot__get_parent
+            );
+        }
+
+        private unsafe T MemGet<T>(uint ea)
+            where T : unmanaged
+        {
+            fixed (byte* ptr = &machine.Memory0[ea])
+            {
+                return *(T*)ptr;
+            }
+        }
+
+        private unsafe void MemSet<T>(uint ea, T value)
+            where T : unmanaged
+        {
+            try
+            {
+                Span<byte> mem = machine.Span0(ea, (uint)sizeof(T));
+                fixed (byte* ptr = mem)
+                {
+                    *(T*)ptr = value;
+                }
+            }
+            catch (Exception e)
+            {
+                throw new Trap($"Memory access out of bounds: {sizeof(T)} bytes at 0x{ea:X8}");
+            }
+        }
+
+        public Slot SlotFromRefID(uint slot_id_lo, uint slot_id_hi)
+        {
+            Slot slot = null;
+            RefID refID = new RefID(((ulong)slot_id_hi << 32) | slot_id_lo);
+            slotDict.TryGetValue(refID, out slot);
+            return slot;
+        }
+
+        public void slot__root_slot(Frame frame, uint rootPtr)
+        {
+            Slot slot = world.RootSlot;
+            MemSet(rootPtr, (ulong)slot.ReferenceID);
+            slotDict.Add(slot.ReferenceID, slot);
+        }
+
+        public void slot__get_parent(Frame frame, uint slot_id_lo, uint slot_id_hi, uint parentPtr)
+        {
+            Slot slot = SlotFromRefID(slot_id_lo, slot_id_hi);
+            if (slot == null)
+            {
+                MemSet(parentPtr, (ulong)0);
+                return;
+            }
+            Slot parent = slot.Parent;
+            if (parent == null)
+            {
+                MemSet(parentPtr, (ulong)0);
+                return;
+            }
+            MemSet(parentPtr, (ulong)parent.ReferenceID);
+            slotDict.Add(parent.ReferenceID, parent);
         }
     }
 }

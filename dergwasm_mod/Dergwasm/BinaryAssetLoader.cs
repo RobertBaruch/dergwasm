@@ -53,7 +53,7 @@ namespace Derg
                 metadata.IsProcessing.Value = false;
             ByteDisplay.GetComponent<TextRenderer>().Text.Value = $"Loaded to {file}";
 
-            DergwasmEnv.Init(world, file);
+            DergwasmMachine.Init(world, file);
             return file;
         }
     }

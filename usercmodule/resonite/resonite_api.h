@@ -2,6 +2,7 @@
 #define __RESONITE_RESONITE_API_H__
 
 #include <stdint.h>
+#include <emscripten.h>
 
 // Reference IDs cannot be converted back to their objects unless they exist
 // in the ResoniteEnv dictionaries.
@@ -19,29 +20,42 @@ typedef uint32_t string_ptr_t;
 // Slot functions.
 //----------------------------------------------------------------------
 
+extern void slot__root_slot(resonite_slot_refid_t* slot_id);
+EMSCRIPTEN_KEEPALIVE void _slot__root_slot(resonite_slot_refid_t* slot_id) {
+	slot__root_slot(slot_id);
+}
+
 // Returns the active user for the given slot.
 //
 // ProtoFlux equivalent: Users/GetActiveUser, Slots/GetActiveUser
 // FrooxEngine equivalent: Slot.ActiveUser
-extern resonite_user_refid_t slot__get_active_user(resonite_slot_refid_t slot_id);
+extern void slot__get_active_user(resonite_slot_refid_t slot_id, resonite_user_refid_t* user_id);
 
 // Returns the active user root for the given slot.
 //
 // ProtoFlux equivalent: Users/GetActiveUserRoot, Slots/GetActiveUserRoot
 // FrooxEngine equivalent: Slot.ActiveUserRoot
-extern resonite_user_root_refid_t slot__get_active_user_root(resonite_slot_refid_t slot_id);
+extern void slot__get_active_user_root(
+    resonite_slot_refid_t slot_id,
+    resonite_user_root_refid_t* user_root_id);
 
 // Returns the object root for the given slot.
 //
 // ProtoFlux equivalent: Slots/GetObjectRoot
 // FrooxEngine equivalent: Slot.GetObjectRoot
-extern resonite_slot_refid_t slot__get_object_root(resonite_slot_refid_t slot_id, int only_explicit);
+extern void slot__get_object_root(
+    resonite_slot_refid_t slot_id, int only_explicit, resonite_slot_refid_t* object_root_id);
 
 // Returns the parent slot for the given slot.
 //
 // ProtoFlux equivalent: Slots/GetParentSlot
 // FrooxEngine equivalent: Slot.Parent
-extern resonite_slot_refid_t slot__get_parent(resonite_slot_refid_t slot_id);
+extern void slot__get_parent(
+    resonite_slot_refid_t slot_id, resonite_slot_refid_t* parent_slot_id);
+EMSCRIPTEN_KEEPALIVE void _slot__get_parent(
+    resonite_slot_refid_t slot_id, resonite_slot_refid_t* parent_slot_id) {
+    slot__get_parent(slot_id, parent_slot_id);
+}
 
 //----------------------------------------------------------------------
 // ValueField functions.

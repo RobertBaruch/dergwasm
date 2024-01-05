@@ -30,6 +30,14 @@ class Slot:
         than a whole MPZ for a 64-bit number.
         """
 
+    @classmethod
+    def root_slot(cls) -> Slot;
+		"""Returns the root slot.
+
+		ProtoFlux equivalent: Slots/RootSlot
+		FrooxEngine equivalent: World.RootSlot
+		"""
+
     def get_active_user(self) -> User:
         """Returns the active user for this slot.
 
