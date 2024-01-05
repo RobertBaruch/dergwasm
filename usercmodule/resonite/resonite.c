@@ -27,12 +27,18 @@ STATIC mp_obj_t resonite_Slot_make_new(const mp_obj_type_t *type, size_t n_args,
     return resonite_create_slot(reference_id);
 }
 
+STATIC void resonite_Slot_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
+	resonite_Slot_obj_t *self = MP_OBJ_TO_PTR(self_in);
+	mp_printf(print, "Slot(ID=%ul)", self->reference_id);
+}
+
 STATIC mp_obj_t resonite_Slot_root_slot(mp_obj_t cls_in) {
     resonite_slot_refid_t root_slot_id;
     slot__root_slot(&root_slot_id);
     return resonite_create_slot(root_slot_id);
 }
-STATIC MP_DEFINE_CONST_CLASSMETHOD_OBJ(resonite_Slot_root_slot_obj, resonite_Slot_root_slot);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(resonite_Slot_root_slot_fun_obj, resonite_Slot_root_slot);
+STATIC MP_DEFINE_CONST_CLASSMETHOD_OBJ(resonite_Slot_root_slot_obj, MP_ROM_PTR(&resonite_Slot_root_slot_fun_obj));
 
 STATIC mp_obj_t resonite_Slot_get_parent(mp_obj_t self_in) {
     resonite_Slot_obj_t *self = MP_OBJ_TO_PTR(self_in);
@@ -59,6 +65,7 @@ MP_DEFINE_CONST_OBJ_TYPE(
     MP_QSTR_Slot,
     MP_TYPE_FLAG_NONE,
     make_new, resonite_Slot_make_new,
+    print, resonite_Slot_print,
     locals_dict, &resonite_Slot_locals_dict
 );
 

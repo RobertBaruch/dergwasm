@@ -402,6 +402,7 @@ namespace Derg
 
         public void slot__root_slot(Frame frame, uint rootPtr)
         {
+            Msg("Called Slot.root_slot");
             Slot slot = world.RootSlot;
             MemSet(rootPtr, (ulong)slot.ReferenceID);
             slotDict.Add(slot.ReferenceID, slot);
