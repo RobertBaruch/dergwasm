@@ -1,6 +1,10 @@
+#include <string.h>
+
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "resonite_api.h"
+
+// The C implementation of the resonite module for MicroPython.
 
 // See https://micropython-usermod.readthedocs.io/
 // and https://docs.micropython.org/en/latest/develop/cmodules.html
@@ -33,27 +37,61 @@ STATIC void resonite_Slot_print(const mp_print_t *print, mp_obj_t self_in, mp_pr
 }
 
 STATIC mp_obj_t resonite_Slot_root_slot(mp_obj_t cls_in) {
-    resonite_slot_refid_t root_slot_id;
-    slot__root_slot(&root_slot_id);
-    return resonite_create_slot(root_slot_id);
+    resonite_slot_refid_t id;
+    slot__root_slot(&id);
+    return resonite_create_slot(id);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(resonite_Slot_root_slot_fun_obj, resonite_Slot_root_slot);
 STATIC MP_DEFINE_CONST_CLASSMETHOD_OBJ(resonite_Slot_root_slot_obj, MP_ROM_PTR(&resonite_Slot_root_slot_fun_obj));
 
 STATIC mp_obj_t resonite_Slot_get_parent(mp_obj_t self_in) {
     resonite_Slot_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    resonite_slot_refid_t parent_id;
-    slot__get_parent(self->reference_id, &parent_id);
-    return resonite_create_slot(parent_id);
+    resonite_slot_refid_t id;
+    slot__get_parent(self->reference_id, &id);
+    return resonite_create_slot(id);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(resonite_Slot_get_parent_obj, resonite_Slot_get_parent);
 
+/*
+STATIC mp_obj_t resonite_Slot_get_active_user(mp_obj_t self_in) {
+    resonite_Slot_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    resonite_user_refid_t id;
+    slot__get_active_user(self->reference_id, &id);
+    return resonite_create_user(id);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(resonite_Slot_get_active_user_obj, resonite_Slot_get_active_user);
+*/
+
+STATIC mp_obj_t resonite_Slot_get_object_root(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+    static const mp_arg_t allowed_args[] = {
+		{ MP_QSTR_only_explicit, MP_ARG_BOOL, {.u_bool = false} },
+	};
+    resonite_Slot_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+    int only_explicit = args[0].u_bool ? 1 : 0;
+
+    resonite_slot_refid_t id;
+    slot__get_object_root(self->reference_id, only_explicit, &id);
+    return resonite_create_slot(id);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(resonite_Slot_get_object_root_obj, 1, resonite_Slot_get_object_root);
+
+STATIC mp_obj_t resonite_Slot_get_name(mp_obj_t self_in) {
+	resonite_Slot_obj_t *self = MP_OBJ_TO_PTR(self_in);
+	char* name = slot__get_name(self->reference_id);
+    return mp_obj_new_str(name, strlen(name));
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(resonite_Slot_get_name_obj, resonite_Slot_get_name);
 
 // This collects all methods and other static class attributes of Slot.
 // The table structure is similar to the module table, as detailed below.
 STATIC const mp_rom_map_elem_t resonite_Slot_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_root_slot), MP_ROM_PTR(&resonite_Slot_root_slot_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_parent), MP_ROM_PTR(&resonite_Slot_get_parent_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_object_root), MP_ROM_PTR(&resonite_Slot_get_object_root_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_name), MP_ROM_PTR(&resonite_Slot_get_name_obj) },
 };
 // Create a const dict named resonite_Slot_locals_dict, with content
 // resonite_Slot_locals_dict_table.

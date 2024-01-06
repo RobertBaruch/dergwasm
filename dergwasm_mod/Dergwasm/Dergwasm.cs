@@ -198,8 +198,8 @@ namespace Derg
                 emscriptenEnv.RegisterHostFuncs();
                 emscriptenEnv.outputWriter = Output;
 
-                DergwasmEnv dergwasmEnv = new DergwasmEnv(machine, world);
-                dergwasmEnv.RegisterHostFuncs();
+                ResoniteEnv resoniteEnv = new ResoniteEnv(machine, world, emscriptenEnv);
+                resoniteEnv.RegisterHostFuncs();
 
                 Module module;
 
@@ -332,98 +332,6 @@ namespace Derg
             {
                 Msg($"mp_js_init exited");
             }
-        }
-    }
-
-    public class DergwasmEnv
-    {
-        public Machine machine;
-        public World world;
-
-        // Could these be persistent across calls? If we could patch into Resonite so that
-        // we get told if any of these are disposed, then we could remove them from the
-        // dictionaries.
-        //
-        // This would enable us to have collections of slots and users.
-        public Dictionary<RefID, Slot> slotDict;
-        public Dictionary<RefID, User> userDict;
-
-        public DergwasmEnv(Machine machine, World world)
-        {
-            this.machine = machine;
-            this.world = world;
-            slotDict = new Dictionary<RefID, Slot>();
-            userDict = new Dictionary<RefID, User>();
-        }
-
-        public void RegisterHostFuncs()
-        {
-            machine.RegisterVoidHostFunc<uint>("env", "slot__root_slot", slot__root_slot);
-            machine.RegisterVoidHostFunc<uint, uint, uint>(
-                "env",
-                "slot__get_parent",
-                slot__get_parent
-            );
-        }
-
-        private unsafe T MemGet<T>(uint ea)
-            where T : unmanaged
-        {
-            fixed (byte* ptr = &machine.Memory0[ea])
-            {
-                return *(T*)ptr;
-            }
-        }
-
-        private unsafe void MemSet<T>(uint ea, T value)
-            where T : unmanaged
-        {
-            try
-            {
-                Span<byte> mem = machine.Span0(ea, (uint)sizeof(T));
-                fixed (byte* ptr = mem)
-                {
-                    *(T*)ptr = value;
-                }
-            }
-            catch (Exception e)
-            {
-                throw new Trap($"Memory access out of bounds: {sizeof(T)} bytes at 0x{ea:X8}");
-            }
-        }
-
-        public Slot SlotFromRefID(uint slot_id_lo, uint slot_id_hi)
-        {
-            Slot slot = null;
-            RefID refID = new RefID(((ulong)slot_id_hi << 32) | slot_id_lo);
-            slotDict.TryGetValue(refID, out slot);
-            return slot;
-        }
-
-        public void slot__root_slot(Frame frame, uint rootPtr)
-        {
-            DergwasmMachine.Msg("Called Slot.root_slot");
-            Slot slot = world.RootSlot;
-            MemSet(rootPtr, (ulong)slot.ReferenceID);
-            slotDict.Add(slot.ReferenceID, slot);
-        }
-
-        public void slot__get_parent(Frame frame, uint slot_id_lo, uint slot_id_hi, uint parentPtr)
-        {
-            Slot slot = SlotFromRefID(slot_id_lo, slot_id_hi);
-            if (slot == null)
-            {
-                MemSet(parentPtr, (ulong)0);
-                return;
-            }
-            Slot parent = slot.Parent;
-            if (parent == null)
-            {
-                MemSet(parentPtr, (ulong)0);
-                return;
-            }
-            MemSet(parentPtr, (ulong)parent.ReferenceID);
-            slotDict.Add(parent.ReferenceID, parent);
         }
     }
 }

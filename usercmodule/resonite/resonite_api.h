@@ -4,17 +4,12 @@
 #include <stdint.h>
 #include <emscripten.h>
 
-// Reference IDs cannot be converted back to their objects unless they exist
-// in the ResoniteEnv dictionaries.
+// This file contains the WASM API for Resonite.
+
 typedef uint64_t resonite_slot_refid_t;
 typedef uint64_t resonite_user_refid_t;
 typedef uint64_t resonite_user_root_refid_t;
 typedef uint64_t resonite_component_refid_t;
-// A NUL-terminated UTF-8-encoded string. The "pointer" is the index into WASM's heap where
-// the string has been malloced.
-//
-// TODO: Export malloc and free.
-typedef uint32_t string_ptr_t;
 
 //----------------------------------------------------------------------
 // Slot functions.
@@ -45,6 +40,10 @@ extern void slot__get_active_user_root(
 // FrooxEngine equivalent: Slot.GetObjectRoot
 extern void slot__get_object_root(
     resonite_slot_refid_t slot_id, int only_explicit, resonite_slot_refid_t* object_root_id);
+EMSCRIPTEN_KEEPALIVE void _slot__get_object_root(
+	resonite_slot_refid_t slot_id, int only_explicit, resonite_slot_refid_t* object_root_id) {
+	slot__get_object_root(slot_id, only_explicit, object_root_id);
+}
 
 // Returns the parent slot for the given slot.
 //
@@ -55,6 +54,13 @@ extern void slot__get_parent(
 EMSCRIPTEN_KEEPALIVE void _slot__get_parent(
     resonite_slot_refid_t slot_id, resonite_slot_refid_t* parent_slot_id) {
     slot__get_parent(slot_id, parent_slot_id);
+}
+
+// Returns the name for the given slot. The returned name must be freed when
+// done with it.
+extern char* slot__get_name(resonite_slot_refid_t slot_id);
+EMSCRIPTEN_KEEPALIVE char* _slot__get_name(resonite_slot_refid_t slot_id) {
+	return slot__get_name(slot_id);
 }
 
 //----------------------------------------------------------------------

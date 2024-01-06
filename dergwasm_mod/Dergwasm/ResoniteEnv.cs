@@ -9,6 +9,9 @@ namespace Derg
 {
     // Provides the functions in resonite_api.h. A ResoniteEnv, like a Machine, is specific
     // to a World.
+    //
+    // In the API, we don't use anything other than ints, floats, and doubles. We can't use
+    // longs because Emscripten doesn't support them yet. Pointers to memory are uints.
     public class ResoniteEnv
     {
         public Machine machine;
@@ -32,29 +35,36 @@ namespace Derg
             userDict = new Dictionary<RefID, User>();
         }
 
-        // This only needs to be called once, when the WASM Machine is initialized and loaded.
-        public void RegisterHostFuncs()
+        private unsafe T MemGet<T>(uint ea)
+            where T : unmanaged
         {
-            machine.RegisterReturningHostFunc<ulong, ulong>(
-                "env",
-                "slot__get_active_user",
-                slot__get_active_user
-            );
-            machine.RegisterReturningHostFunc<ulong, ulong>(
-                "env",
-                "slot__get_active_user_root",
-                slot__get_active_user_root
-            );
-            machine.RegisterReturningHostFunc<ulong, int, ulong>(
-                "env",
-                "slot__get_object_root",
-                slot__get_object_root
-            );
-            machine.RegisterReturningHostFunc<ulong, ulong>(
-                "env",
-                "slot__get_parent",
-                slot__get_parent
-            );
+            fixed (byte* ptr = &machine.Memory0[ea])
+            {
+                return *(T*)ptr;
+            }
+        }
+
+        private unsafe void MemSet<T>(uint ea, T value)
+            where T : unmanaged
+        {
+            try
+            {
+                Span<byte> mem = machine.Span0(ea, (uint)sizeof(T));
+                fixed (byte* ptr = mem)
+                {
+                    *(T*)ptr = value;
+                }
+            }
+            catch (Exception e)
+            {
+                throw new Trap($"Memory access out of bounds: {sizeof(T)} bytes at 0x{ea:X8}");
+            }
+        }
+
+        public Slot SlotFromRefID(uint slot_id_lo, uint slot_id_hi)
+        {
+            RefID refID = new RefID(((ulong)slot_id_hi << 32) | slot_id_lo);
+            return world.ReferenceController.GetObjectOrNull(refID) as Slot;
         }
 
         // Calls a WASM function, where the function to call and its arguments are stored in
@@ -125,56 +135,103 @@ namespace Derg
             }
         }
 
-        public ulong slot__get_active_user(Frame frame, ulong slot_id)
+        //
+        // Host function registration.
+        //
+
+        // This only needs to be called once, when the WASM Machine is initialized and loaded.
+        public void RegisterHostFuncs()
         {
-            Slot slot = null;
-            if (!slotDict.TryGetValue(slot_id, out slot))
-            {
-                return 0;
-            }
-            return (ulong)slot.ActiveUser.ReferenceID;
+            machine.RegisterVoidHostFunc<uint>("env", "slot__root_slot", slot__root_slot);
+            machine.RegisterVoidHostFunc<uint, uint, uint>(
+                "env",
+                "slot__get_parent",
+                slot__get_parent
+            );
+            machine.RegisterVoidHostFunc<uint, uint, uint>(
+                "env",
+                "slot__get_active_user",
+                slot__get_active_user
+            );
+            machine.RegisterVoidHostFunc<uint, uint, uint>(
+                "env",
+                "slot__get_active_user_root",
+                slot__get_active_user_root
+            );
+            machine.RegisterVoidHostFunc<uint, uint, int, uint>(
+                "env",
+                "slot__get_object_root",
+                slot__get_object_root
+            );
+            machine.RegisterReturningHostFunc<uint, uint, int>(
+                "env",
+                "slot__get_name",
+                slot__get_name
+            );
         }
 
-        public ulong slot__get_active_user_root(Frame frame, ulong slot_id)
+        //
+        // The host functions.
+        //
+
+        public void slot__root_slot(Frame frame, uint rootPtr)
         {
-            Slot slot = null;
-            if (!slotDict.TryGetValue(slot_id, out slot))
-            {
-                return 0;
-            }
-            return (ulong)slot.ActiveUserRoot.ReferenceID;
+            Slot slot = world.RootSlot;
+            MemSet(rootPtr, (ulong)slot.ReferenceID);
         }
 
-        public ulong slot__get_object_root(Frame frame, ulong slot_id, int only_explicit)
+        public void slot__get_parent(Frame frame, uint slot_id_lo, uint slot_id_hi, uint parentPtr)
         {
-            Slot slot = null;
-            if (!slotDict.TryGetValue(slot_id, out slot))
-            {
-                return 0;
-            }
-            Slot root = slot.GetObjectRoot(only_explicit != 0);
-            if (root == null)
-            {
-                return 0;
-            }
-            slotDict.Add(root.ReferenceID, root);
-            return (ulong)root.ReferenceID;
+            Slot slot = SlotFromRefID(slot_id_lo, slot_id_hi);
+            MemSet(parentPtr, ((ulong?)slot?.Parent?.ReferenceID) ?? 0);
         }
 
-        public ulong slot__get_parent(Frame frame, ulong slot_id)
+        public void slot__get_active_user(
+            Frame frame,
+            uint slot_id_lo,
+            uint slot_id_hi,
+            uint userPtr
+        )
         {
-            Slot slot = null;
-            if (!slotDict.TryGetValue(slot_id, out slot))
-            {
-                return 0;
-            }
-            Slot parent = slot.Parent;
-            if (parent == null)
-            {
-                return 0;
-            }
-            slotDict.Add(parent.ReferenceID, parent);
-            return (ulong)parent.ReferenceID;
+            Slot slot = SlotFromRefID(slot_id_lo, slot_id_hi);
+            MemSet(userPtr, ((ulong?)slot?.ActiveUser?.ReferenceID) ?? 0);
+        }
+
+        public void slot__get_active_user_root(
+            Frame frame,
+            uint slot_id_lo,
+            uint slot_id_hi,
+            uint userRootPtr
+        )
+        {
+            Slot slot = SlotFromRefID(slot_id_lo, slot_id_hi);
+            MemSet(userRootPtr, ((ulong?)slot?.ActiveUserRoot?.ReferenceID) ?? 0);
+        }
+
+        public void slot__get_object_root(
+            Frame frame,
+            uint slot_id_lo,
+            uint slot_id_hi,
+            int only_explicit,
+            uint objectRootPtr
+        )
+        {
+            Slot slot = SlotFromRefID(slot_id_lo, slot_id_hi);
+            MemSet(
+                objectRootPtr,
+                ((ulong?)slot?.GetObjectRoot(only_explicit != 0)?.ReferenceID) ?? 0
+            );
+        }
+
+        public int slot__get_name(Frame frame, uint slot_id_lo, uint slot_id_hi)
+        {
+            Slot slot = SlotFromRefID(slot_id_lo, slot_id_hi);
+            string name = slot?.Name ?? "";
+            byte[] nameData = Encoding.UTF8.GetBytes(name);
+            int namePtr = emscriptenEnv.malloc(frame, nameData.Length + 1);
+            Array.Copy(nameData, 0, machine.Memory0, namePtr, nameData.Length);
+            machine.Memory0[namePtr + nameData.Length] = 0; // NUL-termination
+            return namePtr;
         }
     }
 }

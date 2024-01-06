@@ -4,3 +4,9 @@ mergeInto(LibraryManager.library, {
 mergeInto(LibraryManager.library, {
     slot__get_parent: function () { }
 });
+mergeInto(LibraryManager.library, {
+    slot__get_object_root: function () { }
+});
+mergeInto(LibraryManager.library, {
+    slot__get_name: function () { }
+});
