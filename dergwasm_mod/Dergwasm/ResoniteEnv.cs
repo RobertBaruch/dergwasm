@@ -1,4 +1,5 @@
-﻿using Elements.Core;
+﻿using Elements.Assets;
+using Elements.Core;
 using FrooxEngine;
 using System;
 using System.Collections.Generic;
@@ -18,29 +19,28 @@ namespace Derg
         public World world;
         public EmscriptenEnv emscriptenEnv;
 
-        // Could these be persistent across calls? If we could patch into Resonite so that
-        // we get told if any of these are disposed, then we could remove them from the
-        // dictionaries.
-        //
-        // This would enable us to have collections of slots and users.
-        public Dictionary<RefID, Slot> slotDict;
-        public Dictionary<RefID, User> userDict;
-
         public ResoniteEnv(Machine machine, World world, EmscriptenEnv emscriptenEnv)
         {
             this.machine = machine;
             this.world = world;
             this.emscriptenEnv = emscriptenEnv;
-            slotDict = new Dictionary<RefID, Slot>();
-            userDict = new Dictionary<RefID, User>();
         }
 
         private unsafe T MemGet<T>(uint ea)
             where T : unmanaged
         {
-            fixed (byte* ptr = &machine.Memory0[ea])
+            try
             {
-                return *(T*)ptr;
+                fixed (byte* ptr = &machine.Memory0[ea])
+                {
+                    return *(T*)ptr;
+                }
+            }
+            catch (Exception)
+            {
+                throw new Trap(
+                    $"Memory access out of bounds: reading {sizeof(T)} bytes at 0x{ea:X8}"
+                );
             }
         }
 
@@ -55,9 +55,11 @@ namespace Derg
                     *(T*)ptr = value;
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                throw new Trap($"Memory access out of bounds: {sizeof(T)} bytes at 0x{ea:X8}");
+                throw new Trap(
+                    $"Memory access out of bounds: writing {sizeof(T)} bytes at 0x{ea:X8}"
+                );
             }
         }
 
@@ -67,71 +69,130 @@ namespace Derg
             return world.ReferenceController.GetObjectOrNull(refID) as Slot;
         }
 
-        // Calls a WASM function, where the function to call and its arguments are stored in
-        // the given argsSlot.
-        public void CallWasmFunction(Slot argsSlot)
+        public int allocateString(string s)
         {
-            Frame frame = new Frame(null, null, null);
-            frame.Label = new Label(1, 0);
-            string funcName = null;
+            Frame frame = new Frame(null, DergwasmMachine.moduleInstance, null);
+            frame.Label = new Label(0, 0);
+
+            byte[] stringData = Encoding.UTF8.GetBytes(s);
+            int stringPtr = emscriptenEnv.malloc(frame, stringData.Length + 1);
+            Array.Copy(stringData, 0, machine.Memory0, stringPtr, stringData.Length);
+            machine.Memory0[stringPtr + stringData.Length] = 0; // NUL-termination
+            return stringPtr;
+        }
+
+        List<Value> ExtractArgs(Slot argsSlot, List<int> allocations)
+        {
             List<Value> args = new List<Value>();
 
-            // The list of stuff we have to free after the call.
-            // TODO: What happens if WASM traps? Is the machine even valid anymore?
-            List<int> allocations = new List<int>();
-
-            // The ValueField components in the argsSlot are the function name and its arguments.
-            // TODO: Should this be Children or LocalChildren? Children calls EnsureChildOrder, which
-            // seems like a good thing.
+            // The ValueField components in the argsSlot children are the arguments.
+            // Children calls EnsureChildOrder, which is a good thing.
             foreach (Slot child in argsSlot.Children)
             {
+                // We only look at the first ValueField we find. Adding more than one ValueField
+                // in a slot leads to undefined behavior.
                 foreach (Component c in child.Components)
                 {
                     if (c is ValueField<string> stringField)
                     {
-                        if (funcName == null)
-                        {
-                            funcName = stringField.Value;
-                            break;
-                        }
-                        byte[] stringData = Encoding.UTF8.GetBytes(stringField.Value);
-                        int stringPtr = emscriptenEnv.malloc(frame, stringData.Length + 1);
-                        allocations.Add(stringPtr);
-                        Array.Copy(stringData, 0, machine.Memory0, stringPtr, stringData.Length);
-                        machine.Memory0[stringPtr + stringData.Length] = 0; // NUL-termination
+                        int ptr = allocateString(stringField.Value);
+                        allocations.Add(ptr);
+                        args.Add(new Value(ptr));
+                        DergwasmMachine.Msg($"String arg, ptr = 0x{ptr:X8}");
                         break;
                     }
 
                     if (c is ValueField<Slot> slotField)
                     {
-                        slotDict.Add(slotField.Value.ReferenceID, slotField.Value);
-                        args.Add(new Value((ulong)slotField.Value.ReferenceID));
+                        args.Add(new Value((uint)slotField.Value.ReferenceID));
+                        args.Add(new Value((uint)(slotField.Value.ReferenceID >> 32)));
+                        DergwasmMachine.Msg($"Slot arg: ID {slotField.Value.ReferenceID}");
                         break;
                     }
 
                     if (c is ValueField<User> userField)
                     {
-                        userDict.Add(userField.Value.ReferenceID, userField.Value);
-                        args.Add(new Value((ulong)userField.Value.ReferenceID));
+                        args.Add(new Value((uint)userField.Value.ReferenceID));
+                        args.Add(new Value((uint)(userField.Value.ReferenceID >> 32)));
+                        DergwasmMachine.Msg($"User arg: ID {userField.Value.ReferenceID}");
                         break;
                     }
 
                     if (c is ValueField<bool> boolField)
                     {
                         args.Add(new Value(boolField.Value));
+                        DergwasmMachine.Msg($"Bool arg: {boolField.Value}");
                         break;
                     }
                     // TODO: The rest of the types
                 }
             }
 
-            // TODO: Execute the exported function.
+            return args;
+        }
 
-            slotDict.Clear();
-            userDict.Clear();
-            foreach (int ptr in allocations)
+        string ExtractFuncName(Slot argsSlot)
+        {
+            // We only look at the first ValueField we find. Adding more than one ValueField
+            // in a slot leads to undefined behavior.
+            foreach (Component c in argsSlot.Components)
             {
-                emscriptenEnv.free(frame, ptr);
+                if (c is ValueField<string> stringField)
+                {
+                    return stringField.Value;
+                }
+            }
+            return null;
+        }
+
+        void InvokeWasmFunction(string funcName, List<Value> args)
+        {
+            Func f = machine.GetFunc(DergwasmMachine.moduleInstance.ModuleName, funcName);
+            if (f == null)
+            {
+                throw new Trap($"No {funcName} function found");
+            }
+            DergwasmMachine.Msg($"Running {funcName}");
+            Frame frame = new Frame(f as ModuleFunc, DergwasmMachine.moduleInstance, null);
+            frame.Label = new Label(0, 0); // We're assuming no return value
+            foreach (Value arg in args)
+            {
+                frame.Push(arg);
+            }
+            frame.InvokeFunc(machine, f);
+        }
+
+        // Calls a WASM function, where the function to call and its arguments are stored in
+        // the given argsSlot. The name of the function to call is in a ValueField<string> on
+        // the argsSlot, while the arguments are in ValueFields on the argsSlot's children.
+        public void CallWasmFunction(Slot argsSlot)
+        {
+            string funcName = ExtractFuncName(argsSlot);
+            if (funcName == null)
+            {
+                DergwasmMachine.Msg("No ValueField<string> component found on args slot");
+                return;
+            }
+            List<int> argAllocations = new List<int>();
+            List<Value> args = ExtractArgs(argsSlot, argAllocations);
+
+            try
+            {
+                InvokeWasmFunction(funcName, args);
+            }
+            catch (ExitTrap)
+            {
+                DergwasmMachine.Msg($"{funcName} exited");
+            }
+            finally
+            {
+                foreach (int ptr in argAllocations)
+                {
+                    Frame frame = new Frame(null, DergwasmMachine.moduleInstance, null);
+                    frame.Label = new Label(0, 0);
+                    emscriptenEnv.free(frame, ptr);
+                }
+                DergwasmMachine.Msg("Call complete");
             }
         }
 

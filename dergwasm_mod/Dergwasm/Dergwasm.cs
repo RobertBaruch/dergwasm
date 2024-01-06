@@ -110,40 +110,18 @@ namespace Derg
                 FrooxEngineContext context
             )
             {
+                // The hierarchy.Tag is the WASM function to call.
                 if (tag != "_dergwasm" || hierarchy == null || hierarchy.Tag != "_dergwasm_args")
                     return;
-                DergwasmMachine.Msg("_dergwasm called on DynamicImpulseTrigger");
-                // TODO: Call ResoniteEnv.CallWasmFunction(hierarchy)
 
-                Slot programSlot = hierarchy.FindChild(
-                    s => s.Tag == "_dergwasm_micropython_program"
-                );
-                if (programSlot == null)
-                {
-                    DergwasmMachine.Msg("Couldn't find program slot");
-                    return;
-                }
-                string program = programSlot.GetComponent<TextRenderer>().Text.Value;
                 try
                 {
-                    DergwasmMachine.MicropythonDoStr(program);
+                    DergwasmMachine.resoniteEnv.CallWasmFunction(hierarchy);
                 }
                 catch (Exception e)
                 {
                     DergwasmMachine.Msg($"Exception: {e}");
                 }
-
-                //Slot child = hierarchy[0];
-                //if (child == null)
-                //    return;
-                //foreach (Component c in child.Components)
-                //{
-                //    if (c is ValueField<int> intField)
-                //    {
-                //        intField.Value.Value += 1;
-                //        break;
-                //    }
-                //}
             }
         }
     }
@@ -154,6 +132,7 @@ namespace Derg
         public static Machine machine = null;
         public static ModuleInstance moduleInstance = null;
         public static EmscriptenEnv emscriptenEnv = null;
+        public static ResoniteEnv resoniteEnv = null;
 
         public static void Output(string msg)
         {
@@ -198,7 +177,7 @@ namespace Derg
                 emscriptenEnv.RegisterHostFuncs();
                 emscriptenEnv.outputWriter = Output;
 
-                ResoniteEnv resoniteEnv = new ResoniteEnv(machine, world, emscriptenEnv);
+                resoniteEnv = new ResoniteEnv(machine, world, emscriptenEnv);
                 resoniteEnv.RegisterHostFuncs();
 
                 Module module;
@@ -265,51 +244,6 @@ namespace Derg
             frame.Label = new Label(0, 0);
             frame.InvokeFunc(machine, ctors);
             Msg("Completed __wasm_call_ctors");
-        }
-
-        static int AddUTF8StringToStack(string s)
-        {
-            byte[] utf = System.Text.Encoding.UTF8.GetBytes(s);
-            int size = utf.Length + 1;
-            Frame frame = new Frame(null, moduleInstance, null);
-            frame.Label = new Label(1, 0);
-            int stackPtr = emscriptenEnv.stackAlloc(frame, size);
-
-            Array.Copy(utf, 0, machine.Memory0, stackPtr, utf.Length);
-            machine.Memory0[stackPtr + utf.Length] = 0; // NUL-termination
-
-            return stackPtr;
-        }
-
-        public static void MicropythonDoStr(string s)
-        {
-            if (machine == null)
-            {
-                throw new Trap("MicropythonDoStr: Machine is null");
-            }
-            int stackPtr = AddUTF8StringToStack(s);
-            MicropythonDoStr(stackPtr);
-        }
-
-        static void MicropythonDoStr(int stackPtr)
-        {
-            Func mp_js_do_str = machine.GetFunc(moduleInstance.ModuleName, "mp_js_do_str");
-            if (mp_js_do_str == null)
-            {
-                throw new Trap("No mp_js_do_str function found");
-            }
-            Msg($"Running mp_js_do_str");
-            try
-            {
-                Frame frame = new Frame(mp_js_do_str as ModuleFunc, moduleInstance, null);
-                frame.Label = new Label(1, 0);
-                frame.Push(new Value(stackPtr)); // source
-                frame.InvokeFunc(machine, mp_js_do_str);
-            }
-            catch (ExitTrap)
-            {
-                Msg("MicroPython exited");
-            }
         }
 
         static void InitMicropython(int stackSizeBytes)
