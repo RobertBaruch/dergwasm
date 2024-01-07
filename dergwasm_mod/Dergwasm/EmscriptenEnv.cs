@@ -15,6 +15,27 @@ namespace Derg
             : base() { }
     }
 
+    // From emscripten/system/lib/libc/musl/include/fcntl.h
+    static class Stat
+    {
+        public const int AT_FDCWD = -100;
+        public const int AT_SYMLINK_NOFOLLOW = 0x100;
+        public const int AT_REMOVEDIR = 0x200;
+        public const int AT_SYMLINK_FOLLOW = 0x400;
+        public const int AT_NO_AUTOMOUNT = 0x800;
+        public const int AT_EMPTY_PATH = 0x1000;
+        public const int AT_STATX_SYNC_TYPE = 0x6000;
+        public const int AT_STATX_SYNC_AS_STAT = 0x0000;
+        public const int AT_STATX_FORCE_SYNC = 0x2000;
+        public const int AT_STATX_DONT_SYNC = 0x4000;
+        public const int AT_RECURSIVE = 0x8000;
+    }
+
+    static class Errno
+    {
+        public const int EINVAL = 22; // Invalid argument
+    }
+
     // Host environment expected by Emscripten.
     public class EmscriptenEnv
     {
@@ -24,6 +45,16 @@ namespace Derg
         public EmscriptenEnv(Machine machine)
         {
             this.machine = machine;
+        }
+
+        public string GetUTF8StringFromMem(int ptr)
+        {
+            int endPtr = ptr;
+            while (machine.Memory0[endPtr] != 0)
+            {
+                endPtr++;
+            }
+            return Encoding.UTF8.GetString(machine.Memory0, ptr, endPtr - ptr);
         }
 
         // Returns a funcref.
@@ -852,7 +883,7 @@ namespace Derg
 
         public void emscripten_exit(Frame frame, int exit_code) => throw new ExitTrap(exit_code);
 
-        // syscalls
+        // syscalls, from emscripten/src/library_syscall.js
         public int __syscall_chdir(Frame frame, int pathPtr) => throw new NotImplementedException();
 
         public int __syscall_rmdir(Frame frame, int pathPtr) => throw new NotImplementedException();
@@ -877,8 +908,24 @@ namespace Derg
         public int __syscall_unlinkat(Frame frame, int dirfd, int pathPtr, int flags) =>
             throw new NotImplementedException();
 
-        public int __syscall_newfstatat(Frame frame, int dirfd, int pathPtr, int buf, int flags) =>
+        public int __syscall_newfstatat(Frame frame, int dirfd, int pathPtr, int buf, int flags)
+        {
+            string path = GetUTF8StringFromMem(pathPtr);
+            bool noFollow = (flags & Stat.AT_SYMLINK_NOFOLLOW) != 0;
+            bool allowEmpty = (flags & Stat.AT_EMPTY_PATH) != 0;
+            if (
+                (flags & ~(Stat.AT_SYMLINK_NOFOLLOW | Stat.AT_EMPTY_PATH | Stat.AT_NO_AUTOMOUNT))
+                != 0
+            )
+            {
+                DergwasmMachine.Msg($"__syscall_newfstatat: Unsupported flags: 0x{flags:X8}");
+                return -Errno.EINVAL;
+            }
+            DergwasmMachine.Msg(
+                $"__syscall_newfstatat: dirfd={dirfd}, path={path}, noFollow={noFollow}, allowEmpty={allowEmpty}"
+            );
             throw new NotImplementedException();
+        }
 
         public int __syscall_poll(Frame frame, int fdsPtr, int nfds, int timeout) =>
             throw new NotImplementedException();
@@ -889,14 +936,26 @@ namespace Derg
         public int __syscall_fstat64(Frame frame, int fd, int buf) =>
             throw new NotImplementedException();
 
-        public int __syscall_stat64(Frame frame, int pathPtr, int buf) =>
+        public int __syscall_stat64(Frame frame, int pathPtr, int buf)
+        {
+            string path = GetUTF8StringFromMem(pathPtr);
+            DergwasmMachine.Msg($"__syscall_stat64: path={path}");
             throw new NotImplementedException();
+        }
 
-        public int __syscall_lstat64(Frame frame, int pathPtr, int buf) =>
+        public int __syscall_lstat64(Frame frame, int pathPtr, int buf)
+        {
+            string path = GetUTF8StringFromMem(pathPtr);
+            DergwasmMachine.Msg($"__syscall_lstat64: path={path}");
             throw new NotImplementedException();
+        }
 
-        public int __syscall_statfs64(Frame frame, int pathPtr, int size, int buf) =>
+        public int __syscall_statfs64(Frame frame, int pathPtr, int size, int buf)
+        {
+            string path = GetUTF8StringFromMem(pathPtr);
+            DergwasmMachine.Msg($"__syscall_statfs64: path={path}, size={size}");
             throw new NotImplementedException();
+        }
 
         // Implementation of exceptions when not supported in WASM.
         public int __cxa_begin_catch(int excPtr) => throw new NotImplementedException();

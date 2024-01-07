@@ -49,7 +49,7 @@ namespace Derg
                 if (dergwasmSlot == null)
                 {
                     Msg(
-                        $"Couldn't access dergwasm slot in world {__instance.Configuration.WorldName.Value}"
+                        $"Couldn't find dergwasm slot with tag _dergwasm in world {__instance.Configuration.WorldName.Value}"
                     );
                     return;
                 }
@@ -57,15 +57,17 @@ namespace Derg
                     s => s.Tag == "_dergwasm_byte_display",
                     maxDepth: 0
                 );
-                Slot firmwareSlot = dergwasmSlot.FindChild(
-                    s => s.Name == "firmware.wasm",
+                // We expect a slot with the tag _dergwasm_byte_display to exist, and to have
+                // a StaticBinary component.
+                Slot wasmBinarySlot = dergwasmSlot.FindChild(
+                    s => s.Tag == "_dergwasm_wasm_file",
                     maxDepth: 0
                 );
 
-                if (firmwareSlot == null)
+                if (wasmBinarySlot == null)
                 {
                     Msg(
-                        $"Couldn't access firmware slot in world {__instance.Configuration.WorldName.Value}"
+                        $"Couldn't find WASM binary slot with tag _dergwasm_wasm_file in world {__instance.Configuration.WorldName.Value}"
                     );
                     return;
                 }
@@ -73,16 +75,16 @@ namespace Derg
                 if (byteDisplay == null)
                 {
                     Msg(
-                        $"Couldn't access byte display slot in world {__instance.Configuration.WorldName.Value}"
+                        $"Couldn't find byte display slot with tag _dergwasm_byte_display in world {__instance.Configuration.WorldName.Value}"
                     );
                     return;
                 }
 
-                StaticBinary binary = firmwareSlot.GetComponent<StaticBinary>();
+                StaticBinary binary = wasmBinarySlot.GetComponent<StaticBinary>();
                 if (binary == null)
                 {
                     Msg(
-                        $"Couldn't access firmware binary in world {__instance.Configuration.WorldName.Value}"
+                        $"Couldn't access WASM StaticBinary component in world {__instance.Configuration.WorldName.Value}"
                     );
                     return;
                 }
@@ -110,7 +112,6 @@ namespace Derg
                 FrooxEngineContext context
             )
             {
-                // The hierarchy.Tag is the WASM function to call.
                 if (tag != "_dergwasm" || hierarchy == null || hierarchy.Tag != "_dergwasm_args")
                     return;
 
@@ -133,22 +134,11 @@ namespace Derg
         public static ModuleInstance moduleInstance = null;
         public static EmscriptenEnv emscriptenEnv = null;
         public static ResoniteEnv resoniteEnv = null;
+        public static Slot dergwasmSlot = null;
+        public static Slot consoleSlot = null;
 
         public static void Output(string msg)
         {
-            UniLog.Log($"[Dergwasm] {msg}");
-            if (world == null)
-            {
-                UniLog.Log($"[Dergwasm] World is null");
-                return;
-            }
-            Slot dergwasmSlot = world.RootSlot.FindChild(s => s.Tag == "_dergwasm", maxDepth: 0);
-            if (dergwasmSlot == null)
-            {
-                UniLog.Log($"[Dergwasm] Couldn't find dergwasm slot");
-                return;
-            }
-            Slot consoleSlot = dergwasmSlot.FindChild(s => s.Tag == "_dergwasm_console_content");
             if (consoleSlot == null)
             {
                 UniLog.Log($"[Dergwasm] Couldn't find console slot");
@@ -167,6 +157,9 @@ namespace Derg
             DergwasmMachine.world = world;
             try
             {
+                dergwasmSlot = world.RootSlot.FindChild(s => s.Tag == "_dergwasm", maxDepth: 0);
+                consoleSlot = dergwasmSlot?.FindChild(s => s.Tag == "_dergwasm_console_content");
+
                 Msg("Init called");
                 machine = new Machine();
                 // machine.Debug = true;
@@ -194,11 +187,10 @@ namespace Derg
                 module.ResolveExterns(machine);
                 moduleInstance = module.Instantiate(machine);
                 CheckForUnimplementedInstructions();
-                Msg("No unimplemented instructions found");
+                Msg("No unimplemented WASM instructions found");
 
                 MaybeRunEmscriptenCtors();
-
-                InitMicropython(64 * 1024);
+                MaybeInitMicropython(64 * 1024);
             }
             catch (Exception e)
             {
@@ -246,13 +238,11 @@ namespace Derg
             Msg("Completed __wasm_call_ctors");
         }
 
-        static void InitMicropython(int stackSizeBytes)
+        static void MaybeInitMicropython(int stackSizeBytes)
         {
             Func mp_js_init = machine.GetFunc(moduleInstance.ModuleName, "mp_js_init");
             if (mp_js_init == null)
-            {
-                throw new Trap("No mp_js_init function found");
-            }
+                return;
             Msg($"Running mp_js_init with stack size {stackSizeBytes} bytes");
             try
             {
@@ -260,11 +250,11 @@ namespace Derg
                 frame.Label = new Label(1, 0);
                 frame.Push(new Value(stackSizeBytes));
                 frame.InvokeFunc(machine, mp_js_init);
-                Msg($"Completed mp_js_init");
+                Msg("Completed mp_js_init");
             }
             catch (ExitTrap)
             {
-                Msg($"mp_js_init exited");
+                Msg("mp_js_init exited");
             }
         }
     }
