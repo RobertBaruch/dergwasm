@@ -26,43 +26,6 @@ namespace Derg
             this.emscriptenEnv = emscriptenEnv;
         }
 
-        private unsafe T MemGet<T>(uint ea)
-            where T : unmanaged
-        {
-            try
-            {
-                fixed (byte* ptr = &machine.Memory0[ea])
-                {
-                    return *(T*)ptr;
-                }
-            }
-            catch (Exception)
-            {
-                throw new Trap(
-                    $"Memory access out of bounds: reading {sizeof(T)} bytes at 0x{ea:X8}"
-                );
-            }
-        }
-
-        private unsafe void MemSet<T>(uint ea, T value)
-            where T : unmanaged
-        {
-            try
-            {
-                Span<byte> mem = machine.Span0(ea, (uint)sizeof(T));
-                fixed (byte* ptr = mem)
-                {
-                    *(T*)ptr = value;
-                }
-            }
-            catch (Exception)
-            {
-                throw new Trap(
-                    $"Memory access out of bounds: writing {sizeof(T)} bytes at 0x{ea:X8}"
-                );
-            }
-        }
-
         public Slot SlotFromRefID(uint slot_id_lo, uint slot_id_hi)
         {
             RefID refID = new RefID(((ulong)slot_id_hi << 32) | slot_id_lo);
@@ -238,13 +201,13 @@ namespace Derg
         public void slot__root_slot(Frame frame, uint rootPtr)
         {
             Slot slot = world.RootSlot;
-            MemSet(rootPtr, (ulong)slot.ReferenceID);
+            machine.MemSet(rootPtr, (ulong)slot.ReferenceID);
         }
 
         public void slot__get_parent(Frame frame, uint slot_id_lo, uint slot_id_hi, uint parentPtr)
         {
             Slot slot = SlotFromRefID(slot_id_lo, slot_id_hi);
-            MemSet(parentPtr, ((ulong?)slot?.Parent?.ReferenceID) ?? 0);
+            machine.MemSet(parentPtr, ((ulong?)slot?.Parent?.ReferenceID) ?? 0);
         }
 
         public void slot__get_active_user(
@@ -255,7 +218,7 @@ namespace Derg
         )
         {
             Slot slot = SlotFromRefID(slot_id_lo, slot_id_hi);
-            MemSet(userPtr, ((ulong?)slot?.ActiveUser?.ReferenceID) ?? 0);
+            machine.MemSet(userPtr, ((ulong?)slot?.ActiveUser?.ReferenceID) ?? 0);
         }
 
         public void slot__get_active_user_root(
@@ -266,7 +229,7 @@ namespace Derg
         )
         {
             Slot slot = SlotFromRefID(slot_id_lo, slot_id_hi);
-            MemSet(userRootPtr, ((ulong?)slot?.ActiveUserRoot?.ReferenceID) ?? 0);
+            machine.MemSet(userRootPtr, ((ulong?)slot?.ActiveUserRoot?.ReferenceID) ?? 0);
         }
 
         public void slot__get_object_root(
@@ -278,7 +241,7 @@ namespace Derg
         )
         {
             Slot slot = SlotFromRefID(slot_id_lo, slot_id_hi);
-            MemSet(
+            machine.MemSet(
                 objectRootPtr,
                 ((ulong?)slot?.GetObjectRoot(only_explicit != 0)?.ReferenceID) ?? 0
             );

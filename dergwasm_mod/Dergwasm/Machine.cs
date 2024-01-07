@@ -17,6 +17,43 @@ namespace Derg
         public List<Memory> memories = new List<Memory>();
         public List<byte[]> dataSegments = new List<byte[]>();
 
+        public unsafe T MemGet<T>(uint ea)
+            where T : unmanaged
+        {
+            try
+            {
+                fixed (byte* ptr = &Memory0[ea])
+                {
+                    return *(T*)ptr;
+                }
+            }
+            catch (Exception)
+            {
+                throw new Trap(
+                    $"Memory access out of bounds: reading {sizeof(T)} bytes at 0x{ea:X8}"
+                );
+            }
+        }
+
+        public unsafe void MemSet<T>(uint ea, T value)
+            where T : unmanaged
+        {
+            try
+            {
+                Span<byte> mem = Span0(ea, (uint)sizeof(T));
+                fixed (byte* ptr = mem)
+                {
+                    *(T*)ptr = value;
+                }
+            }
+            catch (Exception)
+            {
+                throw new Trap(
+                    $"Memory access out of bounds: writing {sizeof(T)} bytes at 0x{ea:X8}"
+                );
+            }
+        }
+
         public string MainModuleName
         {
             get => mainModuleName;

@@ -136,6 +136,7 @@ namespace Derg
         public static ResoniteEnv resoniteEnv = null;
         public static Slot dergwasmSlot = null;
         public static Slot consoleSlot = null;
+        public static Slot fsSlot = null; // The equivalent of the root directory in a filesystem.
 
         public static void Output(string msg)
         {
@@ -159,6 +160,7 @@ namespace Derg
             {
                 dergwasmSlot = world.RootSlot.FindChild(s => s.Tag == "_dergwasm", maxDepth: 0);
                 consoleSlot = dergwasmSlot?.FindChild(s => s.Tag == "_dergwasm_console_content");
+                fsSlot = dergwasmSlot?.FindChild(s => s.Tag == "_dergwasm_fs_root");
 
                 Msg("Init called");
                 machine = new Machine();

@@ -16,7 +16,7 @@ namespace Derg
     }
 
     // From emscripten/system/lib/libc/musl/include/fcntl.h
-    static class Stat
+    static class StatConst
     {
         public const int AT_FDCWD = -100;
         public const int AT_SYMLINK_NOFOLLOW = 0x100;
@@ -31,8 +31,29 @@ namespace Derg
         public const int AT_RECURSIVE = 0x8000;
     }
 
+    class Stat
+    {
+        public int st_dev;
+        public int st_ino;
+        public int st_nlink;
+        public int st_mode;
+        public int st_uid;
+        public int st_gid;
+        public int st_rdev;
+        public int st_size;
+        public int st_blksize;
+        public int st_blocks;
+        public long st_atime_sec;
+        public int st_atime_nsec;
+        public long st_mtime_sec;
+        public int st_mtime_nsec;
+        public long st_ctime_sec;
+        public int st_ctime_nsec;
+    }
+
     static class Errno
     {
+        public const int ENOENT = 2; // No such file or directory
         public const int EINVAL = 22; // Invalid argument
     }
 
@@ -883,6 +904,26 @@ namespace Derg
 
         public void emscripten_exit(Frame frame, int exit_code) => throw new ExitTrap(exit_code);
 
+        private void write_stat(uint statPtr, Stat stat)
+        {
+            machine.MemSet(statPtr + 0, stat.st_dev);
+            machine.MemSet(statPtr + 4, stat.st_ino);
+            machine.MemSet(statPtr + 8, stat.st_mode);
+            machine.MemSet(statPtr + 12, stat.st_nlink);
+            machine.MemSet(statPtr + 16, stat.st_uid);
+            machine.MemSet(statPtr + 20, stat.st_gid);
+            machine.MemSet(statPtr + 24, stat.st_rdev);
+            machine.MemSet(statPtr + 28, stat.st_size);
+            machine.MemSet(statPtr + 32, stat.st_blksize);
+            machine.MemSet(statPtr + 36, stat.st_blocks);
+            machine.MemSet(statPtr + 40, stat.st_atime_sec);
+            machine.MemSet(statPtr + 48, stat.st_atime_nsec);
+            machine.MemSet(statPtr + 52, stat.st_mtime_sec);
+            machine.MemSet(statPtr + 60, stat.st_mtime_nsec);
+            machine.MemSet(statPtr + 64, stat.st_ctime_sec);
+            machine.MemSet(statPtr + 72, stat.st_ctime_nsec);
+        }
+
         // syscalls, from emscripten/src/library_syscall.js
         public int __syscall_chdir(Frame frame, int pathPtr) => throw new NotImplementedException();
 
@@ -911,11 +952,17 @@ namespace Derg
         public int __syscall_newfstatat(Frame frame, int dirfd, int pathPtr, int buf, int flags)
         {
             string path = GetUTF8StringFromMem(pathPtr);
-            bool noFollow = (flags & Stat.AT_SYMLINK_NOFOLLOW) != 0;
-            bool allowEmpty = (flags & Stat.AT_EMPTY_PATH) != 0;
+            bool noFollow = (flags & StatConst.AT_SYMLINK_NOFOLLOW) != 0;
+            bool allowEmpty = (flags & StatConst.AT_EMPTY_PATH) != 0;
             if (
-                (flags & ~(Stat.AT_SYMLINK_NOFOLLOW | Stat.AT_EMPTY_PATH | Stat.AT_NO_AUTOMOUNT))
-                != 0
+                (
+                    flags
+                    & ~(
+                        StatConst.AT_SYMLINK_NOFOLLOW
+                        | StatConst.AT_EMPTY_PATH
+                        | StatConst.AT_NO_AUTOMOUNT
+                    )
+                ) != 0
             )
             {
                 DergwasmMachine.Msg($"__syscall_newfstatat: Unsupported flags: 0x{flags:X8}");
@@ -940,7 +987,7 @@ namespace Derg
         {
             string path = GetUTF8StringFromMem(pathPtr);
             DergwasmMachine.Msg($"__syscall_stat64: path={path}");
-            throw new NotImplementedException();
+            return -Errno.ENOENT;
         }
 
         public int __syscall_lstat64(Frame frame, int pathPtr, int buf)
