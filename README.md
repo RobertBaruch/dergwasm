@@ -52,7 +52,7 @@ Dergwasm includes a WASM binary, `firmware.wasm`, which implements a [MicroPytho
 2. There is a `Text` object (`ByteDisplay`) with tag `_dergwasm_byte_display`. Currently this object is only intended to display your computer's file path where it loads `firmware.wasm` from.
     ![The byte display slot](dergwasm_byte_display.jpg)
 
-3. The `Console` slot has tag `_dergwasm_console_content`. This will display debug messages from Dergwasm, as well as any printed output from MicroPython. It's adapted slightly from the standard text display that Resonite spawns when you import a text file.
+3. The `Console` slot is a text display adapted slightly from the standard text display that Resonite spawns when you import a text file. This will display debug messages from Dergwasm, as well as any printed output from WASM. Buried within this hiearchy is a Content slot with tag `_dergwasm_console_content`, which is how Dergwasm finds the text for the console.
     ![The dergwasm console slot](dergwasm_console_tag.jpg)
 
 4. There's a slot under the `Dergwasm` slot called `Args`, with tag `_dergwasm_args`. It has a `ValueField<string>` component. This field contains the WASM function name you want to call.
