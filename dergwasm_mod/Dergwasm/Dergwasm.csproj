@@ -14,6 +14,7 @@
     <ResonitePath Condition="Exists('D:\SteamLibrary\steamapps\common\Resonite\')">D:\SteamLibrary\steamapps\common\Resonite\</ResonitePath>
     <ResonitePath Condition="Exists('$(HOME)/.steam/steam/steamapps/common/Resonite/')">$(HOME)/.steam/steam/steamapps/common/Resonite/</ResonitePath>
     <ResonitePath Condition="Exists('E:\Programs\Steam\steamapps\common\Resonite')">E:\Programs\Steam\steamapps\common\Resonite\</ResonitePath>
+    <ResonitePath Condition="Exists('F:\Steam\steamapps\common\Resonite')">F:\Steam\steamapps\common\Resonite\</ResonitePath>
     <ResoniteCoreLibs>$(ResonitePath)\Resonite_Data\Managed</ResoniteCoreLibs>
     <ResoniteNmlLibs>$(ResonitePath)\rml_libs</ResoniteNmlLibs>
     <ResoniteNmlMods>$(ResonitePath)\rml_mods</ResoniteNmlMods>
