@@ -78,7 +78,7 @@ A WASM file requires all of its external functions to be present. If an external
 
 If you want to compile the mod, I'm not sure I captured all the requirements. At a minimum:
 
-1. Use Visual Studio 2022 to load and build the Dergwasm project in `dergwasm_mod/Dergwasm/Dergwasm.sln`. This should give you `Dergwasm.dll`.
+1. Use Visual Studio 2022 to load and build the Dergwasm project that is in `dergwasm_mod/Dergwasm.sln`. This should give you `Dergwasm.dll`.
 
 2. Use a Linux system, [install Emscripten](https://emscripten.org/docs/getting_started/downloads.html). I suggest using the `emsdk` tool.
 3. On the Linux system, clone the [MicroPython repo](https://github.com/micropython/micropython).
