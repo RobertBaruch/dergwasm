@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 using Elements.Core; // For UniLog
 using FrooxEngine;
@@ -37,67 +34,7 @@ namespace Derg
                 Msg("Postfix called on World.Load");
                 Msg($"... WorldName {__instance.Configuration.WorldName.Value}");
                 Msg($"... SessionID {__instance.Configuration.SessionID.Value}");
-                Slot dergwasmSlot = __instance.RootSlot.FindChild(
-                    s => s.Tag == "_dergwasm",
-                    maxDepth: 0
-                );
-                if (dergwasmSlot == null)
-                {
-                    dergwasmSlot = __instance.RootSlot.AddSlot("Dergwasm");
-                    dergwasmSlot.Tag = "_dergwasm";
-                }
-                if (dergwasmSlot == null)
-                {
-                    Msg(
-                        $"Couldn't find dergwasm slot with tag _dergwasm in world {__instance.Configuration.WorldName.Value}"
-                    );
-                    return;
-                }
-                Slot byteDisplay = dergwasmSlot.FindChild(
-                    s => s.Tag == "_dergwasm_byte_display",
-                    maxDepth: 0
-                );
-                // We expect a slot with the tag _dergwasm_byte_display to exist, and to have
-                // a StaticBinary component.
-                Slot wasmBinarySlot = dergwasmSlot.FindChild(
-                    s => s.Tag == "_dergwasm_wasm_file",
-                    maxDepth: 0
-                );
-
-                if (wasmBinarySlot == null)
-                {
-                    Msg(
-                        $"Couldn't find WASM binary slot with tag _dergwasm_wasm_file in world {__instance.Configuration.WorldName.Value}"
-                    );
-                    return;
-                }
-
-                if (byteDisplay == null)
-                {
-                    Msg(
-                        $"Couldn't find byte display slot with tag _dergwasm_byte_display in world {__instance.Configuration.WorldName.Value}"
-                    );
-                    return;
-                }
-
-                StaticBinary binary = wasmBinarySlot.GetComponent<StaticBinary>();
-                if (binary == null)
-                {
-                    Msg(
-                        $"Couldn't access WASM StaticBinary component in world {__instance.Configuration.WorldName.Value}"
-                    );
-                    return;
-                }
-
-                BinaryAssetLoader loader = new BinaryAssetLoader(__instance, binary, byteDisplay);
-
-                // Equivalent to Worker.StartGlobalTask
-                Task<string> task = __instance.Coroutines.StartTask<string>(loader.Load);
-                if (task == null)
-                {
-                    Msg($"Couldn't start task in world {__instance.Configuration.WorldName.Value}");
-                    return;
-                }
+                DergwasmMachine.InitStage0(__instance);
             }
         }
 
@@ -112,12 +49,27 @@ namespace Derg
                 FrooxEngineContext context
             )
             {
-                if (tag != "_dergwasm" || hierarchy == null || hierarchy.Tag != "_dergwasm_args")
+                // Use tag __dergwasm_init and slot with tag _dergwasm to initialize Dergwasm. You don't have to do
+                // this if the world already has the Dergwasm hiearchy set up, since this automatically happens
+                // on world load. When you change the hierarchy or the WASM file while the world is running, you
+                // can call this to reinitialize Dergwasm.
+
+                // Use tag __dergwasm and slot with tag _dergwasm_args to call a WASM function.
+
+                if (hierarchy == null)
+                    return;
+                if (
+                    (tag != "_dergwasm" || hierarchy.Tag != "_dergwasm_args")
+                    && (tag != "_dergwasm_init" || hierarchy.Tag != "_dergwasm")
+                )
                     return;
 
                 try
                 {
-                    DergwasmMachine.resoniteEnv.CallWasmFunction(hierarchy);
+                    if (tag == "_dergwasm")
+                        DergwasmMachine.resoniteEnv.CallWasmFunction(hierarchy);
+                    else if (tag == "_dergwasm_init")
+                        DergwasmMachine.InitStage0(context.World);
                 }
                 catch (Exception e)
                 {
@@ -142,7 +94,7 @@ namespace Derg
         {
             if (consoleSlot == null)
             {
-                UniLog.Log($"[Dergwasm] Couldn't find console slot");
+                UniLog.Log($"[Dergwasm] Couldn't find console slot to log this message: {msg}");
                 return;
             }
             consoleSlot.GetComponent<FrooxEngine.UIX.Text>().Content.Value += msg;
@@ -153,6 +105,72 @@ namespace Derg
             Output($"> {msg}\n");
         }
 
+        public static void InitStage0(World world)
+        {
+            DergwasmMachine.world = null;
+            machine = null;
+            moduleInstance = null;
+            emscriptenEnv = null;
+            resoniteEnv = null;
+            DergwasmMachine.dergwasmSlot = null;
+            consoleSlot = null;
+            fsSlot = null;
+
+            Slot dergwasmSlot = world.RootSlot.FindChild(s => s.Tag == "_dergwasm", maxDepth: 0);
+            if (dergwasmSlot == null)
+            {
+                Msg(
+                    $"Couldn't find dergwasm slot with tag _dergwasm in world {world.Configuration.WorldName.Value}"
+                );
+                return;
+            }
+            Slot byteDisplay = dergwasmSlot.FindChild(
+                s => s.Tag == "_dergwasm_byte_display",
+                maxDepth: 0
+            );
+            // We expect a slot with the tag _dergwasm_byte_display to exist, and to have
+            // a StaticBinary component.
+            Slot wasmBinarySlot = dergwasmSlot.FindChild(
+                s => s.Tag == "_dergwasm_wasm_file",
+                maxDepth: 0
+            );
+
+            if (wasmBinarySlot == null)
+            {
+                Msg(
+                    $"Couldn't find WASM binary slot with tag _dergwasm_wasm_file in world {world.Configuration.WorldName.Value}"
+                );
+                return;
+            }
+
+            if (byteDisplay == null)
+            {
+                Msg(
+                    $"Couldn't find byte display slot with tag _dergwasm_byte_display in world {world.Configuration.WorldName.Value}"
+                );
+                return;
+            }
+
+            StaticBinary binary = wasmBinarySlot.GetComponent<StaticBinary>();
+            if (binary == null)
+            {
+                Msg(
+                    $"Couldn't access WASM StaticBinary component in world {world.Configuration.WorldName.Value}"
+                );
+                return;
+            }
+
+            BinaryAssetLoader loader = new BinaryAssetLoader(world, binary, byteDisplay);
+
+            // Equivalent to Worker.StartGlobalTask
+            Task<string> task = world.Coroutines.StartTask<string>(loader.Load);
+            if (task == null)
+            {
+                Msg($"Couldn't start task in world {world.Configuration.WorldName.Value}");
+                return;
+            }
+        }
+
         public static void Init(World world, string filename)
         {
             DergwasmMachine.world = world;
@@ -161,6 +179,9 @@ namespace Derg
                 dergwasmSlot = world.RootSlot.FindChild(s => s.Tag == "_dergwasm", maxDepth: 0);
                 consoleSlot = dergwasmSlot?.FindChild(s => s.Tag == "_dergwasm_console_content");
                 fsSlot = dergwasmSlot?.FindChild(s => s.Tag == "_dergwasm_fs_root");
+
+                if (consoleSlot != null)
+                    consoleSlot.GetComponent<FrooxEngine.UIX.Text>().Content.Value = "";
 
                 Msg("Init called");
                 machine = new Machine();

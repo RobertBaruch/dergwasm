@@ -32,10 +32,20 @@ namespace Derg
             return world.ReferenceController.GetObjectOrNull(refID) as Slot;
         }
 
-        public int allocateString(string s)
+        // Creates an empty frame which can be used to call a WASM function, if you weren't
+        // already in a frame. Specify the ModuleFunc if you are going to use this to call
+        // a WASM function.
+        public Frame EmptyFrame(ModuleFunc f = null)
         {
-            Frame frame = new Frame(null, DergwasmMachine.moduleInstance, null);
+            Frame frame = new Frame(f, DergwasmMachine.moduleInstance, null);
             frame.Label = new Label(0, 0);
+            return frame;
+        }
+
+        public int allocateString(Frame frame, string s)
+        {
+            if (frame == null)
+                frame = EmptyFrame();
 
             byte[] stringData = Encoding.UTF8.GetBytes(s);
             int stringPtr = emscriptenEnv.malloc(frame, stringData.Length + 1);
@@ -58,7 +68,7 @@ namespace Derg
                 {
                     if (c is ValueField<string> stringField)
                     {
-                        int ptr = allocateString(stringField.Value);
+                        int ptr = allocateString(null, stringField.Value);
                         allocations.Add(ptr);
                         args.Add(new Value(ptr));
                         DergwasmMachine.Msg($"String arg, ptr = 0x{ptr:X8}");
@@ -108,6 +118,7 @@ namespace Derg
             return null;
         }
 
+        // Invokes a WASM function when you're not already in a WASM function.
         void InvokeWasmFunction(string funcName, List<Value> args)
         {
             Func f = machine.GetFunc(DergwasmMachine.moduleInstance.ModuleName, funcName);
@@ -116,8 +127,7 @@ namespace Derg
                 throw new Trap($"No {funcName} function found");
             }
             DergwasmMachine.Msg($"Running {funcName}");
-            Frame frame = new Frame(f as ModuleFunc, DergwasmMachine.moduleInstance, null);
-            frame.Label = new Label(0, 0); // We're assuming no return value
+            Frame frame = EmptyFrame(f as ModuleFunc);
             foreach (Value arg in args)
             {
                 frame.Push(arg);
@@ -151,9 +161,7 @@ namespace Derg
             {
                 foreach (int ptr in argAllocations)
                 {
-                    Frame frame = new Frame(null, DergwasmMachine.moduleInstance, null);
-                    frame.Label = new Label(0, 0);
-                    emscriptenEnv.free(frame, ptr);
+                    emscriptenEnv.free(EmptyFrame(), ptr);
                 }
                 DergwasmMachine.Msg("Call complete");
             }
@@ -195,7 +203,7 @@ namespace Derg
         }
 
         //
-        // The host functions.
+        // The host functions. They are always called from WASM, so they already have a frame.
         //
 
         public void slot__root_slot(Frame frame, uint rootPtr)
@@ -248,6 +256,17 @@ namespace Derg
         }
 
         public int slot__get_name(Frame frame, uint slot_id_lo, uint slot_id_hi)
+        {
+            Slot slot = SlotFromRefID(slot_id_lo, slot_id_hi);
+            string name = slot?.Name ?? "";
+            byte[] nameData = Encoding.UTF8.GetBytes(name);
+            int namePtr = emscriptenEnv.malloc(frame, nameData.Length + 1);
+            Array.Copy(nameData, 0, machine.Memory0, namePtr, nameData.Length);
+            machine.Memory0[namePtr + nameData.Length] = 0; // NUL-termination
+            return namePtr;
+        }
+
+        public int slot__set_name(Frame frame, uint slot_id_lo, uint slot_id_hi, uint ptr)
         {
             Slot slot = SlotFromRefID(slot_id_lo, slot_id_hi);
             string name = slot?.Name ?? "";
