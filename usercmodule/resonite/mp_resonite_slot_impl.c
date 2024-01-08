@@ -27,16 +27,12 @@ mp_obj_t resonite_Slot_make_new(const mp_obj_type_t *type, size_t n_args, size_t
 }
 
 mp_obj_t resonite_Slot_root_slot(mp_obj_t cls_in) {
-    resonite_slot_refid_t id;
-    slot__root_slot(&id);
-    return resonite_create_slot(id);
+    return resonite_create_slot(slot__root_slot());
 }
 
 mp_obj_t resonite_Slot_get_parent(mp_obj_t self_in) {
     resonite_Slot_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    resonite_slot_refid_t id;
-    slot__get_parent(self->reference_id, &id);
-    return resonite_create_slot(id);
+    return resonite_create_slot(slot__get_parent(self->reference_id));
 }
 
 mp_obj_t resonite_Slot_get_object_root(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
@@ -49,9 +45,7 @@ mp_obj_t resonite_Slot_get_object_root(size_t n_args, const mp_obj_t *pos_args, 
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
     int only_explicit = args[0].u_bool ? 1 : 0;
 
-    resonite_slot_refid_t id;
-    slot__get_object_root(self->reference_id, only_explicit, &id);
-    return resonite_create_slot(id);
+    return resonite_create_slot(slot__get_object_root(self->reference_id, only_explicit));
 }
 
 mp_obj_t resonite_Slot_get_name(mp_obj_t self_in) {

@@ -703,16 +703,8 @@ namespace Derg
         // This was present in hello_world.c. It returns a long, but the actual return value
         // is just the low 32 bits. The upper 32 bits get stored in $global1 (although we don't
         // yet support exported globals).
-        public int dynCall_jiji(Frame frame, int index, int a, int b_lo, int b_hi, int d) =>
-            CallExportedFunc<int, int, int, int, int, int>(
-                "dynCall_jiji",
-                frame,
-                index,
-                a,
-                b_lo,
-                b_hi,
-                d
-            );
+        public long dynCall_jiji(Frame frame, int index, int a, long b, int d) =>
+            CallExportedFunc<long, int, int, long, int>("dynCall_jiji", frame, index, a, b, d);
 
         // The various dyncall_* functions for setjmp/longjmp.
         // The first character is the return type, and the rest are the arg types.

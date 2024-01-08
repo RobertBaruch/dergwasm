@@ -8,3 +8,4 @@ SRC_USERMOD += $(USERMODULES_DIR)/mp_resonite_slot.c
 CFLAGS_USERMOD += -I$(USERMODULES_DIR)
 
 JSFLAGS += --js-library $(USERMODULES_DIR)/resonite_api.js
+JSFLAGS += -s WASM_BIGINT

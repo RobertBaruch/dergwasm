@@ -6,35 +6,33 @@
 
 #include "resonite_api_types.h"
 
-extern void slot__root_slot(resonite_slot_refid_t* slot_id);
+extern resonite_slot_refid_t slot__root_slot();
 
 // Returns the active user for the given slot.
 //
 // ProtoFlux equivalent: Users/GetActiveUser, Slots/GetActiveUser
 // FrooxEngine equivalent: Slot.ActiveUser
-extern void slot__get_active_user(resonite_slot_refid_t slot_id, resonite_user_refid_t* user_id);
+extern resonite_user_refid_t slot__get_active_user(resonite_slot_refid_t slot_id);
 
 // Returns the active user root for the given slot.
 //
 // ProtoFlux equivalent: Users/GetActiveUserRoot, Slots/GetActiveUserRoot
 // FrooxEngine equivalent: Slot.ActiveUserRoot
-extern void slot__get_active_user_root(
-    resonite_slot_refid_t slot_id,
-    resonite_user_root_refid_t* user_root_id);
+extern resonite_user_root_refid_t slot__get_active_user_root(
+    resonite_slot_refid_t slot_id);
 
 // Returns the object root for the given slot.
 //
 // ProtoFlux equivalent: Slots/GetObjectRoot
 // FrooxEngine equivalent: Slot.GetObjectRoot
-extern void slot__get_object_root(
-    resonite_slot_refid_t slot_id, int only_explicit, resonite_slot_refid_t* object_root_id);
+extern resonite_slot_refid_t slot__get_object_root(
+    resonite_slot_refid_t slot_id, int only_explicit);
 
 // Returns the parent slot for the given slot.
 //
 // ProtoFlux equivalent: Slots/GetParentSlot
 // FrooxEngine equivalent: Slot.Parent
-extern void slot__get_parent(
-    resonite_slot_refid_t slot_id, resonite_slot_refid_t* parent_slot_id);
+extern resonite_slot_refid_t slot__get_parent(resonite_slot_refid_t slot_id);
 
 // Returns the name for the given slot. The returned name must be freed when
 // done with it. Although the return type is not const, changes to the returned

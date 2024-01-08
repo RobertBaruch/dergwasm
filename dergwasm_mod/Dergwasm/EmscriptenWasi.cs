@@ -35,7 +35,7 @@ namespace Derg
                 "fd_write",
                 FdWrite
             );
-            machine.RegisterReturningHostFunc<int, int, int, int, int, int>(
+            machine.RegisterReturningHostFunc<int, long, int, int, int>(
                 "wasi_snapshot_preview1",
                 "fd_seek",
                 FdSeek
@@ -162,10 +162,10 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdSeek(Frame frame, int fd, int offset_lo, int offset_hi, int whence, int newOffsetPtr)
+        int FdSeek(Frame frame, int fd, long offset, int whence, int newOffsetPtr)
         {
             throw new Trap(
-                $"Unimplemented call to FdSeek({fd}, {offset_lo}, {offset_hi}, {whence}, 0x{newOffsetPtr:X8})"
+                $"Unimplemented call to FdSeek({fd}, {offset}, {whence}, 0x{newOffsetPtr:X8})"
             );
         }
 
