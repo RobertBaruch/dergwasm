@@ -180,6 +180,16 @@ namespace Derg
             );
             machine.RegisterReturningHostFunc<ulong, int>("env", "slot__get_name", slot__get_name);
             machine.RegisterVoidHostFunc<ulong, int>("env", "slot__set_name", slot__set_name);
+            machine.RegisterReturningHostFunc<ulong, int>(
+                "env",
+                "value_field__bool__get_value",
+                value_field__bool__get_value
+            );
+            machine.RegisterVoidHostFunc<ulong, int>(
+                "env",
+                "value_field__bool__set_value",
+                value_field__bool__set_value
+            );
         }
 
         //
@@ -229,6 +239,24 @@ namespace Derg
             if (slot == null)
                 return;
             slot.Name = emscriptenEnv.GetUTF8StringFromMem(ptr);
+        }
+
+        public void value_field__bool__set_value(Frame frame, ulong value_field_id, int value)
+        {
+            ValueField<bool> component =
+                world.ReferenceController.GetObjectOrNull(new RefID(value_field_id))
+                as ValueField<bool>;
+            if (component == null)
+                return;
+            component.Value.Value = value != 0;
+        }
+
+        public int value_field__bool__get_value(Frame frame, ulong value_field_id)
+        {
+            ValueField<bool> component =
+                world.ReferenceController.GetObjectOrNull(new RefID(value_field_id))
+                as ValueField<bool>;
+            return (component?.Value?.Value ?? false) ? 1 : 0;
         }
     }
 }

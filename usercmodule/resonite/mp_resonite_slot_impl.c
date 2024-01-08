@@ -18,12 +18,7 @@ void resonite_Slot_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kin
 }
 
 mp_obj_t resonite_Slot_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
-    resonite_slot_refid_t reference_id = 0;
-    // args[0] is reference_id_lo
-    reference_id = (uint64_t)mp_obj_get_int(args[0]); // mp_int_t is an int under the WASM port.
-    // args[1] is reference_id_hi
-    reference_id |= (uint64_t)mp_obj_get_int(args[1]) << 32; // mp_int_t is an int under the WASM port.
-    return resonite_create_slot(reference_id);
+    return resonite_create_slot((uint64_t)mp_obj_get_int(args[0]));
 }
 
 mp_obj_t resonite_Slot_root_slot(mp_obj_t cls_in) {

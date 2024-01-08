@@ -10,24 +10,13 @@ from collections.abc import Iterator
 
 
 class Slot:
-    """Handle to a Slot.
-
-    Internally, instances are just Resonite RefIDs. While Slots don't hold their own
-    IDs, the World has a _slots SlotBag, which is a dictionary that maps RefIDs to
-    Slot instances. Unfortunately, this member is private, which means it is
-    problematic to hold references to slots.
-    """
-    def __init__(self, reference_id_lo: int, reference_id_hi: int):
+    """A Slot."""
+    def __init__(self, reference_id: int):
         """
         Makes a new Slot instance.
 
         Args:
-          reference_id_lo: The low 32 bits of the Slot's ReferenceID.
-          reference_id_hi: The high 32 bits of the Slot's ReferenceID.
-
-        Because the WASM MicroPython port is a 32-bit port, it only supports int.
-        Anything larger is an MPZ type, so it's just easier to pass in two ints rather
-        than a whole MPZ for a 64-bit number.
+          reference_id: The Slot's ReferenceID.
         """
 
     @classmethod
@@ -86,6 +75,13 @@ class Slot:
         ProtoFlux equivalent: Slots/Info/GetSlotName
         FrooxEngine equivalent: Slot.Name
         """
+
+    def set_name(self, name: str) -> None:
+		"""Sets the name of this slot.
+
+		ProtoFlux equivalent: Slots/Info/SetSlotName
+		FrooxEngine equivalent: Slot.Name
+		"""
 
     def children(self) -> Iterator[Slot]:
         """Returns an iterator over the children of this slot.
