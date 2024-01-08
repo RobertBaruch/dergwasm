@@ -277,16 +277,16 @@ namespace Derg
         }
 
         public void CallExportedFunc(string name, Frame frame) =>
-            CallFunc(machine.GetFunc(machine.MainModuleName, name), frame);
+            CallFunc(machine.GetRequiredFunc(machine.MainModuleName, name), frame);
 
         public void CallExportedFunc<T1>(string name, Frame frame, T1 arg1)
             where T1 : unmanaged =>
-            CallFunc(machine.GetFunc(machine.MainModuleName, name), frame, arg1);
+            CallFunc(machine.GetRequiredFunc(machine.MainModuleName, name), frame, arg1);
 
         public void CallExportedFunc<T1, T2>(string name, Frame frame, T1 arg1, T2 arg2)
             where T1 : unmanaged
             where T2 : unmanaged =>
-            CallFunc(machine.GetFunc(machine.MainModuleName, name), frame, arg1, arg2);
+            CallFunc(machine.GetRequiredFunc(machine.MainModuleName, name), frame, arg1, arg2);
 
         public void CallExportedFunc<T1, T2, T3>(
             string name,
@@ -298,7 +298,13 @@ namespace Derg
             where T1 : unmanaged
             where T2 : unmanaged
             where T3 : unmanaged =>
-            CallFunc(machine.GetFunc(machine.MainModuleName, name), frame, arg1, arg2, arg3);
+            CallFunc(
+                machine.GetRequiredFunc(machine.MainModuleName, name),
+                frame,
+                arg1,
+                arg2,
+                arg3
+            );
 
         public void CallExportedFunc<T1, T2, T3, T4>(
             string name,
@@ -312,7 +318,14 @@ namespace Derg
             where T2 : unmanaged
             where T3 : unmanaged
             where T4 : unmanaged =>
-            CallFunc(machine.GetFunc(machine.MainModuleName, name), frame, arg1, arg2, arg3, arg4);
+            CallFunc(
+                machine.GetRequiredFunc(machine.MainModuleName, name),
+                frame,
+                arg1,
+                arg2,
+                arg3,
+                arg4
+            );
 
         public void CallExportedFunc<T1, T2, T3, T4, T5>(
             string name,
@@ -329,7 +342,7 @@ namespace Derg
             where T4 : unmanaged
             where T5 : unmanaged =>
             CallFunc(
-                machine.GetFunc(machine.MainModuleName, name),
+                machine.GetRequiredFunc(machine.MainModuleName, name),
                 frame,
                 arg1,
                 arg2,
@@ -340,18 +353,23 @@ namespace Derg
 
         public R CallExportedFunc<R>(string name, Frame frame)
             where R : unmanaged =>
-            CallFunc<R>(machine.GetFunc(machine.MainModuleName, name), frame);
+            CallFunc<R>(machine.GetRequiredFunc(machine.MainModuleName, name), frame);
 
         public R CallExportedFunc<R, T1>(string name, Frame frame, T1 arg1)
             where R : unmanaged
             where T1 : unmanaged =>
-            CallFunc<R, T1>(machine.GetFunc(machine.MainModuleName, name), frame, arg1);
+            CallFunc<R, T1>(machine.GetRequiredFunc(machine.MainModuleName, name), frame, arg1);
 
         public R CallExportedFunc<R, T1, T2>(string name, Frame frame, T1 arg1, T2 arg2)
             where R : unmanaged
             where T1 : unmanaged
             where T2 : unmanaged =>
-            CallFunc<R, T1, T2>(machine.GetFunc(machine.MainModuleName, name), frame, arg1, arg2);
+            CallFunc<R, T1, T2>(
+                machine.GetRequiredFunc(machine.MainModuleName, name),
+                frame,
+                arg1,
+                arg2
+            );
 
         public R CallExportedFunc<R, T1, T2, T3>(
             string name,
@@ -365,7 +383,7 @@ namespace Derg
             where T2 : unmanaged
             where T3 : unmanaged =>
             CallFunc<R, T1, T2, T3>(
-                machine.GetFunc(machine.MainModuleName, name),
+                machine.GetRequiredFunc(machine.MainModuleName, name),
                 frame,
                 arg1,
                 arg2,
@@ -386,7 +404,7 @@ namespace Derg
             where T3 : unmanaged
             where T4 : unmanaged =>
             CallFunc<R, T1, T2, T3, T4>(
-                machine.GetFunc(machine.MainModuleName, name),
+                machine.GetRequiredFunc(machine.MainModuleName, name),
                 frame,
                 arg1,
                 arg2,
@@ -410,7 +428,7 @@ namespace Derg
             where T4 : unmanaged
             where T5 : unmanaged =>
             CallFunc<R, T1, T2, T3, T4, T5>(
-                machine.GetFunc(machine.MainModuleName, name),
+                machine.GetRequiredFunc(machine.MainModuleName, name),
                 frame,
                 arg1,
                 arg2,
@@ -889,7 +907,6 @@ namespace Derg
 
         public void _emscripten_throw_longjmp(Frame frame)
         {
-            Console.WriteLine("=============== Throwing a longjmp");
             throw new LongjmpException();
         }
 

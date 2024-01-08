@@ -105,7 +105,7 @@ namespace Derg
 
         public Func GetFunc(int addr) => funcs[addr];
 
-        public Func GetFunc(string moduleName, string name)
+        public Func GetFunc(string moduleName, string name, bool throw_if_not_found = false)
         {
             // O(N) for now
             foreach (var f in funcs)
@@ -115,8 +115,19 @@ namespace Derg
                     return f;
                 }
             }
+            if (throw_if_not_found)
+            {
+                throw new Trap($"Could not find function {moduleName}.{name} in WASM");
+            }
             return null;
         }
+
+        public Func GetRequiredFunc(string moduleName, string name) =>
+            GetFunc(
+                moduleName,
+                name, /*throw_if_not_found=*/
+                true
+            );
 
         public int AddTable(Table table)
         {
