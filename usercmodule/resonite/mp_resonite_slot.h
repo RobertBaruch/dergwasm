@@ -3,7 +3,7 @@
 
 #include "py/obj.h"
 #include "py/runtime.h"
-#include "resonite_api.h"
+#include "resonite_api_types.h"
 
 // This structure represents Slot instance objects.
 typedef struct _resonite_Slot_obj_t {
@@ -25,5 +25,6 @@ extern mp_obj_t resonite_Slot_root_slot(mp_obj_t cls_in);
 extern mp_obj_t resonite_Slot_get_parent(mp_obj_t self_in);
 extern mp_obj_t resonite_Slot_get_object_root(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args);
 extern mp_obj_t resonite_Slot_get_name(mp_obj_t self_in);
+extern mp_obj_t resonite_Slot_set_name(mp_obj_t self_in, mp_obj_t name);
 
 #endif // __RESONITE_RESONITE_SLOT_H__

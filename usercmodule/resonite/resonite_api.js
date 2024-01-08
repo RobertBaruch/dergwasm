@@ -10,3 +10,6 @@ mergeInto(LibraryManager.library, {
 mergeInto(LibraryManager.library, {
     slot__get_name: function () { }
 });
+mergeInto(LibraryManager.library, {
+    slot__set_name: function () { }
+});

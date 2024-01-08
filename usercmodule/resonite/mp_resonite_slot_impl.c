@@ -4,7 +4,7 @@
 
 #include "py/obj.h"
 #include "py/runtime.h"
-#include "resonite_api.h"
+#include "resonite_slot_api.h"
 
 mp_obj_t resonite_create_slot(resonite_slot_refid_t reference_id) {
     resonite_Slot_obj_t *self = mp_obj_malloc(resonite_Slot_obj_t, &resonite_Slot_type);
@@ -58,4 +58,10 @@ mp_obj_t resonite_Slot_get_name(mp_obj_t self_in) {
 	resonite_Slot_obj_t *self = MP_OBJ_TO_PTR(self_in);
 	char* name = slot__get_name(self->reference_id);
     return mp_obj_new_str(name, strlen(name));
+}
+
+mp_obj_t resonite_Slot_set_name(mp_obj_t self_in, mp_obj_t name) {
+	resonite_Slot_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    slot__set_name(self->reference_id, mp_obj_str_get_str(name));
+    return mp_const_none;
 }

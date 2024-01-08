@@ -7,12 +7,10 @@
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(resonite_Slot_root_slot_fun_obj, resonite_Slot_root_slot);
 STATIC MP_DEFINE_CONST_CLASSMETHOD_OBJ(resonite_Slot_root_slot_obj, MP_ROM_PTR(&resonite_Slot_root_slot_fun_obj));
-
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(resonite_Slot_get_parent_obj, resonite_Slot_get_parent);
-
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(resonite_Slot_get_object_root_obj, 1, resonite_Slot_get_object_root);
-
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(resonite_Slot_get_name_obj, resonite_Slot_get_name);
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(resonite_Slot_set_name_obj, resonite_Slot_set_name);
 
 // This collects all methods and other static class attributes of Slot.
 // The table structure is similar to the module table, as detailed below.
@@ -21,6 +19,7 @@ STATIC const mp_rom_map_elem_t resonite_Slot_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_get_parent), MP_ROM_PTR(&resonite_Slot_get_parent_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_object_root), MP_ROM_PTR(&resonite_Slot_get_object_root_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_name), MP_ROM_PTR(&resonite_Slot_get_name_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_name), MP_ROM_PTR(&resonite_Slot_set_name_obj) },
 };
 // Create a const dict named resonite_Slot_locals_dict, with content
 // resonite_Slot_locals_dict_table.

@@ -1,6 +1,8 @@
-// Contains all keepalives for resonite_api.
+// Contains all keepalives for resonite_slot_api.
 
-#include "resonite_api.h"
+// This file isn't needed when compiling MicroPython because MicroPython uses the functions.
+
+#include "resonite_slot_api.h"
 
 #include <stdint.h>
 #include <emscripten.h>
@@ -21,4 +23,8 @@ EMSCRIPTEN_KEEPALIVE void _slot__get_parent(
 
 EMSCRIPTEN_KEEPALIVE char* _slot__get_name(resonite_slot_refid_t slot_id) {
 	return slot__get_name(slot_id);
+}
+
+EMSCRIPTEN_KEEPALIVE void _slot__set_name(resonite_slot_refid_t slot_id, const char* name) {
+	slot__set_name(slot_id, name);
 }

@@ -68,6 +68,31 @@ namespace Derg
             this.machine = machine;
         }
 
+        // Creates an empty frame which can be used to call a WASM function, if you weren't
+        // already in a frame. Specify the ModuleFunc if you are going to use this to call
+        // a WASM function.
+        public Frame EmptyFrame(ModuleFunc f = null)
+        {
+            Frame frame = new Frame(f, DergwasmMachine.moduleInstance, null);
+            frame.Label = new Label(0, 0);
+            return frame;
+        }
+
+        // Allocates a string in WASM memory and returns the pointer to it.
+        // You can pass null as the frame if you're calling this from outside a WASM function.
+        // Otherwise pass the frame you're in.
+        public int AllocateUTF8StringInMem(Frame frame, string s)
+        {
+            if (frame == null)
+                frame = EmptyFrame();
+
+            byte[] stringData = Encoding.UTF8.GetBytes(s);
+            int stringPtr = malloc(frame, stringData.Length + 1);
+            Array.Copy(stringData, 0, machine.Memory0, stringPtr, stringData.Length);
+            machine.Memory0[stringPtr + stringData.Length] = 0; // NUL-termination
+            return stringPtr;
+        }
+
         public string GetUTF8StringFromMem(int ptr)
         {
             int endPtr = ptr;

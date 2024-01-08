@@ -32,28 +32,6 @@ namespace Derg
             return world.ReferenceController.GetObjectOrNull(refID) as Slot;
         }
 
-        // Creates an empty frame which can be used to call a WASM function, if you weren't
-        // already in a frame. Specify the ModuleFunc if you are going to use this to call
-        // a WASM function.
-        public Frame EmptyFrame(ModuleFunc f = null)
-        {
-            Frame frame = new Frame(f, DergwasmMachine.moduleInstance, null);
-            frame.Label = new Label(0, 0);
-            return frame;
-        }
-
-        public int allocateString(Frame frame, string s)
-        {
-            if (frame == null)
-                frame = EmptyFrame();
-
-            byte[] stringData = Encoding.UTF8.GetBytes(s);
-            int stringPtr = emscriptenEnv.malloc(frame, stringData.Length + 1);
-            Array.Copy(stringData, 0, machine.Memory0, stringPtr, stringData.Length);
-            machine.Memory0[stringPtr + stringData.Length] = 0; // NUL-termination
-            return stringPtr;
-        }
-
         List<Value> ExtractArgs(Slot argsSlot, List<int> allocations)
         {
             List<Value> args = new List<Value>();
@@ -68,7 +46,7 @@ namespace Derg
                 {
                     if (c is ValueField<string> stringField)
                     {
-                        int ptr = allocateString(null, stringField.Value);
+                        int ptr = emscriptenEnv.AllocateUTF8StringInMem(null, stringField.Value);
                         allocations.Add(ptr);
                         args.Add(new Value(ptr));
                         DergwasmMachine.Msg($"String arg, ptr = 0x{ptr:X8}");
@@ -127,7 +105,7 @@ namespace Derg
                 throw new Trap($"No {funcName} function found");
             }
             DergwasmMachine.Msg($"Running {funcName}");
-            Frame frame = EmptyFrame(f as ModuleFunc);
+            Frame frame = emscriptenEnv.EmptyFrame(f as ModuleFunc);
             foreach (Value arg in args)
             {
                 frame.Push(arg);
@@ -161,7 +139,7 @@ namespace Derg
             {
                 foreach (int ptr in argAllocations)
                 {
-                    emscriptenEnv.free(EmptyFrame(), ptr);
+                    emscriptenEnv.free(emscriptenEnv.EmptyFrame(), ptr);
                 }
                 DergwasmMachine.Msg("Call complete");
             }
@@ -259,22 +237,15 @@ namespace Derg
         {
             Slot slot = SlotFromRefID(slot_id_lo, slot_id_hi);
             string name = slot?.Name ?? "";
-            byte[] nameData = Encoding.UTF8.GetBytes(name);
-            int namePtr = emscriptenEnv.malloc(frame, nameData.Length + 1);
-            Array.Copy(nameData, 0, machine.Memory0, namePtr, nameData.Length);
-            machine.Memory0[namePtr + nameData.Length] = 0; // NUL-termination
-            return namePtr;
+            return emscriptenEnv.AllocateUTF8StringInMem(frame, name);
         }
 
-        public int slot__set_name(Frame frame, uint slot_id_lo, uint slot_id_hi, uint ptr)
+        public void slot__set_name(Frame frame, uint slot_id_lo, uint slot_id_hi, int ptr)
         {
             Slot slot = SlotFromRefID(slot_id_lo, slot_id_hi);
-            string name = slot?.Name ?? "";
-            byte[] nameData = Encoding.UTF8.GetBytes(name);
-            int namePtr = emscriptenEnv.malloc(frame, nameData.Length + 1);
-            Array.Copy(nameData, 0, machine.Memory0, namePtr, nameData.Length);
-            machine.Memory0[namePtr + nameData.Length] = 0; // NUL-termination
-            return namePtr;
+            if (slot == null)
+                return;
+            slot.Name = emscriptenEnv.GetUTF8StringFromMem(ptr);
         }
     }
 }
