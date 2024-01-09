@@ -182,13 +182,23 @@ namespace Derg
             machine.RegisterVoidHostFunc<ulong, int>("env", "slot__set_name", slot__set_name);
             machine.RegisterReturningHostFunc<ulong, int>(
                 "env",
-                "value_field__bool__get_value",
-                value_field__bool__get_value
+                "slot__get_num_children",
+                slot__get_num_children
             );
-            machine.RegisterVoidHostFunc<ulong, int>(
+            machine.RegisterReturningHostFunc<ulong, int, ulong>(
                 "env",
-                "value_field__bool__set_value",
-                value_field__bool__set_value
+                "slot__get_child",
+                slot__get_child
+            );
+            machine.RegisterReturningHostFunc<ulong, int, int, int, int, ulong>(
+                "env",
+                "slot__find_child_by_name",
+                slot__find_child_by_name
+            );
+            machine.RegisterReturningHostFunc<ulong, int, int, ulong>(
+                "env",
+                "slot__find_child_by_tag",
+                slot__find_child_by_tag
             );
         }
 
@@ -241,22 +251,51 @@ namespace Derg
             slot.Name = emscriptenEnv.GetUTF8StringFromMem(ptr);
         }
 
-        public void value_field__bool__set_value(Frame frame, ulong value_field_id, int value)
+        public int slot__get_num_children(Frame frame, ulong slot_id)
         {
-            ValueField<bool> component =
-                world.ReferenceController.GetObjectOrNull(new RefID(value_field_id))
-                as ValueField<bool>;
-            if (component == null)
-                return;
-            component.Value.Value = value != 0;
+            Slot slot = SlotFromRefID(slot_id);
+            return slot?.ChildrenCount ?? 0;
         }
 
-        public int value_field__bool__get_value(Frame frame, ulong value_field_id)
+        public ulong slot__get_child(Frame frame, ulong slot_id, int index)
         {
-            ValueField<bool> component =
-                world.ReferenceController.GetObjectOrNull(new RefID(value_field_id))
-                as ValueField<bool>;
-            return (component?.Value?.Value ?? false) ? 1 : 0;
+            Slot slot = SlotFromRefID(slot_id);
+            return ((ulong?)slot?[index]?.ReferenceID) ?? 0;
+        }
+
+        public ulong slot__find_child_by_name(
+            Frame frame,
+            ulong slot_id,
+            int namePtr,
+            int match_substring,
+            int ignore_case,
+            int max_depth
+        )
+        {
+            Slot slot = SlotFromRefID(slot_id);
+            string name = emscriptenEnv.GetUTF8StringFromMem(namePtr);
+            return (
+                    (ulong?)
+                        slot?.FindChild(
+                            name,
+                            match_substring != 0,
+                            ignore_case != 0,
+                            max_depth
+                        )?.ReferenceID
+                ) ?? 0;
+        }
+
+        public ulong slot__find_child_by_tag(Frame frame, ulong slot_id, int tagPtr, int max_depth)
+        {
+            Slot slot = SlotFromRefID(slot_id);
+            string tag = emscriptenEnv.GetUTF8StringFromMem(tagPtr);
+            return (
+                    (ulong?)
+                        slot?.FindChild(
+                            (Predicate<Slot>)(s => s.Tag == tag),
+                            max_depth
+                        )?.ReferenceID
+                ) ?? 0;
         }
     }
 }

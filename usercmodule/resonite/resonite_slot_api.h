@@ -42,4 +42,14 @@ extern char* slot__get_name(resonite_slot_refid_t slot_id);
 // Sets the name for the given slot.
 extern void slot__set_name(resonite_slot_refid_t slot_id, const char* name);
 
+extern int slot__get_num_children(resonite_slot_refid_t slot_id);
+
+extern resonite_slot_refid_t slot__get_child(resonite_slot_refid_t slot_id, int index);
+
+extern resonite_slot_refid_t slot__find_child_by_name(resonite_slot_refid_t slot_id,
+    const char* name, int match_substring, int ignore_case, int max_depth);
+
+extern resonite_slot_refid_t slot__find_child_by_tag(resonite_slot_refid_t slot_id,
+    const char* tag, int max_depth);
+
 #endif // __RESONITE_RESONITE_SLOT_API_H__

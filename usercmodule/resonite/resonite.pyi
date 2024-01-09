@@ -9,6 +9,64 @@ from __future__ import annotations
 from collections.abc import Iterator
 
 
+# These types are necessary to mirror the Resonite types. Python's type system is
+# more general.
+#
+# Type conversion between these numerics must be explicit. For example, you cannot
+# multiply an Int and a UInt -- you would have to convert the Int to a UInt, or the
+# UInt to an Int.
+class Int:
+	"""A 32-bit signed integer."""
+	def __init__(self, val: int):
+		"""
+		Makes a new Int instance.
+
+		Args:
+		  val: The value.
+
+        Raises:
+  	        OverflowError: If the value cannot fit in a signed 32-bit int.
+		"""
+
+class UInt:
+	"""A 32-bit unsigned integer."""
+	def __init__(self, val: int):
+		"""
+		Makes a new UInt instance.
+
+		Args:
+		  val: The value.
+
+        Raises:
+  	        OverflowError: If the value is negative or cannot fit in an unsigned 32-bit int.
+		"""
+
+class Long:
+	"""A 64-bit signed integer."""
+	def __init__(self, val: int):
+		"""
+		Makes a new Long instance.
+
+		Args:
+		  val: The value.
+
+        Raises:
+  	        OverflowError: If the value cannot fit in a signed 64-bit int.
+		"""
+
+class ULong:
+	"""A 64-bit unsigned integer."""
+	def __init__(self, val: int):
+		"""
+		Makes a new ULong instance.
+
+		Args:
+		  val: The value.
+
+        Raises:
+  	        OverflowError: If the value is negative or cannot fit in an unsigned 64-bit int.
+		"""
+
 class Slot:
     """A Slot."""
     def __init__(self, reference_id: int):
@@ -197,3 +255,53 @@ class Slot:
         ProtoFlux equivalent: Slots/Searching/FindParentByTag
         FrooxEngine equivalent: Slot.FindParent
         """
+
+    def get_components(self) -> Iterator[Component]:
+		"""Returns an iterator over the components of this slot.
+
+		Warning about added and deleted components during iteration.
+		Warning about storing iterators across MicroPython calls.
+
+		ProtoFlux equivalent: None
+		FrooxEngine equivalent: Slot.Components
+		"""
+
+class Component:
+    """Base class for Components."""
+    def __init__(self, reference_id: int):
+        """
+        Makes a new Component instance.
+
+        Args:
+          reference_id: The Component's ReferenceID.
+        """
+
+class ValueField[T](Component):
+	"""A ValueField storing a value of type T."""
+	def __init__(self, reference_id: int, value_type: type[T]):
+		"""
+		Makes a new ValueField instance holding a type of value_type.
+        We must pass the type of the value as a type hint, because
+        while the Python runtime may not care, C# does.
+
+		Args:
+		  reference_id: The ValueField's ReferenceID.
+          value_type: The type of the value.
+		"""
+
+    def get_value_type(self) -> type:
+		"""Returns the type of the value stored in this ValueField."""
+
+	def get_value(self) -> T:
+		"""Returns the value of this ValueField.
+
+		ProtoFlux equivalent: ValueFields/GetValue
+		FrooxEngine equivalent: ValueField.Value
+		"""
+
+	def set_value(self, value: T) -> None:
+		"""Sets the value of this ValueField.
+
+		ProtoFlux equivalent: ValueFields/SetValue
+		FrooxEngine equivalent: ValueField.Value
+		"""

@@ -40,7 +40,7 @@ Dergwasm includes a WASM binary, `firmware.wasm`, which implements a [MicroPytho
     6:38:54 PM.614 ( -1 FPS)	[INFO] [ResoniteModLoader/Dergwasm] Dergwasm patches applied
     ```
 
-6. Copy this URL, and paste it into your world in Resonite: `resrec:///U-Xekri/R-a6ddab70-db2d-41cf-be0e-4f7a356afe69`. This is a Dergwasm slot hierarchy, already set up.
+6. Copy this URL, and paste it into your world in Resonite: `resrec:///U-Xekri/R-c67b56f1-8b83-4108-8ac7-0846ed8ce8b9`. This is a Dergwasm slot hierarchy, already set up.
    ![The Dergwasm slot](dergwasm_slot.jpg)
 7. Re-initialize Dergwasm by using the ProtofluxTool to create a Dynamic Impulse Trigger node. Set its `Tag` to `_dergwasm_init` and its `TargetHierarchy` to the top-level Dergwasm slot. Now trigger the node. There will be a slight hitch as the WASM file is read in and parsed.
 

@@ -183,6 +183,7 @@ namespace Derg
                 if (consoleSlot != null)
                     consoleSlot.GetComponent<FrooxEngine.UIX.Text>().Content.Value = "";
 
+                Msg($"Dergwasm v{typeof(Dergwasm).Assembly.GetName().Version}");
                 Msg("Init called");
                 machine = new Machine();
                 // machine.Debug = true;
