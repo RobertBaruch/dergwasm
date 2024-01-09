@@ -78,18 +78,31 @@ namespace Derg
             return frame;
         }
 
+        // Allocates `size` bytes in WASM memory and returns the pointer to it.
+        public int Malloc(Frame frame, int size)
+        {
+            if (frame == null)
+                frame = EmptyFrame();
+
+            return malloc(frame, size);
+        }
+
         // Allocates a string in WASM memory and returns the pointer to it.
         // You can pass null as the frame if you're calling this from outside a WASM function.
         // Otherwise pass the frame you're in.
         public int AllocateUTF8StringInMem(Frame frame, string s)
         {
-            if (frame == null)
-                frame = EmptyFrame();
+            int allocated_size = 0;
+            return AllocateUTF8StringInMem(frame, s, ref allocated_size);
+        }
 
+        public int AllocateUTF8StringInMem(Frame frame, string s, ref int allocated_size)
+        {
             byte[] stringData = Encoding.UTF8.GetBytes(s);
-            int stringPtr = malloc(frame, stringData.Length + 1);
+            int stringPtr = Malloc(frame, stringData.Length + 1);
             Array.Copy(stringData, 0, machine.Memory0, stringPtr, stringData.Length);
             machine.Memory0[stringPtr + stringData.Length] = 0; // NUL-termination
+            allocated_size = stringData.Length + 1;
             return stringPtr;
         }
 

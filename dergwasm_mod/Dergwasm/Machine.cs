@@ -35,6 +35,12 @@ namespace Derg
             }
         }
 
+        public unsafe T MemGet<T>(int ea)
+            where T : unmanaged
+        {
+            return MemGet<T>((uint)ea);
+        }
+
         public unsafe void MemSet<T>(uint ea, T value)
             where T : unmanaged
         {
@@ -52,6 +58,12 @@ namespace Derg
                     $"Memory access out of bounds: writing {sizeof(T)} bytes at 0x{ea:X8}"
                 );
             }
+        }
+
+        public unsafe void MemSet<T>(int ea, T value)
+            where T : unmanaged
+        {
+            MemSet((uint)ea, value);
         }
 
         public string MainModuleName
