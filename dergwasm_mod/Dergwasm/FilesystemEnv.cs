@@ -1,6 +1,7 @@
 ﻿using FrooxEngine;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -119,7 +120,9 @@ namespace Derg
             public const int AT_RECURSIVE = 0x8000;
         }
 
-        // A struct returned by stat. 76 bytes.
+        // A struct returned by stat. 96 bytes.
+        //
+        // The layout is based on emscripten/src/generated_struct_info32.json.
         [StructLayout(LayoutKind.Explicit)]
         public struct Stat
         {
@@ -127,37 +130,34 @@ namespace Derg
             [FieldOffset(0)]
             public int st_dev;
 
-            // Inode number.
-            [FieldOffset(4)]
-            public int st_ino;
-
             // File type and mode.
             [FieldOffset(8)]
             public int st_mode;
 
             // Number of hard links.
-            [FieldOffset(12)]
+            [FieldOffset(8)]
             public int st_nlink;
 
             // User ID of owner.
-            [FieldOffset(16)]
+            [FieldOffset(12)]
             public int st_uid;
 
             // Group ID of owner.
-            [FieldOffset(20)]
+            [FieldOffset(16)]
             public int st_gid;
 
             // Device ID (if special file).
-            [FieldOffset(24)]
+            [FieldOffset(20)]
             public int st_rdev;
 
             // Total size, in bytes. If this is a symbolic link (which we don't support)
             // then it's the length of the pathname it contains, without a terminating
             // NUL byte.
             //
-            // Note that we're not supporting files larger than 2GB.
-            [FieldOffset(28)]
-            public int st_size;
+            // Although this is a ulong, we only use files to store strings, and .NET can
+            // only store strings up to 2GB in size.
+            [FieldOffset(24)]
+            public ulong st_size;
 
             // The preferred block size for efficient filesystem I/O.
             [FieldOffset(32)]
@@ -174,23 +174,27 @@ namespace Derg
 
             // Time of last access, nanoseconds part.
             [FieldOffset(48)]
-            public int st_atime_nsec;
+            public long st_atime_nsec;
 
             // Time of last modification, seconds part.
-            [FieldOffset(52)]
+            [FieldOffset(56)]
             public long st_mtime_sec;
 
             // Time of last modification, nanoseconds part.
-            [FieldOffset(60)]
-            public int st_mtime_nsec;
+            [FieldOffset(64)]
+            public long st_mtime_nsec;
 
             // Time of last status change, seconds part.
-            [FieldOffset(64)]
+            [FieldOffset(72)]
             public long st_ctime_sec;
 
             // Time of last status change, nanoseconds part.
-            [FieldOffset(72)]
-            public int st_ctime_nsec;
+            [FieldOffset(80)]
+            public long st_ctime_nsec;
+
+            // Inode number.
+            [FieldOffset(88)]
+            public long st_ino;
         }
 
         // Calculate the path relative to the path for the given directory file descriptor.
@@ -363,6 +367,7 @@ namespace Derg
         public int __syscall_chdir(Frame frame, int pathPtr)
         {
             string path = env.GetUTF8StringFromMem(pathPtr);
+            DergwasmMachine.Msg($"__syscall_chdir: path={path}");
             if (path.StartsWith("/"))
             {
                 return chdir_absolute(path);
@@ -398,6 +403,7 @@ namespace Derg
         // given buffer, which is of the given size.
         public int __syscall_getcwd(Frame frame, int buf, int size)
         {
+            DergwasmMachine.Msg($"__syscall_getcwd: cwd={cwd}");
             if (size == 0)
                 return -Errno.EINVAL;
             byte[] bytes = Encoding.UTF8.GetBytes(cwd);
@@ -467,6 +473,7 @@ namespace Derg
         public int __syscall_stat64(Frame frame, int pathPtr, int buf)
         {
             string path = env.GetUTF8StringFromMem(pathPtr);
+            DergwasmMachine.Msg($"__syscall_stat64: path={path}");
             Slot slot;
             int err = get_slot_for_absolute_path(path, out slot);
             if (err != 0)
@@ -474,7 +481,6 @@ namespace Derg
             bool is_file = slot_is_regular_file(slot);
             Stat stat = new Stat();
             stat.st_dev = 0; // Always 0
-            stat.st_ino = 0; // Not supported
             stat.st_mode = (is_file ? 0x8000 : 0x4000) | 0755; // rwxr-xr-x
             stat.st_nlink = 0; // Not supported
             stat.st_uid = 0; // Not supported
@@ -485,16 +491,17 @@ namespace Derg
             {
                 string contents = slot.GetComponent<ValueField<string>>().Value;
                 UTF8Encoding utf8 = new UTF8Encoding();
-                stat.st_size = utf8.GetByteCount(contents);
+                stat.st_size = (ulong)utf8.GetByteCount(contents);
             }
-            stat.st_blksize = 1024;
-            stat.st_blocks = (stat.st_size + 511) / 512;
+            stat.st_blksize = 1024; // I guess?
+            stat.st_blocks = 1; // Technicaly correct
             stat.st_atime_sec = 0; // Not supported
             stat.st_atime_nsec = 0; // Not supported
             stat.st_mtime_sec = 0; // Not supported
             stat.st_mtime_nsec = 0; // Not supported
             stat.st_ctime_sec = 0; // Not supported
             stat.st_ctime_nsec = 0; // Not supported
+            stat.st_ino = 0; // Not supported
 
             IntPtr ptr = IntPtr.Zero;
             try
