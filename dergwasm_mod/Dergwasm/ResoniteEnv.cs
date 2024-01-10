@@ -1,11 +1,7 @@
-﻿using Elements.Assets;
-using Elements.Core;
+﻿using Elements.Core;
 using FrooxEngine;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
-using System.Text;
 
 namespace Derg
 {

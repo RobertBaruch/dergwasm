@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,42 +14,6 @@ namespace Derg
     {
         public LongjmpException()
             : base() { }
-    }
-
-    // From emscripten/system/lib/libc/musl/include/fcntl.h
-    static class StatConst
-    {
-        public const int AT_FDCWD = -100;
-        public const int AT_SYMLINK_NOFOLLOW = 0x100;
-        public const int AT_REMOVEDIR = 0x200;
-        public const int AT_SYMLINK_FOLLOW = 0x400;
-        public const int AT_NO_AUTOMOUNT = 0x800;
-        public const int AT_EMPTY_PATH = 0x1000;
-        public const int AT_STATX_SYNC_TYPE = 0x6000;
-        public const int AT_STATX_SYNC_AS_STAT = 0x0000;
-        public const int AT_STATX_FORCE_SYNC = 0x2000;
-        public const int AT_STATX_DONT_SYNC = 0x4000;
-        public const int AT_RECURSIVE = 0x8000;
-    }
-
-    class Stat
-    {
-        public int st_dev;
-        public int st_ino;
-        public int st_nlink;
-        public int st_mode;
-        public int st_uid;
-        public int st_gid;
-        public int st_rdev;
-        public int st_size;
-        public int st_blksize;
-        public int st_blocks;
-        public long st_atime_sec;
-        public int st_atime_nsec;
-        public long st_mtime_sec;
-        public int st_mtime_nsec;
-        public long st_ctime_sec;
-        public int st_ctime_nsec;
     }
 
     static class Errno
@@ -865,68 +830,6 @@ namespace Derg
             machine.RegisterVoidHostFunc("env", "mp_js_hook", mp_js_hook);
             machine.RegisterReturningHostFunc<int>("env", "mp_js_ticks_ms", mp_js_ticks_ms);
             machine.RegisterVoidHostFunc<int, int>("env", "mp_js_write", mp_js_write);
-            machine.RegisterReturningHostFunc<int, int>("env", "__syscall_chdir", __syscall_chdir);
-            machine.RegisterReturningHostFunc<int, int>("env", "__syscall_rmdir", __syscall_rmdir);
-            machine.RegisterReturningHostFunc<int, int, int>(
-                "env",
-                "__syscall_getcwd",
-                __syscall_getcwd
-            );
-            machine.RegisterReturningHostFunc<int, int, int, int>(
-                "env",
-                "__syscall_mkdirat",
-                __syscall_mkdirat
-            );
-            machine.RegisterReturningHostFunc<int, int, int, int, int>(
-                "env",
-                "__syscall_openat",
-                __syscall_openat
-            );
-            machine.RegisterReturningHostFunc<int, int, int, int, int>(
-                "env",
-                "__syscall_renameat",
-                __syscall_renameat
-            );
-            machine.RegisterReturningHostFunc<int, int, int, int>(
-                "env",
-                "__syscall_unlinkat",
-                __syscall_unlinkat
-            );
-            machine.RegisterReturningHostFunc<int, int, int, int, int>(
-                "env",
-                "__syscall_newfstatat",
-                __syscall_newfstatat
-            );
-            machine.RegisterReturningHostFunc<int, int, int, int>(
-                "env",
-                "__syscall_poll",
-                __syscall_poll
-            );
-            machine.RegisterReturningHostFunc<int, int, int, int>(
-                "env",
-                "__syscall_getdents64",
-                __syscall_getdents64
-            );
-            machine.RegisterReturningHostFunc<int, int, int>(
-                "env",
-                "__syscall_fstat64",
-                __syscall_fstat64
-            );
-            machine.RegisterReturningHostFunc<int, int, int>(
-                "env",
-                "__syscall_stat64",
-                __syscall_stat64
-            );
-            machine.RegisterReturningHostFunc<int, int, int>(
-                "env",
-                "__syscall_lstat64",
-                __syscall_lstat64
-            );
-            machine.RegisterReturningHostFunc<int, int, int, int>(
-                "env",
-                "__syscall_statfs64",
-                __syscall_statfs64
-            );
         }
 
         public void __assert_fail(
@@ -970,106 +873,6 @@ namespace Derg
             throw new NotImplementedException();
 
         public void emscripten_exit(Frame frame, int exit_code) => throw new ExitTrap(exit_code);
-
-        private void write_stat(uint statPtr, Stat stat)
-        {
-            machine.MemSet(statPtr + 0, stat.st_dev);
-            machine.MemSet(statPtr + 4, stat.st_ino);
-            machine.MemSet(statPtr + 8, stat.st_mode);
-            machine.MemSet(statPtr + 12, stat.st_nlink);
-            machine.MemSet(statPtr + 16, stat.st_uid);
-            machine.MemSet(statPtr + 20, stat.st_gid);
-            machine.MemSet(statPtr + 24, stat.st_rdev);
-            machine.MemSet(statPtr + 28, stat.st_size);
-            machine.MemSet(statPtr + 32, stat.st_blksize);
-            machine.MemSet(statPtr + 36, stat.st_blocks);
-            machine.MemSet(statPtr + 40, stat.st_atime_sec);
-            machine.MemSet(statPtr + 48, stat.st_atime_nsec);
-            machine.MemSet(statPtr + 52, stat.st_mtime_sec);
-            machine.MemSet(statPtr + 60, stat.st_mtime_nsec);
-            machine.MemSet(statPtr + 64, stat.st_ctime_sec);
-            machine.MemSet(statPtr + 72, stat.st_ctime_nsec);
-        }
-
-        // syscalls, from emscripten/src/library_syscall.js
-        public int __syscall_chdir(Frame frame, int pathPtr) => throw new NotImplementedException();
-
-        public int __syscall_rmdir(Frame frame, int pathPtr) => throw new NotImplementedException();
-
-        public int __syscall_getcwd(Frame frame, int buf, int size) =>
-            throw new NotImplementedException();
-
-        public int __syscall_mkdirat(Frame frame, int dirfd, int pathPtr, int mode) =>
-            throw new NotImplementedException();
-
-        public int __syscall_openat(Frame frame, int dirfd, int pathPtr, int flags, int mode) =>
-            throw new NotImplementedException();
-
-        public int __syscall_renameat(
-            Frame frame,
-            int olddirfd,
-            int oldpathPtr,
-            int newdirfd,
-            int newpathPtr
-        ) => throw new NotImplementedException();
-
-        public int __syscall_unlinkat(Frame frame, int dirfd, int pathPtr, int flags) =>
-            throw new NotImplementedException();
-
-        public int __syscall_newfstatat(Frame frame, int dirfd, int pathPtr, int buf, int flags)
-        {
-            string path = GetUTF8StringFromMem(pathPtr);
-            bool noFollow = (flags & StatConst.AT_SYMLINK_NOFOLLOW) != 0;
-            bool allowEmpty = (flags & StatConst.AT_EMPTY_PATH) != 0;
-            if (
-                (
-                    flags
-                    & ~(
-                        StatConst.AT_SYMLINK_NOFOLLOW
-                        | StatConst.AT_EMPTY_PATH
-                        | StatConst.AT_NO_AUTOMOUNT
-                    )
-                ) != 0
-            )
-            {
-                DergwasmMachine.Msg($"__syscall_newfstatat: Unsupported flags: 0x{flags:X8}");
-                return -Errno.EINVAL;
-            }
-            DergwasmMachine.Msg(
-                $"__syscall_newfstatat: dirfd={dirfd}, path={path}, noFollow={noFollow}, allowEmpty={allowEmpty}"
-            );
-            throw new NotImplementedException();
-        }
-
-        public int __syscall_poll(Frame frame, int fdsPtr, int nfds, int timeout) =>
-            throw new NotImplementedException();
-
-        public int __syscall_getdents64(Frame frame, int fd, int dirp, int count) =>
-            throw new NotImplementedException();
-
-        public int __syscall_fstat64(Frame frame, int fd, int buf) =>
-            throw new NotImplementedException();
-
-        public int __syscall_stat64(Frame frame, int pathPtr, int buf)
-        {
-            string path = GetUTF8StringFromMem(pathPtr);
-            DergwasmMachine.Msg($"__syscall_stat64: path={path}");
-            return -Errno.ENOENT;
-        }
-
-        public int __syscall_lstat64(Frame frame, int pathPtr, int buf)
-        {
-            string path = GetUTF8StringFromMem(pathPtr);
-            DergwasmMachine.Msg($"__syscall_lstat64: path={path}");
-            throw new NotImplementedException();
-        }
-
-        public int __syscall_statfs64(Frame frame, int pathPtr, int size, int buf)
-        {
-            string path = GetUTF8StringFromMem(pathPtr);
-            DergwasmMachine.Msg($"__syscall_statfs64: path={path}, size={size}");
-            throw new NotImplementedException();
-        }
 
         // Implementation of exceptions when not supported in WASM.
         public int __cxa_begin_catch(int excPtr) => throw new NotImplementedException();
