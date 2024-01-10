@@ -12,8 +12,8 @@ public class Program
     {
         machine = new Machine();
         // machine.Debug = true;
-        new EmscriptenWasi(machine).RegisterHostFuncs();
         EmscriptenEnv emscriptenEnv = new EmscriptenEnv(machine);
+        new EmscriptenWasi(machine, emscriptenEnv).RegisterHostFuncs();
         emscriptenEnv.RegisterHostFuncs();
         Module module;
 
