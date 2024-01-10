@@ -14,5 +14,8 @@
     "python.testing.pytestArgs": [
         "dergwasm"
     ],
-    "dotnet.preferCSharpExtension": true
+    "dotnet.preferCSharpExtension": true,
+    "rust-analyzer.linkedProjects": [
+        "dergwasm_lib/rust/Cargo.toml"
+    ]
 }
