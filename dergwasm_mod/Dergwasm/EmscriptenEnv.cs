@@ -20,8 +20,11 @@ namespace Derg
     {
         public const int ENOENT = 2; // No such file or directory
         public const int EBADF = 9; // Bad file descriptor
+        public const int EACCES = 13; // Permission denied
         public const int EFAULT = 14; // Bad address
+        public const int ENOTDIR = 20; // Not a directory
         public const int EINVAL = 22; // Invalid argument
+        public const int ERANGE = 34; // Math result not representable
     }
 
     // Host environment expected by Emscripten.
