@@ -4,6 +4,7 @@ using FrooxEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 
 namespace Derg
@@ -321,7 +322,7 @@ namespace Derg
             return emscriptenEnv.AllocateUTF8StringInMem(frame, typeName);
         }
 
-        public int value_field__get_value(Frame frame, ulong component_id, ref int dataPtr)
+        public int value_field__get_value(Frame frame, ulong component_id, int dataPtrPtr)
         {
             ValueField<object> valueField =
                 world.ReferenceController.GetObjectOrNull(new RefID(component_id))
@@ -330,273 +331,19 @@ namespace Derg
                 return 0;
             object value = valueField.Value.Value;
 
-            if (value is bool b)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 4);
-                machine.MemSet<int>(dataPtr, b ? 1 : 0);
-                return 4;
-            }
-            if (value is bool2 b2)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 8);
-                machine.MemSet<int>(dataPtr, b2.x ? 1 : 0);
-                machine.MemSet<int>(dataPtr + 4, b2.y ? 1 : 0);
-                return 8;
-            }
-            if (value is bool3 b3)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 12);
-                machine.MemSet<int>(dataPtr, b3.x ? 1 : 0);
-                machine.MemSet<int>(dataPtr + 4, b3.y ? 1 : 0);
-                machine.MemSet<int>(dataPtr + 8, b3.z ? 1 : 0);
-                return 12;
-            }
-            if (value is bool4 b4)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 16);
-                machine.MemSet<int>(dataPtr, b4.x ? 1 : 0);
-                machine.MemSet<int>(dataPtr + 4, b4.y ? 1 : 0);
-                machine.MemSet<int>(dataPtr + 8, b4.z ? 1 : 0);
-                machine.MemSet<int>(dataPtr + 16, b4.w ? 1 : 0);
-                return 16;
-            }
-            if (value is int i)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 4);
-                machine.MemSet<int>(dataPtr, i);
-                return 4;
-            }
-            if (value is int2 i2)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 8);
-                machine.MemSet<int>(dataPtr, i2.x);
-                machine.MemSet<int>(dataPtr + 4, i2.y);
-                return 8;
-            }
-            if (value is int3 i3)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 12);
-                machine.MemSet<int>(dataPtr, i3.x);
-                machine.MemSet<int>(dataPtr + 4, i3.y);
-                machine.MemSet<int>(dataPtr + 8, i3.z);
-                return 12;
-            }
-            if (value is int4 i4)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 16);
-                machine.MemSet<int>(dataPtr, i4.x);
-                machine.MemSet<int>(dataPtr + 4, i4.y);
-                machine.MemSet<int>(dataPtr + 8, i4.z);
-                machine.MemSet<int>(dataPtr + 12, i4.w);
-                return 16;
-            }
-            if (value is uint ui)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 4);
-                machine.MemSet<uint>(dataPtr, ui);
-                return 4;
-            }
-            if (value is uint2 ui2)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 8);
-                machine.MemSet<uint>(dataPtr, ui2.x);
-                machine.MemSet<uint>(dataPtr + 4, ui2.y);
-                return 8;
-            }
-            if (value is uint3 ui3)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 12);
-                machine.MemSet<uint>(dataPtr, ui3.x);
-                machine.MemSet<uint>(dataPtr + 4, ui3.y);
-                machine.MemSet<uint>(dataPtr + 8, ui3.z);
-                return 12;
-            }
-            if (value is uint4 ui4)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 16);
-                machine.MemSet<uint>(dataPtr, ui4.x);
-                machine.MemSet<uint>(dataPtr + 4, ui4.y);
-                machine.MemSet<uint>(dataPtr + 8, ui4.z);
-                machine.MemSet<uint>(dataPtr + 12, ui4.w);
-                return 16;
-            }
-            if (value is long l)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 8);
-                machine.MemSet<long>(dataPtr, l);
-                return 8;
-            }
-            if (value is long2 l2)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 16);
-                machine.MemSet<long>(dataPtr, l2.x);
-                machine.MemSet<long>(dataPtr + 8, l2.y);
-                return 16;
-            }
-            if (value is long3 l3)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 24);
-                machine.MemSet<long>(dataPtr, l3.x);
-                machine.MemSet<long>(dataPtr + 8, l3.y);
-                machine.MemSet<long>(dataPtr + 16, l3.z);
-                return 24;
-            }
-            if (value is long4 l4)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 32);
-                machine.MemSet<long>(dataPtr, l4.x);
-                machine.MemSet<long>(dataPtr + 8, l4.y);
-                machine.MemSet<long>(dataPtr + 16, l4.z);
-                machine.MemSet<long>(dataPtr + 24, l4.w);
-                return 32;
-            }
-            if (value is ulong ul)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 8);
-                machine.MemSet<ulong>(dataPtr, ul);
-                return 8;
-            }
-            if (value is ulong2 ul2)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 16);
-                machine.MemSet<ulong>(dataPtr, ul2.x);
-                machine.MemSet<ulong>(dataPtr + 8, ul2.y);
-                return 16;
-            }
-            if (value is ulong3 ul3)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 24);
-                machine.MemSet<ulong>(dataPtr, ul3.x);
-                machine.MemSet<ulong>(dataPtr + 8, ul3.y);
-                machine.MemSet<ulong>(dataPtr + 16, ul3.z);
-                return 24;
-            }
-            if (value is ulong4 ul4)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 32);
-                machine.MemSet<ulong>(dataPtr, ul4.x);
-                machine.MemSet<ulong>(dataPtr + 8, ul4.y);
-                machine.MemSet<ulong>(dataPtr + 16, ul4.z);
-                machine.MemSet<ulong>(dataPtr + 24, ul4.w);
-                return 32;
-            }
-            if (value is float f)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 4);
-                machine.MemSet<float>(dataPtr, f);
-                return 4;
-            }
-            if (value is float2 f2)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 8);
-                machine.MemSet<float>(dataPtr, f2.x);
-                machine.MemSet<float>(dataPtr + 4, f2.y);
-                return 8;
-            }
-            if (value is float3 f3)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 12);
-                machine.MemSet<float>(dataPtr, f3.x);
-                machine.MemSet<float>(dataPtr + 4, f3.y);
-                machine.MemSet<float>(dataPtr + 8, f3.z);
-                return 12;
-            }
-            if (value is float4 f4)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 16);
-                machine.MemSet<float>(dataPtr, f4.x);
-                machine.MemSet<float>(dataPtr + 4, f4.y);
-                machine.MemSet<float>(dataPtr + 8, f4.z);
-                machine.MemSet<float>(dataPtr + 12, f4.w);
-                return 16;
-            }
-            if (value is floatQ fq)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 16);
-                machine.MemSet<float>(dataPtr, fq.x);
-                machine.MemSet<float>(dataPtr + 4, fq.y);
-                machine.MemSet<float>(dataPtr + 8, fq.z);
-                machine.MemSet<float>(dataPtr + 12, fq.w);
-                return 16;
-            }
-            if (value is double d)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 8);
-                machine.MemSet<double>(dataPtr, d);
-                return 8;
-            }
-            if (value is double2 d2)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 16);
-                machine.MemSet<double>(dataPtr, d2.x);
-                machine.MemSet<double>(dataPtr + 8, d2.y);
-                return 16;
-            }
-            if (value is double3 d3)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 24);
-                machine.MemSet<double>(dataPtr, d3.x);
-                machine.MemSet<double>(dataPtr + 8, d3.y);
-                machine.MemSet<double>(dataPtr + 16, d3.z);
-                return 24;
-            }
-            if (value is double4 d4)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 32);
-                machine.MemSet<double>(dataPtr, d4.x);
-                machine.MemSet<double>(dataPtr + 8, d4.y);
-                machine.MemSet<double>(dataPtr + 16, d4.z);
-                machine.MemSet<double>(dataPtr + 24, d4.w);
-                return 32;
-            }
-            if (value is doubleQ dq)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 32);
-                machine.MemSet<double>(dataPtr, dq.x);
-                machine.MemSet<double>(dataPtr + 8, dq.y);
-                machine.MemSet<double>(dataPtr + 16, dq.z);
-                machine.MemSet<double>(dataPtr + 24, dq.w);
-                return 32;
-            }
-            if (value is string s)
-            {
-                int allocated_size = 0;
-                dataPtr = emscriptenEnv.AllocateUTF8StringInMem(frame, s, ref allocated_size);
-                return allocated_size;
-            }
-            if (value is color c)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 16);
-                machine.MemSet<float>(dataPtr, c.r);
-                machine.MemSet<float>(dataPtr + 4, c.g);
-                machine.MemSet<float>(dataPtr + 8, c.b);
-                machine.MemSet<float>(dataPtr + 12, c.a);
-                return 16;
-            }
-            if (value is colorX cx)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 20);
-                machine.MemSet<float>(dataPtr, cx.baseColor.r);
-                machine.MemSet<float>(dataPtr + 4, cx.baseColor.g);
-                machine.MemSet<float>(dataPtr + 8, cx.baseColor.b);
-                machine.MemSet<float>(dataPtr + 12, cx.baseColor.a);
-                machine.MemSet<int>(dataPtr + 16, (int)cx.profile);
-                return 20;
-            }
-            if (value is RefID id)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 8);
-                machine.MemSet<ulong>(dataPtr, (ulong)id);
-                return 8;
-            }
-            if (value is IWorldElement e)
-            {
-                dataPtr = emscriptenEnv.Malloc(frame, 8);
-                machine.MemSet<ulong>(dataPtr, (ulong)e.ReferenceID);
-                return 8;
-            }
+            int len;
+            int dataPtr = SimpleSerialization.Serialize(
+                machine,
+                emscriptenEnv,
+                frame,
+                value,
+                out len
+            );
+            if (len == 0)
+                return 0;
 
-            return 0;
+            machine.MemSet(dataPtrPtr, dataPtr);
+            return len;
         }
     }
 }
