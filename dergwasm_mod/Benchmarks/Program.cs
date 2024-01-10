@@ -135,7 +135,7 @@ namespace DergwasmTests
     {
         public static void Main(string[] args)
         {
-            var summary = BenchmarkRunner.Run<GenericAddBenchmark>();
+            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
         }
     }
 }
