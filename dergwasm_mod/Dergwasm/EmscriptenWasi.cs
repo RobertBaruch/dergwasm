@@ -10,10 +10,12 @@ namespace Derg
     public class EmscriptenWasi
     {
         Machine machine;
+        public EmscriptenEnv emscriptenEnv;
 
-        public EmscriptenWasi(Machine machine)
+        public EmscriptenWasi(Machine machine, EmscriptenEnv emscriptenEnv)
         {
             this.machine = machine;
+            this.emscriptenEnv = emscriptenEnv;
         }
 
         public void RegisterHostFuncs()
@@ -108,44 +110,65 @@ namespace Derg
 
         // Writes data to a file descriptor.
         //
+        // If fd == 0, writes to stdout. In this case, though, the buffer must be
+        // decodable as a UTF-8 string. If the buffer couldn't be decoded, then
+        // -EINVAL is returned.
+        //
+        // If fd != 0, -EBADF is returned.
+        //
         // Args:
         //    fd: The file descriptor to write to.
-        //    iovs: A pointer to an array of __wasi_ciovec_t structures, each describing
+        //    iov: A pointer to an array of __wasi_ciovec_t structures, each describing
         //      a buffer to write data from.
-        //    iovs_len: The number of vectors (__wasi_ciovec_t) in the iovs array.
-        //    nwritten_ptr: A pointer to store the number of bytes written.
+        //    iovcnt: The number of vectors (__wasi_ciovec_t) in the iovs array.
+        //    pnum: A pointer to store the number of bytes written. May be 0 to not write the count.
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
         int FdWrite(Frame frame, int fd, int iov, int iovcnt, int pnum)
         {
-            Console.WriteLine("=================================================");
-            Console.WriteLine("=================================================");
-            Console.WriteLine($"FdWrite({fd}, 0x{iov:X8}, {iovcnt}, 0x{pnum:X8})");
+            if (iov == 0)
+            {
+                return -Errno.EFAULT;
+            }
+            if (fd != 0)
+            {
+                return -Errno.EBADF;
+            }
+
             Memory mem = machine.GetMemoryFromIndex(0);
 
             MemoryStream iovStream = new MemoryStream(mem.Data);
             iovStream.Position = iov;
             BinaryReader iovReader = new BinaryReader(iovStream);
 
-            int count = 0;
+            uint count = 0;
 
             for (int i = 0; i < iovcnt; i++)
             {
                 int ptr = iovReader.ReadInt32();
-                int len = iovReader.ReadInt32();
-                Console.WriteLine($"  iov[{i}]: ptr=0x{ptr:X8}, len={len}");
-                byte[] data = new byte[len];
-                Array.Copy(mem.Data, ptr, data, 0, len);
-                Console.WriteLine($"  data: {System.Text.Encoding.UTF8.GetString(data)}");
+                uint len = iovReader.ReadUInt32();
+
+                string str = emscriptenEnv.GetUTF8StringFromMem(ptr, len);
+
+                if (emscriptenEnv.outputWriter != null)
+                {
+                    emscriptenEnv.outputWriter(str);
+                }
+                else
+                {
+                    Console.Write(str);
+                }
+
                 count += len;
             }
 
-            iovStream.Position = pnum;
-            BinaryWriter countWriter = new BinaryWriter(iovStream);
-            countWriter.Write(count);
-            Console.WriteLine("=================================================");
-            Console.WriteLine("=================================================");
+            if (pnum != 0)
+            {
+                iovStream.Position = pnum;
+                BinaryWriter countWriter = new BinaryWriter(iovStream);
+                countWriter.Write(count);
+            }
             return 0;
         }
 

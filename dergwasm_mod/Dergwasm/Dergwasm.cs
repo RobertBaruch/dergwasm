@@ -191,11 +191,11 @@ namespace Derg
                 // machine.Debug = true;
 
                 // Register all the environments.
-                new EmscriptenWasi(machine).RegisterHostFuncs();
-
                 emscriptenEnv = new EmscriptenEnv(machine);
                 emscriptenEnv.RegisterHostFuncs();
                 emscriptenEnv.outputWriter = Output;
+
+                new EmscriptenWasi(machine, emscriptenEnv).RegisterHostFuncs();
 
                 utilEnv = new UtilEnv(machine, emscriptenEnv);
                 utilEnv.RegisterHostFuncs();
