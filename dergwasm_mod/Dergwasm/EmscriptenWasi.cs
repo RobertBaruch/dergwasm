@@ -110,11 +110,11 @@ namespace Derg
 
         // Writes data to a file descriptor.
         //
-        // If fd == 0, writes to stdout. In this case, though, the buffer must be
+        // If fd == 1, writes to stdout. In this case, though, the buffer must be
         // decodable as a UTF-8 string. If the buffer couldn't be decoded, then
         // -EINVAL is returned.
         //
-        // If fd != 0, -EBADF is returned.
+        // If fd != 1, -EBADF is returned.
         //
         // Args:
         //    fd: The file descriptor to write to.
@@ -131,7 +131,7 @@ namespace Derg
             {
                 return -Errno.EFAULT;
             }
-            if (fd != 0)
+            if (fd != 1)
             {
                 return -Errno.EBADF;
             }
