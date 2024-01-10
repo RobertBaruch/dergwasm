@@ -28,11 +28,11 @@ namespace Derg
         //
         // If the bufPtr is 0, returns -EFAULT.
         //
-        // If fd == 0, writes to stdout. In this case, though, the buffer must be
+        // If fd == 1, writes to stdout. In this case, though, the buffer must be
         // decodable as a UTF-8 string. If the buffer couldn't be decoded, then
         // -EINVAL is returned.
         //
-        // If fd != 0, -EBADF is returned.
+        // If fd != 1, -EBADF is returned.
         //
         // Writes the number of bytes written in the memory pointed to by nwrittenPtr,
         // unless nwrittenPtr is 0.
@@ -42,7 +42,7 @@ namespace Derg
             {
                 return -Errno.EFAULT;
             }
-            if (fd != 0)
+            if (fd != 1)
             {
                 return -Errno.EBADF;
             }

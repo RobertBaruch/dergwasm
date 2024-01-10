@@ -1,4 +1,3 @@
-mod console;
 mod external;
 mod ref_id;
 mod slot;
@@ -7,7 +6,6 @@ mod user_root;
 
 use external::Extern;
 
-pub use console::Console;
 pub use ref_id::RefId;
 pub use slot::{Slot, SlotChildren, SlotChildrenIterator};
 pub use user::User;
