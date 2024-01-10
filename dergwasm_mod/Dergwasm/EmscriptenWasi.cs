@@ -149,15 +149,22 @@ namespace Derg
                 int ptr = iovReader.ReadInt32();
                 uint len = iovReader.ReadUInt32();
 
-                string str = emscriptenEnv.GetUTF8StringFromMem(ptr, len);
+                try
+                {
+                    string str = emscriptenEnv.GetUTF8StringFromMem(ptr, len);
 
-                if (emscriptenEnv.outputWriter != null)
-                {
-                    emscriptenEnv.outputWriter(str);
+                    if (emscriptenEnv.outputWriter != null)
+                    {
+                        emscriptenEnv.outputWriter(str);
+                    }
+                    else
+                    {
+                        Console.Write(str);
+                    }
                 }
-                else
+                catch (Exception)
                 {
-                    Console.Write(str);
+                    return -Errno.EINVAL;
                 }
 
                 count += len;
