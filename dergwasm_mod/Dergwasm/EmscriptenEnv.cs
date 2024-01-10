@@ -54,6 +54,8 @@ namespace Derg
     static class Errno
     {
         public const int ENOENT = 2; // No such file or directory
+        public const int EBADF = 9; // Bad file descriptor
+        public const int EFAULT = 14; // Bad address
         public const int EINVAL = 22; // Invalid argument
     }
 
@@ -114,6 +116,11 @@ namespace Derg
                 endPtr++;
             }
             return Encoding.UTF8.GetString(machine.Memory0, ptr, endPtr - ptr);
+        }
+
+        public string GetUTF8StringFromMem(int ptr, uint len)
+        {
+            return Encoding.UTF8.GetString(machine.Memory0, ptr, (int)len);
         }
 
         // Returns a funcref.

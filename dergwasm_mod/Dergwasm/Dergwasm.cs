@@ -86,6 +86,7 @@ namespace Derg
         public static ModuleInstance moduleInstance = null;
         public static EmscriptenEnv emscriptenEnv = null;
         public static ResoniteEnv resoniteEnv = null;
+        public static UtilEnv utilEnv = null;
         public static Slot dergwasmSlot = null;
         public static Slot consoleSlot = null;
         public static Slot fsSlot = null; // The equivalent of the root directory in a filesystem.
@@ -112,6 +113,7 @@ namespace Derg
             moduleInstance = null;
             emscriptenEnv = null;
             resoniteEnv = null;
+            utilEnv = null;
             DergwasmMachine.dergwasmSlot = null;
             consoleSlot = null;
             fsSlot = null;
@@ -188,15 +190,20 @@ namespace Derg
                 machine = new Machine();
                 // machine.Debug = true;
 
+                // Register all the environments.
                 new EmscriptenWasi(machine).RegisterHostFuncs();
 
                 emscriptenEnv = new EmscriptenEnv(machine);
                 emscriptenEnv.RegisterHostFuncs();
                 emscriptenEnv.outputWriter = Output;
 
+                utilEnv = new UtilEnv(machine, emscriptenEnv);
+                utilEnv.RegisterHostFuncs();
+
                 resoniteEnv = new ResoniteEnv(machine, world, emscriptenEnv);
                 resoniteEnv.RegisterHostFuncs();
 
+                // Read and parse the WASM file.
                 Module module;
 
                 Msg("Opening WASM file");
@@ -213,6 +220,7 @@ namespace Derg
                 CheckForUnimplementedInstructions();
                 Msg("No unimplemented WASM instructions found");
 
+                // Run any initializers we might find.
                 MaybeRunEmscriptenCtors();
                 MaybeInitMicropython(64 * 1024);
             }
