@@ -72,27 +72,31 @@ namespace DergwasmTests
             frame = CreateFrame();
             ModuleFunc func = new ModuleFunc("test", "$-1", frame.GetFuncTypeForIndex(0));
             func.Locals = new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 };
-            func.Code = new List<Instruction>();
+            List<UnflattenedInstruction> instructions = new List<UnflattenedInstruction>
+            {
+                Insn(InstructionType.I32_ADD),
+                Insn(InstructionType.END)
+            };
+            func.Code = instructions.Flatten(0);
             frame.Func = func;
-
-            SetProgram(0, Insn(InstructionType.I32_ADD), Insn(InstructionType.NOP));
         }
 
-        // BenchmarkDotNet v0.13.10, Windows 11 (10.0.22621.2428/22H2/2022Update/SunValley2)
+        // BenchmarkDotNet v0.13.10, Windows 11 (10.0.22621.2861/22H2/2022Update/SunValley2)
         // 11th Gen Intel Core i7-11700K 3.60GHz, 1 CPU, 16 logical and 8 physical cores
-        //  [Host]               : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
-        //  .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
+        //   [Host]               : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+        //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
         //
         // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
         //
-        // | Method         | Mean      | Error    | StdDev   | Ratio |
-        // |--------------- |----------:|---------:|---------:|------:|
-        // | I32Add         | 112.38 ns | 1.042 ns | 0.870 ns |  1.00 |
-        // |                |           |          |          |       |
-        // | I32AddOverhead |  46.53 ns | 0.692 ns | 0.647 ns |  1.00 |
+        // | Method         | Mean     | Error    | StdDev   | Ratio |
+        // |--------------- |---------:|---------:|---------:|------:|
+        // | I32Add         | 77.63 ns | 1.314 ns | 2.158 ns |  1.00 |
+        // |                |          |          |          |       |
+        // | I32AddOverhead | 36.79 ns | 0.372 ns | 0.330 ns |  1.00 |
         [Benchmark]
         public Value I32Add()
         {
+            frame.PC = 0;
             frame.Push(new Value(0x0F));
             frame.Push(new Value(0xFFFFFFFF));
             frame.Step(this);
@@ -102,10 +106,55 @@ namespace DergwasmTests
         [Benchmark]
         public Value I32AddOverhead()
         {
+            frame.PC = 0;
             frame.Push(new Value(0x0F));
             frame.Push(new Value(0xFFFFFFFF));
             frame.Pop();
             return frame.Pop();
+        }
+    }
+
+    [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
+    public class NopBenchmark : TestMachine
+    {
+        Frame frame;
+
+        [Params(1000, 10000)]
+        public int N;
+
+        [GlobalSetup]
+        public void Setup()
+        {
+            frame = CreateFrame();
+            ModuleFunc func = new ModuleFunc("test", "$-1", frame.GetFuncTypeForIndex(0));
+            func.Locals = new Derg.ValueType[] { };
+
+            List<UnflattenedInstruction> instructions = new List<UnflattenedInstruction>();
+            for (int i = 0; i < N; i++)
+            {
+                instructions.Add(Insn(InstructionType.NOP));
+            }
+            func.Code = instructions.Flatten(0);
+            frame.Func = func;
+        }
+
+        // BenchmarkDotNet v0.13.10, Windows 11 (10.0.22621.2861/22H2/2022Update/SunValley2)
+        // 11th Gen Intel Core i7-11700K 3.60GHz, 1 CPU, 16 logical and 8 physical cores
+        //   [Host]               : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+        //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
+        //
+        // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
+        //
+        // | Method | N     | Mean      | Error    | StdDev   | Ratio |
+        // |------- |------ |----------:|---------:|---------:|------:|
+        // | Nop    | 1000  |  18.79 us | 0.253 us | 0.423 us |  1.00 |
+        // |        |       |           |          |          |       |
+        // | Nop    | 10000 | 188.36 us | 2.372 us | 2.218 us |  1.00 |
+        [Benchmark]
+        public void Nop()
+        {
+            frame.PC = 0;
+            frame.Step(this, N);
         }
     }
 
