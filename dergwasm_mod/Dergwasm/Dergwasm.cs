@@ -107,6 +107,23 @@ namespace Derg
             Output($"> {msg}\n");
         }
 
+        public static void DebugMemHex(int ptr, int size)
+        {
+            Span<byte> mem = machine.Span0((uint)ptr, (uint)size);
+            string collect = "";
+            for (int i = 0; i < mem.Length; ++i)
+            {
+                collect += $"{mem[i]:X2} ";
+                if (i % 8 == 7)
+                {
+                    Msg($"{i - 7:X4}: {collect}");
+                    collect = "";
+                }
+            }
+            if (collect != "")
+                Msg($"{(mem.Length / 8) * 8:X4}: {collect}");
+        }
+
         public static void InitStage0(World world)
         {
             DergwasmMachine.world = null;

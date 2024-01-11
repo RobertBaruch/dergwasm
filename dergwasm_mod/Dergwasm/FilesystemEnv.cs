@@ -1,7 +1,6 @@
 ﻿using FrooxEngine;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -27,8 +26,9 @@ namespace Derg
         public Machine machine;
         public Slot fsRoot;
         public EmscriptenEnv env;
-        public string cwd = "/";
-        public Dictionary<int, string> fdToPath = new Dictionary<int, string>();
+        string cwd = "/";
+        Dictionary<int, string> fdToPath = new Dictionary<int, string>();
+        Dictionary<int, Stream> streams = new Dictionary<int, Stream>();
 
         public FilesystemEnv(Machine machine, Slot fsRootSlot, EmscriptenEnv emscriptenEnv)
         {
@@ -131,7 +131,7 @@ namespace Derg
             public int st_dev;
 
             // File type and mode.
-            [FieldOffset(8)]
+            [FieldOffset(4)]
             public int st_mode;
 
             // Number of hard links.
@@ -197,15 +197,90 @@ namespace Derg
             public long st_ino;
         }
 
+        // A directory entry struct. 280 bytes.
+        //
+        // The layout is based on emscripten/src/generated_struct_info32.json.
+        [StructLayout(LayoutKind.Explicit)]
+        public struct Dirent
+        {
+            // Inode number.
+            [FieldOffset(0)]
+            public ulong d_ino;
+
+            // This is an opaque value, not an offset.
+            // See https://man7.org/linux/man-pages/man3/readdir.3.html.
+            [FieldOffset(8)]
+            public ulong d_off;
+
+            // Length of this record = namesize + 19
+            [FieldOffset(16)]
+            public ushort d_reclen;
+
+            // The type of the file:
+            // DT_DIR (4) = directory
+            // DT_REG (8) = regular file
+            [FieldOffset(18)]
+            public byte d_type;
+
+            // The filename, NUL-terminated.
+            [FieldOffset(19), MarshalAs(UnmanagedType.ByValArray, SizeConst = 256)]
+            public byte[] d_name;
+        }
+
+        public static class OpenFlags
+        {
+            public const int O_RDONLY = 0;
+            public const int O_WRONLY = 1;
+            public const int O_RDWR = 2;
+            public const int O_CREAT = 0100;
+            public const int O_EXCL = 0200;
+            public const int O_TRUNC = 01000;
+            public const int O_APPEND = 02000;
+            public const int O_DIRECTORY = 0200000;
+        }
+
+        class Stream
+        {
+            public int fd;
+            public string path;
+            public byte[] content;
+            public ulong position;
+        }
+
+        // Creates a stream for the given slot, which must be a file. The `path` is
+        // the normalized path to the slot.
+        //
+        // We do not support binary files yet.
+        Stream createStream(Slot slot, string path)
+        {
+            Stream stream = new Stream()
+            {
+                // File descriptors 0, 1, and 2 are reserved for stdin, stdout, and stderr.
+                fd = streams.Count + 3,
+                path = path,
+                content = Encoding.UTF8.GetBytes(slot.GetComponent<ValueField<string>>().Value),
+                position = 0
+            };
+            streams.Add(stream.fd, stream);
+            return stream;
+        }
+
+        public int fd_close(int fd)
+        {
+            if (fd == 0 || fd == 1 || fd == 2)
+                return -Errno.EBADF;
+            if (!streams.ContainsKey(fd))
+                return -Errno.EBADF;
+            streams.Remove(fd);
+            return 0;
+        }
+
         // Calculate the path relative to the path for the given directory file descriptor.
         // If the dirfd is AT_FDCWD, then the path is relative to the cwd.
         string calculateAt(int dirfd, string path, bool allowEmpty = false)
         {
-            if (path.StartsWith("/"))
-            {
-                // It's an absolute path.
+            if (path.StartsWith("/")) // It's an absolute path.
                 return path;
-            }
 
             string dir;
             if (dirfd == StatConst.AT_FDCWD)
@@ -214,22 +289,19 @@ namespace Derg
             }
             else
             {
-                try
-                {
-                    dir = fdToPath[dirfd];
-                }
-                catch (Exception e)
+                if (!streams.ContainsKey(dirfd))
                 {
                     DergwasmMachine.Msg($"calculateAt: invalid dirfd: {dirfd}");
                     return null;
                 }
+                dir = streams[dirfd].path;
             }
 
             if (path.Length == 0)
             {
                 if (!allowEmpty)
                 {
-                    Dergwasm.Msg($"calculateAt: empty path");
+                    DergwasmMachine.Msg("calculateAt: empty path");
                     return null;
                 }
                 return dir;
@@ -293,9 +365,11 @@ namespace Derg
             return 0;
         }
 
-        int get_slot_for_absolute_path(string path, out Slot slot)
+        int get_slot_for_absolute_path(string path, out Slot slot, out string normalized_path)
         {
             slot = fsRoot;
+            normalized_path = "";
+            List<string> normalized_elements = new List<string>();
 
             foreach (string element in path.Split('/'))
             {
@@ -308,6 +382,7 @@ namespace Derg
                     if (slot.Parent == slot)
                         continue;
                     slot = slot.Parent;
+                    normalized_elements.RemoveAt(normalized_elements.Count - 1);
                     continue;
                 }
                 slot = slot.FindChild(element);
@@ -318,7 +393,9 @@ namespace Derg
                     );
                     return -Errno.ENOENT;
                 }
+                normalized_elements.Add(element);
             }
+            normalized_path = "/" + string.Join("/", normalized_elements);
             return 0;
         }
 
@@ -342,7 +419,7 @@ namespace Derg
             slot = null;
 
             Slot parentSlot;
-            int err = get_slot_for_absolute_path(dirname(path), out parentSlot);
+            int err = get_slot_for_absolute_path(dirname(path), out parentSlot, out _);
             if (err != 0)
                 return err;
 
@@ -382,11 +459,11 @@ namespace Derg
             int err;
             if (path.StartsWith("/"))
             {
-                err = get_slot_for_absolute_path(path, out slot);
+                err = get_slot_for_absolute_path(path, out slot, out _);
             }
             else
             {
-                err = get_slot_for_absolute_path(cwd + "/" + path, out slot);
+                err = get_slot_for_absolute_path(cwd + "/" + path, out slot, out _);
             }
             if (err != 0)
                 return err;
@@ -421,8 +498,47 @@ namespace Derg
             return mknod(path, false, out _);
         }
 
-        public int __syscall_openat(Frame frame, int dirfd, int pathPtr, int flags, int mode) =>
-            throw new NotImplementedException();
+        // Opens the given file. The path is relative to the given directory file descriptor.
+        //
+        // We currently do not allow creation or writing of files, so the flags must not contain
+        // O_CREAT, O_WRONLY, or O_RDWR.
+        //
+        // We also currently don't allow opening directories.
+        //
+        // Returns the opened file descriptor on success, or -ERRNO on failure.
+        public int __syscall_openat(Frame frame, int dirfd, int pathPtr, int flags, int mode)
+        {
+            string path = env.GetUTF8StringFromMem(pathPtr);
+            path = calculateAt(dirfd, path);
+            DergwasmMachine.Msg($"__syscall_openat: path={path}");
+
+            Slot slot;
+            string normalized_path;
+            int err = get_slot_for_absolute_path(path, out slot, out normalized_path);
+            if (err != 0)
+                return err;
+
+            int unsupported_mask =
+                OpenFlags.O_CREAT | OpenFlags.O_WRONLY | OpenFlags.O_RDWR | OpenFlags.O_DIRECTORY;
+            if ((flags & unsupported_mask) != 0)
+            {
+                string unsupported_flags = "";
+                if ((flags & OpenFlags.O_CREAT) != 0)
+                    unsupported_flags += "O_CREAT ";
+                if ((flags & OpenFlags.O_WRONLY) != 0)
+                    unsupported_flags += "O_WRONLY ";
+                if ((flags & OpenFlags.O_RDWR) != 0)
+                    unsupported_flags += "O_RDWR ";
+                if ((flags & OpenFlags.O_DIRECTORY) != 0)
+                    unsupported_flags += "O_DIRECTORY ";
+                DergwasmMachine.Msg($"__syscall_openat: unsupported flags: {unsupported_flags}");
+                return -Errno.EINVAL;
+            }
+
+            int fd = createStream(slot, normalized_path).fd;
+            DergwasmMachine.Msg($"__syscall_openat: fd={fd}");
+            return fd;
+        }
 
         public int __syscall_renameat(
             Frame frame,
@@ -463,6 +579,8 @@ namespace Derg
         public int __syscall_poll(Frame frame, int fdsPtr, int nfds, int timeout) =>
             throw new NotImplementedException();
 
+        // Reads directory entries from the given directory file descriptor. The dirp buffer contains
+        // `count` bytes. You can call this function multiple times to read all the entries.
         public int __syscall_getdents64(Frame frame, int fd, int dirp, int count) =>
             throw new NotImplementedException();
 
@@ -475,7 +593,7 @@ namespace Derg
             string path = env.GetUTF8StringFromMem(pathPtr);
             DergwasmMachine.Msg($"__syscall_stat64: path={path}");
             Slot slot;
-            int err = get_slot_for_absolute_path(path, out slot);
+            int err = get_slot_for_absolute_path(path, out slot, out _);
             if (err != 0)
                 return err;
             bool is_file = slot_is_regular_file(slot);
