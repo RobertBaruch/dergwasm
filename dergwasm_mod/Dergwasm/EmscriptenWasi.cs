@@ -241,18 +241,67 @@ namespace Derg
         //
         // Args:
         //    fd: The file descriptor to read from.
-        //    iovs: A pointer to an array of __wasi_iovec_t structures describing
+        //    iov: A pointer to an array of __wasi_iovec_t structures describing
         //      the buffers where the data will be stored.
-        //    iovs_len: The number of vectors (__wasi_iovec_t) in the iovs array.
-        //    nread_ptr: A pointer to store the number of bytes read.
+        //    iovcnt: The number of vectors (__wasi_iovec_t) in the iovs array.
+        //    pnum: A pointer to store the number of bytes read.
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdRead(Frame frame, int fd, int iovs, int iovs_len, int nreadPtr)
+        int FdRead(Frame frame, int fd, int iov, int iovcnt, int pnum)
         {
-            throw new Trap(
-                $"Unimplemented call to FdRead({fd}, 0x{iovs:X8}, {iovs_len}, 0x{nreadPtr:X8})"
-            );
+            if (iov == 0)
+            {
+                return -Errno.EFAULT;
+            }
+            if (!streams.ContainsKey(fd))
+            {
+                return -Errno.EBADF;
+            }
+
+            Memory mem = machine.GetMemoryFromIndex(0);
+
+            MemoryStream iovStream = new MemoryStream(mem.Data);
+            iovStream.Position = iov;
+            BinaryReader iovReader = new BinaryReader(iovStream);
+
+            MemoryStream dataStream = new MemoryStream(streams[fd].content);
+            iovStream.Position = (long)streams[fd].position;
+            BinaryReader dataReader = new BinaryReader(dataStream);
+
+            int nread = 0;
+
+            for (int i = 0; i < iovcnt; i++)
+            {
+                int ptr = iovReader.ReadInt32();
+                uint len = iovReader.ReadUInt32();
+                long availableData = dataStream.Length - dataStream.Position;
+                if (availableData < len)
+                {
+                    len = (uint)availableData;
+                }
+                if (len > 0)
+                {
+                    dataStream.Position += len;
+                    try
+                    {
+                        dataStream.Read(mem.Data, ptr, (int)len);
+                    }
+                    catch (Exception)
+                    {
+                        return -Errno.EINVAL;
+                    }
+                    nread += (int)len;
+                }
+            }
+
+            if (pnum != 0)
+            {
+                iovStream.Position = pnum;
+                BinaryWriter countWriter = new BinaryWriter(iovStream);
+                countWriter.Write(nread);
+            }
+            return 0;
         }
 
         // Closes a file descriptor.
@@ -262,10 +311,7 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdClose(Frame frame, int fd)
-        {
-            throw new Trap($"Unimplemented call to FdClose({fd})");
-        }
+        int FdClose(Frame frame, int fd) => fd_close(fd);
 
         // Syncs the file to disk.
         //
@@ -274,9 +320,6 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdSync(Frame frame, int fd)
-        {
-            throw new Trap($"Unimplemented call to FdSync({fd})");
-        }
+        int FdSync(Frame frame, int fd) => 0;
     }
 }
