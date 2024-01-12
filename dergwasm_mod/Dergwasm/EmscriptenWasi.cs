@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FrooxEngine;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,6 +12,7 @@ namespace Derg
     {
         Machine machine;
         public EmscriptenEnv emscriptenEnv;
+        public Dictionary<int, Stream> streams = new Dictionary<int, Stream>();
 
         public EmscriptenWasi(Machine machine, EmscriptenEnv emscriptenEnv)
         {
@@ -57,6 +59,42 @@ namespace Derg
                 "fd_sync",
                 FdSync
             );
+        }
+
+        public class Stream
+        {
+            public int fd;
+            public string path;
+            public byte[] content;
+            public ulong position;
+        }
+
+        // Creates a stream for the given slot, which must be a file. The `path` is
+        // the normalized path to the slot.
+        //
+        // We do not support binary files yet.
+        public Stream createStream(Slot slot, string path)
+        {
+            Stream stream = new Stream()
+            {
+                // File descriptors 0, 1, and 2 are reserved for stdin, stdout, and stderr.
+                fd = streams.Count + 3,
+                path = path,
+                content = Encoding.UTF8.GetBytes(slot.GetComponent<ValueField<string>>().Value),
+                position = 0
+            };
+            streams.Add(stream.fd, stream);
+            return stream;
+        }
+
+        public int fd_close(int fd)
+        {
+            if (fd == 0 || fd == 1 || fd == 2)
+                return -Errno.EBADF;
+            if (!streams.ContainsKey(fd))
+                return -Errno.EBADF;
+            streams.Remove(fd);
+            return 0;
         }
 
         // Terminates the process.

@@ -85,6 +85,7 @@ namespace Derg
         public static Machine machine = null;
         public static ModuleInstance moduleInstance = null;
         public static EmscriptenEnv emscriptenEnv = null;
+        public static EmscriptenWasi emscriptenWasi = null;
         public static ResoniteEnv resoniteEnv = null;
         public static FilesystemEnv filesystemEnv = null;
         public static UtilEnv utilEnv = null;
@@ -130,6 +131,7 @@ namespace Derg
             machine = null;
             moduleInstance = null;
             emscriptenEnv = null;
+            emscriptenWasi = null;
             resoniteEnv = null;
             utilEnv = null;
             filesystemEnv = null;
@@ -214,7 +216,8 @@ namespace Derg
                 emscriptenEnv.RegisterHostFuncs();
                 emscriptenEnv.outputWriter = Output;
 
-                new EmscriptenWasi(machine, emscriptenEnv).RegisterHostFuncs();
+                emscriptenWasi = new EmscriptenWasi(machine, emscriptenEnv);
+                emscriptenWasi.RegisterHostFuncs();
 
                 utilEnv = new UtilEnv(machine, emscriptenEnv);
                 utilEnv.RegisterHostFuncs();
@@ -222,7 +225,7 @@ namespace Derg
                 resoniteEnv = new ResoniteEnv(machine, world, emscriptenEnv);
                 resoniteEnv.RegisterHostFuncs();
 
-                filesystemEnv = new FilesystemEnv(machine, fsSlot, emscriptenEnv);
+                filesystemEnv = new FilesystemEnv(machine, fsSlot, emscriptenEnv, emscriptenWasi);
                 filesystemEnv.RegisterHostFuncs();
 
                 // Read and parse the WASM file.

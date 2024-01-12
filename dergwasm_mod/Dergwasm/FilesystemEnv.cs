@@ -26,15 +26,20 @@ namespace Derg
         public Machine machine;
         public Slot fsRoot;
         public EmscriptenEnv env;
+        public EmscriptenWasi wasi;
         string cwd = "/";
-        Dictionary<int, string> fdToPath = new Dictionary<int, string>();
-        Dictionary<int, Stream> streams = new Dictionary<int, Stream>();
 
-        public FilesystemEnv(Machine machine, Slot fsRootSlot, EmscriptenEnv emscriptenEnv)
+        public FilesystemEnv(
+            Machine machine,
+            Slot fsRootSlot,
+            EmscriptenEnv emscriptenEnv,
+            EmscriptenWasi wasi
+        )
         {
             this.machine = machine;
             this.fsRoot = fsRootSlot;
             this.env = emscriptenEnv;
+            this.wasi = wasi;
         }
 
         // Functions callable from WASM.
@@ -239,42 +244,6 @@ namespace Derg
             public const int O_DIRECTORY = 0200000;
         }
 
-        class Stream
-        {
-            public int fd;
-            public string path;
-            public byte[] content;
-            public ulong position;
-        }
-
-        // Creates a stream for the given slot, which must be a file. The `path` is
-        // the normalized path to the slot.
-        //
-        // We do not support binary files yet.
-        Stream createStream(Slot slot, string path)
-        {
-            Stream stream = new Stream()
-            {
-                // File descriptors 0, 1, and 2 are reserved for stdin, stdout, and stderr.
-                fd = streams.Count + 3,
-                path = path,
-                content = Encoding.UTF8.GetBytes(slot.GetComponent<ValueField<string>>().Value),
-                position = 0
-            };
-            streams.Add(stream.fd, stream);
-            return stream;
-        }
-
-        public int fd_close(int fd)
-        {
-            if (fd == 0 || fd == 1 || fd == 2)
-                return -Errno.EBADF;
-            if (!streams.ContainsKey(fd))
-                return -Errno.EBADF;
-            streams.Remove(fd);
-            return 0;
-        }
-
         // Calculate the path relative to the path for the given directory file descriptor.
         // If the dirfd is AT_FDCWD, then the path is relative to the cwd.
         string calculateAt(int dirfd, string path, bool allowEmpty = false)
@@ -289,12 +258,12 @@ namespace Derg
             }
             else
             {
-                if (!streams.ContainsKey(dirfd))
+                if (!wasi.streams.ContainsKey(dirfd))
                 {
                     DergwasmMachine.Msg($"calculateAt: invalid dirfd: {dirfd}");
                     return null;
                 }
-                dir = streams[dirfd].path;
+                dir = wasi.streams[dirfd].path;
             }
 
             if (path.Length == 0)
@@ -535,7 +504,7 @@ namespace Derg
                 return -Errno.EINVAL;
             }
 
-            int fd = createStream(slot, normalized_path).fd;
+            int fd = wasi.createStream(slot, normalized_path).fd;
             DergwasmMachine.Msg($"__syscall_openat: fd={fd}");
             return fd;
         }
