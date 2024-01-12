@@ -128,31 +128,25 @@ namespace Derg
         // A struct returned by stat. 96 bytes.
         //
         // The layout is based on emscripten/src/generated_struct_info32.json.
-        [StructLayout(LayoutKind.Explicit)]
+        [StructLayout(LayoutKind.Sequential)]
         public struct Stat
         {
             // ID of device containing the file.
-            [FieldOffset(0)]
             public int st_dev;
 
             // File type and mode.
-            [FieldOffset(4)]
             public int st_mode;
 
             // Number of hard links.
-            [FieldOffset(8)]
             public int st_nlink;
 
             // User ID of owner.
-            [FieldOffset(12)]
             public int st_uid;
 
             // Group ID of owner.
-            [FieldOffset(16)]
             public int st_gid;
 
             // Device ID (if special file).
-            [FieldOffset(20)]
             public int st_rdev;
 
             // Total size, in bytes. If this is a symbolic link (which we don't support)
@@ -161,44 +155,34 @@ namespace Derg
             //
             // Although this is a ulong, we only use files to store strings, and .NET can
             // only store strings up to 2GB in size.
-            [FieldOffset(24)]
             public ulong st_size;
 
             // The preferred block size for efficient filesystem I/O.
-            [FieldOffset(32)]
             public int st_blksize;
 
             // Number of 512-byte blocks allocated. For Resonite, this is
             // just ceil(st_size/512).
-            [FieldOffset(36)]
             public int st_blocks;
 
             // Time of last access, seconds part.
-            [FieldOffset(40)]
             public long st_atime_sec;
 
             // Time of last access, nanoseconds part.
-            [FieldOffset(48)]
             public long st_atime_nsec;
 
             // Time of last modification, seconds part.
-            [FieldOffset(56)]
             public long st_mtime_sec;
 
             // Time of last modification, nanoseconds part.
-            [FieldOffset(64)]
             public long st_mtime_nsec;
 
             // Time of last status change, seconds part.
-            [FieldOffset(72)]
             public long st_ctime_sec;
 
             // Time of last status change, nanoseconds part.
-            [FieldOffset(80)]
             public long st_ctime_nsec;
 
             // Inode number.
-            [FieldOffset(88)]
             public long st_ino;
         }
 
