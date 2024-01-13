@@ -159,11 +159,12 @@ namespace Derg
         //    iov: A pointer to an array of __wasi_ciovec_t structures, each describing
         //      a buffer to write data from.
         //    iovcnt: The number of vectors (__wasi_ciovec_t) in the iovs array.
-        //    pnum: A pointer to store the number of bytes written. May be 0 to not write the count.
+        //    nwrittenPtr: A pointer to store the number of bytes written. May be 0
+        //      to not write the count.
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdWrite(Frame frame, int fd, int iov, int iovcnt, int pnum)
+        int FdWrite(Frame frame, int fd, int iov, int iovcnt, int nwrittenPtr)
         {
             if (iov == 0)
             {
@@ -180,7 +181,7 @@ namespace Derg
             iovStream.Position = iov;
             BinaryReader iovReader = new BinaryReader(iovStream);
 
-            uint count = 0;
+            uint nwritten = 0;
 
             for (int i = 0; i < iovcnt; i++)
             {
@@ -205,14 +206,12 @@ namespace Derg
                     return -Errno.EINVAL;
                 }
 
-                count += len;
+                nwritten += len;
             }
 
-            if (pnum != 0)
+            if (nwrittenPtr != 0)
             {
-                iovStream.Position = pnum;
-                BinaryWriter countWriter = new BinaryWriter(iovStream);
-                countWriter.Write(count);
+                machine.MemSet(nwrittenPtr, nwritten);
             }
             return 0;
         }
@@ -230,11 +229,47 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdSeek(Frame frame, int fd, long offset, int whence, int newOffsetPtr)
+        int FdSeek(Frame frame, int fd, long offset, uint whence, int newOffsetPtr)
         {
-            throw new Trap(
-                $"Unimplemented call to FdSeek({fd}, {offset}, {whence}, 0x{newOffsetPtr:X8})"
-            );
+            if (!streams.ContainsKey(fd))
+            {
+                return -Errno.EBADF;
+            }
+
+            long newpos = 0;
+            switch (whence)
+            {
+                case 0: // SEEK_SET
+                    newpos = offset;
+                    break;
+
+                case 1: // SEEK_CUR
+                    newpos = (long)streams[fd].position + offset;
+                    break;
+
+                case 2: // SEEK_END
+                    newpos = streams[fd].content.Length + offset;
+                    break;
+
+                default:
+                    return -Errno.EINVAL;
+            }
+
+            if (newpos < 0)
+            {
+                newpos = 0;
+            }
+            else if (newpos > streams[fd].content.Length)
+            {
+                newpos = streams[fd].content.Length;
+            }
+            streams[fd].position = (ulong)newpos;
+
+            if (newOffsetPtr != 0)
+            {
+                machine.MemSet(newOffsetPtr, (long)streams[fd].position);
+            }
+            return 0;
         }
 
         // Reads data from a file descriptor.
@@ -244,11 +279,11 @@ namespace Derg
         //    iov: A pointer to an array of __wasi_iovec_t structures describing
         //      the buffers where the data will be stored.
         //    iovcnt: The number of vectors (__wasi_iovec_t) in the iovs array.
-        //    pnum: A pointer to store the number of bytes read.
+        //    nreadPtr: A pointer to store the number of bytes read.
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdRead(Frame frame, int fd, int iov, int iovcnt, int pnum)
+        int FdRead(Frame frame, int fd, int iov, int iovcnt, int nreadPtr)
         {
             if (iov == 0)
             {
@@ -265,9 +300,7 @@ namespace Derg
             iovStream.Position = iov;
             BinaryReader iovReader = new BinaryReader(iovStream);
 
-            MemoryStream dataStream = new MemoryStream(streams[fd].content);
-            iovStream.Position = (long)streams[fd].position;
-            BinaryReader dataReader = new BinaryReader(dataStream);
+            long index = (long)streams[fd].position;
 
             int nread = 0;
 
@@ -275,17 +308,19 @@ namespace Derg
             {
                 int ptr = iovReader.ReadInt32();
                 uint len = iovReader.ReadUInt32();
-                long availableData = dataStream.Length - dataStream.Position;
+
+                long availableData = streams[fd].content.Length - index;
                 if (availableData < len)
                 {
                     len = (uint)availableData;
                 }
+
                 if (len > 0)
                 {
-                    dataStream.Position += len;
+                    index += len;
                     try
                     {
-                        dataStream.Read(mem.Data, ptr, (int)len);
+                        Array.Copy(streams[fd].content, index, mem.Data, ptr, len);
                     }
                     catch (Exception)
                     {
@@ -295,11 +330,9 @@ namespace Derg
                 }
             }
 
-            if (pnum != 0)
+            if (nreadPtr != 0)
             {
-                iovStream.Position = pnum;
-                BinaryWriter countWriter = new BinaryWriter(iovStream);
-                countWriter.Write(nread);
+                machine.MemSet(nreadPtr, nread);
             }
             return 0;
         }
