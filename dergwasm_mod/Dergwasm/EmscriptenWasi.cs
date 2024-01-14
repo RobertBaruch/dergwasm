@@ -39,7 +39,7 @@ namespace Derg
                 "fd_write",
                 FdWrite
             );
-            machine.RegisterReturningHostFunc<int, long, int, int, int>(
+            machine.RegisterReturningHostFunc<int, long, uint, int, int>(
                 "wasi_snapshot_preview1",
                 "fd_seek",
                 FdSeek
