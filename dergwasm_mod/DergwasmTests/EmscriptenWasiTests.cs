@@ -296,7 +296,7 @@ namespace DergwasmTests
         }
 
         [Fact]
-        public void WriteToStdout()
+        public void WriteToStdoutFromByteArray()
         {
             string output = "";
             env.outputWriter = (string str) => output += str;
@@ -308,6 +308,18 @@ namespace DergwasmTests
             byte[] buffer = new byte[] { 0x30, 0x31, 0x32, 0x33, 0x34 };
             Assert.Equal(5, wasi.Write(EmscriptenWasi.FD_STDOUT, buffer));
             Assert.Equal("01234", output);
+        }
+
+        [Fact]
+        public void WriteToStdoutFromHeap()
+        {
+            string output = "";
+            env.outputWriter = (string str) => output += str;
+
+            env.WriteUTF8StringToMem(0, "012345");
+
+            Assert.Equal(6, wasi.Write(EmscriptenWasi.FD_STDOUT, 0, 6));
+            Assert.Equal("012345", output);
         }
     }
 }
