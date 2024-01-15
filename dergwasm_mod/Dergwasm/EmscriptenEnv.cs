@@ -13,7 +13,8 @@ namespace Derg
     public class LongjmpException : Exception
     {
         public LongjmpException()
-            : base() { }
+            : base() {
+            }
     }
 
     static class Errno

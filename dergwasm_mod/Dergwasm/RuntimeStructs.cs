@@ -233,5 +233,7 @@ namespace Derg
             Limits = limits;
             Data = new byte[Limits.Minimum << 16];
         }
+
+        public Memory<byte> AsMemory() => new Memory<byte>(Data);
     }
 }
