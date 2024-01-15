@@ -1,18 +1,31 @@
-﻿using FrooxEngine;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+
+using FrooxEngine;
 
 namespace Derg
 {
+    public class Stream
+    {
+        public int fd;
+        public string path;
+        public byte[] content;
+
+        // Byte arrays are limited to 0X7FFFFFC7 in size.
+        // See https://learn.microsoft.com/en-us/dotnet/api/system.array
+        public ulong position;
+    }
+
     public class EmscriptenWasi
     {
+        public const ulong MAX_ARRAY_LENGTH = 0x7FFFFFC7;
+
         Machine machine;
         public EmscriptenEnv emscriptenEnv;
         public Dictionary<int, Stream> streams = new Dictionary<int, Stream>();
+        SortedSet<int> availableFds = new SortedSet<int>();
 
         public EmscriptenWasi(Machine machine, EmscriptenEnv emscriptenEnv)
         {
@@ -61,55 +74,290 @@ namespace Derg
             );
         }
 
-        public class Stream
+        int getAvailableFd()
         {
-            public int fd;
-            public string path;
-            public byte[] content;
-            public ulong position;
+            if (availableFds.Count > 0)
+            {
+                int fd = availableFds.Min;
+                availableFds.Remove(fd);
+                return fd;
+            }
+            // File descriptors 0, 1, and 2 are reserved for stdin, stdout, and stderr.
+            return streams.Count + 3;
         }
 
         // Creates a stream for the given slot, which must be a file. The `path` is
         // the normalized path to the slot.
         //
         // We do not support binary files yet.
-        public Stream createStream(Slot slot, string path)
+        public Stream CreateStream(Slot slot, string path)
         {
+            return CreateStream(
+                path,
+                Encoding.UTF8.GetBytes(slot.GetComponent<ValueField<string>>().Value)
+            );
+        }
+
+        // Creates a stream for the given path and content. The `path` is required to be
+        // normalized.
+        public Stream CreateStream(string path, byte[] content)
+        {
+            int fd = getAvailableFd();
             Stream stream = new Stream()
             {
-                // File descriptors 0, 1, and 2 are reserved for stdin, stdout, and stderr.
-                fd = streams.Count + 3,
+                fd = fd,
                 path = path,
-                content = Encoding.UTF8.GetBytes(slot.GetComponent<ValueField<string>>().Value),
+                content = content,
                 position = 0
             };
             streams.Add(stream.fd, stream);
             return stream;
         }
 
-        public int fd_close(int fd)
+        // Closes a file descriptor.
+        public int Close(int fd)
         {
-            if (fd == 0 || fd == 1 || fd == 2)
-                return -Errno.EBADF;
             if (!streams.ContainsKey(fd))
                 return -Errno.EBADF;
             streams.Remove(fd);
+            // There's an opportunity for more cleverness, since there's no need to store fd
+            // numbers higher than the highest fd number in use. But it's not worth the
+            // code complexity at this point.
+            availableFds.Add(fd);
             return 0;
         }
 
-        // Terminates the process.
+        // Reads data from a file descriptor, returning the amount of data read, or -errno.
+        // No data is ever read from beyond the end of the file.
+        public int Read(int fd, byte[] data)
+        {
+            if (!streams.ContainsKey(fd))
+                return -Errno.EBADF;
+
+            ulong newpos = streams[fd].position + (ulong)data.Length;
+            if (newpos > (ulong)streams[fd].content.Length)
+            {
+                newpos = (ulong)streams[fd].content.Length;
+            }
+            int len = (int)(newpos - streams[fd].position);
+
+            Buffer.BlockCopy(streams[fd].content, (int)streams[fd].position, data, 0, len);
+            streams[fd].position = newpos;
+            return len;
+        }
+
+        // Reads data from a file descriptor into the machine's heap, returning the amount
+        // of data read, or -errno. No data is ever read from beyond the end of the file.
+        //
+        // If the data read would overflow the memory, then -EFAULT is returned, and the
+        // file position is not updated.
+        public int Read(int fd, int memptr, int len)
+        {
+            if (!streams.ContainsKey(fd))
+                return -Errno.EBADF;
+
+            ulong newpos = streams[fd].position + (ulong)len;
+            if (newpos > (ulong)streams[fd].content.Length)
+            {
+                newpos = (ulong)streams[fd].content.Length;
+            }
+            int nread = (int)(newpos - streams[fd].position);
+
+            try
+            {
+                Buffer.BlockCopy(
+                    streams[fd].content,
+                    (int)streams[fd].position,
+                    machine.Memory0,
+                    memptr,
+                    nread
+                );
+            }
+            catch (Exception)
+            {
+                return -Errno.EFAULT;
+            }
+            streams[fd].position = newpos;
+            return nread;
+        }
+
+        // Writes the given data to stdout.
+        public int WriteStdout(byte[] data)
+        {
+            try
+            {
+                string str = Encoding.UTF8.GetString(data);
+
+                if (emscriptenEnv.outputWriter != null)
+                {
+                    emscriptenEnv.outputWriter(str);
+                }
+                else
+                {
+                    Console.Write(str);
+                }
+                return data.Length;
+            }
+            catch (Exception)
+            {
+                return -Errno.EINVAL;
+            }
+        }
+
+        // Writes the given data from the machine's heap to stdout.
+        public int WriteStdout(int memptr, int len)
+        {
+            try
+            {
+                string str = emscriptenEnv.GetUTF8StringFromMem(memptr, (uint)len);
+
+                if (emscriptenEnv.outputWriter != null)
+                {
+                    emscriptenEnv.outputWriter(str);
+                }
+                else
+                {
+                    Console.Write(str);
+                }
+                return len;
+            }
+            catch (Exception)
+            {
+                return -Errno.EINVAL;
+            }
+        }
+
+        // Writes the given data to a file descriptor. If the file size after writing would
+        // exceed the maximum array length, then -EFBIG is returned.
+        public int Write(int fd, byte[] data)
+        {
+            if (fd == 1)
+                return WriteStdout(data);
+            if (!streams.ContainsKey(fd))
+                return -Errno.EBADF;
+
+            ulong newpos = streams[fd].position + (ulong)data.Length;
+            if (newpos > MAX_ARRAY_LENGTH)
+                return -Errno.EFBIG;
+
+            if (newpos > (ulong)streams[fd].content.Length)
+            {
+                Array.Resize(ref streams[fd].content, (int)newpos);
+            }
+            Buffer.BlockCopy(data, 0, streams[fd].content, (int)streams[fd].position, data.Length);
+            streams[fd].position = newpos;
+            return data.Length;
+        }
+
+        // Writes the given data from the machine's heap to a file descriptor. If the file size
+        // after writing would exceed the maximum array length, then -EFBIG is returned.
+        public int Write(int fd, int memptr, int len)
+        {
+            if (fd == 1)
+                return WriteStdout(memptr, len);
+            if (!streams.ContainsKey(fd))
+                return -Errno.EBADF;
+
+            ulong newpos = streams[fd].position + (ulong)len;
+            if (newpos > MAX_ARRAY_LENGTH)
+                return -Errno.EFBIG;
+
+            if (newpos > (ulong)streams[fd].content.Length)
+            {
+                Array.Resize(ref streams[fd].content, (int)newpos);
+            }
+
+            try
+            {
+                Buffer.BlockCopy(
+                    machine.Memory0,
+                    memptr,
+                    streams[fd].content,
+                    (int)streams[fd].position,
+                    len
+                );
+            }
+            catch (Exception)
+            {
+                // Undo the resize.
+                Array.Resize(ref streams[fd].content, (int)streams[fd].position);
+                return -Errno.EFAULT;
+            }
+
+            streams[fd].position = newpos;
+            return len;
+        }
+
+        // Seeks to a position in a file descriptor.
+        //
+        // Args:
+        //    fd: The file descriptor to seek.
+        //    offset: The 64-bit offset to seek to.
+        //    whence: The origin of the seek.This is one of:
+        //        0: SEEK_SET(seek from the beginning of the file)
+        //        1: SEEK_CUR(seek from the current position in the file)
+        //        2: SEEK_END(seek from the end of the file)
+        //    errno: An out ref to an int to store the error, if any.
+        //
+        // Returns:
+        //    The new file offset.
+        public ulong LSeek(int fd, long offset, uint whence, out int errno)
+        {
+            if (!streams.ContainsKey(fd))
+            {
+                errno = Errno.EBADF;
+                return 0;
+            }
+
+            long newpos = 0;
+            switch (whence)
+            {
+                case 0: // SEEK_SET
+                    newpos = offset;
+                    break;
+
+                case 1: // SEEK_CUR
+                    newpos = (long)streams[fd].position + offset;
+                    break;
+
+                case 2: // SEEK_END
+                    newpos = streams[fd].content.Length + offset;
+                    break;
+
+                default:
+                    errno = Errno.EINVAL;
+                    return 0;
+            }
+
+            if (newpos < 0)
+            {
+                newpos = 0;
+            }
+            else if (newpos > streams[fd].content.Length)
+            {
+                newpos = streams[fd].content.Length;
+            }
+            streams[fd].position = (ulong)newpos;
+
+            errno = 0;
+            return streams[fd].position;
+        }
+
+        // Terminates the process, syncing and closing all open file descriptors.
         //
         // Args:
         //    exit_code: The exit code of the process. An exit code of 0 indicates successful
         //      termination of the program. Any other values are dependent on the environment.
         //
-        // Does not return.
+        // Raises:
+        //   ExitTrap: Always raises this exception.
         void ProcExit(Frame frame, int exit_code)
         {
-            //Console.WriteLine(
-            //    $"ProcExit called with exit_code={exit_code}. {100000 - ((Machine)machine).stepBudget} instructions executed."
-            //);
-            //Environment.Exit(exit_code);
+            foreach (int fd in streams.Keys)
+            {
+                FdSync(frame, fd);
+                Close(fd);
+            }
             throw new ExitTrap(exit_code);
         }
 
@@ -152,8 +400,6 @@ namespace Derg
         // decodable as a UTF-8 string. If the buffer couldn't be decoded, then
         // -EINVAL is returned.
         //
-        // If fd != 1, -EBADF is returned.
-        //
         // Args:
         //    fd: The file descriptor to write to.
         //    iov: A pointer to an array of __wasi_ciovec_t structures, each describing
@@ -167,17 +413,9 @@ namespace Derg
         int FdWrite(Frame frame, int fd, int iov, int iovcnt, int nwrittenPtr)
         {
             if (iov == 0)
-            {
                 return -Errno.EFAULT;
-            }
-            if (fd != 1)
-            {
-                return -Errno.EBADF;
-            }
 
-            Memory mem = machine.GetMemoryFromIndex(0);
-
-            MemoryStream iovStream = new MemoryStream(mem.Data);
+            MemoryStream iovStream = new MemoryStream(machine.Memory0);
             iovStream.Position = iov;
             BinaryReader iovReader = new BinaryReader(iovStream);
 
@@ -187,26 +425,12 @@ namespace Derg
             {
                 int ptr = iovReader.ReadInt32();
                 uint len = iovReader.ReadUInt32();
-
-                try
+                int ret = Write(fd, ptr, (int)len);
+                if (ret < 0)
                 {
-                    string str = emscriptenEnv.GetUTF8StringFromMem(ptr, len);
-
-                    if (emscriptenEnv.outputWriter != null)
-                    {
-                        emscriptenEnv.outputWriter(str);
-                    }
-                    else
-                    {
-                        Console.Write(str);
-                    }
+                    return ret;
                 }
-                catch (Exception)
-                {
-                    return -Errno.EINVAL;
-                }
-
-                nwritten += len;
+                nwritten += (uint)ret;
             }
 
             if (nwrittenPtr != 0)
@@ -231,43 +455,15 @@ namespace Derg
         //    0 on success, or -ERRNO on failure.
         int FdSeek(Frame frame, int fd, long offset, uint whence, int newOffsetPtr)
         {
-            if (!streams.ContainsKey(fd))
+            int errno;
+            ulong pos = LSeek(fd, offset, whence, out errno);
+            if (errno != 0)
             {
-                return -Errno.EBADF;
+                return -errno;
             }
-
-            long newpos = 0;
-            switch (whence)
-            {
-                case 0: // SEEK_SET
-                    newpos = offset;
-                    break;
-
-                case 1: // SEEK_CUR
-                    newpos = (long)streams[fd].position + offset;
-                    break;
-
-                case 2: // SEEK_END
-                    newpos = streams[fd].content.Length + offset;
-                    break;
-
-                default:
-                    return -Errno.EINVAL;
-            }
-
-            if (newpos < 0)
-            {
-                newpos = 0;
-            }
-            else if (newpos > streams[fd].content.Length)
-            {
-                newpos = streams[fd].content.Length;
-            }
-            streams[fd].position = (ulong)newpos;
-
             if (newOffsetPtr != 0)
             {
-                machine.MemSet(newOffsetPtr, (long)streams[fd].position);
+                machine.MemSet(newOffsetPtr, (long)pos);
             }
             return 0;
         }
@@ -286,48 +482,24 @@ namespace Derg
         int FdRead(Frame frame, int fd, int iov, int iovcnt, int nreadPtr)
         {
             if (iov == 0)
-            {
                 return -Errno.EFAULT;
-            }
-            if (!streams.ContainsKey(fd))
-            {
-                return -Errno.EBADF;
-            }
 
-            Memory mem = machine.GetMemoryFromIndex(0);
-
-            MemoryStream iovStream = new MemoryStream(mem.Data);
+            MemoryStream iovStream = new MemoryStream(machine.Memory0);
             iovStream.Position = iov;
             BinaryReader iovReader = new BinaryReader(iovStream);
 
-            long index = (long)streams[fd].position;
-
-            int nread = 0;
+            uint nread = 0;
 
             for (int i = 0; i < iovcnt; i++)
             {
                 int ptr = iovReader.ReadInt32();
                 uint len = iovReader.ReadUInt32();
-
-                long availableData = streams[fd].content.Length - index;
-                if (availableData < len)
+                int ret = Read(fd, ptr, (int)len);
+                if (ret < 0)
                 {
-                    len = (uint)availableData;
+                    return ret;
                 }
-
-                if (len > 0)
-                {
-                    index += len;
-                    try
-                    {
-                        Array.Copy(streams[fd].content, index, mem.Data, ptr, len);
-                    }
-                    catch (Exception)
-                    {
-                        return -Errno.EINVAL;
-                    }
-                    nread += (int)len;
-                }
+                nread += (uint)ret;
             }
 
             if (nreadPtr != 0)
@@ -344,7 +516,7 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdClose(Frame frame, int fd) => fd_close(fd);
+        int FdClose(Frame frame, int fd) => Close(fd);
 
         // Syncs the file to disk.
         //

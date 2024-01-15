@@ -488,7 +488,7 @@ namespace Derg
                 return -Errno.EINVAL;
             }
 
-            int fd = wasi.createStream(slot, normalized_path).fd;
+            int fd = wasi.CreateStream(slot, normalized_path).fd;
             DergwasmMachine.Msg($"__syscall_openat: fd={fd}");
             return fd;
         }

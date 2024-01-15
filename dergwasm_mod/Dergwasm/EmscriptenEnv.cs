@@ -16,7 +16,7 @@ namespace Derg
             : base() { }
     }
 
-    static class Errno
+    public static class Errno
     {
         public const int ENOENT = 2; // No such file or directory
         public const int EBADF = 9; // Bad file descriptor
@@ -24,6 +24,7 @@ namespace Derg
         public const int EFAULT = 14; // Bad address
         public const int ENOTDIR = 20; // Not a directory
         public const int EINVAL = 22; // Invalid argument
+        public const int EFBIG = 27; // File too large
         public const int ERANGE = 34; // Math result not representable
     }
 
@@ -71,7 +72,7 @@ namespace Derg
             return AllocateUTF8StringInMemWithPadding(frame, 0, s, out allocated_size);
         }
 
-        // Allocates a UTF-8 encoded string in WASM memory, with padding before the string.
+        // Allocates a UTF-8 encoded string in WASM memory, with padding *before* the string.
         // You can pass null as the frame if you're calling this from outside a WASM function.
         // Otherwise pass the frame you're in.
         public int AllocateUTF8StringInMemWithPadding(
@@ -81,11 +82,9 @@ namespace Derg
             out int allocated_size
         )
         {
-            byte[] stringData = Encoding.UTF8.GetBytes(s);
-            int stringPtr = Malloc(frame, padding + stringData.Length + 1);
-            Array.Copy(stringData, 0, machine.Memory0, stringPtr + padding, stringData.Length);
-            machine.Memory0[stringPtr + padding + stringData.Length] = 0; // NUL-termination
-            allocated_size = padding + stringData.Length + 1;
+            int stringPtr = Malloc(frame, padding + Encoding.UTF8.GetByteCount(s) + 1);
+            int len = WriteUTF8StringToMem(stringPtr + padding, s);
+            allocated_size = padding + len;
             return stringPtr;
         }
 
@@ -102,6 +101,15 @@ namespace Derg
         public string GetUTF8StringFromMem(int ptr, uint len)
         {
             return Encoding.UTF8.GetString(machine.Memory0, ptr, (int)len);
+        }
+
+        // Writes a UTF-8 encoded string to the heap. Returns the number of bytes written.
+        public int WriteUTF8StringToMem(int ptr, string s)
+        {
+            byte[] stringData = Encoding.UTF8.GetBytes(s);
+            Buffer.BlockCopy(stringData, 0, machine.Memory0, ptr, stringData.Length);
+            machine.Memory0[ptr + stringData.Length] = 0; // NUL-termination
+            return stringData.Length + 1;
         }
 
         // Returns a funcref.
