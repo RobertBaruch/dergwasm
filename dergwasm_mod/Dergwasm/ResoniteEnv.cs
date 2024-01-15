@@ -23,15 +23,26 @@ namespace Derg
             this.emscriptenEnv = emscriptenEnv;
         }
 
-        public Slot SlotFromRefID(uint slot_id_lo, uint slot_id_hi)
+        public IWorldElement FromRefID(uint slot_id_lo, uint slot_id_hi)
         {
-            return SlotFromRefID(((ulong)slot_id_hi << 32) | slot_id_lo);
+            return FromRefID(((ulong)slot_id_hi << 32) | slot_id_lo);
         }
 
-        public Slot SlotFromRefID(ulong slot_id)
+        public T FromRefID<T>(uint slot_id_lo, uint slot_id_hi) where T : class, IWorldElement
+        {
+            return FromRefID(slot_id_lo, slot_id_hi) as T;
+        }
+
+        public T FromRefID<T>(ulong slot_id) where T : class, IWorldElement
         {
             RefID refID = new RefID(slot_id);
-            return world.ReferenceController.GetObjectOrNull(refID) as Slot;
+            return world.ReferenceController.GetObjectOrNull(refID) as T;
+        }
+
+        public IWorldElement FromRefID(ulong slot_id)
+        {
+            RefID refID = new RefID(slot_id);
+            return world.ReferenceController.GetObjectOrNull(refID);
         }
 
         List<Value> ExtractArgs(Slot argsSlot, List<int> allocations)
@@ -216,38 +227,38 @@ namespace Derg
 
         public ulong slot__get_parent(Frame frame, ulong slot_id)
         {
-            Slot slot = SlotFromRefID(slot_id);
+            Slot slot = FromRefID<Slot>(slot_id);
             return ((ulong?)slot?.Parent?.ReferenceID) ?? 0;
         }
 
         public ulong slot__get_active_user(Frame frame, ulong slot_id)
         {
-            Slot slot = SlotFromRefID(slot_id);
+            Slot slot = FromRefID<Slot>(slot_id);
             return ((ulong?)slot?.ActiveUser?.ReferenceID) ?? 0;
         }
 
         public ulong slot__get_active_user_root(Frame frame, ulong slot_id)
         {
-            Slot slot = SlotFromRefID(slot_id);
+            Slot slot = FromRefID<Slot>(slot_id);
             return ((ulong?)slot?.ActiveUserRoot?.ReferenceID) ?? 0;
         }
 
         public ulong slot__get_object_root(Frame frame, ulong slot_id, int only_explicit)
         {
-            Slot slot = SlotFromRefID(slot_id);
+            Slot slot = FromRefID<Slot>(slot_id);
             return ((ulong?)slot?.GetObjectRoot(only_explicit != 0)?.ReferenceID) ?? 0;
         }
 
         public int slot__get_name(Frame frame, ulong slot_id)
         {
-            Slot slot = SlotFromRefID(slot_id);
+            Slot slot = FromRefID<Slot>(slot_id);
             string name = slot?.Name ?? "";
             return emscriptenEnv.AllocateUTF8StringInMem(frame, name);
         }
 
         public void slot__set_name(Frame frame, ulong slot_id, int ptr)
         {
-            Slot slot = SlotFromRefID(slot_id);
+            Slot slot = FromRefID<Slot>(slot_id);
             if (slot == null)
                 return;
             slot.Name = emscriptenEnv.GetUTF8StringFromMem(ptr);
@@ -255,13 +266,13 @@ namespace Derg
 
         public int slot__get_num_children(Frame frame, ulong slot_id)
         {
-            Slot slot = SlotFromRefID(slot_id);
+            Slot slot = FromRefID<Slot>(slot_id);
             return slot?.ChildrenCount ?? 0;
         }
 
         public ulong slot__get_child(Frame frame, ulong slot_id, int index)
         {
-            Slot slot = SlotFromRefID(slot_id);
+            Slot slot = FromRefID<Slot>(slot_id);
             return ((ulong?)slot?[index]?.ReferenceID) ?? 0;
         }
 
@@ -274,7 +285,7 @@ namespace Derg
             int max_depth
         )
         {
-            Slot slot = SlotFromRefID(slot_id);
+            Slot slot = FromRefID<Slot>(slot_id);
             string name = emscriptenEnv.GetUTF8StringFromMem(namePtr);
             return (
                     (ulong?)
@@ -289,12 +300,12 @@ namespace Derg
 
         public ulong slot__find_child_by_tag(Frame frame, ulong slot_id, int tagPtr, int max_depth)
         {
-            Slot slot = SlotFromRefID(slot_id);
+            Slot slot = FromRefID<Slot>(slot_id);
             string tag = emscriptenEnv.GetUTF8StringFromMem(tagPtr);
             return (
                     (ulong?)
                         slot?.FindChild(
-                            (Predicate<Slot>)(s => s.Tag == tag),
+                            s => s.Tag == tag,
                             max_depth
                         )?.ReferenceID
                 ) ?? 0;
@@ -302,7 +313,7 @@ namespace Derg
 
         public ulong slot__get_component(Frame frame, ulong slot_id, int typeNamePtr)
         {
-            Slot slot = SlotFromRefID(slot_id);
+            Slot slot = FromRefID<Slot>(slot_id);
             string typeName = emscriptenEnv.GetUTF8StringFromMem(typeNamePtr);
             Type type = Type.GetType(typeName);
             if (type == null)
@@ -312,17 +323,14 @@ namespace Derg
 
         public int component__get_type_name(Frame frame, ulong component_id)
         {
-            Component c =
-                world.ReferenceController.GetObjectOrNull(new RefID(component_id)) as Component;
+            Component c = FromRefID<Component>(component_id);
             string typeName = c?.GetType().FullName ?? "";
             return emscriptenEnv.AllocateUTF8StringInMem(frame, typeName);
         }
 
         public int value_field__get_value(Frame frame, ulong component_id, int dataPtrPtr)
         {
-            ValueField<object> valueField =
-                world.ReferenceController.GetObjectOrNull(new RefID(component_id))
-                as ValueField<object>;
+            ValueField<object> valueField = FromRefID<ValueField<object>>(component_id);
             if (valueField == null)
                 return 0;
             object value = valueField.Value.Value;
