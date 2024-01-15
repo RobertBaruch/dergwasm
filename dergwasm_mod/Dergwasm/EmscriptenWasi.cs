@@ -21,6 +21,9 @@ namespace Derg
     public class EmscriptenWasi
     {
         public const ulong MAX_ARRAY_LENGTH = 0x7FFFFFC7;
+        public const int FD_STDIN = 0;
+        public const int FD_STDOUT = 1;
+        public const int FD_STDERR = 2;
 
         Machine machine;
         public EmscriptenEnv emscriptenEnv;
@@ -231,7 +234,7 @@ namespace Derg
         // exceed the maximum array length, then -EFBIG is returned.
         public int Write(int fd, byte[] data)
         {
-            if (fd == 1)
+            if (fd == FD_STDOUT)
                 return WriteStdout(data);
             if (!streams.ContainsKey(fd))
                 return -Errno.EBADF;
@@ -253,7 +256,7 @@ namespace Derg
         // after writing would exceed the maximum array length, then -EFBIG is returned.
         public int Write(int fd, int memptr, int len)
         {
-            if (fd == 1)
+            if (fd == FD_STDOUT)
                 return WriteStdout(memptr, len);
             if (!streams.ContainsKey(fd))
                 return -Errno.EBADF;

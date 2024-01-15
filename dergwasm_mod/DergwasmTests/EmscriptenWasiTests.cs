@@ -285,5 +285,29 @@ namespace DergwasmTests
 
             Assert.Equal(-Errno.EFBIG, wasi.Write(stream.fd, 0, 10));
         }
+
+        [Fact]
+        public void WriteFromHeapEfault()
+        {
+            Stream stream = wasi.CreateStream("test.txt", Encoding.UTF8.GetBytes("0123456789"));
+
+            Assert.Equal(-Errno.EFAULT, wasi.Write(stream.fd, machine.Memory0.Length, 1));
+            Assert.Equal(0, wasi.Write(stream.fd, machine.Memory0.Length, 0));
+        }
+
+        [Fact]
+        public void WriteToStdout()
+        {
+            string output = "";
+            env.outputWriter = (string str) => output += str;
+
+            Assert.Equal(6, wasi.Write(EmscriptenWasi.FD_STDOUT, Encoding.UTF8.GetBytes("012345")));
+            Assert.Equal("012345", output);
+
+            output = "";
+            byte[] buffer = new byte[] { 0x30, 0x31, 0x32, 0x33, 0x34 };
+            Assert.Equal(5, wasi.Write(EmscriptenWasi.FD_STDOUT, buffer));
+            Assert.Equal("01234", output);
+        }
     }
 }
