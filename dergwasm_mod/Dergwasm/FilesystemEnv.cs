@@ -206,7 +206,7 @@ namespace Derg
         //
         // The layout is based on emscripten/src/generated_struct_info32.json.
         [StructLayout(LayoutKind.Explicit)]
-        public struct Dirent
+        public unsafe struct Dirent
         {
             // Inode number.
             [FieldOffset(0)]
@@ -228,8 +228,8 @@ namespace Derg
             public byte d_type;
 
             // The filename, NUL-terminated.
-            [FieldOffset(19), MarshalAs(UnmanagedType.ByValArray, SizeConst = 256)]
-            public byte[] d_name;
+            [FieldOffset(19)]
+            public fixed byte d_name[256];
         }
 
         public static class OpenFlags
