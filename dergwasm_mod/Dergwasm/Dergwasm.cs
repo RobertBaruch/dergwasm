@@ -88,7 +88,6 @@ namespace Derg
         public static EmscriptenWasi emscriptenWasi = null;
         public static ResoniteEnv resoniteEnv = null;
         public static FilesystemEnv filesystemEnv = null;
-        public static UtilEnv utilEnv = null;
         public static Slot dergwasmSlot = null;
         public static Slot consoleSlot = null;
         public static Slot fsSlot = null; // The equivalent of the root directory in a filesystem.
@@ -133,7 +132,6 @@ namespace Derg
             emscriptenEnv = null;
             emscriptenWasi = null;
             resoniteEnv = null;
-            utilEnv = null;
             filesystemEnv = null;
             DergwasmMachine.dergwasmSlot = null;
             consoleSlot = null;
@@ -218,9 +216,6 @@ namespace Derg
 
                 emscriptenWasi = new EmscriptenWasi(machine, emscriptenEnv);
                 emscriptenWasi.RegisterHostFuncs();
-
-                utilEnv = new UtilEnv(machine, emscriptenEnv);
-                utilEnv.RegisterHostFuncs();
 
                 resoniteEnv = new ResoniteEnv(machine, world, emscriptenEnv);
                 resoniteEnv.RegisterHostFuncs();
