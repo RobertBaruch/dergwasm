@@ -16,6 +16,9 @@ namespace Derg
         // Byte arrays are limited to 0X7FFFFFC7 in size.
         // See https://learn.microsoft.com/en-us/dotnet/api/system.array
         public ulong position;
+
+        // Called when this stream is synced.
+        public Func<Stream, int> sync;
     }
 
     public class EmscriptenWasi
@@ -93,17 +96,18 @@ namespace Derg
         // the normalized path to the slot.
         //
         // We do not support binary files yet.
-        public Stream CreateStream(Slot slot, string path)
+        public Stream CreateStream(Slot slot, string path, Func<Stream, int> syncer = null)
         {
             return CreateStream(
                 path,
-                Encoding.UTF8.GetBytes(slot.GetComponent<ValueField<string>>().Value)
+                Encoding.UTF8.GetBytes(slot.GetComponent<ValueField<string>>().Value),
+                syncer
             );
         }
 
         // Creates a stream for the given path and content. The `path` is required to be
         // normalized.
-        public Stream CreateStream(string path, byte[] content)
+        public Stream CreateStream(string path, byte[] content, Func<Stream, int> syncer = null)
         {
             int fd = getAvailableFd();
             Stream stream = new Stream()
@@ -111,13 +115,15 @@ namespace Derg
                 fd = fd,
                 path = path,
                 content = content,
-                position = 0
+                position = 0,
+                sync = syncer,
             };
             streams.Add(stream.fd, stream);
             return stream;
         }
 
-        // Closes a file descriptor.
+        // Closes a file descriptor. Closing does not guarantee that the data has been
+        // successfully saved. Use Sync() to ensure that the data has been saved.
         public int Close(int fd)
         {
             if (!streams.ContainsKey(fd))
@@ -346,7 +352,20 @@ namespace Derg
             return streams[fd].position;
         }
 
-        // Terminates the process, syncing and closing all open file descriptors.
+        public int Sync(int fd)
+        {
+            if (fd == FD_STDIN)
+                return -Errno.EBADF;
+            if (fd == FD_STDOUT || fd == FD_STDERR)
+                return 0;
+            if (!streams.ContainsKey(fd))
+                return -Errno.EBADF;
+            if (streams[fd].sync == null)
+                return 0;
+            return streams[fd].sync(streams[fd]);
+        }
+
+        // Terminates the process, closing all open file descriptors.
         //
         // Args:
         //    exit_code: The exit code of the process. An exit code of 0 indicates successful
@@ -357,10 +376,7 @@ namespace Derg
         void ProcExit(Frame frame, int exit_code)
         {
             foreach (int fd in streams.Keys)
-            {
-                FdSync(frame, fd);
                 Close(fd);
-            }
             throw new ExitTrap(exit_code);
         }
 
@@ -521,13 +537,13 @@ namespace Derg
         //    0 on success, or -ERRNO on failure.
         int FdClose(Frame frame, int fd) => Close(fd);
 
-        // Syncs the file to disk.
+        // Syncs the file to "disk".
         //
         // Args:
         //    fd: The file descriptor to sync.
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdSync(Frame frame, int fd) => 0;
+        int FdSync(Frame frame, int fd) => Sync(fd);
     }
 }

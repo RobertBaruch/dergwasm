@@ -391,6 +391,32 @@ namespace Derg
             return 0;
         }
 
+        // Writes the content of the given stream to its slot.
+        //
+        // Returns 0 on success, or -ERRNO on failure.
+        //
+        // If the data is not valid UTF-8, returns -EINVAL.
+        int sync(Stream stream)
+        {
+            Slot slot;
+            int err = get_slot_for_absolute_path(stream.path, out slot, out _);
+            if (err != 0)
+                return err;
+            if (!slot_is_regular_file(slot))
+                return 0;
+            try
+            {
+                slot.GetComponent<ValueField<string>>().Value.Value = Encoding.UTF8.GetString(
+                    stream.content
+                );
+            }
+            catch (Exception)
+            {
+                return -Errno.EINVAL;
+            }
+            return 0;
+        }
+
         // syscalls, from emscripten/src/library_syscall.js
 
         // Changes the current working directory of the WASM machine.
@@ -488,7 +514,7 @@ namespace Derg
                 return -Errno.EINVAL;
             }
 
-            int fd = wasi.CreateStream(slot, normalized_path).fd;
+            int fd = wasi.CreateStream(slot, normalized_path, sync).fd;
             DergwasmMachine.Msg($"__syscall_openat: fd={fd}");
             return fd;
         }
