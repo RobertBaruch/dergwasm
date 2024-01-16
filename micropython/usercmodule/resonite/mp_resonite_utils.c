@@ -62,7 +62,8 @@ int64_t mp_obj_int_get_int64_checked(mp_const_obj_t self_in) {
     if (mpz_as_int64_checked(&self->mpz, &value)) {
         return value;
     }
-    mp_raise_msg(&mp_type_OverflowError, MP_ERROR_TEXT("overflow converting Python int to 64-bit unsigned int"));
+    mp_raise_msg(&mp_type_OverflowError, MP_ERROR_TEXT(
+        "overflow converting Python int to 64-bit signed int"));
 }
 
 uint64_t mp_obj_int_get_uint64_checked(mp_const_obj_t self_in) {
@@ -78,5 +79,6 @@ uint64_t mp_obj_int_get_uint64_checked(mp_const_obj_t self_in) {
             return value;
         }
     }
-    mp_raise_msg(&mp_type_OverflowError, MP_ERROR_TEXT("overflow converting Python int to 64-bit signed int"));
+    mp_raise_msg(&mp_type_OverflowError, MP_ERROR_TEXT(
+        "overflow converting Python int to 64-bit unsigned int"));
 }

@@ -260,6 +260,7 @@ namespace Derg
                 return dir;
             }
 
+            DergwasmMachine.Msg($"calculateAt: dir={dir}, path={path}");
             if (dir == "/")
             {
                 return dir + path;
@@ -295,7 +296,7 @@ namespace Derg
                     continue;
                 if (element == "..")
                 {
-                    if (slot.Parent == slot)
+                    if (slot.Parent == fsRoot)
                         continue;
                     slot = slot.Parent;
                     normalized_elements.RemoveAt(normalized_elements.Count - 1);
@@ -332,7 +333,7 @@ namespace Derg
                     continue;
                 if (element == "..")
                 {
-                    if (slot.Parent == slot)
+                    if (slot.Parent == fsRoot)
                         continue;
                     slot = slot.Parent;
                     normalized_elements.RemoveAt(normalized_elements.Count - 1);
