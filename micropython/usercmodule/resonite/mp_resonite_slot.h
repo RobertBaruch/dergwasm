@@ -3,7 +3,6 @@
 
 #include "py/obj.h"
 #include "py/runtime.h"
-#include "resonite_api_types.h"
 
 // Wrapper for slot-related functions in C.
 
@@ -17,5 +16,8 @@ extern mp_obj_t resonite_Slot_get_child(mp_obj_t ref_id, mp_obj_t index);
 extern mp_obj_t resonite_Slot_find_child_by_name(size_t n_args, const mp_obj_t *args);
 extern mp_obj_t resonite_Slot_find_child_by_tag(mp_obj_t ref_id,
     mp_obj_t tag, mp_obj_t max_depth);
+extern mp_obj_t resonite_Slot_get_active_user(mp_obj_t ref_id);
+extern mp_obj_t resonite_Slot_get_active_user_root(mp_obj_t ref_id);
+extern mp_obj_t resonite_Slot_get_component(mp_obj_t ref_id, mp_obj_t component_type_name);
 
 #endif // __RESONITE_RESONITE_SLOT_H__

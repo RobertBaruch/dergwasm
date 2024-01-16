@@ -28,12 +28,14 @@ namespace Derg
             return FromRefID(((ulong)slot_id_hi << 32) | slot_id_lo);
         }
 
-        public T FromRefID<T>(uint slot_id_lo, uint slot_id_hi) where T : class, IWorldElement
+        public T FromRefID<T>(uint slot_id_lo, uint slot_id_hi)
+            where T : class, IWorldElement
         {
             return FromRefID(slot_id_lo, slot_id_hi) as T;
         }
 
-        public T FromRefID<T>(ulong slot_id) where T : class, IWorldElement
+        public T FromRefID<T>(ulong slot_id)
+            where T : class, IWorldElement
         {
             RefID refID = new RefID(slot_id);
             return world.ReferenceController.GetObjectOrNull(refID) as T;
@@ -165,6 +167,12 @@ namespace Derg
         // This only needs to be called once, when the WASM Machine is initialized and loaded.
         public void RegisterHostFuncs()
         {
+            machine.RegisterReturningHostFunc<ulong, int>(
+                "env",
+                "component__get_type_name",
+                component__get_type_name
+            );
+
             machine.RegisterReturningHostFunc<ulong>("env", "slot__root_slot", slot__root_slot);
             machine.RegisterReturningHostFunc<ulong, ulong>(
                 "env",
@@ -302,13 +310,7 @@ namespace Derg
         {
             Slot slot = FromRefID<Slot>(slot_id);
             string tag = emscriptenEnv.GetUTF8StringFromMem(tagPtr);
-            return (
-                    (ulong?)
-                        slot?.FindChild(
-                            s => s.Tag == tag,
-                            max_depth
-                        )?.ReferenceID
-                ) ?? 0;
+            return ((ulong?)slot?.FindChild(s => s.Tag == tag, max_depth)?.ReferenceID) ?? 0;
         }
 
         public ulong slot__get_component(Frame frame, ulong slot_id, int typeNamePtr)

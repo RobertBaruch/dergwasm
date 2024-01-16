@@ -62,3 +62,19 @@ mp_obj_t resonite_Slot_find_child_by_tag(
         mp_obj_str_get_str(tag),
         mp_obj_get_int(max_depth)));
 }
+
+mp_obj_t resonite_Slot_get_active_user(mp_obj_t ref_id) {
+    return mp_obj_new_int_from_ll(slot__get_active_user(
+        mp_obj_int_get_uint64_checked(ref_id)));
+}
+
+mp_obj_t resonite_Slot_get_active_user_root(mp_obj_t ref_id) {
+    return mp_obj_new_int_from_ll(slot__get_active_user_root(
+        mp_obj_int_get_uint64_checked(ref_id)));
+}
+
+mp_obj_t resonite_Slot_get_component(mp_obj_t ref_id, mp_obj_t component_type_name) {
+    return mp_obj_new_int_from_ll(slot__get_component(
+        mp_obj_int_get_uint64_checked(ref_id),
+        mp_obj_str_get_str(component_type_name)));
+}
