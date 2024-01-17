@@ -1,7 +1,4 @@
 import resonitenative
-from . import component
-from . import user
-from . import userroot
 
 
 class SlotChildrenIterable:
@@ -78,17 +75,22 @@ class Slot:
     def children(self) -> SlotChildrenIterable:
         return SlotChildrenIterable(self)
 
-    def get_active_user(self) -> "user.User":
-        return user.User(
+    def get_active_user(self) -> "User":
+        return User(
             resonitenative.resonite_Slot_get_active_user(self.reference_id))
 
-    def get_active_user_root(self) -> "userroot.UserRoot":
-        return userroot.UserRoot(
+    def get_active_user_root(self) -> "UserRoot":
+        return UserRoot(
             resonitenative.resonite_Slot_get_active_user_root(self.reference_id))
 
-    def get_component(self, component_type_name: str) -> "component.Component" | None:
+    def get_component(self, component_type_name: str) -> "Component" | None:
         component_id = resonitenative.resonite_Slot_get_component(
             self.reference_id, component_type_name)
         if component_id == 0:
             return None
-        return component.Component.make_new(component_id)
+        return Component.make_new(component_id)
+
+
+from resonite.component import Component
+from resonite.user import User
+from resonite.userroot import UserRoot

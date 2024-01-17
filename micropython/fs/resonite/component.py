@@ -1,5 +1,4 @@
 import resonitenative
-from . import valuefield
 
 
 class Component:
@@ -20,5 +19,8 @@ class Component:
     def make_new(cls, reference_id: int) -> "Component":
         typename = resonitenative.resonite_Component_get_type_name(reference_id)
         if typename.startswith("ValueField"):
-            return valuefield.ValueField(reference_id, typename)
+            return ValueField(reference_id, typename)
         return Component(reference_id, typename)
+
+
+from resonite.valuefield import ValueField

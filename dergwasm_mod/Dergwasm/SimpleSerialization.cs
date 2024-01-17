@@ -280,8 +280,8 @@ namespace Derg
 
                 case string s:
                     writer.Write(SimpleType.String);
+                    writer.Write(Encoding.UTF8.GetByteCount(s));
                     writer.Write(Encoding.UTF8.GetBytes(s));
-                    writer.Write((byte)0);
                     break;
 
                 case color c:
