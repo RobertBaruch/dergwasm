@@ -326,7 +326,7 @@ namespace Derg
         public int component__get_type_name(Frame frame, ulong component_id)
         {
             Component c = FromRefID<Component>(component_id);
-            string typeName = c?.GetType().FullName ?? "";
+            string typeName = c?.GetType().GetNiceName() ?? "";
             return emscriptenEnv.AllocateUTF8StringInMem(frame, typeName);
         }
 
