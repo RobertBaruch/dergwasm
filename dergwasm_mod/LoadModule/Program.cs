@@ -11,7 +11,7 @@ public class Program
     public Program(string filename)
     {
         machine = new Machine();
-        machine.Debug = true;
+        // machine.Debug = true;
         EmscriptenEnv emscriptenEnv = new EmscriptenEnv(machine);
         emscriptenEnv.RegisterHostFuncs();
 
@@ -49,8 +49,8 @@ public class Program
         }
 
         MaybeRunEmscriptenCtors();
-        RunMain();
-        // RunMicropython(emscriptenEnv);
+        // RunMain();
+        RunMicropython(emscriptenEnv);
     }
 
     void CheckForUnimplementedInstructions()
@@ -176,7 +176,7 @@ public class Program
 
         string s = "print('hello world!')\n"; // The Python code to run
 
-        int ptr = emscriptenEnv.AllocateUTF8StringInMem(null, s);
+        int ptr = AddUTF8StringToStack(emscriptenEnv, s);
         MicropythonDoStr(emscriptenEnv, ptr);
     }
 
