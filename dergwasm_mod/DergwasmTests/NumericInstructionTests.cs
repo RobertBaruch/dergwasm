@@ -1,6 +1,6 @@
-﻿using Derg;
-using System;
+﻿using System;
 using System.Security.Cryptography;
+using Derg;
 using Xunit;
 
 namespace DergwasmTests
@@ -18,7 +18,7 @@ namespace DergwasmTests
             machine.Step();
 
             Assert.Equal(1, machine.Frame.PC);
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(val, e.U32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(val, e.u32));
         }
 
         [Fact]
@@ -30,7 +30,7 @@ namespace DergwasmTests
             machine.Step();
 
             Assert.Equal(1, machine.Frame.PC);
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(1L, e.S64));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(1L, e.s64));
         }
 
         [Fact]
@@ -42,7 +42,7 @@ namespace DergwasmTests
             machine.Step();
 
             Assert.Equal(1, machine.Frame.PC);
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(1.1f, e.F32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(1.1f, e.f32));
         }
 
         [Fact]
@@ -54,7 +54,7 @@ namespace DergwasmTests
             machine.Step();
 
             Assert.Equal(1, machine.Frame.PC);
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(1.1, e.F64));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(1.1, e.f64));
         }
 
         [Theory]
@@ -96,11 +96,11 @@ namespace DergwasmTests
             // 0: const_insn input
             // 1: insn
             // 2: NOP
-            machine.SetProgram(0, Insn(const_insn, new Value(input)), Insn(insn), Nop());
+            machine.SetProgram(0, Insn(const_insn, new Value { u64 = input }), Insn(insn), Nop());
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected_output, e.U64));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected_output, e.u64));
         }
 
         [Theory]
@@ -153,7 +153,7 @@ namespace DergwasmTests
 
             machine.Step(3);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.U32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.u32));
         }
 
         [Theory]
@@ -289,7 +289,7 @@ namespace DergwasmTests
 
             machine.Step(3);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.U64));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.u64));
         }
 
         [Theory]
@@ -384,7 +384,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.U32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.u32));
         }
 
         [Theory]
@@ -403,7 +403,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.U64));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.u64));
         }
 
         [Theory]
@@ -418,7 +418,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.U32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.u32));
         }
 
         [Theory]
@@ -435,7 +435,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.U64));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.u64));
         }
 
         [Theory]
@@ -461,7 +461,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.F32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.f32));
         }
 
         [Theory]
@@ -487,7 +487,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.F64));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.f64));
         }
 
         [Theory]
@@ -513,7 +513,7 @@ namespace DergwasmTests
 
             machine.Step(3);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.F32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.f32));
         }
 
         [Theory]
@@ -539,7 +539,7 @@ namespace DergwasmTests
 
             machine.Step(3);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.F64));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.f64));
         }
 
         [Theory]
@@ -612,7 +612,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(0xFFFFFFFFU, e.U32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(0xFFFFFFFFU, e.u32));
         }
 
         [Fact]
@@ -630,7 +630,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(0x83215600U, e.U32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(0x83215600U, e.u32));
         }
 
         [Fact]
@@ -643,7 +643,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(0xFFFFFFFFU, e.U32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(0xFFFFFFFFU, e.u32));
         }
 
         [Fact]
@@ -661,7 +661,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(0x83215600U, e.U32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(0x83215600U, e.u32));
         }
 
         [Fact]
@@ -676,7 +676,7 @@ namespace DergwasmTests
 
             Assert.Collection(
                 machine.Frame.value_stack,
-                e => Assert.Equal(0xFFFFFFFFFFFFFFFFU, e.U64)
+                e => Assert.Equal(0xFFFFFFFFFFFFFFFFU, e.u64)
             );
         }
 
@@ -692,7 +692,7 @@ namespace DergwasmTests
 
             Assert.Collection(
                 machine.Frame.value_stack,
-                e => Assert.Equal(0x83D6C80000000000UL, e.U64)
+                e => Assert.Equal(0x83D6C80000000000UL, e.u64)
             );
         }
 
@@ -708,7 +708,7 @@ namespace DergwasmTests
 
             Assert.Collection(
                 machine.Frame.value_stack,
-                e => Assert.Equal(0xFFFFFFFFFFFFFFFFU, e.U64)
+                e => Assert.Equal(0xFFFFFFFFFFFFFFFFU, e.u64)
             );
         }
 
@@ -724,7 +724,7 @@ namespace DergwasmTests
 
             Assert.Collection(
                 machine.Frame.value_stack,
-                e => Assert.Equal(0x83D6C7AAB6360000UL, e.U64)
+                e => Assert.Equal(0x83D6C7AAB6360000UL, e.u64)
             );
         }
 
@@ -738,7 +738,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(1.58f, e.F32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(1.58f, e.f32));
         }
 
         [Fact]
@@ -753,7 +753,7 @@ namespace DergwasmTests
 
             Assert.Collection(
                 machine.Frame.value_stack,
-                e => Assert.Equal(1.5800000429153442, e.F64)
+                e => Assert.Equal(1.5800000429153442, e.f64)
             );
         }
 
@@ -767,7 +767,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(-1f, e.F32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(-1f, e.f32));
         }
 
         [Fact]
@@ -785,7 +785,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(4294967296f, e.F32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(4294967296f, e.f32));
         }
 
         [Fact]
@@ -798,7 +798,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(-1f, e.F32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(-1f, e.f32));
         }
 
         [Fact]
@@ -818,7 +818,7 @@ namespace DergwasmTests
 
             Assert.Collection(
                 machine.Frame.value_stack,
-                e => Assert.Equal(18446744073709551616f, e.F32)
+                e => Assert.Equal(18446744073709551616f, e.f32)
             );
         }
 
@@ -832,7 +832,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(-1, e.F64));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(-1, e.f64));
         }
 
         [Fact]
@@ -850,7 +850,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(4294967295, e.F64));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(4294967295, e.f64));
         }
 
         [Fact]
@@ -863,7 +863,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(-1, e.F64));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(-1, e.f64));
         }
 
         [Fact]
@@ -883,7 +883,7 @@ namespace DergwasmTests
 
             Assert.Collection(
                 machine.Frame.value_stack,
-                e => Assert.Equal(18446744073709551615.0, e.F64)
+                e => Assert.Equal(18446744073709551615.0, e.f64)
             );
         }
 
@@ -902,7 +902,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(0xBFC00000U, e.U32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(0xBFC00000U, e.u32));
         }
 
         [Fact]
@@ -922,7 +922,7 @@ namespace DergwasmTests
 
             Assert.Collection(
                 machine.Frame.value_stack,
-                e => Assert.Equal(0xBFF947AE147AE148UL, e.U64)
+                e => Assert.Equal(0xBFF947AE147AE148UL, e.u64)
             );
         }
 
@@ -941,7 +941,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(-1.5f, e.F32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(-1.5f, e.f32));
         }
 
         [Fact]
@@ -959,7 +959,7 @@ namespace DergwasmTests
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(-1.58, e.F64));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(-1.58, e.f64));
         }
     }
 }

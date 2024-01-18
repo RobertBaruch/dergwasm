@@ -321,7 +321,7 @@ namespace Derg
                     $"<offset_for_element_seg_{i}_into_table_{tableAddr}>",
                     ValueType.I32,
                     activeElementSegmentSpec.OffsetExpr
-                ).S32;
+                ).s32;
                 int n = elementSegment.Elements.Length;
                 if (d + n > table.Elements.Length)
                 {
@@ -358,7 +358,7 @@ namespace Derg
                     $"<offset_for_data_seg_{i}_into_memory_{memAddr}>",
                     ValueType.I32,
                     activeDataSegment.OffsetExpr
-                ).S32;
+                ).s32;
                 int n = dataSegment.Data.Length;
                 if (d + n > memory.Data.Length)
                 {

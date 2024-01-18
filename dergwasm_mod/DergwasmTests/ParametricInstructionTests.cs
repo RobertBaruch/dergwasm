@@ -39,7 +39,7 @@ namespace DergwasmTests
             machine.Step(4);
 
             Assert.Equal(4, machine.Frame.PC);
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.S32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.s32));
         }
     }
 }

@@ -1,10 +1,10 @@
-﻿using BenchmarkDotNet.Attributes;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
+using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 using Derg;
-using System;
-using System.Linq.Expressions;
-using System.Collections.Generic;
 
 namespace DergwasmTests
 {
@@ -93,12 +93,57 @@ namespace DergwasmTests
         // | I32Add         | 77.63 ns | 1.314 ns | 2.158 ns |  1.00 |
         // |                |          |          |          |       |
         // | I32AddOverhead | 36.79 ns | 0.372 ns | 0.330 ns |  1.00 |
+
+        // With Value + list:
+        //
+        // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3693/22H2/2022Update)
+        // Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
+        //   [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+        //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
+        //
+        // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
+        //
+        // | Method         | Mean     | Error   | StdDev  | Ratio |
+        // |--------------- |---------:|--------:|--------:|------:|
+        // | I32Add         | 169.6 ns | 2.99 ns | 3.56 ns |  1.00 |
+        // |                |          |         |         |       |
+        // | I32AddOverhead | 145.6 ns | 1.66 ns | 1.56 ns |  1.00 |
+
+        // With union (64 bits) + stack:
+        //
+        // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3693/22H2/2022Update)
+        // Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
+        //   [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+        //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
+        //
+        // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
+        //
+        // | Method         | Mean     | Error    | StdDev   | Ratio |
+        // |--------------- |---------:|---------:|---------:|------:|
+        // | I32Add         | 62.46 ns | 0.786 ns | 0.656 ns |  1.00 |
+        // |                |          |          |          |       |
+        // | I32AddOverhead | 26.63 ns | 0.411 ns | 0.365 ns |  1.00 |
+        //
+        // With union (128 bits) + stack:
+        //
+        // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3693/22H2/2022Update)
+        // Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
+        //   [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+        //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
+        //
+        // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
+        //
+        // | Method         | Mean     | Error    | StdDev   | Ratio |
+        // |--------------- |---------:|---------:|---------:|------:|
+        // | I32Add         | 64.93 ns | 1.284 ns | 1.800 ns |  1.00 |
+        // |                |          |          |          |       |
+        // | I32AddOverhead | 34.49 ns | 0.222 ns | 0.218 ns |  1.00 |
         [Benchmark]
         public Value I32Add()
         {
             frame.PC = 0;
-            frame.Push(new Value(0x0F));
-            frame.Push(new Value(0xFFFFFFFF));
+            frame.Push(new Value { u32 = 0x0F });
+            frame.Push(new Value { u32 = 0xFFFFFFFF });
             frame.Step(this);
             return frame.Pop();
         }
@@ -107,9 +152,11 @@ namespace DergwasmTests
         public Value I32AddOverhead()
         {
             frame.PC = 0;
-            frame.Push(new Value(0x0F));
-            frame.Push(new Value(0xFFFFFFFF));
+            frame.Push(new Value { u32 = 0x0F });
+            frame.Push(new Value { u32 = 0xFFFFFFFF });
             frame.Pop();
+            frame.Pop();
+            frame.Push(new Value { u32 = 0x0F });
             return frame.Pop();
         }
     }
@@ -175,7 +222,7 @@ namespace DergwasmTests
         public Value PushPopInt()
         {
             Frame frame = CreateFrame();
-            frame.Push(new Value(1));
+            frame.Push(new Value { s32 = 1 });
             return frame.Pop();
         }
     }

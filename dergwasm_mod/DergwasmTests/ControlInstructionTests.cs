@@ -92,7 +92,10 @@ namespace DergwasmTests
             machine.Step(3);
 
             Assert.Equal(3, machine.Frame.PC);
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(1), e));
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(new Value { s32 = 1 }, e)
+            );
             Assert.Single(machine.Frame.label_stack);
         }
 
@@ -114,8 +117,8 @@ namespace DergwasmTests
             Assert.Equal(4, machine.Frame.PC);
             Assert.Collection(
                 machine.Frame.value_stack,
-                e => Assert.Equal(new Value(2), e),
-                e => Assert.Equal(new Value(1), e)
+                e => Assert.Equal(new Value { s32 = 1 }, e),
+                e => Assert.Equal(new Value { s32 = 2 }, e)
             );
             Assert.Single(machine.Frame.label_stack);
         }
@@ -136,7 +139,10 @@ namespace DergwasmTests
             machine.Step(4);
 
             Assert.Equal(4, machine.Frame.PC);
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(1), e));
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(new Value { s32 = 1 }, e)
+            );
             Assert.Single(machine.Frame.label_stack);
         }
 
@@ -289,7 +295,10 @@ namespace DergwasmTests
             machine.Step(3);
 
             Assert.Equal(5, machine.Frame.PC);
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(1), e));
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(new Value { s32 = 1 }, e)
+            );
             Assert.Single(machine.Frame.label_stack);
         }
 
@@ -307,7 +316,10 @@ namespace DergwasmTests
             machine.Step(3);
 
             Assert.Equal(5, machine.Frame.PC);
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(1), e));
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(new Value { s32 = 1 }, e)
+            );
             Assert.Single(machine.Frame.label_stack);
         }
 
@@ -358,8 +370,8 @@ namespace DergwasmTests
             Assert.Equal(9, machine.Frame.PC);
             Assert.Collection(
                 machine.Frame.value_stack,
-                e => Assert.Equal(new Value(1), e),
-                e => Assert.Equal(new Value(2), e)
+                e => Assert.Equal(new Value { s32 = 2 }, e),
+                e => Assert.Equal(new Value { s32 = 1 }, e)
             );
             Assert.Single(machine.Frame.label_stack);
         }
@@ -425,7 +437,10 @@ namespace DergwasmTests
             machine.Step(2);
 
             Assert.Equal(2, machine.Frame.PC);
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(1), e));
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(new Value { s32 = 1 }, e)
+            );
             Assert.Equal(new Label(1, 1), machine.Frame.Label);
         }
 
@@ -442,7 +457,10 @@ namespace DergwasmTests
             machine.Step(3);
 
             Assert.Equal(1, machine.Frame.PC);
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(1), e));
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(new Value { s32 = 1 }, e)
+            );
             Assert.Single(machine.Frame.label_stack);
         }
 
@@ -462,7 +480,10 @@ namespace DergwasmTests
             machine.Step(4);
 
             Assert.Equal(4, machine.Frame.PC);
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(1), e));
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(new Value { s32 = 1 }, e)
+            );
             Assert.Single(machine.Frame.label_stack);
         }
 
@@ -485,8 +506,8 @@ namespace DergwasmTests
             Assert.Equal(1, machine.Frame.PC);
             Assert.Collection(
                 machine.Frame.value_stack,
-                e => Assert.Equal(new Value(1), e),
-                e => Assert.Equal(new Value(2), e)
+                e => Assert.Equal(new Value { s32 = 2 }, e),
+                e => Assert.Equal(new Value { s32 = 1 }, e)
             );
             Assert.Single(machine.Frame.label_stack);
         }
@@ -540,8 +561,8 @@ namespace DergwasmTests
             Assert.Equal(4, machine.Frame.PC);
             Assert.Collection(
                 machine.Frame.value_stack,
-                e => Assert.Equal(new Value(1), e),
-                e => Assert.Equal(new Value(2), e)
+                e => Assert.Equal(new Value { s32 = 2 }, e),
+                e => Assert.Equal(new Value { s32 = 1 }, e)
             );
         }
 
@@ -579,7 +600,7 @@ namespace DergwasmTests
             machine.SetFuncAt(
                 15,
                 I32Const(0),
-                Insn(InstructionType.LOCAL_GET, new Value(0)),
+                Insn(InstructionType.LOCAL_GET, new Value { s32 = 0 }),
                 Insn(InstructionType.I32_SUB),
                 End()
             );
@@ -589,8 +610,8 @@ namespace DergwasmTests
             Assert.Equal(3, machine.Frame.PC);
             Assert.Collection(
                 machine.Frame.value_stack,
-                e => Assert.Equal(new Value(100), e),
-                e => Assert.Equal(new Value(-1), e)
+                e => Assert.Equal(new Value { s32 = -1 }, e),
+                e => Assert.Equal(new Value { s32 = 100 }, e)
             );
         }
 
@@ -610,8 +631,8 @@ namespace DergwasmTests
             machine.SetProgram(0, I32Const(1), I32Const(2), Call(4), Nop());
             machine.SetFuncAt(
                 14,
-                Insn(InstructionType.LOCAL_GET, new Value(0)),
-                Insn(InstructionType.LOCAL_GET, new Value(1)),
+                Insn(InstructionType.LOCAL_GET, new Value { s32 = 0 }),
+                Insn(InstructionType.LOCAL_GET, new Value { s32 = 1 }),
                 Insn(InstructionType.I32_SUB),
                 End()
             );
@@ -619,7 +640,10 @@ namespace DergwasmTests
             machine.Step(3);
 
             Assert.Equal(3, machine.Frame.PC);
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(-1), e));
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(new Value { s32 = -1 }, e)
+            );
         }
 
         [Fact]
@@ -637,7 +661,7 @@ namespace DergwasmTests
             machine.Step(1);
 
             Assert.Equal(1, machine.Frame.PC);
-            Assert.Equal(new Value(1), machine.Frame.TopOfStack);
+            Assert.Equal(new Value { s32 = 1 }, machine.Frame.TopOfStack);
         }
 
         [Fact]
@@ -660,8 +684,8 @@ namespace DergwasmTests
             Assert.Equal(3, machine.Frame.PC);
             Assert.Collection(
                 machine.Frame.value_stack,
-                e => Assert.Equal(new Value(1), e),
-                e => Assert.Equal(new Value(2), e)
+                e => Assert.Equal(new Value { s32 = 2 }, e),
+                e => Assert.Equal(new Value { s32 = 1 }, e)
             );
         }
 
@@ -684,7 +708,10 @@ namespace DergwasmTests
             machine.Step();
 
             Assert.Equal(3, machine.Frame.PC);
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(-10), e));
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(new Value { s32 = -10 }, e)
+            );
         }
 
         [Fact]
@@ -714,7 +741,7 @@ namespace DergwasmTests
             machine.Step(2);
 
             Assert.Equal(2, machine.Frame.PC);
-            Assert.Equal(new Value(2), machine.Frame.TopOfStack);
+            Assert.Equal(new Value { s32 = 2 }, machine.Frame.TopOfStack);
         }
     }
 }

@@ -14,16 +14,16 @@ namespace DergwasmTests
             // 1: NOP
             machine.SetProgram(
                 TestMachine.VoidType,
-                Insn(InstructionType.LOCAL_GET, new Value(localidx)),
+                Insn(InstructionType.LOCAL_GET, new Value { s32 = localidx }),
                 Nop()
             );
 
-            machine.Frame.Locals[0] = new Value(1);
-            machine.Frame.Locals[1] = new Value(2);
+            machine.Frame.Locals[0] = new Value { s32 = 1 };
+            machine.Frame.Locals[1] = new Value { s32 = 2 };
 
             machine.Step();
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.S32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.s32));
         }
 
         [Theory]
@@ -37,14 +37,14 @@ namespace DergwasmTests
             machine.SetProgram(
                 TestMachine.VoidType,
                 I32Const(1),
-                Insn(InstructionType.LOCAL_SET, new Value(localidx)),
+                Insn(InstructionType.LOCAL_SET, new Value { s32 = localidx }),
                 Nop()
             );
 
             machine.Step(2);
 
             Assert.Empty(machine.Frame.value_stack);
-            Assert.Equal(1, machine.Frame.Locals[localidx].S32);
+            Assert.Equal(1, machine.Frame.Locals[localidx].s32);
         }
 
         [Theory]
@@ -58,14 +58,35 @@ namespace DergwasmTests
             machine.SetProgram(
                 TestMachine.VoidType,
                 I32Const(1),
-                Insn(InstructionType.LOCAL_TEE, new Value(localidx)),
+                Insn(InstructionType.LOCAL_TEE, new Value { s32 = localidx }),
                 Nop()
             );
 
             machine.Step(2);
 
-            Assert.Equal(1, machine.Frame.TopOfStack.S32);
-            Assert.Equal(1, machine.Frame.Locals[localidx].S32);
+            Assert.Equal(1, machine.Frame.TopOfStack.s32);
+            Assert.Equal(1, machine.Frame.Locals[localidx].s32);
+        }
+
+        [Fact]
+        public void TestLocalTeeUsesTopOfStack()
+        {
+            // 0: I32_CONST 2
+            // 1: I32_CONST 1
+            // 2: LOCAL_TEE 0
+            // 3: NOP
+            machine.SetProgram(
+                TestMachine.VoidType,
+                I32Const(2),
+                I32Const(1),
+                Insn(InstructionType.LOCAL_TEE, new Value { s32 = 0 }),
+                Nop()
+            );
+
+            machine.Step(3);
+
+            Assert.Equal(1, machine.Frame.TopOfStack.s32);
+            Assert.Equal(1, machine.Frame.Locals[0].s32);
         }
 
         [Theory]
@@ -77,16 +98,16 @@ namespace DergwasmTests
             // 1: NOP
             machine.SetProgram(
                 TestMachine.VoidType,
-                Insn(InstructionType.GLOBAL_GET, new Value(globalidx)),
+                Insn(InstructionType.GLOBAL_GET, new Value { s32 = globalidx }),
                 Nop()
             );
 
-            machine.Globals[0] = new Value(1);
-            machine.Globals[1] = new Value(2);
+            machine.Globals[0] = new Value { s32 = 1 };
+            machine.Globals[1] = new Value { s32 = 2 };
 
             machine.Step();
 
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.S32));
+            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(expected, e.s32));
         }
 
         [Theory]
@@ -100,14 +121,14 @@ namespace DergwasmTests
             machine.SetProgram(
                 TestMachine.VoidType,
                 I32Const(1),
-                Insn(InstructionType.GLOBAL_SET, new Value(globalidx)),
+                Insn(InstructionType.GLOBAL_SET, new Value { s32 = globalidx }),
                 Nop()
             );
 
             machine.Step(2);
 
             Assert.Empty(machine.Frame.value_stack);
-            Assert.Equal(1, machine.Globals[globaladdr].S32);
+            Assert.Equal(1, machine.Globals[globaladdr].s32);
         }
     }
 }

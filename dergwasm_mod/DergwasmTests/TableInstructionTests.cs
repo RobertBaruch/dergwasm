@@ -32,7 +32,7 @@ namespace DergwasmTests
             machine.SetProgram(
                 0,
                 I32Const(elemidx),
-                Insn(InstructionType.TABLE_GET, new Value(tableidx)), // Maps to tableidx+30
+                Insn(InstructionType.TABLE_GET, new Value { s32 = tableidx }), // Maps to tableidx+30
                 Nop()
             );
 
@@ -58,7 +58,7 @@ namespace DergwasmTests
             machine.SetProgram(
                 0,
                 I32Const(2),
-                Insn(InstructionType.TABLE_GET, new Value(0)), // Maps to table 30
+                Insn(InstructionType.TABLE_GET, new Value { s32 = 0 }), // Maps to table 30
                 Nop()
             );
 
@@ -88,8 +88,8 @@ namespace DergwasmTests
             machine.SetProgram(
                 0,
                 I32Const(elemidx),
-                Insn(InstructionType.REF_FUNC, new Value(10)), // Maps to addr 20
-                Insn(InstructionType.TABLE_SET, new Value(tableidx)), // Maps to table tableidx+30
+                Insn(InstructionType.REF_FUNC, new Value { s32 = 10 }), // Maps to addr 20
+                Insn(InstructionType.TABLE_SET, new Value { s32 = tableidx }), // Maps to table tableidx+30
                 Nop()
             );
 
@@ -114,8 +114,8 @@ namespace DergwasmTests
             machine.SetProgram(
                 0,
                 I32Const(2),
-                Insn(InstructionType.REF_FUNC, new Value(10)), // Maps to addr 20
-                Insn(InstructionType.TABLE_SET, new Value(0)), // Maps to table 30
+                Insn(InstructionType.REF_FUNC, new Value { s32 = 10 }), // Maps to addr 20
+                Insn(InstructionType.TABLE_SET, new Value { s32 = 0 }), // Maps to table 30
                 Nop()
             );
 
@@ -140,13 +140,13 @@ namespace DergwasmTests
             // 1: NOP
             machine.SetProgram(
                 0,
-                Insn(InstructionType.TABLE_SIZE, new Value(tableidx)), // Maps to tableidx+30
+                Insn(InstructionType.TABLE_SIZE, new Value { s32 = tableidx }), // Maps to tableidx+30
                 Nop()
             );
 
             machine.Step();
 
-            Assert.Equal(expected, machine.Frame.TopOfStack.Int);
+            Assert.Equal(expected, machine.Frame.TopOfStack.s32);
         }
 
         [Theory]
@@ -171,15 +171,15 @@ namespace DergwasmTests
             // 3: NOP
             machine.SetProgram(
                 0,
-                Insn(InstructionType.REF_FUNC, new Value(10)), // Maps to addr 20
+                Insn(InstructionType.REF_FUNC, new Value { s32 = 10 }), // Maps to addr 20
                 I32Const(n),
-                Insn(InstructionType.TABLE_GROW, new Value(tableidx)), // Maps to tableidx+30
+                Insn(InstructionType.TABLE_GROW, new Value { s32 = tableidx }), // Maps to tableidx+30
                 Nop()
             );
 
             machine.Step(3);
 
-            Assert.Equal(expected, machine.Frame.TopOfStack.Int);
+            Assert.Equal(expected, machine.Frame.TopOfStack.s32);
             Assert.Equal(expected_new_size, machine.tables[30 + tableidx].Elements.Length);
         }
 
@@ -232,7 +232,11 @@ namespace DergwasmTests
                 I32Const(d_offset),
                 I32Const(s_offset),
                 I32Const(n),
-                Insn(InstructionType.TABLE_INIT, new Value(d_tableidx), new Value(s_elemidx)),
+                Insn(
+                    InstructionType.TABLE_INIT,
+                    new Value { s32 = d_tableidx },
+                    new Value { s32 = s_elemidx }
+                ),
                 Nop()
             );
 
@@ -271,7 +275,11 @@ namespace DergwasmTests
                 I32Const(d_offset),
                 I32Const(s_offset),
                 I32Const(n),
-                Insn(InstructionType.TABLE_INIT, new Value(d_tableidx), new Value(s_elemidx)),
+                Insn(
+                    InstructionType.TABLE_INIT,
+                    new Value { s32 = d_tableidx },
+                    new Value { s32 = s_elemidx }
+                ),
                 Nop()
             );
 
@@ -312,9 +320,9 @@ namespace DergwasmTests
             machine.SetProgram(
                 0,
                 I32Const(offset),
-                Insn(InstructionType.REF_FUNC, new Value(40)), // Maps to addr 50.
+                Insn(InstructionType.REF_FUNC, new Value { s32 = 40 }), // Maps to addr 50.
                 I32Const(n),
-                Insn(InstructionType.TABLE_FILL, new Value(tableidx)),
+                Insn(InstructionType.TABLE_FILL, new Value { s32 = tableidx }),
                 Nop()
             );
 
@@ -346,7 +354,7 @@ namespace DergwasmTests
                 I32Const(offset),
                 Insn(InstructionType.REF_FUNC, Value.RefOfFuncAddr(50)),
                 I32Const(n),
-                Insn(InstructionType.TABLE_FILL, new Value(tableidx)),
+                Insn(InstructionType.TABLE_FILL, new Value { s32 = tableidx }),
                 Nop()
             );
 
@@ -393,7 +401,11 @@ namespace DergwasmTests
                 I32Const(d_offset),
                 I32Const(s_offset),
                 I32Const(n),
-                Insn(InstructionType.TABLE_COPY, new Value(d_tableidx), new Value(s_tableidx)),
+                Insn(
+                    InstructionType.TABLE_COPY,
+                    new Value { s32 = d_tableidx },
+                    new Value { s32 = s_tableidx }
+                ),
                 Nop()
             );
 
@@ -431,7 +443,11 @@ namespace DergwasmTests
                 I32Const(d_offset),
                 I32Const(s_offset),
                 I32Const(n),
-                Insn(InstructionType.TABLE_COPY, new Value(d_tableidx), new Value(s_tableidx)),
+                Insn(
+                    InstructionType.TABLE_COPY,
+                    new Value { s32 = d_tableidx },
+                    new Value { s32 = s_tableidx }
+                ),
                 Nop()
             );
 
@@ -448,7 +464,11 @@ namespace DergwasmTests
 
             // 0: ELEM_DROP elemidx
             // 1: NOP
-            machine.SetProgram(0, Insn(InstructionType.ELEM_DROP, new Value(elemidx)), Nop());
+            machine.SetProgram(
+                0,
+                Insn(InstructionType.ELEM_DROP, new Value { s32 = elemidx }),
+                Nop()
+            );
 
             machine.Step();
 

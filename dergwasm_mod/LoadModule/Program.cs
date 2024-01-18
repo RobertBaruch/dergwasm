@@ -112,8 +112,8 @@ public class Program
         {
             Frame frame = new Frame(main as ModuleFunc, moduleInstance, null);
             frame.Label = new Label(1, 0);
-            frame.Push(new Value(0)); // argc
-            frame.Push(new Value(0)); // argv
+            frame.Push(new Value { s32 = 0 }); // argc
+            frame.Push(new Value { s32 = 0 }); // argv
             frame.InvokeFunc(machine, main);
         }
         catch (ExitTrap) { }
@@ -145,7 +145,7 @@ public class Program
         {
             Frame frame = new Frame(mp_js_do_str as ModuleFunc, moduleInstance, null);
             frame.Label = new Label(1, 0);
-            frame.Push(new Value(stackPtr)); // source
+            frame.Push(new Value { s32 = stackPtr }); // source
             frame.InvokeFunc(machine, mp_js_do_str);
         }
         catch (ExitTrap) { }
@@ -163,7 +163,7 @@ public class Program
         {
             Frame frame = new Frame(mp_js_init as ModuleFunc, moduleInstance, null);
             frame.Label = new Label(1, 0);
-            frame.Push(new Value(stackSizeBytes));
+            frame.Push(new Value { s32 = stackSizeBytes });
             frame.InvokeFunc(machine, mp_js_init);
         }
         catch (ExitTrap) { }
@@ -172,11 +172,12 @@ public class Program
     void RunMicropython(EmscriptenEnv emscriptenEnv)
     {
         InitMicropython(emscriptenEnv, 64 * 1024);
+        Console.WriteLine("Micropython initialized");
 
         string s = "print('hello world!')\n"; // The Python code to run
 
-        int stackPtr = AddUTF8StringToStack(emscriptenEnv, s);
-        MicropythonDoStr(emscriptenEnv, stackPtr);
+        int ptr = AddUTF8StringToStack(emscriptenEnv, s);
+        MicropythonDoStr(emscriptenEnv, ptr);
     }
 
     public static void Main(string[] args)

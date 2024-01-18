@@ -1,10 +1,10 @@
-﻿using FrooxEngine;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using FrooxEngine;
 
 namespace Derg
 {
@@ -877,7 +877,7 @@ namespace Derg
         public void emscripten_scan_registers(Frame frame, int scanPtr)
         {
             Console.WriteLine($"emscripten_scan_registers({scanPtr})");
-            throw new NotImplementedException();
+            // throw new NotImplementedException();
         }
 
         public int emscripten_resize_heap(Frame frame, int requestedSize) =>
