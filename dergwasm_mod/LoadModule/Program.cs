@@ -11,7 +11,7 @@ public class Program
     public Program(string filename)
     {
         machine = new Machine();
-        // machine.Debug = true;
+        machine.Debug = true;
         EmscriptenEnv emscriptenEnv = new EmscriptenEnv(machine);
         emscriptenEnv.RegisterHostFuncs();
 
@@ -49,8 +49,8 @@ public class Program
         }
 
         MaybeRunEmscriptenCtors();
-        // RunMain();
-        RunMicropython(emscriptenEnv);
+        RunMain();
+        // RunMicropython(emscriptenEnv);
     }
 
     void CheckForUnimplementedInstructions()
