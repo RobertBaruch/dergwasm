@@ -13,8 +13,22 @@ public class Program
         machine = new Machine();
         // machine.Debug = true;
         EmscriptenEnv emscriptenEnv = new EmscriptenEnv(machine);
-        new EmscriptenWasi(machine, emscriptenEnv).RegisterHostFuncs();
         emscriptenEnv.RegisterHostFuncs();
+
+        EmscriptenWasi emscriptenWasi = new EmscriptenWasi(machine, emscriptenEnv);
+        emscriptenWasi.RegisterHostFuncs();
+
+        ResoniteEnv resoniteEnv = new ResoniteEnv(machine, null, emscriptenEnv);
+        resoniteEnv.RegisterHostFuncs();
+
+        FilesystemEnv filesystemEnv = new FilesystemEnv(
+            machine,
+            null,
+            emscriptenEnv,
+            emscriptenWasi
+        );
+        filesystemEnv.RegisterHostFuncs();
+
         Module module;
 
         using (var stream = File.OpenRead(filename))
