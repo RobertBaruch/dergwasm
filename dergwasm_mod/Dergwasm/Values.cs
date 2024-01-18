@@ -77,9 +77,9 @@ namespace Derg
         [FieldOffset(8)]
         public ulong value_hi;
 
-        // This is highly expensive because it does boxing and unboxing. If you
-        // absolutely know the type of the value you're popping,
-        // then extract it yourself.
+        // This is highly expensive because it does boxing and unboxing. It takes about
+        // 4.5x the time to get a value this way. If you already know the type of the
+        // value you're popping, then extract it yourself.
         public T As<T>()
             where T : unmanaged
         {

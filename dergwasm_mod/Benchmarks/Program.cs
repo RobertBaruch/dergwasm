@@ -205,9 +205,36 @@ namespace DergwasmTests
         }
     }
 
+    // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3693/22H2/2022Update)
+    // Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
+    //   [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+    //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
+    //
+    // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
+    //
+    // | Method       | N     | Mean      | Error    | StdDev   | Ratio |
+    // |------------- |------ |----------:|---------:|---------:|------:|
+    // | PushPopInt   | 1000  |  12.56 us | 0.234 us | 0.219 us |  1.00 |
+    // |              |       |           |          |          |       |
+    // | PushPopAsInt | 1000  |  56.41 us | 0.756 us | 0.631 us |  1.00 |
+    // |              |       |           |          |          |       |
+    // | PushPopInt   | 10000 | 121.01 us | 0.692 us | 0.647 us |  1.00 |
+    // |              |       |           |          |          |       |
+    // | PushPopAsInt | 10000 | 588.64 us | 7.023 us | 6.569 us |  1.00 |
     [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
     public class PushPop : TestMachine
     {
+        Frame frame;
+
+        [Params(1000, 10000)]
+        public int N;
+
+        [GlobalSetup]
+        public void Setup()
+        {
+            frame = CreateFrame();
+        }
+
         // BenchmarkDotNet v0.13.10, Windows 11 (10.0.22621.2428/22H2/2022Update/SunValley2)
         // 11th Gen Intel Core i7-11700K 3.60GHz, 1 CPU, 16 logical and 8 physical cores
         //  [Host]               : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
@@ -219,11 +246,27 @@ namespace DergwasmTests
         // |----------- |---------:|---------:|---------:|---------:|------:|
         // | PushPopInt | 22.30 ns | 0.414 ns | 0.991 ns | 21.96 ns |  1.00 |
         [Benchmark]
-        public Value PushPopInt()
+        public int PushPopInt()
         {
-            Frame frame = CreateFrame();
-            frame.Push(new Value { s32 = 1 });
-            return frame.Pop();
+            int x = 0;
+            for (int i = 0; i < N; i++)
+            {
+                frame.Push(new Value { s32 = 1 });
+                x += frame.Pop().s32;
+            }
+            return x;
+        }
+
+        [Benchmark]
+        public int PushPopAsInt()
+        {
+            int x = 0;
+            for (int i = 0; i < N; i++)
+            {
+                frame.Push(new Value { s32 = 1 });
+                x += frame.Pop<int>();
+            }
+            return x;
         }
     }
 

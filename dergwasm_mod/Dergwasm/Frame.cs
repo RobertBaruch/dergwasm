@@ -95,9 +95,9 @@ namespace Derg
 
         public Value Pop() => value_stack.Pop();
 
-        // This is highly expensive because it does boxing and unboxing. If you
-        // absolutely know the type of the value you're popping,
-        // then extract it yourself from Pop().
+        // This is highly expensive because it does boxing and unboxing. It takes about
+        // 4.5x the time to get a value this way. If you already know the type of the
+        // value you're popping, then extract it yourself.
         public T Pop<T>()
             where T : unmanaged => Pop().As<T>();
 
