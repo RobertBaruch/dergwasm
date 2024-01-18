@@ -105,6 +105,20 @@ namespace Derg
 
         public void Push(bool val) => Push(new Value { u32 = val ? 1u : 0u });
 
+        public void Push(int val) => Push(new Value { s32 = val });
+
+        public void Push(uint val) => Push(new Value { u32 = val });
+
+        public void Push(long val) => Push(new Value { s64 = val });
+
+        public void Push(ulong val) => Push(new Value { u64 = val });
+
+        public void Push(float val) => Push(new Value { f32 = val });
+
+        public void Push(double val) => Push(new Value { f64 = val });
+
+        // This is about 1.7x the time of a direct push. If you already know the type of the
+        // value you're pushing, then create the value directly and push it.
         public void Push<R>(R ret)
         {
             switch (ret)
