@@ -25,13 +25,13 @@ namespace DergwasmTests
             machine.SetProgram(
                 0,
                 I32Const(offset),
-                Insn(insn, new Value(0), new Value(base_addr)),
+                Insn(insn, new Value { s32 = 0 }, new Value { s32 = base_addr }),
                 Nop()
             );
 
             machine.Step(2);
 
-            Assert.Equal(expected, machine.Frame.TopOfStack.U32);
+            Assert.Equal(expected, machine.Frame.TopOfStack.u32);
         }
 
         [Theory]
@@ -51,7 +51,7 @@ namespace DergwasmTests
             machine.SetProgram(
                 0,
                 I32Const(offset),
-                Insn(insn, new Value(0), new Value(base_addr)),
+                Insn(insn, new Value { s32 = 0 }, new Value { s32 = base_addr }),
                 Nop()
             );
 
@@ -78,13 +78,13 @@ namespace DergwasmTests
             machine.SetProgram(
                 0,
                 I32Const(offset),
-                Insn(insn, new Value(0), new Value(base_addr)),
+                Insn(insn, new Value { s32 = 0 }, new Value { s32 = base_addr }),
                 Nop()
             );
 
             machine.Step(2);
 
-            Assert.Equal(expected, machine.Frame.TopOfStack.U64);
+            Assert.Equal(expected, machine.Frame.TopOfStack.u64);
         }
 
         [Theory]
@@ -101,13 +101,17 @@ namespace DergwasmTests
             machine.SetProgram(
                 0,
                 I32Const(offset),
-                Insn(InstructionType.F32_LOAD, new Value(0), new Value(base_addr)),
+                Insn(
+                    InstructionType.F32_LOAD,
+                    new Value { s32 = 0 },
+                    new Value { s32 = base_addr }
+                ),
                 Nop()
             );
 
             machine.Step(2);
 
-            Assert.Equal(expected, machine.Frame.TopOfStack.F32);
+            Assert.Equal(expected, machine.Frame.TopOfStack.f32);
         }
 
         [Theory]
@@ -124,13 +128,17 @@ namespace DergwasmTests
             machine.SetProgram(
                 0,
                 I32Const(offset),
-                Insn(InstructionType.F64_LOAD, new Value(0), new Value(base_addr)),
+                Insn(
+                    InstructionType.F64_LOAD,
+                    new Value { s32 = 0 },
+                    new Value { s32 = base_addr }
+                ),
                 Nop()
             );
 
             machine.Step(2);
 
-            Assert.Equal(expected, machine.Frame.TopOfStack.F64);
+            Assert.Equal(expected, machine.Frame.TopOfStack.f64);
         }
 
         [Theory]
@@ -155,7 +163,7 @@ namespace DergwasmTests
                 0,
                 I32Const(offset),
                 I32Const(val),
-                Insn(insn, new Value(0), new Value(base_addr)),
+                Insn(insn, new Value { s32 = 0 }, new Value { s32 = base_addr }),
                 Nop()
             );
 
@@ -179,7 +187,11 @@ namespace DergwasmTests
                 0,
                 I32Const(offset),
                 F32Const(3.14f),
-                Insn(InstructionType.F32_STORE, new Value(0), new Value(base_addr)),
+                Insn(
+                    InstructionType.F32_STORE,
+                    new Value { s32 = 0 },
+                    new Value { s32 = base_addr }
+                ),
                 Nop()
             );
 
@@ -255,7 +267,7 @@ namespace DergwasmTests
                 0,
                 I32Const(offset),
                 I64Const(val),
-                Insn(insn, new Value(0), new Value(base_addr)),
+                Insn(insn, new Value { s32 = 0 }, new Value { s32 = base_addr }),
                 Nop()
             );
 
@@ -280,7 +292,11 @@ namespace DergwasmTests
                 0,
                 I32Const(offset),
                 F64Const(3.14),
-                Insn(InstructionType.F64_STORE, new Value(0), new Value(base_addr)),
+                Insn(
+                    InstructionType.F64_STORE,
+                    new Value { s32 = 0 },
+                    new Value { s32 = base_addr }
+                ),
                 Nop()
             );
 
@@ -300,11 +316,11 @@ namespace DergwasmTests
 
             // 0: MEMORY_SIZE 0
             // 1: NOP
-            machine.SetProgram(0, Insn(InstructionType.MEMORY_SIZE, new Value(0)), Nop());
+            machine.SetProgram(0, Insn(InstructionType.MEMORY_SIZE, new Value { s32 = 0 }), Nop());
 
             machine.Step();
 
-            Assert.Collection(machine.Frame.value_stack, v => Assert.Equal(sz, v.S32));
+            Assert.Collection(machine.Frame.value_stack, v => Assert.Equal(sz, v.s32));
         }
 
         [Theory]
@@ -327,13 +343,13 @@ namespace DergwasmTests
             machine.SetProgram(
                 0,
                 I32Const(delta),
-                Insn(InstructionType.MEMORY_GROW, new Value(0)),
+                Insn(InstructionType.MEMORY_GROW, new Value { s32 = 0 }),
                 Nop()
             );
 
             machine.Step(2);
 
-            Assert.Collection(machine.Frame.value_stack, v => Assert.Equal(expected_return, v.S32));
+            Assert.Collection(machine.Frame.value_stack, v => Assert.Equal(expected_return, v.s32));
 
             Assert.Equal(expected_size, machine.Memory0.Length);
         }
@@ -356,7 +372,7 @@ namespace DergwasmTests
                 I32Const(offset),
                 I32Const(value),
                 I32Const(sz),
-                Insn(InstructionType.MEMORY_FILL, new Value(0)),
+                Insn(InstructionType.MEMORY_FILL, new Value { s32 = 0 }),
                 Nop()
             );
 
@@ -382,7 +398,7 @@ namespace DergwasmTests
                 I32Const(offset),
                 I32Const(0),
                 I32Const(sz),
-                Insn(InstructionType.MEMORY_FILL, new Value(0)),
+                Insn(InstructionType.MEMORY_FILL, new Value { s32 = 0 }),
                 Nop()
             );
 
@@ -407,7 +423,7 @@ namespace DergwasmTests
                 I32Const(d_offset),
                 I32Const(s_offset),
                 I32Const(sz),
-                Insn(InstructionType.MEMORY_COPY, new Value(0)),
+                Insn(InstructionType.MEMORY_COPY, new Value { s32 = 0 }),
                 Nop()
             );
 
@@ -433,7 +449,7 @@ namespace DergwasmTests
                 I32Const(d_offset),
                 I32Const(s_offset),
                 I32Const(sz),
-                Insn(InstructionType.MEMORY_COPY, new Value(0)),
+                Insn(InstructionType.MEMORY_COPY, new Value { s32 = 0 }),
                 Nop()
             );
 
@@ -461,7 +477,11 @@ namespace DergwasmTests
                 I32Const(d_offset),
                 I32Const(s_offset),
                 I32Const(sz),
-                Insn(InstructionType.MEMORY_INIT, new Value(dataidx), new Value(0)),
+                Insn(
+                    InstructionType.MEMORY_INIT,
+                    new Value { s32 = dataidx },
+                    new Value { s32 = 0 }
+                ),
                 Nop()
             );
 
@@ -497,7 +517,11 @@ namespace DergwasmTests
                 I32Const(d_offset),
                 I32Const(s_offset),
                 I32Const(sz),
-                Insn(InstructionType.MEMORY_INIT, new Value(dataidx), new Value(0)),
+                Insn(
+                    InstructionType.MEMORY_INIT,
+                    new Value { s32 = dataidx },
+                    new Value { s32 = 0 }
+                ),
                 Nop()
             );
 
@@ -514,7 +538,11 @@ namespace DergwasmTests
 
             // 0: DATA_DROP dataidx
             // 1: NOP
-            machine.SetProgram(0, Insn(InstructionType.DATA_DROP, new Value(dataidx)), Nop());
+            machine.SetProgram(
+                0,
+                Insn(InstructionType.DATA_DROP, new Value { s32 = dataidx }),
+                Nop()
+            );
 
             machine.Step();
 

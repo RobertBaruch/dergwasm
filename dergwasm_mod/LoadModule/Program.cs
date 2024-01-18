@@ -13,8 +13,22 @@ public class Program
         machine = new Machine();
         // machine.Debug = true;
         EmscriptenEnv emscriptenEnv = new EmscriptenEnv(machine);
-        new EmscriptenWasi(machine, emscriptenEnv).RegisterHostFuncs();
         emscriptenEnv.RegisterHostFuncs();
+
+        EmscriptenWasi emscriptenWasi = new EmscriptenWasi(machine, emscriptenEnv);
+        emscriptenWasi.RegisterHostFuncs();
+
+        ResoniteEnv resoniteEnv = new ResoniteEnv(machine, null, emscriptenEnv);
+        resoniteEnv.RegisterHostFuncs();
+
+        FilesystemEnv filesystemEnv = new FilesystemEnv(
+            machine,
+            null,
+            emscriptenEnv,
+            emscriptenWasi
+        );
+        filesystemEnv.RegisterHostFuncs();
+
         Module module;
 
         using (var stream = File.OpenRead(filename))
@@ -98,8 +112,8 @@ public class Program
         {
             Frame frame = new Frame(main as ModuleFunc, moduleInstance, null);
             frame.Label = new Label(1, 0);
-            frame.Push(new Value(0)); // argc
-            frame.Push(new Value(0)); // argv
+            frame.Push(new Value { s32 = 0 }); // argc
+            frame.Push(new Value { s32 = 0 }); // argv
             frame.InvokeFunc(machine, main);
         }
         catch (ExitTrap) { }
@@ -131,7 +145,7 @@ public class Program
         {
             Frame frame = new Frame(mp_js_do_str as ModuleFunc, moduleInstance, null);
             frame.Label = new Label(1, 0);
-            frame.Push(new Value(stackPtr)); // source
+            frame.Push(new Value { s32 = stackPtr }); // source
             frame.InvokeFunc(machine, mp_js_do_str);
         }
         catch (ExitTrap) { }
@@ -149,7 +163,7 @@ public class Program
         {
             Frame frame = new Frame(mp_js_init as ModuleFunc, moduleInstance, null);
             frame.Label = new Label(1, 0);
-            frame.Push(new Value(stackSizeBytes));
+            frame.Push(new Value { s32 = stackSizeBytes });
             frame.InvokeFunc(machine, mp_js_init);
         }
         catch (ExitTrap) { }
@@ -158,11 +172,12 @@ public class Program
     void RunMicropython(EmscriptenEnv emscriptenEnv)
     {
         InitMicropython(emscriptenEnv, 64 * 1024);
+        Console.WriteLine("Micropython initialized");
 
         string s = "print('hello world!')\n"; // The Python code to run
 
-        int stackPtr = AddUTF8StringToStack(emscriptenEnv, s);
-        MicropythonDoStr(emscriptenEnv, stackPtr);
+        int ptr = emscriptenEnv.AllocateUTF8StringInMem(null, s);
+        MicropythonDoStr(emscriptenEnv, ptr);
     }
 
     public static void Main(string[] args)

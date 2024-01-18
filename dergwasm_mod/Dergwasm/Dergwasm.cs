@@ -300,7 +300,7 @@ namespace Derg
             {
                 Frame frame = new Frame(mp_js_init as ModuleFunc, moduleInstance, null);
                 frame.Label = new Label(1, 0);
-                frame.Push(new Value(stackSizeBytes));
+                frame.Push(new Value { s32 = stackSizeBytes });
                 frame.InvokeFunc(machine, mp_js_init);
                 Msg("Completed mp_js_init");
             }

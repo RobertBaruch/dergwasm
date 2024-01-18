@@ -10,12 +10,15 @@ namespace DergwasmTests
         {
             // 0: REF_NULL _
             // 1: NOP
-            machine.SetProgram(0, Insn(InstructionType.REF_NULL, new Value(0x6F)), Nop());
+            machine.SetProgram(0, Insn(InstructionType.REF_NULL, new Value { s32 = 0x6F }), Nop());
 
             machine.Step();
 
             Assert.Equal(1, machine.Frame.PC);
-            Assert.Collection(machine.Frame.value_stack, e => Assert.Equal(new Value(0, 0), e));
+            Assert.Collection(
+                machine.Frame.value_stack,
+                e => Assert.Equal(new Value { u64 = 0, value_hi = 0 }, e)
+            );
         }
 
         [Fact]
@@ -23,14 +26,18 @@ namespace DergwasmTests
         {
             // 0: REF_FUNC 1
             // 1: NOP
-            machine.SetProgram(0, Insn(InstructionType.REF_FUNC, new Value(1)), Nop());
+            machine.SetProgram(0, Insn(InstructionType.REF_FUNC, new Value { s32 = 1 }), Nop());
 
             machine.Step();
 
             Assert.Equal(1, machine.Frame.PC);
             Assert.Collection(
                 machine.Frame.value_stack,
-                e => Assert.Equal(new Value(11UL, (ulong)ReferenceValueType.FUNCREF), e)
+                e =>
+                    Assert.Equal(
+                        new Value { u64 = 11UL, value_hi = (ulong)ReferenceValueType.FUNCREF },
+                        e
+                    )
             );
         }
 
@@ -42,7 +49,7 @@ namespace DergwasmTests
             // 2: NOP
             machine.SetProgram(
                 0,
-                Insn(InstructionType.REF_NULL, new Value(0x6F)),
+                Insn(InstructionType.REF_NULL, new Value { s32 = 0x6F }),
                 Insn(InstructionType.REF_IS_NULL),
                 Nop()
             );
@@ -61,7 +68,7 @@ namespace DergwasmTests
             // 2: NOP
             machine.SetProgram(
                 0,
-                Insn(InstructionType.REF_FUNC, new Value(0)),
+                Insn(InstructionType.REF_FUNC, new Value { s32 = 0 }),
                 Insn(InstructionType.REF_IS_NULL),
                 Nop()
             );

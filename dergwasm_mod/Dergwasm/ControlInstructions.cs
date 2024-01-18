@@ -75,7 +75,7 @@ namespace Derg
 
         public static void If(Instruction instruction, Machine machine, Frame frame)
         {
-            bool cond = frame.Pop().Int != 0;
+            bool cond = frame.Pop().s32 != 0;
             if (cond)
             {
                 Block(instruction, machine, frame);
@@ -114,27 +114,27 @@ namespace Derg
 
         public static void Br(Instruction instruction, Machine machine, Frame frame)
         {
-            int levels = instruction.Operands[0].Int;
+            int levels = instruction.Operands[0].s32;
             BrLevels(machine, frame, levels);
         }
 
         public static void BrIf(Instruction instruction, Machine machine, Frame frame)
         {
-            bool cond = frame.Pop().Int != 0;
+            bool cond = frame.Pop().s32 != 0;
             if (cond)
                 Br(instruction, machine, frame);
         }
 
         public static void BrTable(Instruction instruction, Machine machine, Frame frame)
         {
-            int idx = (int)Math.Min(frame.Pop().U32, (uint)instruction.Operands.Length - 1);
-            int levels = instruction.Operands[idx].Int;
+            int idx = (int)Math.Min(frame.Pop().u32, (uint)instruction.Operands.Length - 1);
+            int levels = instruction.Operands[idx].s32;
             BrLevels(machine, frame, levels);
         }
 
         public static void Call(Instruction instruction, Machine machine, Frame frame)
         {
-            int idx = instruction.Operands[0].Int;
+            int idx = instruction.Operands[0].s32;
             // This fully executes the call. This way, we can throw an exception
             // and have the machine's frame stack automatically unwind.
             frame.InvokeFuncFromIndex(machine, idx);
@@ -142,11 +142,11 @@ namespace Derg
 
         public static void CallIndirect(Instruction instruction, Machine machine, Frame frame)
         {
-            int tableidx = instruction.Operands[1].Int;
-            int typeidx = instruction.Operands[0].Int;
+            int tableidx = instruction.Operands[1].s32;
+            int typeidx = instruction.Operands[0].s32;
             Table table = machine.GetTable(frame.GetTableAddrForIndex(tableidx));
             FuncType funcType = frame.GetFuncTypeForIndex(typeidx);
-            uint i = frame.Pop().U32;
+            uint i = frame.Pop().u32;
             if (i >= table.Elements.LongLength)
             {
                 throw new Trap(

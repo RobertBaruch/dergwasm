@@ -9,16 +9,7 @@ namespace DergwasmTests
         public TestMachine machine = new TestMachine();
         public List<Instruction> program;
 
-        public InstructionTestFixture()
-        {
-            //machine.Frame = new Frame(null, machine.FakeModuleInstance);
-            //// This frame collects any return values.
-            //ModuleFunc func = new ModuleFunc("test", "$-1", machine.GetFuncTypeFromIndex(0));
-            //func.Locals = new ValueType[] { ValueType.I32, ValueType.I32 };
-            //func.Code = new List<Instruction>();
-            //machine.Frame.Func = func;
-            //machine.Frame.Locals = new Value[func.Signature.args.Length + func.Locals.Length];
-        }
+        public InstructionTestFixture() { }
 
         public UnflattenedInstruction Insn(InstructionType type, params Value[] operands)
         {
@@ -38,32 +29,38 @@ namespace DergwasmTests
 
         public UnflattenedInstruction Return() => Insn(InstructionType.RETURN);
 
-        public UnflattenedInstruction Call(int v) => Insn(InstructionType.CALL, new Value(v));
+        public UnflattenedInstruction Call(int v) =>
+            Insn(InstructionType.CALL, new Value { s32 = v });
 
         public UnflattenedInstruction CallIndirect(int typeidx, int tableidx)
         {
-            return Insn(InstructionType.CALL_INDIRECT, new Value(typeidx), new Value(tableidx));
+            return Insn(
+                InstructionType.CALL_INDIRECT,
+                new Value { s32 = typeidx },
+                new Value { s32 = tableidx }
+            );
         }
 
         public UnflattenedInstruction I32Const(int v) =>
-            Insn(InstructionType.I32_CONST, new Value(v));
+            Insn(InstructionType.I32_CONST, new Value { s32 = v });
 
         public UnflattenedInstruction I32Const(uint v) =>
-            Insn(InstructionType.I32_CONST, new Value(v));
+            Insn(InstructionType.I32_CONST, new Value { u32 = v });
 
         public UnflattenedInstruction I64Const(long v) =>
-            Insn(InstructionType.I64_CONST, new Value(v));
+            Insn(InstructionType.I64_CONST, new Value { s64 = v });
 
         public UnflattenedInstruction I64Const(ulong v) =>
-            Insn(InstructionType.I64_CONST, new Value(v));
+            Insn(InstructionType.I64_CONST, new Value { u64 = v });
 
         public UnflattenedInstruction F32Const(float v) =>
-            Insn(InstructionType.F32_CONST, new Value(v));
+            Insn(InstructionType.F32_CONST, new Value { f32 = v });
 
         public UnflattenedInstruction F64Const(double v) =>
-            Insn(InstructionType.F64_CONST, new Value(v));
+            Insn(InstructionType.F64_CONST, new Value { f64 = v });
 
-        public UnflattenedInstruction Br(int levels) => Insn(InstructionType.BR, new Value(levels));
+        public UnflattenedInstruction Br(int levels) =>
+            Insn(InstructionType.BR, new Value { s32 = levels });
 
         // A block with zero args and zero returns.
         public UnflattenedInstruction VoidBlock(params UnflattenedInstruction[] instructions)
@@ -73,7 +70,7 @@ namespace DergwasmTests
                 new UnflattenedOperand[]
                 {
                     new UnflattenedBlockOperand(
-                        new Value(0UL, (ulong)BlockType.VOID_BLOCK),
+                        new Value { u64 = 0UL, value_hi = (ulong)BlockType.VOID_BLOCK },
                         new List<UnflattenedInstruction>(instructions),
                         new List<UnflattenedInstruction>()
                     ),
@@ -89,10 +86,11 @@ namespace DergwasmTests
                 new UnflattenedOperand[]
                 {
                     new UnflattenedBlockOperand(
-                        new Value(
-                            0UL,
-                            (ulong)BlockType.RETURNING_BLOCK | (ulong)ValueType.I32 << 2
-                        ),
+                        new Value
+                        {
+                            u64 = 0UL,
+                            value_hi = (ulong)BlockType.RETURNING_BLOCK | (ulong)ValueType.I32 << 2
+                        },
                         new List<UnflattenedInstruction>(instructions),
                         new List<UnflattenedInstruction>()
                     ),
@@ -108,7 +106,11 @@ namespace DergwasmTests
                 new UnflattenedOperand[]
                 {
                     new UnflattenedBlockOperand(
-                        new Value(0UL, (ulong)BlockType.TYPED_BLOCK | (1UL << 2)),
+                        new Value
+                        {
+                            u64 = 0UL,
+                            value_hi = (ulong)BlockType.TYPED_BLOCK | (1UL << 2)
+                        },
                         new List<UnflattenedInstruction>(instructions),
                         new List<UnflattenedInstruction>()
                     ),
@@ -124,7 +126,7 @@ namespace DergwasmTests
                 new UnflattenedOperand[]
                 {
                     new UnflattenedBlockOperand(
-                        new Value(0UL, (ulong)BlockType.VOID_BLOCK),
+                        new Value { u64 = 0UL, value_hi = (ulong)BlockType.VOID_BLOCK },
                         new List<UnflattenedInstruction>(instructions),
                         new List<UnflattenedInstruction>()
                     ),
@@ -143,7 +145,7 @@ namespace DergwasmTests
                 new UnflattenedOperand[]
                 {
                     new UnflattenedBlockOperand(
-                        new Value(0UL, (ulong)BlockType.VOID_BLOCK),
+                        new Value { u64 = 0UL, value_hi = (ulong)BlockType.VOID_BLOCK },
                         new List<UnflattenedInstruction>(instructions),
                         new List<UnflattenedInstruction>(else_instructions)
                     ),
@@ -159,7 +161,7 @@ namespace DergwasmTests
                 new UnflattenedOperand[]
                 {
                     new UnflattenedBlockOperand(
-                        new Value(0UL, (ulong)BlockType.VOID_BLOCK),
+                        new Value { u64 = 0UL, value_hi = (ulong)BlockType.VOID_BLOCK },
                         new List<UnflattenedInstruction>(instructions),
                         new List<UnflattenedInstruction>()
                     ),
@@ -175,7 +177,11 @@ namespace DergwasmTests
                 new UnflattenedOperand[]
                 {
                     new UnflattenedBlockOperand(
-                        new Value(0UL, (ulong)BlockType.TYPED_BLOCK | (1UL << 2)),
+                        new Value
+                        {
+                            u64 = 0UL,
+                            value_hi = (ulong)BlockType.TYPED_BLOCK | (1UL << 2)
+                        },
                         new List<UnflattenedInstruction>(instructions),
                         new List<UnflattenedInstruction>()
                     ),

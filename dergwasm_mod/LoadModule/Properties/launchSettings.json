@@ -3,7 +3,7 @@
     "LoadModule": {
       "commandName": "Project",
       "commandLineArgs": "firmware.wasm",
-      "workingDirectory": "F:\\dergwasm"
+      "workingDirectory": "C:\\Users\\rober\\Documents\\dergwasm"
     }
   }
 }

@@ -23,8 +23,8 @@ namespace DergwasmTests
         // and one memory (with one page).
         public TestMachine()
         {
-            Globals.Add(new Value(0));
-            Globals.Add(new Value(0));
+            Globals.Add(new Value { s32 = 0 });
+            Globals.Add(new Value { s32 = 0 });
 
             funcs = new List<Func>(new Func[500]);
             tables = new List<Table>(new Table[500]);

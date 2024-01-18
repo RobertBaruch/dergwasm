@@ -1,7 +1,7 @@
-﻿using Elements.Core;
-using FrooxEngine;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Elements.Core;
+using FrooxEngine;
 
 namespace Derg
 {
@@ -63,30 +63,28 @@ namespace Derg
                     {
                         int ptr = emscriptenEnv.AllocateUTF8StringInMem(null, stringField.Value);
                         allocations.Add(ptr);
-                        args.Add(new Value(ptr));
+                        args.Add(new Value { s32 = ptr });
                         DergwasmMachine.Msg($"String arg, ptr = 0x{ptr:X8}");
                         break;
                     }
 
                     if (c is ValueField<Slot> slotField)
                     {
-                        args.Add(new Value((uint)slotField.Value.ReferenceID));
-                        args.Add(new Value((uint)(slotField.Value.ReferenceID >> 32)));
+                        args.Add(new Value { u64 = (ulong)slotField.Value.ReferenceID });
                         DergwasmMachine.Msg($"Slot arg: ID {slotField.Value.ReferenceID}");
                         break;
                     }
 
                     if (c is ValueField<User> userField)
                     {
-                        args.Add(new Value((uint)userField.Value.ReferenceID));
-                        args.Add(new Value((uint)(userField.Value.ReferenceID >> 32)));
+                        args.Add(new Value { u64 = (ulong)userField.Value.ReferenceID });
                         DergwasmMachine.Msg($"User arg: ID {userField.Value.ReferenceID}");
                         break;
                     }
 
                     if (c is ValueField<bool> boolField)
                     {
-                        args.Add(new Value(boolField.Value));
+                        args.Add(new Value { u32 = boolField.Value ? 1u : 0u });
                         DergwasmMachine.Msg($"Bool arg: {boolField.Value}");
                         break;
                     }

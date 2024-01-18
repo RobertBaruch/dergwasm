@@ -6,6 +6,48 @@
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 	</PropertyGroup>
 
+	<PropertyGroup>
+		<ResonitePath>$(MSBuildThisFileDirectory)Resonite</ResonitePath>
+		<ResonitePath Condition="Exists('C:\Program Files (x86)\Steam\steamapps\common\Resonite\')">C:\Program Files (x86)\Steam\steamapps\common\Resonite\</ResonitePath>
+		<ResonitePath Condition="Exists('D:\Program Files (x86)\Steam\steamapps\common\Resonite\')">D:\Program Files (x86)\Steam\steamapps\common\Resonite\</ResonitePath>
+		<ResonitePath Condition="Exists('C:\SteamLibrary\steamapps\common\Resonite\')">C:\SteamLibrary\steamapps\common\Resonite\</ResonitePath>
+		<ResonitePath Condition="Exists('D:\SteamLibrary\steamapps\common\Resonite\')">D:\SteamLibrary\steamapps\common\Resonite\</ResonitePath>
+		<ResonitePath Condition="Exists('$(HOME)/.steam/steam/steamapps/common/Resonite/')">$(HOME)/.steam/steam/steamapps/common/Resonite/</ResonitePath>
+		<ResonitePath Condition="Exists('E:\Programs\Steam\steamapps\common\Resonite')">E:\Programs\Steam\steamapps\common\Resonite\</ResonitePath>
+		<ResonitePath Condition="Exists('F:\Steam\steamapps\common\Resonite')">F:\Steam\steamapps\common\Resonite\</ResonitePath>
+		<ResoniteCoreLibs>$(ResonitePath)\Resonite_Data\Managed</ResoniteCoreLibs>
+		<ResoniteNmlLibs>$(ResonitePath)\rml_libs</ResoniteNmlLibs>
+		<ResoniteNmlMods>$(ResonitePath)\rml_mods</ResoniteNmlMods>
+		<ResoniteLibs>$(ResonitePath)\Libraries</ResoniteLibs>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Reference Include="0Harmony">
+			<HintPath>$(ResoniteNmlLibs)\0Harmony.dll</HintPath>
+		</Reference>
+		<Reference Include="Elements.Assets">
+			<HintPath>$(ResoniteCoreLibs)\Elements.Assets.dll</HintPath>
+		</Reference>
+		<Reference Include="Elements.Core">
+			<HintPath>$(ResoniteCoreLibs)\Elements.Core.dll</HintPath>
+		</Reference>
+		<Reference Include="FrooxEngine">
+			<HintPath>$(ResoniteCoreLibs)\FrooxEngine.dll</HintPath>
+		</Reference>
+		<Reference Include="ProtoFlux.Core">
+			<HintPath>$(ResoniteCoreLibs)\ProtoFlux.Core.dll</HintPath>
+		</Reference>
+		<Reference Include="ProtoFlux.Nodes.FrooxEngine">
+			<HintPath>$(ResoniteCoreLibs)\ProtoFlux.Nodes.FrooxEngine.dll</HintPath>
+		</Reference>
+		<Reference Include="ResoniteModLoader">
+			<HintPath>$(ResoniteLibs)\ResoniteModLoader.dll</HintPath>
+		</Reference>
+		<Reference Include="SkyFrost.Base">
+			<HintPath>$(ResoniteCoreLibs)\SkyFrost.Base.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+
 	<ItemGroup>
 		<ProjectReference Include="..\Dergwasm\Dergwasm.csproj" />
 	</ItemGroup>
