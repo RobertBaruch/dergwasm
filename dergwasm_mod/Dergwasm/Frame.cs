@@ -91,7 +91,7 @@ namespace Derg
             get => Func.Code;
         }
 
-        public Value TopOfStack => value_stack.Last();
+        public Value TopOfStack => value_stack.First();
 
         public Value Pop() => value_stack.Pop();
 

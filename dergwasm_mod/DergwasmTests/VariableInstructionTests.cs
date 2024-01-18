@@ -68,6 +68,27 @@ namespace DergwasmTests
             Assert.Equal(1, machine.Frame.Locals[localidx].s32);
         }
 
+        [Fact]
+        public void TestLocalTeeUsesTopOfStack()
+        {
+            // 0: I32_CONST 2
+            // 1: I32_CONST 1
+            // 2: LOCAL_TEE 0
+            // 3: NOP
+            machine.SetProgram(
+                TestMachine.VoidType,
+                I32Const(2),
+                I32Const(1),
+                Insn(InstructionType.LOCAL_TEE, new Value { s32 = 0 }),
+                Nop()
+            );
+
+            machine.Step(3);
+
+            Assert.Equal(1, machine.Frame.TopOfStack.s32);
+            Assert.Equal(1, machine.Frame.Locals[0].s32);
+        }
+
         [Theory]
         [InlineData(10, 1)]
         [InlineData(11, 2)]
