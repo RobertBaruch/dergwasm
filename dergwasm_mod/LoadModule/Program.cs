@@ -11,7 +11,7 @@ public class Program
     public Program(string filename)
     {
         machine = new Machine();
-        machine.Debug = true;
+        // machine.Debug = true;
         EmscriptenEnv emscriptenEnv = new EmscriptenEnv(machine);
         emscriptenEnv.RegisterHostFuncs();
 
