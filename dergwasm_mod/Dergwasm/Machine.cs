@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using Derg.Wasm;
 
 namespace Derg
 {
@@ -16,6 +16,8 @@ namespace Derg
         public List<Value> Globals = new List<Value>();
         public List<Memory> memories = new List<Memory>();
         public List<byte[]> dataSegments = new List<byte[]>();
+
+        public IWasmAllocator Allocator;
 
         public unsafe T MemGet<T>(uint ea)
             where T : unmanaged

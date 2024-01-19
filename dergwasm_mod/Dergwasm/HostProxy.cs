@@ -2,11 +2,11 @@
 
 namespace Derg
 {
-    public class HostProxy
+    public abstract class HostProxy
     {
         // Invokes a host function. The given frame contains the arguments to the function in its locals,
         // and the return value will be pushed onto the frame's stack.
-        public virtual void Invoke(Machine machine, Frame frame) { }
+        public abstract void Invoke(Machine machine, Frame frame);
 
         public virtual int NumArgs() => 0;
 
@@ -368,5 +368,26 @@ namespace Derg
         public override int NumArgs() => 6;
 
         public override int Arity() => 1;
+    }
+
+    public class CalculatedHostProxy : HostProxy
+    {
+        private readonly Action<Machine, Frame> _method;
+
+        private readonly int _numArgs;
+        private readonly int _arity;
+
+        public CalculatedHostProxy(Action<Machine, Frame> method, int numArgs, int arity)
+        {
+            _method = method;
+            _numArgs = numArgs;
+            _arity = arity;
+        }
+
+        public override void Invoke(Machine machine, Frame frame) => _method(machine, frame);
+
+        public override int NumArgs() => _numArgs;
+
+        public override int Arity() => _arity;
     }
 }

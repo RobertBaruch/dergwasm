@@ -17,6 +17,8 @@ namespace Derg.Wasm
         }
 
         public Pointer<T> Reinterpret<T>() where T : unmanaged => new Pointer<T>(Ptr);
+
+        public Buffer<T> Reinterpret<T>(int length) where T : unmanaged => new Buffer<T>(Ptr, length);
     }
 
     [StructLayout(LayoutKind.Sequential)]

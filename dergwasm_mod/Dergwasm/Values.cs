@@ -158,6 +158,37 @@ namespace Derg
             }
         }
 
+        public static Value From<T>(T val)
+        {
+            switch (val)
+            {
+                case bool v:
+                    return new Value(v);
+                case byte v:
+                    return new Value(v);
+                case sbyte v:
+                    return new Value(v);
+                case short v:
+                    return new Value(v);
+                case ushort v:
+                    return new Value(v);
+                case int v:
+                    return new Value(v);
+                case uint v:
+                    return new Value(v);
+                case long v:
+                    return new Value(v);
+                case ulong v:
+                    return new Value(v);
+                case float v:
+                    return new Value(v);
+                case double v:
+                    return new Value(v);
+                default:
+                    throw new Exception($"Unknown type {typeof(T)}");
+            }
+        }
+
         public unsafe float F32
         {
             get
@@ -344,7 +375,7 @@ namespace Derg
 
         public override string ToString()
         {
-            return $"({string.Join(", ", args)}) -> ({string.Join(", ", returns)})";
+            return $"({string.Join(", ", args ?? Array.Empty<ValueType>())}) -> ({string.Join(", ", returns ?? Array.Empty<ValueType>())})";
         }
     }
 

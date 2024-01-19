@@ -21,5 +21,15 @@ namespace Derg.Mem
                 *(T*)p = obj;
             }
         }
+
+        public Value ToValue(in T obj, in MemoryContext ctx)
+        {
+            return Value.From(obj);
+        }
+
+        public T FromValue(in Value value, in MemoryContext ctx)
+        {
+            return value.As<T>();
+        }
     }
 }
