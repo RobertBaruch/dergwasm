@@ -37,10 +37,6 @@ namespace DergwasmTests
         public void GetSyncValueTest()
         {
             var testComponent = new TestComponent(world);
-            FieldInfo fieldInfo = testComponent
-                .GetType()
-                .GetField("Value", BindingFlags.Instance | BindingFlags.Public);
-            fieldInfo.SetValue(testComponent, new Sync<int> { Value = 1 });
             Assert.Equal(1, ComponentUtils.GetFieldValue(testComponent, "Value"));
         }
     }
