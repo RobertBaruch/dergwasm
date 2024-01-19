@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Elements.Core;
 using FrooxEngine;
 
@@ -326,6 +327,67 @@ namespace Derg
             Component c = FromRefID<Component>(component_id);
             string typeName = c?.GetType().GetNiceName() ?? "";
             return emscriptenEnv.AllocateUTF8StringInMem(frame, typeName);
+        }
+
+        // Fields of components are Sync, SyncRef, or SyncDelegate.
+        //
+        // Sync<T> fields contain values, and are SyncField<T>.
+        // SyncRef<T> fields are SyncField<RefID>, where a SyncField contains a field reference (?).
+        // SyncDelegate fields are SyncField<WorldDelegate>.
+        // A WorldDelegate is a {target RefID, method string, type} tuple.
+        //
+        // Some fields are actually properties.
+        public int component__get_field_value(
+            Frame frame,
+            ulong component_id,
+            int namePtr,
+            int dataPtrPtr
+        )
+        {
+            object value;
+
+            Component component = FromRefID<Component>(component_id);
+            if (component == null)
+                return 0;
+            string fieldName = emscriptenEnv.GetUTF8StringFromMem(namePtr);
+
+            Type componentType = component.GetType();
+            PropertyInfo propertyInfo = componentType.GetProperty(fieldName);
+            if (propertyInfo != null)
+            {
+                value = propertyInfo.GetValue(component);
+            }
+            else
+            {
+                // Then, check if the name is a public field.
+                FieldInfo fieldInfo = componentType.GetField(
+                    fieldName,
+                    BindingFlags.Instance | BindingFlags.Public
+                );
+                if (fieldInfo == null)
+                    return -1;
+                value = fieldInfo.GetValue(component);
+
+                if (value.GetType().IsOfGenericType(typeof(SyncField<>)))
+                {
+                    // If the field is a SyncField, we need to get the value of the Value property.
+                    value = value.GetType().GetProperty("Value").GetValue(value);
+                }
+            }
+
+            int len;
+            int dataPtr = SimpleSerialization.Serialize(
+                machine,
+                emscriptenEnv,
+                frame,
+                value,
+                out len
+            );
+            if (len == 0)
+                return 0;
+
+            machine.MemSet(dataPtrPtr, dataPtr);
+            return len;
         }
 
         public int value_field__get_value(Frame frame, ulong component_id, int dataPtrPtr)
