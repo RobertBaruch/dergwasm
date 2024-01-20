@@ -30,5 +30,31 @@ namespace Derg
             }
             return null;
         }
+
+        public static bool SetFieldValue(Component component, string fieldName, object value)
+        {
+            Type componentType = component.GetType();
+            PropertyInfo propertyInfo = componentType.GetProperty(fieldName);
+            if (propertyInfo != null)
+            {
+                propertyInfo.SetValue(component, value);
+                return false;
+            }
+
+            FieldInfo fieldInfo = componentType.GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.Public
+            );
+            if (fieldInfo == null)
+                return false;
+            object syncValue = fieldInfo.GetValue(component);
+
+            if (syncValue.GetType().IsOfGenericType(typeof(SyncField<>)))
+            {
+                syncValue.GetType().GetProperty("Value").SetValue(syncValue, value);
+                return true;
+            }
+            return false;
+        }
     }
 }

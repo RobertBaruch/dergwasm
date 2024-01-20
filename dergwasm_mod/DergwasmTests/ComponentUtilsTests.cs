@@ -1,5 +1,6 @@
 ﻿using System;
-// using Derg;
+using System.Reflection;
+using Derg;
 using FrooxEngine;
 using Xunit;
 
@@ -22,15 +23,46 @@ namespace DergwasmTests
 
         public ComponentUtilsTests()
         {
-            World world = World.JoinSession(null, new Uri[] { });
-            Assert.NotNull(world.ConnectorManager);
+            //World world = World.JoinSession(null, new Uri[] { });
+            //Assert.NotNull(world.ConnectorManager);
         }
 
         [Fact]
         public void GetSyncValueTest()
         {
-            var testComponent = new TestComponent(world);
-            // Assert.Equal(1, ComponentUtils.GetFieldValue(testComponent, "Value"));
+            var testComponent = new ValueField<int>();
+            var intField = new Sync<int>();
+
+            FieldInfo fieldInfo = testComponent.GetType().GetField("Value");
+            fieldInfo.SetValue(testComponent, intField);
+
+            fieldInfo = typeof(Sync<int>).GetField(
+                "_value",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            );
+            fieldInfo.SetValue(intField, 1);
+
+            Assert.Equal(1, ComponentUtils.GetFieldValue(testComponent, "Value"));
+        }
+
+        [Fact]
+        public void SetSyncValueTest()
+        {
+            var testComponent = new ValueField<int>();
+            var intField = new Sync<int>();
+
+            FieldInfo fieldInfo = testComponent.GetType().GetField("Value");
+            fieldInfo.SetValue(testComponent, intField);
+
+            fieldInfo = typeof(Sync<int>).GetField(
+                "_value",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            );
+            fieldInfo.SetValue(intField, 1);
+
+            ComponentUtils.SetFieldValue(testComponent, "Value", 12);
+
+            Assert.Equal(12, ComponentUtils.GetFieldValue(testComponent, "Value"));
         }
     }
 }
