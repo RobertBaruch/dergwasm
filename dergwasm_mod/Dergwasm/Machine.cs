@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Derg.Modules;
 using Derg.Wasm;
 
 namespace Derg
@@ -16,6 +17,8 @@ namespace Derg
         public List<Value> Globals = new List<Value>();
         public List<Memory> memories = new List<Memory>();
         public List<byte[]> dataSegments = new List<byte[]>();
+
+        public List<IHostModule> HostModules = new List<IHostModule>();
 
         public IWasmAllocator Allocator;
 

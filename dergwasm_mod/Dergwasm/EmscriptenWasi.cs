@@ -2,64 +2,17 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using Derg.Mem;
+using Derg.Modules;
+using Derg.Wasm;
 
 namespace Derg
 {
+    [Mod("wasi_snapshot_preview1")]
     public class EmscriptenWasi
     {
-        Machine machine;
-        public EmscriptenEnv emscriptenEnv;
         public Dictionary<int, Stream> streams = new Dictionary<int, Stream>();
-
-        public EmscriptenWasi(Machine machine, EmscriptenEnv emscriptenEnv)
-        {
-            this.machine = machine;
-            this.emscriptenEnv = emscriptenEnv;
-        }
-
-        public void RegisterHostFuncs()
-        {
-            machine.RegisterReturningHostFunc<int, int, int>(
-                "wasi_snapshot_preview1",
-                "environ_get",
-                EnvironGet
-            );
-            machine.RegisterReturningHostFunc<int, int, int>(
-                "wasi_snapshot_preview1",
-                "environ_sizes_get",
-                EnvironSizesGet
-            );
-
-            machine.RegisterVoidHostFunc<int>("wasi_snapshot_preview1", "proc_exit", ProcExit);
-            machine.RegisterReturningHostFunc<int, int, int, int, int>(
-                "wasi_snapshot_preview1",
-                "fd_write",
-                FdWrite
-            );
-            machine.RegisterReturningHostFunc<int, long, uint, int, int>(
-                "wasi_snapshot_preview1",
-                "fd_seek",
-                FdSeek
-            );
-            machine.RegisterReturningHostFunc<int, int, int, int, int>(
-                "wasi_snapshot_preview1",
-                "fd_read",
-                FdRead
-            );
-            machine.RegisterReturningHostFunc<int, int>(
-                "wasi_snapshot_preview1",
-                "fd_close",
-                FdClose
-            );
-            machine.RegisterReturningHostFunc<int, int>(
-                "wasi_snapshot_preview1",
-                "fd_sync",
-                FdSync
-            );
-        }
 
         public class Stream
         {
@@ -104,6 +57,7 @@ namespace Derg
         //      termination of the program. Any other values are dependent on the environment.
         //
         // Does not return.
+        [ModFn("proc_exit")]
         void ProcExit(Frame frame, int exit_code)
         {
             //Console.WriteLine(
@@ -113,6 +67,7 @@ namespace Derg
             throw new ExitTrap(exit_code);
         }
 
+        [ModFn("environ_get")]
         int EnvironGet(Frame frame, int environPtrPtr, int environBufPtr)
         {
             //throw new Trap(
@@ -121,6 +76,7 @@ namespace Derg
             return 0;
         }
 
+        [ModFn("environ_sizes_get")]
         int EnvironSizesGet(Frame frame, int argcPtr, int argvBufSizePtr)
         {
             //throw new Trap(
@@ -164,7 +120,8 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdWrite(Frame frame, int fd, int iov, int iovcnt, int nwrittenPtr)
+        [ModFn("fd_write")]
+        int FdWrite(in MemoryContext ctx, int fd, int iov, int iovcnt, int nwrittenPtr)
         {
             if (iov == 0)
             {
@@ -175,13 +132,17 @@ namespace Derg
                 return -Errno.EBADF;
             }
 
-            Memory mem = machine.GetMemoryFromIndex(0);
-
-            MemoryStream iovStream = new MemoryStream(mem.Data);
-            iovStream.Position = iov;
-            BinaryReader iovReader = new BinaryReader(iovStream);
+            var buffer = new Buffer<Wasm.Buffer>(iov, iovcnt);
 
             uint nwritten = 0;
+
+            foreach (var buf in ctx.BufferView(buffer))
+            {
+                var castBuf = buf.Reinterpret<byte>();
+                var marshaller = new TerminatedUtf8Marshaller();
+                var str = marshaller.GetString(castBuf.ToPointer(), in ctx);
+                nwritten += castBuf.Length;
+            }
 
             for (int i = 0; i < iovcnt; i++)
             {
@@ -229,7 +190,8 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdSeek(Frame frame, int fd, long offset, uint whence, int newOffsetPtr)
+        [ModFn("fd_seek")]
+        int FdSeek(in MemoryContext ctx, int fd, long offset, uint whence, Pointer<uint> newOffsetPtr)
         {
             if (!streams.ContainsKey(fd))
             {
@@ -283,6 +245,7 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
+        [ModFn("fd_read")]
         int FdRead(Frame frame, int fd, int iov, int iovcnt, int nreadPtr)
         {
             if (iov == 0)
@@ -344,6 +307,7 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
+        [ModFn("fd_close")]
         int FdClose(Frame frame, int fd) => fd_close(fd);
 
         // Syncs the file to disk.
@@ -353,6 +317,7 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
+        [ModFn("fd_sync")]
         int FdSync(Frame frame, int fd) => 0;
     }
 }

@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using Derg.Mem;
 
 namespace Derg.Wasm
 {
@@ -26,6 +25,8 @@ namespace Derg.Wasm
         public readonly int Ptr;
         public readonly int Length;
 
+        public unsafe int ByteLength() => Length * sizeof(T);
+
         public Buffer(int ptr, int length)
         {
             Ptr = ptr;
@@ -34,6 +35,6 @@ namespace Derg.Wasm
 
         public Pointer<T> ToPointer() => new Pointer<T>(Ptr);
 
-        public BufferView<T> ToView(Memory mem) => new BufferView<T>(this, mem);
+        public static implicit operator Buffer(Buffer<T> p) => new Buffer(p.Ptr, p.Length);
     }
 }

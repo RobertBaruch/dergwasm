@@ -11,6 +11,7 @@ namespace Derg.Mem
         private IWasmAllocator Allocator => _machine.Allocator;
         private Memory Memory => _machine.memories[0];
 
+        // This is called in a reflection context.
         public MemoryContext(Machine machine, Frame frame)
         {
             _machine = machine;
@@ -22,14 +23,14 @@ namespace Derg.Mem
             return Allocator.Malloc(_frame, sizeof(T)).Reinterpret<T>();
         }
 
-        public unsafe Buffer<byte> Allocate(int size)
+        public unsafe Buffer<T> Allocate<T>(int length) where T : unmanaged
         {
-            return Allocator.Malloc(_frame, size).Reinterpret<byte>(size);
+            return Allocator.Malloc(_frame, sizeof(T) * length).Reinterpret<T>().ToBuffer(length);
         }
 
-        public unsafe BufferView<T> BufferView<T>(Buffer<T> buffer) where T : unmanaged
+        public Buffer<byte> Allocate(int size)
         {
-            return buffer.ToView(Memory);
+            return Allocator.Malloc(_frame, size).Reinterpret<byte>(size);
         }
 
         /// <summary>
@@ -39,14 +40,9 @@ namespace Derg.Mem
         /// </summary>
         /// <param name="start">A pointer to the start of the block of memory.</param>
         /// <returns>A span from start to the end of memory.</returns>
-        public unsafe Memory<byte> RemainingMemory(Pointer<byte> start)
+        public Memory<byte> RemainingMemory(Pointer<byte> start)
         {
             return Memory.AsMemory().Slice(start.Ptr);
-        }
-
-        public T TryRead<T>(Pointer<T> ptr) where T : unmanaged
-        {
-            return ptr.ToBuffer().ToView(Memory)[0];
         }
     }
 }

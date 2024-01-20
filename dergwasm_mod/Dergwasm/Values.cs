@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Derg.Wasm;
 using LEB128;
 
 namespace Derg
@@ -53,10 +54,10 @@ namespace Derg
     // on the correct types, it means that we don't have to store type information.
     //
     // Note: block operands are not values on the stack, but rather values in a block's operands.
-    public struct Value
+    public readonly struct Value
     {
-        public ulong value_lo;
-        public ulong value_hi;
+        public readonly ulong value_lo;
+        public readonly ulong value_hi;
 
         public Value(ulong value_lo, ulong value_hi)
         {
@@ -184,6 +185,8 @@ namespace Derg
                     return new Value(v);
                 case double v:
                     return new Value(v);
+                case Pointer v:
+                    return new Value(v.Ptr);
                 default:
                     throw new Exception($"Unknown type {typeof(T)}");
             }

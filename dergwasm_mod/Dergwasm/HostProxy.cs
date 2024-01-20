@@ -370,14 +370,14 @@ namespace Derg
         public override int Arity() => 1;
     }
 
-    public class CalculatedHostProxy : HostProxy
+    public class ActionHostProxy : HostProxy
     {
         private readonly Action<Machine, Frame> _method;
 
         private readonly int _numArgs;
         private readonly int _arity;
 
-        public CalculatedHostProxy(Action<Machine, Frame> method, int numArgs, int arity)
+        public ActionHostProxy(Action<Machine, Frame> method, int numArgs, int arity)
         {
             _method = method;
             _numArgs = numArgs;

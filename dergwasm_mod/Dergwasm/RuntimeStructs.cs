@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading.Tasks;
+using Derg.Wasm;
 using LEB128;
 
 namespace Derg
@@ -235,5 +238,45 @@ namespace Derg
         }
 
         public Memory<byte> AsMemory() => new Memory<byte>(Data);
+
+        public PinnedMemoryView PinnedView() => new PinnedMemoryView(this);
+    }
+
+    public readonly unsafe struct PinnedMemoryView : IDisposable
+    {
+        private readonly GCHandle _handle;
+        private readonly void* _ptr;
+        private readonly int _size;
+
+        public Span<T> Span<T>(Pointer<T> pointer) where T : unmanaged
+        {
+            return Span(pointer.ToBuffer());
+        }
+
+        public Span<T> Span<T>(Buffer<T> buffer) where T : unmanaged
+        {
+            if (buffer.Ptr < 0)
+            {
+                throw new IndexOutOfRangeException("Buffer pointer was negative");
+            }
+            if (_size <= buffer.Ptr + buffer.ByteLength())
+            {
+                throw new IndexOutOfRangeException("Buffer would have reached outside of memory");
+            }
+
+            return new Span<T>(Unsafe.Add<byte>(_ptr, buffer.Ptr), buffer.Length);
+        }
+
+        public PinnedMemoryView(Memory memory)
+        {
+            _handle = GCHandle.Alloc(memory.Data, GCHandleType.Pinned);
+            _ptr = (void*)_handle.AddrOfPinnedObject();
+            _size = memory.Data.Length;
+        }
+
+        public void Dispose()
+        {
+            _handle.Free();
+        }
     }
 }

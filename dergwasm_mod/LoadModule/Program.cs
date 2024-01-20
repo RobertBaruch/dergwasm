@@ -13,6 +13,7 @@ public class Program
         machine = new Machine();
         // machine.Debug = true;
         EmscriptenEnv emscriptenEnv = new EmscriptenEnv(machine);
+        machine.Allocator = emscriptenEnv;
         new EmscriptenWasi(machine, emscriptenEnv).RegisterHostFuncs();
         emscriptenEnv.RegisterHostFuncs();
         Module module;

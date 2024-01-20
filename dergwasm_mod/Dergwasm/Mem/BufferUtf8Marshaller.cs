@@ -4,9 +4,9 @@ using Derg.Wasm;
 
 namespace Derg.Mem
 {
-    public readonly struct TerminatedUtf8Marshaller : IMarshaller<string>
+    public readonly struct BufferUtf8Marshaller : IMarshaller<string>
     {
-        private readonly BlitMarshaller<Pointer> PtrMarshaller;
+        private readonly BlitMarshaller<Wasm.Buffer> PtrMarshaller;
 
         public int Length(in string obj) => PtrMarshaller.Length(default);
 
@@ -21,12 +21,12 @@ namespace Derg.Mem
             return buffer;
         }
 
-        public unsafe string GetString(Pointer<byte> ptr, in MemoryContext ctx)
+        public unsafe string GetString(Buffer<byte> ptr, in MemoryContext ctx)
         {
-            var buff = ctx.RemainingMemory(ptr);
-            fixed (byte* p = buff.Span)
+            var view = ctx.View(ptr);
+            fixed (byte* p = view)
             {
-                return Encoding.UTF8.GetString(p, buff.Length);
+                return Encoding.UTF8.GetString(p, firstNull);
             }
         }
 
@@ -34,7 +34,7 @@ namespace Derg.Mem
         {
             var buffer = PutString(obj, in ctx);
 
-            PtrMarshaller.ToMem(buffer.ToPointer(), memory, in ctx);
+            PtrMarshaller.ToMem(buffer, memory, in ctx);
         }
 
         public unsafe string FromMem(ReadOnlySpan<byte> memory, in MemoryContext ctx)

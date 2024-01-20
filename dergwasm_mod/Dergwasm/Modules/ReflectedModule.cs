@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing.Text;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -8,7 +7,7 @@ using Derg.Mem;
 
 namespace Derg.Modules
 {
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Class)]
     public class ModAttribute : Attribute
     {
         public string DefaultModule { get; }
@@ -19,7 +18,7 @@ namespace Derg.Modules
         }
     }
 
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Method)]
     public class ModFnAttribute : Attribute
     {
         public string Name { get; }
@@ -32,16 +31,16 @@ namespace Derg.Modules
         }
     }
 
-    public class ReflectedModule<T> where T : class
+    public class ReflectedModule<T> : IHostModule where T : class
     {
-        private static readonly List<Func<T, HostFunc>> _reflectedFuncs;
+        private static readonly List<Func<T, HostFunc>> ReflectedFuncs;
 
         static ReflectedModule()
         {
             var modAttr = typeof(T).GetCustomAttribute<ModAttribute>();
             var defaultModule = modAttr?.DefaultModule ?? "env";
 
-            _reflectedFuncs = new List<Func<T, HostFunc>>();
+            ReflectedFuncs = new List<Func<T, HostFunc>>();
             foreach (var method in typeof(T).GetMethods())
             {
                 var modFnAttr = method.GetCustomAttribute<ModFnAttribute>();
@@ -50,7 +49,7 @@ namespace Derg.Modules
                     continue;
                 }
 
-                _reflectedFuncs.Add(ReflectCallSite(modFnAttr, method, defaultModule));
+                ReflectedFuncs.Add(ReflectCallSite(modFnAttr, method, defaultModule));
             }
         }
 
@@ -98,25 +97,24 @@ namespace Derg.Modules
                 Expression.Call(context, method, parameters));
 
             var funcCtor = Expression.New(typeof(HostFunc).GetConstructors().First(),
-                Expression.Constant(name),
                 Expression.Constant(module),
+                Expression.Constant(name),
                 Expression.Constant(new FuncType()),
-                Expression.New(typeof(CalculatedHostProxy).GetConstructors().First(),
+                Expression.New(typeof(ActionHostProxy).GetConstructors().First(),
                     Expression.Lambda<Action<Machine, Frame>>(body, machine, frame),
                     Expression.Constant(argsCount),
                     Expression.Constant(/*arity*/0))
                 );
 
             var lambda = Expression.Lambda<Func<T, HostFunc>>(funcCtor, context);
-
             return lambda.Compile();
         }
 
-        public Memory<HostFunc> Functions { get; }
+        public List<HostFunc> Functions { get; }
 
         public ReflectedModule(T self)
         {
-            Functions = new Memory<HostFunc>(_reflectedFuncs.Select(f => f(self)).ToArray());
+            Functions = ReflectedFuncs.Select(f => f(self)).ToList();
         }
     }
 }

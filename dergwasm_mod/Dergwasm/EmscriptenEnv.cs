@@ -1,11 +1,6 @@
-﻿using Derg.Mem;
-using FrooxEngine;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
+﻿using System;
 using System.Text;
-using System.Threading.Tasks;
+using Derg.Wasm;
 
 namespace Derg
 {
@@ -30,7 +25,7 @@ namespace Derg
     }
 
     // Host environment expected by Emscripten.
-    public class EmscriptenEnv
+    public class EmscriptenEnv : IWasmAllocator
     {
         public Machine machine;
         public Action<string> outputWriter = null;
@@ -52,12 +47,17 @@ namespace Derg
 
         // Allocates `size` bytes in WASM memory and returns the pointer to it.
         // Virtual for testing.
-        public virtual int Malloc(Frame frame, int size)
+        public virtual Pointer Malloc(Frame frame, int size)
         {
             if (frame == null)
                 frame = EmptyFrame();
 
-            return malloc(frame, size);
+            return new Pointer(malloc(frame, size));
+        }
+
+        public void Free(Frame frame, Pointer buffer)
+        {
+            free(frame, buffer.Ptr);
         }
 
         // Allocates a UTF-8 encoded string in WASM memory and returns the pointer to it.

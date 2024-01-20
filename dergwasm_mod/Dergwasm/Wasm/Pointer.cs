@@ -1,3 +1,4 @@
+using Derg.Mem;
 using System.Runtime.InteropServices;
 
 namespace Derg.Wasm
@@ -10,6 +11,10 @@ namespace Derg.Wasm
     public readonly struct Pointer
     {
         public readonly int Ptr;
+
+        public bool Valid => Ptr != 0;
+
+        public static Pointer Null => new Pointer(0);
 
         public Pointer(int ptr)
         {
@@ -26,12 +31,16 @@ namespace Derg.Wasm
     {
         public readonly int Ptr;
 
+        public bool Valid => Ptr != 0;
+
+        public static Pointer<T> Null => new Pointer<T>(0);
+
         public Pointer(int ptr)
         {
             Ptr = ptr;
         }
 
-        public Buffer<T> ToBuffer() => new Buffer<T>(Ptr, 1);
+        public Buffer<T> ToBuffer(int length = 1) => new Buffer<T>(Ptr, length);
 
         public Pointer<TNew> Reinterpret<TNew>() where TNew : unmanaged => new Pointer<TNew>(Ptr);
 
