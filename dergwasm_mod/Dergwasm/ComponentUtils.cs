@@ -4,6 +4,16 @@ using FrooxEngine;
 
 namespace Derg
 {
+    // Utilities for working with the fields of a Component.
+    //
+    // Component fields can be:
+    // * Sync (field for a value)
+    // * SyncRef (field for a RefID; this includes component fields)
+    // * SyncDelegate (field for a WorldDelegate)
+    //
+    // All of these are SyncFields.
+    //
+    // SyncList is NOT a SyncField.
     public static class ComponentUtils
     {
         public static object GetFieldValue(Component component, string fieldName)
@@ -23,10 +33,15 @@ namespace Derg
                 return null;
             object value = fieldInfo.GetValue(component);
 
-            if (value.GetType().IsOfGenericType(typeof(SyncField<>)))
+            if (value.GetType().IsOfGenericType(typeof(Sync<>)))
             {
-                // If the field is a SyncField, we need to get the value of the Value property.
+                // If the field is a Sync, we need to get the value of the Value property.
                 return value.GetType().GetProperty("Value").GetValue(value);
+            }
+            if (value.GetType().IsOfGenericType(typeof(SyncRef<>)))
+            {
+                // If the field is a SyncRef, we need to get the value of the Target property.
+                return value.GetType().GetProperty("Target").GetValue(value);
             }
             return null;
         }
