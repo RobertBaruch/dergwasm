@@ -264,6 +264,109 @@ namespace DergwasmTests
         }
     }
 
+    // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3930/22H2/2022Update)
+    //  Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
+    //      [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+    //  .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
+    //
+    // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
+    //
+    // | Method              | N    | Mean       | Error    | StdDev   | Ratio |
+    // |-------------------- |----- |-----------:|---------:|---------:|------:|
+    // | FlattenLinear       | 1000 |   101.3 us |  1.66 us |  1.56 us |  1.00 |
+    // |                     |      |            |          |          |       |
+    // | FlattenBlocks       | 1000 |   176.4 us |  3.24 us |  2.71 us |  1.00 |
+    // |                     |      |            |          |          |       |
+    // | FlattenNestedBlocks | 1000 | 2,199.5 us | 27.98 us | 26.18 us |  1.00 |
+    [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
+    public class FlattenerBenchmark
+    {
+        [Params(1000)]
+        public int N;
+
+        List<UnflattenedInstruction> linearInstructions;
+        readonly UnflattenedOperand[] noOperands = { };
+
+        List<UnflattenedInstruction> blockInstructions;
+        List<UnflattenedInstruction> nestedBlockInstructions;
+
+        UnflattenedInstruction NestBlock(int level)
+        {
+            List<UnflattenedInstruction> blockInsns = new List<UnflattenedInstruction>(11);
+            for (int j = 0; j < 9; j++)
+            {
+                blockInsns.Add(new UnflattenedInstruction(InstructionType.NOP, noOperands));
+            }
+            if (level > 0)
+            {
+                blockInsns.Add(NestBlock(level - 1));
+            }
+            blockInsns.Add(new UnflattenedInstruction(InstructionType.END, noOperands));
+            UnflattenedBlockOperand[] blockOperand =
+            {
+                new UnflattenedBlockOperand(
+                    new Value(),
+                    blockInsns,
+                    new List<UnflattenedInstruction>()
+                )
+            };
+            return new UnflattenedInstruction(InstructionType.BLOCK, blockOperand);
+        }
+
+        [GlobalSetup]
+        public void Setup()
+        {
+            // Creates a list of non-control instructions to flatten
+            linearInstructions = new List<UnflattenedInstruction>(N);
+            for (int i = 0; i < linearInstructions.Capacity; i++)
+            {
+                linearInstructions.Add(new UnflattenedInstruction(InstructionType.NOP, noOperands));
+            }
+
+            blockInstructions = new List<UnflattenedInstruction>(N / 10);
+            for (int i = 0; i < blockInstructions.Capacity; i++)
+            {
+                List<UnflattenedInstruction> blockInsns = new List<UnflattenedInstruction>(11);
+                for (int j = 0; j < 10; j++)
+                {
+                    blockInsns.Add(new UnflattenedInstruction(InstructionType.NOP, noOperands));
+                }
+                blockInsns.Add(new UnflattenedInstruction(InstructionType.END, noOperands));
+                UnflattenedBlockOperand[] blockOperand =
+                {
+                    new UnflattenedBlockOperand(
+                        new Value(),
+                        blockInsns,
+                        new List<UnflattenedInstruction>()
+                    )
+                };
+                blockInstructions.Add(
+                    new UnflattenedInstruction(InstructionType.BLOCK, blockOperand)
+                );
+            }
+
+            nestedBlockInstructions = new List<UnflattenedInstruction>() { NestBlock(N / 10 - 1) };
+        }
+
+        [Benchmark]
+        public List<Instruction> FlattenLinear()
+        {
+            return linearInstructions.Flatten(0);
+        }
+
+        [Benchmark]
+        public List<Instruction> FlattenBlocks()
+        {
+            return blockInstructions.Flatten(0);
+        }
+
+        [Benchmark]
+        public List<Instruction> FlattenNestedBlocks()
+        {
+            return nestedBlockInstructions.Flatten(0);
+        }
+    }
+
     public class Program
     {
         public static void Main(string[] args)

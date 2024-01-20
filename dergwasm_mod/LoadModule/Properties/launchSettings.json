@@ -2,7 +2,7 @@
   "profiles": {
     "LoadModule": {
       "commandName": "Project",
-      "commandLineArgs": "hello_world.wasm",
+      "commandLineArgs": "firmware.wasm",
       "workingDirectory": "C:\\Users\\rober\\Documents\\dergwasm"
     }
   }
