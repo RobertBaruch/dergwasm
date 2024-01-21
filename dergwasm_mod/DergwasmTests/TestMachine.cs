@@ -49,7 +49,8 @@ namespace DergwasmTests
         // The program always has two I32 locals.
         public void SetProgram(int signature_idx, params UnflattenedInstruction[] instructions)
         {
-            List<Instruction> program = new List<UnflattenedInstruction>(instructions).Flatten(0);
+            List<Instruction> program = new List<Instruction>();
+            new List<UnflattenedInstruction>(instructions).Flatten(program);
 
             programFrame = CreateFrame();
             ModuleFunc func = new ModuleFunc(
@@ -68,7 +69,8 @@ namespace DergwasmTests
         // signature (see GetFuncTypeFromIndex). The function has two I32 locals.
         public void SetFuncAt(int addr, params UnflattenedInstruction[] instructions)
         {
-            List<Instruction> program = new List<UnflattenedInstruction>(instructions).Flatten(0);
+            List<Instruction> program = new List<Instruction>();
+            new List<UnflattenedInstruction>(instructions).Flatten(program);
             ModuleFunc func = new ModuleFunc(
                 "test",
                 $"${addr - 10}",

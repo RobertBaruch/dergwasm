@@ -88,181 +88,181 @@ namespace DergwasmTests
     // | I32Add         | 73.85 ns | 1.497 ns | 1.998 ns |  1.00 |
     // |                |          |          |          |       |
     // | I32AddOverhead | 38.75 ns | 0.382 ns | 0.338 ns |  1.00 |
-    [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
-    public class I32AddBenchmark : TestMachine
-    {
-        Frame frame;
-
-        [GlobalSetup]
-        public void Setup()
+    /*    [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
+        public class I32AddBenchmark : TestMachine
         {
-            frame = CreateFrame();
-            ModuleFunc func = new ModuleFunc("test", "$-1", frame.GetFuncTypeForIndex(0));
-            func.Locals = new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 };
-            List<UnflattenedInstruction> instructions = new List<UnflattenedInstruction>
+            Frame frame;
+    
+            [GlobalSetup]
+            public void Setup()
             {
-                Insn(InstructionType.I32_ADD),
-                Insn(InstructionType.END)
-            };
-            func.Code = instructions.Flatten(0);
-            frame.Func = func;
-        }
-
-        [Benchmark]
-        public Value I32Add()
-        {
-            frame.PC = 0;
-            frame.Push(new Value { u32 = 0x0F });
-            frame.Push(new Value { u32 = 0xFFFFFFFF });
-            frame.Step(this);
-            return frame.Pop();
-        }
-
-        [Benchmark]
-        public Value I32AddOverhead()
-        {
-            frame.PC = 0;
-            frame.Push(new Value { u32 = 0x0F });
-            frame.Push(new Value { u32 = 0xFFFFFFFF });
-            frame.Pop();
-            frame.Pop();
-            frame.Push(new Value { u32 = 0x0F });
-            return frame.Pop();
-        }
-    }
-
-    [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
-    public class NopBenchmark : TestMachine
-    {
-        Frame frame;
-
-        [Params(1000, 10000)]
-        public int N;
-
-        [GlobalSetup]
-        public void Setup()
-        {
-            frame = CreateFrame();
-            ModuleFunc func = new ModuleFunc("test", "$-1", frame.GetFuncTypeForIndex(0));
-            func.Locals = new Derg.ValueType[] { };
-
-            List<UnflattenedInstruction> instructions = new List<UnflattenedInstruction>();
-            for (int i = 0; i < N; i++)
-            {
-                instructions.Add(Insn(InstructionType.NOP));
+                frame = CreateFrame();
+                ModuleFunc func = new ModuleFunc("test", "$-1", frame.GetFuncTypeForIndex(0));
+                func.Locals = new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 };
+                List<UnflattenedInstruction> instructions = new List<UnflattenedInstruction>
+                {
+                    Insn(InstructionType.I32_ADD),
+                    Insn(InstructionType.END)
+                };
+                func.Code = instructions.Flatten(0);
+                frame.Func = func;
             }
-            func.Code = instructions.Flatten(0);
-            frame.Func = func;
+    
+            [Benchmark]
+            public Value I32Add()
+            {
+                frame.PC = 0;
+                frame.Push(new Value { u32 = 0x0F });
+                frame.Push(new Value { u32 = 0xFFFFFFFF });
+                frame.Step(this);
+                return frame.Pop();
+            }
+    
+            [Benchmark]
+            public Value I32AddOverhead()
+            {
+                frame.PC = 0;
+                frame.Push(new Value { u32 = 0x0F });
+                frame.Push(new Value { u32 = 0xFFFFFFFF });
+                frame.Pop();
+                frame.Pop();
+                frame.Push(new Value { u32 = 0x0F });
+                return frame.Pop();
+            }
         }
-
-        // BenchmarkDotNet v0.13.10, Windows 11 (10.0.22621.2861/22H2/2022Update/SunValley2)
-        // 11th Gen Intel Core i7-11700K 3.60GHz, 1 CPU, 16 logical and 8 physical cores
-        //   [Host]               : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
-        //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
+    
+        [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
+        public class NopBenchmark : TestMachine
+        {
+            Frame frame;
+    
+            [Params(1000, 10000)]
+            public int N;
+    
+            [GlobalSetup]
+            public void Setup()
+            {
+                frame = CreateFrame();
+                ModuleFunc func = new ModuleFunc("test", "$-1", frame.GetFuncTypeForIndex(0));
+                func.Locals = new Derg.ValueType[] { };
+    
+                List<UnflattenedInstruction> instructions = new List<UnflattenedInstruction>();
+                for (int i = 0; i < N; i++)
+                {
+                    instructions.Add(Insn(InstructionType.NOP));
+                }
+                func.Code = instructions.Flatten(0);
+                frame.Func = func;
+            }
+    
+            // BenchmarkDotNet v0.13.10, Windows 11 (10.0.22621.2861/22H2/2022Update/SunValley2)
+            // 11th Gen Intel Core i7-11700K 3.60GHz, 1 CPU, 16 logical and 8 physical cores
+            //   [Host]               : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+            //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
+            //
+            // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
+            //
+            // | Method | N     | Mean      | Error    | StdDev   | Ratio |
+            // |------- |------ |----------:|---------:|---------:|------:|
+            // | Nop    | 1000  |  18.79 us | 0.253 us | 0.423 us |  1.00 |
+            // |        |       |           |          |          |       |
+            // | Nop    | 10000 | 188.36 us | 2.372 us | 2.218 us |  1.00 |
+            [Benchmark]
+            public void Nop()
+            {
+                frame.PC = 0;
+                frame.Step(this, N);
+            }
+        }
+    
+        // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3693/22H2/2022Update)
+        // Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
+        //   [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+        //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
         //
         // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
         //
-        // | Method | N     | Mean      | Error    | StdDev   | Ratio |
-        // |------- |------ |----------:|---------:|---------:|------:|
-        // | Nop    | 1000  |  18.79 us | 0.253 us | 0.423 us |  1.00 |
-        // |        |       |           |          |          |       |
-        // | Nop    | 10000 | 188.36 us | 2.372 us | 2.218 us |  1.00 |
-        [Benchmark]
-        public void Nop()
+        // | Method             | N   | Mean     | Error     | StdDev    | Ratio |
+        // |------------------- |---- |---------:|----------:|----------:|------:|
+        // | PushPopInt         | 100 | 1.286 us | 0.0255 us | 0.0238 us |  1.00 |
+        // |                    |     |          |           |           |       |
+        // | PushPopGenericInt  | 100 | 5.886 us | 0.1075 us | 0.0953 us |  1.00 |
+        // |                    |     |          |           |           |       |
+        // | PushOverloadPopInt | 100 | 1.244 us | 0.0140 us | 0.0131 us |  1.00 |
+        // |                    |     |          |           |           |       |
+        // | PushGenericPopInt  | 100 | 2.126 us | 0.0421 us | 0.0468 us |  1.00 |
+        [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
+        public class PushPop : TestMachine
         {
-            frame.PC = 0;
-            frame.Step(this, N);
-        }
-    }
-
-    // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3693/22H2/2022Update)
-    // Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
-    //   [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
-    //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
-    //
-    // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
-    //
-    // | Method             | N   | Mean     | Error     | StdDev    | Ratio |
-    // |------------------- |---- |---------:|----------:|----------:|------:|
-    // | PushPopInt         | 100 | 1.286 us | 0.0255 us | 0.0238 us |  1.00 |
-    // |                    |     |          |           |           |       |
-    // | PushPopGenericInt  | 100 | 5.886 us | 0.1075 us | 0.0953 us |  1.00 |
-    // |                    |     |          |           |           |       |
-    // | PushOverloadPopInt | 100 | 1.244 us | 0.0140 us | 0.0131 us |  1.00 |
-    // |                    |     |          |           |           |       |
-    // | PushGenericPopInt  | 100 | 2.126 us | 0.0421 us | 0.0468 us |  1.00 |
-    [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
-    public class PushPop : TestMachine
-    {
-        Frame frame;
-
-        [Params(100)]
-        public int N;
-
-        [GlobalSetup]
-        public void Setup()
-        {
-            frame = CreateFrame();
-        }
-
-        // BenchmarkDotNet v0.13.10, Windows 11 (10.0.22621.2428/22H2/2022Update/SunValley2)
-        // 11th Gen Intel Core i7-11700K 3.60GHz, 1 CPU, 16 logical and 8 physical cores
-        //  [Host]               : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
-        //  .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
-        //
-        // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
-        //
-        // | Method     | Mean     | Error    | StdDev   | Median   | Ratio |
-        // |----------- |---------:|---------:|---------:|---------:|------:|
-        // | PushPopInt | 22.30 ns | 0.414 ns | 0.991 ns | 21.96 ns |  1.00 |
-        [Benchmark]
-        public int PushPopInt()
-        {
-            int x = 0;
-            for (int i = 0; i < N; i++)
+            Frame frame;
+    
+            [Params(100)]
+            public int N;
+    
+            [GlobalSetup]
+            public void Setup()
             {
-                frame.Push(new Value { s32 = 1 });
-                x += frame.Pop().s32;
+                frame = CreateFrame();
             }
-            return x;
-        }
-
-        [Benchmark]
-        public int PushPopGenericInt()
-        {
-            int x = 0;
-            for (int i = 0; i < N; i++)
+    
+            // BenchmarkDotNet v0.13.10, Windows 11 (10.0.22621.2428/22H2/2022Update/SunValley2)
+            // 11th Gen Intel Core i7-11700K 3.60GHz, 1 CPU, 16 logical and 8 physical cores
+            //  [Host]               : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
+            //  .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
+            //
+            // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
+            //
+            // | Method     | Mean     | Error    | StdDev   | Median   | Ratio |
+            // |----------- |---------:|---------:|---------:|---------:|------:|
+            // | PushPopInt | 22.30 ns | 0.414 ns | 0.991 ns | 21.96 ns |  1.00 |
+            [Benchmark]
+            public int PushPopInt()
             {
-                frame.Push(new Value { s32 = 1 });
-                x += frame.Pop<int>();
+                int x = 0;
+                for (int i = 0; i < N; i++)
+                {
+                    frame.Push(new Value { s32 = 1 });
+                    x += frame.Pop().s32;
+                }
+                return x;
             }
-            return x;
-        }
-
-        [Benchmark]
-        public int PushOverloadPopInt()
-        {
-            int x = 0;
-            for (int i = 0; i < N; i++)
+    
+            [Benchmark]
+            public int PushPopGenericInt()
             {
-                frame.Push(1);
-                x += frame.Pop().s32;
+                int x = 0;
+                for (int i = 0; i < N; i++)
+                {
+                    frame.Push(new Value { s32 = 1 });
+                    x += frame.Pop<int>();
+                }
+                return x;
             }
-            return x;
-        }
-
-        [Benchmark]
-        public int PushGenericPopInt()
-        {
-            int x = 0;
-            for (int i = 0; i < N; i++)
+    
+            [Benchmark]
+            public int PushOverloadPopInt()
             {
-                frame.Push<int>(1);
-                x += frame.Pop().s32;
+                int x = 0;
+                for (int i = 0; i < N; i++)
+                {
+                    frame.Push(1);
+                    x += frame.Pop().s32;
+                }
+                return x;
             }
-            return x;
-        }
-    }
+    
+            [Benchmark]
+            public int PushGenericPopInt()
+            {
+                int x = 0;
+                for (int i = 0; i < N; i++)
+                {
+                    frame.Push<int>(1);
+                    x += frame.Pop().s32;
+                }
+                return x;
+            }
+        } */
 
     // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3930/22H2/2022Update)
     //  Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
@@ -271,13 +271,13 @@ namespace DergwasmTests
     //
     // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
     //
-    // | Method              | N    | Mean       | Error    | StdDev   | Ratio |
-    // |-------------------- |----- |-----------:|---------:|---------:|------:|
-    // | FlattenLinear       | 1000 |   101.3 us |  1.66 us |  1.56 us |  1.00 |
-    // |                     |      |            |          |          |       |
-    // | FlattenBlocks       | 1000 |   176.4 us |  3.24 us |  2.71 us |  1.00 |
-    // |                     |      |            |          |          |       |
-    // | FlattenNestedBlocks | 1000 | 2,199.5 us | 27.98 us | 26.18 us |  1.00 |
+    // | Method              | N    | Mean     | Error   | StdDev  | Ratio |
+    // |-------------------- |----- |---------:|--------:|--------:|------:|
+    // | FlattenLinear       | 1000 | 101.8 us | 1.64 us | 1.53 us |  1.00 |
+    // |                     |      |          |         |         |       |
+    // | FlattenBlocks       | 1000 | 117.5 us | 1.61 us | 1.43 us |  1.00 |
+    // |                     |      |          |         |         |       |
+    // | FlattenNestedBlocks | 1000 | 110.5 us | 1.84 us | 1.72 us |  1.00 |
     [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
     public class FlattenerBenchmark
     {
@@ -351,19 +351,25 @@ namespace DergwasmTests
         [Benchmark]
         public List<Instruction> FlattenLinear()
         {
-            return linearInstructions.Flatten(0);
+            List<Instruction> instructions = new List<Instruction>();
+            linearInstructions.Flatten(instructions);
+            return instructions;
         }
 
         [Benchmark]
         public List<Instruction> FlattenBlocks()
         {
-            return blockInstructions.Flatten(0);
+            List<Instruction> instructions = new List<Instruction>();
+            blockInstructions.Flatten(instructions);
+            return instructions;
         }
 
         [Benchmark]
         public List<Instruction> FlattenNestedBlocks()
         {
-            return nestedBlockInstructions.Flatten(0);
+            List<Instruction> instructions = new List<Instruction>();
+            nestedBlockInstructions.Flatten(instructions);
+            return instructions;
         }
     }
 
