@@ -69,6 +69,12 @@ namespace Derg
                 syncValue.GetType().GetProperty("Value").SetValue(syncValue, value);
                 return true;
             }
+            if (syncValue.GetType().IsOfGenericType(typeof(SyncRef<>)))
+            {
+                // If the field is a SyncRef, we need to get the value of the Target property.
+                syncValue.GetType().GetProperty("Target").SetValue(syncValue, value);
+                return true;
+            }
             return false;
         }
     }

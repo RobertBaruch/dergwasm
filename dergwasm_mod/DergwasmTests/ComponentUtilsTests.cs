@@ -23,45 +23,24 @@ namespace DergwasmTests
             IntField = new Sync<int>();
             ComponentRefField = new SyncRef<TestComponent>();
         }
-    }
 
-    public class ComponentUtilsTests
-    {
-        public World world;
-
-        public ComponentUtilsTests()
+        public void InternalSetIntField(int value)
         {
-            //World world = World.JoinSession(null, new Uri[] { });
-            //Assert.NotNull(world.ConnectorManager);
-        }
-
-        //[Fact]
-        //public void GetSyncValueTest()
-        //{
-        //    var testComponent = new ValueField<int>();
-        //    var intField = new Sync<int>();
-
-        //    FieldInfo fieldInfo = testComponent.GetType().GetField("Value");
-        //    fieldInfo.SetValue(testComponent, intField);
-
-        //    fieldInfo = typeof(Sync<int>).GetField(
-        //        "_value",
-        //        BindingFlags.Instance | BindingFlags.NonPublic
-        //    );
-        //    fieldInfo.SetValue(intField, 1);
-
-        //    Assert.Equal(1, ComponentUtils.GetFieldValue(testComponent, "Value"));
-        //}
-
-        [Fact]
-        public void GetSyncValueTest()
-        {
-            var testComponent = new TestComponent();
             FieldInfo fieldInfo = typeof(Sync<int>).GetField(
                 "_value",
                 BindingFlags.Instance | BindingFlags.NonPublic
             );
-            fieldInfo.SetValue(testComponent.IntField, 1);
+            fieldInfo.SetValue(IntField, value);
+        }
+    }
+
+    public class ComponentUtilsTests
+    {
+        [Fact]
+        public void GetSyncValueTest()
+        {
+            var testComponent = new TestComponent();
+            testComponent.InternalSetIntField(1);
 
             Assert.Equal(1, ComponentUtils.GetFieldValue(testComponent, "IntField"));
         }
@@ -86,11 +65,7 @@ namespace DergwasmTests
         public void GetPropertyTest()
         {
             var testComponent = new TestComponent();
-            FieldInfo fieldInfo = typeof(Sync<int>).GetField(
-                "_value",
-                BindingFlags.Instance | BindingFlags.NonPublic
-            );
-            fieldInfo.SetValue(testComponent.IntField, 1);
+            testComponent.InternalSetIntField(1);
 
             Assert.Equal(1, ComponentUtils.GetFieldValue(testComponent, "IntProperty"));
         }
@@ -98,12 +73,10 @@ namespace DergwasmTests
         [Fact]
         public void SetSyncValueTest()
         {
+            ResonitePatches.Apply();
+
             var testComponent = new TestComponent();
-            FieldInfo fieldInfo = typeof(Sync<int>).GetField(
-                "_value",
-                BindingFlags.Instance | BindingFlags.NonPublic
-            );
-            fieldInfo.SetValue(testComponent.IntField, 1);
+            testComponent.InternalSetIntField(1);
 
             ComponentUtils.SetFieldValue(testComponent, "IntField", 12);
 
