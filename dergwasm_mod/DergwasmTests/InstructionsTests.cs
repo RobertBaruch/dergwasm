@@ -479,7 +479,8 @@ namespace DergwasmTests
             stream.WriteOpcode(InstructionType.END);
             stream.Position = 0;
 
-            List<Instruction> instructions = Expr.Decode(new BinaryReader(stream)).Flatten(0);
+            List<Instruction> instructions = new List<Instruction>();
+            Expr.Decode(new BinaryReader(stream)).Flatten(instructions);
 
             Assert.Collection(
                 instructions,
@@ -502,18 +503,19 @@ namespace DergwasmTests
             stream.WriteOpcode(InstructionType.END);
             stream.Position = 0;
 
-            List<Instruction> instructions = Expr.Decode(new BinaryReader(stream)).Flatten(100);
+            List<Instruction> instructions = new List<Instruction>();
+            Expr.Decode(new BinaryReader(stream)).Flatten(instructions);
 
             Assert.Collection(
                 instructions,
-                e => Assert.Equal(InstructionType.BLOCK, e.Type), // 100
-                e => Assert.Equal(InstructionType.NOP, e.Type), // 101
-                e => Assert.Equal(InstructionType.END, e.Type), // 102
-                e => Assert.Equal(InstructionType.NOP, e.Type), // 103
-                e => Assert.Equal(InstructionType.END, e.Type) // 104
+                e => Assert.Equal(InstructionType.BLOCK, e.Type), // 0
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 1
+                e => Assert.Equal(InstructionType.END, e.Type), // 2
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 3
+                e => Assert.Equal(InstructionType.END, e.Type) // 4
             );
 
-            Assert.Equal(103, instructions[0].Operands[0].GetTarget());
+            Assert.Equal(3, instructions[0].Operands[0].GetTarget());
         }
 
         [Fact]
@@ -529,18 +531,19 @@ namespace DergwasmTests
             stream.WriteOpcode(InstructionType.END);
             stream.Position = 0;
 
-            List<Instruction> instructions = Expr.Decode(new BinaryReader(stream)).Flatten(100);
+            List<Instruction> instructions = new List<Instruction>();
+            Expr.Decode(new BinaryReader(stream)).Flatten(instructions);
 
             Assert.Collection(
                 instructions,
-                e => Assert.Equal(InstructionType.LOOP, e.Type), // 100
-                e => Assert.Equal(InstructionType.NOP, e.Type), // 101
-                e => Assert.Equal(InstructionType.END, e.Type), // 102
-                e => Assert.Equal(InstructionType.NOP, e.Type), // 103
-                e => Assert.Equal(InstructionType.END, e.Type) // 104
+                e => Assert.Equal(InstructionType.LOOP, e.Type), // 0
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 1
+                e => Assert.Equal(InstructionType.END, e.Type), // 2
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 3
+                e => Assert.Equal(InstructionType.END, e.Type) // 4
             );
 
-            Assert.Equal(100, instructions[0].Operands[0].GetTarget());
+            Assert.Equal(0, instructions[0].Operands[0].GetTarget());
         }
 
         [Fact]
@@ -556,19 +559,20 @@ namespace DergwasmTests
             stream.WriteOpcode(InstructionType.END);
             stream.Position = 0;
 
-            List<Instruction> instructions = Expr.Decode(new BinaryReader(stream)).Flatten(100);
+            List<Instruction> instructions = new List<Instruction>();
+            Expr.Decode(new BinaryReader(stream)).Flatten(instructions);
 
             Assert.Collection(
                 instructions,
-                e => Assert.Equal(InstructionType.IF, e.Type), // 100
-                e => Assert.Equal(InstructionType.NOP, e.Type), // 101
-                e => Assert.Equal(InstructionType.END, e.Type), // 102
-                e => Assert.Equal(InstructionType.NOP, e.Type), // 103
-                e => Assert.Equal(InstructionType.END, e.Type) // 104
+                e => Assert.Equal(InstructionType.IF, e.Type), // 0
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 1
+                e => Assert.Equal(InstructionType.END, e.Type), // 2
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 3
+                e => Assert.Equal(InstructionType.END, e.Type) // 4
             );
 
-            Assert.Equal(103, instructions[0].Operands[0].GetTarget());
-            Assert.Equal(103, instructions[0].Operands[0].GetElseTarget());
+            Assert.Equal(3, instructions[0].Operands[0].GetTarget());
+            Assert.Equal(3, instructions[0].Operands[0].GetElseTarget());
         }
 
         [Fact]
@@ -586,21 +590,22 @@ namespace DergwasmTests
             stream.WriteOpcode(InstructionType.END);
             stream.Position = 0;
 
-            List<Instruction> instructions = Expr.Decode(new BinaryReader(stream)).Flatten(100);
+            List<Instruction> instructions = new List<Instruction>();
+            Expr.Decode(new BinaryReader(stream)).Flatten(instructions);
 
             Assert.Collection(
                 instructions,
-                e => Assert.Equal(InstructionType.IF, e.Type), // 100
-                e => Assert.Equal(InstructionType.NOP, e.Type), // 101
-                e => Assert.Equal(InstructionType.ELSE, e.Type), // 102
-                e => Assert.Equal(InstructionType.NOP, e.Type), // 103
-                e => Assert.Equal(InstructionType.END, e.Type), // 104
-                e => Assert.Equal(InstructionType.NOP, e.Type), // 105
-                e => Assert.Equal(InstructionType.END, e.Type) // 106
+                e => Assert.Equal(InstructionType.IF, e.Type), // 0
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 1
+                e => Assert.Equal(InstructionType.ELSE, e.Type), // 2
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 3
+                e => Assert.Equal(InstructionType.END, e.Type), // 4
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 5
+                e => Assert.Equal(InstructionType.END, e.Type) // 6
             );
 
-            Assert.Equal(105, instructions[0].Operands[0].GetTarget());
-            Assert.Equal(103, instructions[0].Operands[0].GetElseTarget());
+            Assert.Equal(5, instructions[0].Operands[0].GetTarget());
+            Assert.Equal(3, instructions[0].Operands[0].GetElseTarget());
         }
     }
 }

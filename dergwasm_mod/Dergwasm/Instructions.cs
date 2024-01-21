@@ -783,92 +783,89 @@ namespace Derg
     {
         // Recursively flattens a list of UnflattenedInstructions. This also resolves instruction locations
         // in terms of program counters, which allows us to populate block targets.
-        public static List<Instruction> Flatten(
+        public static void Flatten(
             this List<UnflattenedInstruction> instructions,
-            int pc
+            List<Instruction> flattened
         )
         {
-            List<Instruction> flattened_instructions = new List<Instruction>();
-            List<Instruction> block_insns;
             UnflattenedBlockOperand block_operand;
+            int pc;
 
             foreach (UnflattenedInstruction instruction in instructions)
             {
-                Instruction initial_instruction = new Instruction(
-                    instruction.Type,
-                    (from operand in instruction.Operands select operand.value).ToArray()
-                );
                 switch (instruction.Type)
                 {
                     case InstructionType.BLOCK:
-                        block_insns = new List<Instruction> { initial_instruction };
+                        Instruction blockInsn = new Instruction(
+                            InstructionType.BLOCK,
+                            new Value[] { new Value() }
+                        );
+                        flattened.Add(blockInsn);
                         block_operand = (UnflattenedBlockOperand)instruction.Operands[0];
-                        block_insns.AddRange(block_operand.instructions.Flatten(pc + 1));
+                        block_operand.instructions.Flatten(flattened);
 
-                        pc += (int)block_insns.Count;
+                        pc = flattened.Count;
                         // The signature for the block.
-                        initial_instruction.Operands[0].value_hi = instruction
-                            .Operands[0]
-                            .value
-                            .value_hi;
+                        blockInsn.Operands[0].value_hi = instruction.Operands[0].value.value_hi;
                         // Where a BR 0 would go. Will be END+1.
-                        initial_instruction.Operands[0].u64 = (ulong)pc;
-
-                        flattened_instructions.AddRange(block_insns);
+                        blockInsn.Operands[0].u64 = (ulong)pc;
                         break;
 
                     case InstructionType.LOOP:
-                        block_insns = new List<Instruction> { initial_instruction };
+                        Instruction loopInsn = new Instruction(
+                            InstructionType.LOOP,
+                            new Value[] { new Value() }
+                        );
+                        pc = flattened.Count;
+                        flattened.Add(loopInsn);
                         block_operand = (UnflattenedBlockOperand)instruction.Operands[0];
-                        block_insns.AddRange(block_operand.instructions.Flatten(pc + 1));
+                        block_operand.instructions.Flatten(flattened);
 
                         // The signature for the block.
-                        initial_instruction.Operands[0].value_hi = instruction
-                            .Operands[0]
-                            .value
-                            .value_hi;
+                        loopInsn.Operands[0].value_hi = instruction.Operands[0].value.value_hi;
                         // Where a BR 0 would go. Will be the the LOOP instruction.
-                        initial_instruction.Operands[0].u64 = (ulong)pc;
-                        pc += (int)block_insns.Count;
-
-                        flattened_instructions.AddRange(block_insns);
+                        loopInsn.Operands[0].u64 = (ulong)pc;
                         break;
 
                     case InstructionType.IF:
-                        block_insns = new List<Instruction> { initial_instruction };
+                        Instruction ifInsn = new Instruction(
+                            InstructionType.IF,
+                            new Value[] { new Value() }
+                        );
+                        flattened.Add(ifInsn);
                         block_operand = (UnflattenedBlockOperand)instruction.Operands[0];
-                        block_insns.AddRange(block_operand.instructions.Flatten(pc + 1));
+                        block_operand.instructions.Flatten(flattened);
 
                         // This first block ends in either an END or an ELSE.
 
-                        pc += (int)block_insns.Count;
+                        pc = flattened.Count;
                         // The negative condition's target.  Will be either ELSE+1 or END+1.
-                        initial_instruction.Operands[0].u64 = (ulong)pc << 32;
+                        ifInsn.Operands[0].u64 = (ulong)pc << 32;
 
-                        List<Instruction> false_insns = block_operand.else_instructions.Flatten(pc);
-                        pc += (int)false_insns.Count;
+                        block_operand.else_instructions.Flatten(flattened);
+                        pc = flattened.Count;
 
                         // The signature for the block.
-                        initial_instruction.Operands[0].value_hi = instruction
-                            .Operands[0]
-                            .value
-                            .value_hi;
+                        ifInsn.Operands[0].value_hi = instruction.Operands[0].value.value_hi;
                         // Where a BR 0 would go. Will be END+1.
-                        initial_instruction.Operands[0].u64 |= (uint)pc;
+                        ifInsn.Operands[0].u64 |= (uint)pc;
 
                         // Note that if there was no ELSE, then both targets will be equal.
-
-                        flattened_instructions.AddRange(block_insns);
-                        flattened_instructions.AddRange(false_insns);
                         break;
 
                     default:
-                        flattened_instructions.Add(initial_instruction);
-                        pc += 1;
+                        flattened.Add(
+                            new Instruction(
+                                instruction.Type,
+                                (
+                                    from operand in instruction.Operands
+                                    select operand.value
+                                ).ToArray()
+                            )
+                        );
                         break;
                 }
             }
-            return flattened_instructions;
         }
     }
 } // namespace Derg

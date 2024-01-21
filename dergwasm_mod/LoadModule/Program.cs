@@ -49,8 +49,8 @@ public class Program
         }
 
         MaybeRunEmscriptenCtors();
-        RunMain();
-        // RunMicropython(emscriptenEnv);
+        // RunMain();
+        RunMicropython(emscriptenEnv);
     }
 
     void CheckForUnimplementedInstructions()
