@@ -27,6 +27,12 @@
 		<Reference Include="0Harmony">
 			<HintPath>$(ResoniteNmlLibs)\0Harmony.dll</HintPath>
 		</Reference>
+		<Reference Include="BepuPhysics">
+			<HintPath>$(ResoniteCoreLibs)\BepuPhysics.dll</HintPath>
+		</Reference>
+		<Reference Include="BepuUtilities">
+			<HintPath>$(ResoniteCoreLibs)\BepuUtilities.dll</HintPath>
+		</Reference>
 		<Reference Include="Elements.Assets">
 			<HintPath>$(ResoniteCoreLibs)\Elements.Assets.dll</HintPath>
 		</Reference>
@@ -53,6 +59,7 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
 		<PackageReference Include="System.Memory" Version="4.5.5" />
+		<PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
 		<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
 		<PackageReference Include="xunit" Version="2.6.2" />
 		<PackageReference Include="xunit.runner.visualstudio" Version="2.5.4">
@@ -67,6 +74,21 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Dergwasm\Dergwasm.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Update="Properties\Settings.Designer.cs">
+	    <DesignTimeSharedInput>True</DesignTimeSharedInput>
+	    <AutoGen>True</AutoGen>
+	    <DependentUpon>Settings.settings</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="Properties\Settings.settings">
+	    <Generator>SettingsSingleFileGenerator</Generator>
+	    <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+	  </None>
 	</ItemGroup>
 
 </Project>
