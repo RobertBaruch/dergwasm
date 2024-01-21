@@ -1,7 +1,8 @@
-﻿using Elements.Core;
-using FrooxEngine;
+﻿using System;
 using System.IO;
 using System.Text;
+using Elements.Core;
+using FrooxEngine;
 
 namespace Derg
 {
@@ -58,7 +59,7 @@ namespace Derg
         // * ulong, ulong2, ulong3, ulong4
         // * float, float2, float3, float4, floatQ
         // * double, double2, double3, double4, doubleQ
-        // * string
+        // * string (serialized as length, then UTF-8 bytes)
         // * color, colorX
         // * RefID
         // * Slot, User, UserRoot (represented as their RefID)
@@ -68,7 +69,7 @@ namespace Derg
         // amount of memory allocated.
         public static int Serialize(
             Machine machine,
-            EmscriptenEnv emscriptenEnv,
+            ResoniteEnv resoniteEnv,
             Frame frame,
             object value,
             out int len
@@ -325,7 +326,7 @@ namespace Derg
                     return 0;
             }
 
-            dataPtr = emscriptenEnv.Malloc(frame, (int)stream.Length);
+            dataPtr = resoniteEnv.emscriptenEnv.Malloc(frame, (int)stream.Length);
             len = (int)stream.Length;
 
             // There doesn't seem to be a way to directly copy the contents of a
@@ -334,6 +335,196 @@ namespace Derg
             stream.Position = 0;
             stream.CopyTo(memoryStream);
             return dataPtr;
+        }
+
+        // Deserializes a "simple" value. Returns the deserialized value, or null if it
+        // couldn't be deserialized.
+        public static object Deserialize(Machine machine, ResoniteEnv resoniteEnv, int dataPtr)
+        {
+            MemoryStream memoryStream = new MemoryStream(machine.Memory0);
+            BinaryReader reader = new BinaryReader(memoryStream);
+            memoryStream.Position = dataPtr;
+
+            try
+            {
+                int dataType = reader.ReadInt32();
+                switch (dataType)
+                {
+                    case SimpleType.Bool:
+                        return reader.ReadInt32() != 0;
+                    case SimpleType.Bool2:
+                        return new bool2(reader.ReadInt32() != 0, reader.ReadInt32() != 0);
+                    case SimpleType.Bool3:
+                        return new bool3(
+                            reader.ReadInt32() != 0,
+                            reader.ReadInt32() != 0,
+                            reader.ReadInt32() != 0
+                        );
+                    case SimpleType.Bool4:
+                        return new bool4(
+                            reader.ReadInt32() != 0,
+                            reader.ReadInt32() != 0,
+                            reader.ReadInt32() != 0,
+                            reader.ReadInt32() != 0
+                        );
+
+                    case SimpleType.Int:
+                        return reader.ReadInt32();
+                    case SimpleType.Int2:
+                        return new int2(reader.ReadInt32(), reader.ReadInt32());
+                    case SimpleType.Int3:
+                        return new int3(reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32());
+                    case SimpleType.Int4:
+                        return new int4(
+                            reader.ReadInt32(),
+                            reader.ReadInt32(),
+                            reader.ReadInt32(),
+                            reader.ReadInt32()
+                        );
+
+                    case SimpleType.UInt:
+                        return reader.ReadUInt32();
+                    case SimpleType.UInt2:
+                        return new uint2(reader.ReadUInt32(), reader.ReadUInt32());
+                    case SimpleType.UInt3:
+                        return new uint3(
+                            reader.ReadUInt32(),
+                            reader.ReadUInt32(),
+                            reader.ReadUInt32()
+                        );
+                    case SimpleType.UInt4:
+                        return new uint4(
+                            reader.ReadUInt32(),
+                            reader.ReadUInt32(),
+                            reader.ReadUInt32(),
+                            reader.ReadUInt32()
+                        );
+
+                    case SimpleType.Long:
+                        return reader.ReadInt64();
+                    case SimpleType.Long2:
+                        return new long2(reader.ReadInt64(), reader.ReadInt64());
+                    case SimpleType.Long3:
+                        return new long3(
+                            reader.ReadInt64(),
+                            reader.ReadInt64(),
+                            reader.ReadInt64()
+                        );
+                    case SimpleType.Long4:
+                        return new long4(
+                            reader.ReadInt64(),
+                            reader.ReadInt64(),
+                            reader.ReadInt64(),
+                            reader.ReadInt64()
+                        );
+
+                    case SimpleType.ULong:
+                        return reader.ReadUInt64();
+                    case SimpleType.ULong2:
+                        return new ulong2(reader.ReadUInt64(), reader.ReadUInt64());
+                    case SimpleType.ULong3:
+                        return new ulong3(
+                            reader.ReadUInt64(),
+                            reader.ReadUInt64(),
+                            reader.ReadUInt64()
+                        );
+                    case SimpleType.ULong4:
+                        return new ulong4(
+                            reader.ReadUInt64(),
+                            reader.ReadUInt64(),
+                            reader.ReadUInt64(),
+                            reader.ReadUInt64()
+                        );
+
+                    case SimpleType.Float:
+                        return reader.ReadSingle();
+                    case SimpleType.Float2:
+                        return new float2(reader.ReadSingle(), reader.ReadSingle());
+                    case SimpleType.Float3:
+                        return new float3(
+                            reader.ReadSingle(),
+                            reader.ReadSingle(),
+                            reader.ReadSingle()
+                        );
+                    case SimpleType.Float4:
+                        return new float4(
+                            reader.ReadSingle(),
+                            reader.ReadSingle(),
+                            reader.ReadSingle(),
+                            reader.ReadSingle()
+                        );
+                    case SimpleType.FloatQ:
+                        return new floatQ(
+                            reader.ReadSingle(),
+                            reader.ReadSingle(),
+                            reader.ReadSingle(),
+                            reader.ReadSingle()
+                        );
+
+                    case SimpleType.Double:
+                        return reader.ReadDouble();
+                    case SimpleType.Double2:
+                        return new double2(reader.ReadDouble(), reader.ReadDouble());
+                    case SimpleType.Double3:
+                        return new double3(
+                            reader.ReadDouble(),
+                            reader.ReadDouble(),
+                            reader.ReadDouble()
+                        );
+                    case SimpleType.Double4:
+                        return new double4(
+                            reader.ReadDouble(),
+                            reader.ReadDouble(),
+                            reader.ReadDouble(),
+                            reader.ReadDouble()
+                        );
+                    case SimpleType.DoubleQ:
+                        return new doubleQ(
+                            reader.ReadDouble(),
+                            reader.ReadDouble(),
+                            reader.ReadDouble(),
+                            reader.ReadDouble()
+                        );
+
+                    case SimpleType.String:
+                        int stringLen = reader.ReadInt32();
+                        byte[] stringBytes = reader.ReadBytes(stringLen);
+                        return Encoding.UTF8.GetString(stringBytes);
+
+                    case SimpleType.Color:
+                        return new color(
+                            reader.ReadSingle(),
+                            reader.ReadSingle(),
+                            reader.ReadSingle(),
+                            reader.ReadSingle()
+                        );
+                    case SimpleType.ColorX:
+                        return new colorX(
+                            reader.ReadSingle(),
+                            reader.ReadSingle(),
+                            reader.ReadSingle(),
+                            reader.ReadSingle()
+                        );
+
+                    case SimpleType.RefID:
+                        return (RefID)reader.ReadUInt64();
+
+                    case SimpleType.Slot:
+                        return resoniteEnv.FromRefID<Slot>(reader.ReadUInt64());
+                    case SimpleType.User:
+                        return resoniteEnv.FromRefID<User>(reader.ReadUInt64());
+                    case SimpleType.UserRoot:
+                        return resoniteEnv.FromRefID<UserRoot>(reader.ReadUInt64());
+
+                    default:
+                        return null;
+                }
+            }
+            catch (Exception e)
+            {
+                DergwasmMachine.Msg($"Error in deserialization: {e}");
+                return null;
+            }
         }
     }
 }

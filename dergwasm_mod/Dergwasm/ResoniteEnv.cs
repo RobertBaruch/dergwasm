@@ -9,8 +9,8 @@ namespace Derg
     // Provides the functions in resonite_api.h. A ResoniteEnv, like a Machine, is specific
     // to a World.
     //
-    // In the API, we don't use anything other than ints, floats, and doubles. We can't use
-    // longs because Emscripten doesn't support them yet. Pointers to memory are uints.
+    // In the API, we don't use anything other than ints, longs, floats, and doubles.
+    // Pointers to memory are uints.
     public class ResoniteEnv
     {
         public Machine machine;
@@ -166,10 +166,20 @@ namespace Derg
         // This only needs to be called once, when the WASM Machine is initialized and loaded.
         public void RegisterHostFuncs()
         {
+            machine.RegisterReturningHostFunc<ulong, int, int, int>(
+                "env",
+                "component__get_field_value",
+                component__get_field_value
+            );
             machine.RegisterReturningHostFunc<ulong, int>(
                 "env",
                 "component__get_type_name",
                 component__get_type_name
+            );
+            machine.RegisterReturningHostFunc<ulong, int, int, int>(
+                "env",
+                "component__set_field_value",
+                component__set_field_value
             );
 
             machine.RegisterReturningHostFunc<ulong>("env", "slot__root_slot", slot__root_slot);
@@ -329,6 +339,14 @@ namespace Derg
             return emscriptenEnv.AllocateUTF8StringInMem(frame, typeName);
         }
 
+        // Gets the value of a field on a component. The field name is in the given string.
+        // The value is serialized into an allocated area of the heap, and the pointer to it
+        // is returned. The length of the serialized value is placed in the heap at the
+        // given lenPtr, if the pointer is nonzero.
+        //
+        // Returns null if the field doesn't exist, couldn't be gotten, or the value couldn't
+        // be serialized.
+        //
         // Fields of components are Sync, SyncRef, or SyncDelegate.
         //
         // Sync<T> fields contain values, and are SyncField<T>.
@@ -337,57 +355,55 @@ namespace Derg
         // A WorldDelegate is a {target RefID, method string, type} tuple.
         //
         // Some fields are actually properties.
+        //
+        // There are also SyncLists.
+        //
+        // Currently we only support properties, Sync, and SyncRef.
         public int component__get_field_value(
             Frame frame,
             ulong component_id,
             int namePtr,
-            int dataPtrPtr
+            int lenPtr
         )
         {
-            object value;
-
             Component component = FromRefID<Component>(component_id);
             if (component == null)
                 return 0;
             string fieldName = emscriptenEnv.GetUTF8StringFromMem(namePtr);
-
-            Type componentType = component.GetType();
-            PropertyInfo propertyInfo = componentType.GetProperty(fieldName);
-            if (propertyInfo != null)
-            {
-                value = propertyInfo.GetValue(component);
-            }
-            else
-            {
-                // Then, check if the name is a public field.
-                FieldInfo fieldInfo = componentType.GetField(
-                    fieldName,
-                    BindingFlags.Instance | BindingFlags.Public
-                );
-                if (fieldInfo == null)
-                    return -1;
-                value = fieldInfo.GetValue(component);
-
-                if (value.GetType().IsOfGenericType(typeof(SyncField<>)))
-                {
-                    // If the field is a SyncField, we need to get the value of the Value property.
-                    value = value.GetType().GetProperty("Value").GetValue(value);
-                }
-            }
+            object value = ComponentUtils.GetFieldValue(component, fieldName);
+            if (value == null)
+                return 0;
 
             int len;
-            int dataPtr = SimpleSerialization.Serialize(
-                machine,
-                emscriptenEnv,
-                frame,
-                value,
-                out len
-            );
+            int dataPtr = SimpleSerialization.Serialize(machine, this, frame, value, out len);
             if (len == 0)
                 return 0;
 
-            machine.MemSet(dataPtrPtr, dataPtr);
-            return len;
+            if (lenPtr != 0)
+                machine.MemSet(lenPtr, len);
+            return dataPtr;
+        }
+
+        // Sets the value of a field on a component. The field name is in the given string.
+        // The value is deserialized from memory. Returns 0 on success, or -1 if the field
+        // doesn't exist, couldn't be set, or the value couldn't be deserialized.
+        public int component__set_field_value(
+            Frame frame,
+            ulong component_id,
+            int namePtr,
+            int dataPtr
+        )
+        {
+            Component component = FromRefID<Component>(component_id);
+            if (component == null)
+                return -1;
+            string fieldName = emscriptenEnv.GetUTF8StringFromMem(namePtr);
+            object value = SimpleSerialization.Deserialize(machine, this, dataPtr);
+            if (value == null)
+                return -1;
+            if (!ComponentUtils.SetFieldValue(component, fieldName, value))
+                return -1;
+            return 0;
         }
 
         public int value_field__get_value(Frame frame, ulong component_id, int dataPtrPtr)
@@ -398,13 +414,7 @@ namespace Derg
             object value = valueField.Value.Value;
 
             int len;
-            int dataPtr = SimpleSerialization.Serialize(
-                machine,
-                emscriptenEnv,
-                frame,
-                value,
-                out len
-            );
+            int dataPtr = SimpleSerialization.Serialize(machine, this, frame, value, out len);
             if (len == 0)
                 return 0;
 

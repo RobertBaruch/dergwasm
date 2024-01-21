@@ -25,9 +25,10 @@ namespace DergwasmTests
         public void TestBoolSerializesCorrectly()
         {
             TestEmscriptenEnv env = new TestEmscriptenEnv();
+            ResoniteEnv resoniteEnv = new ResoniteEnv(env.machine, null, env);
             bool value = true;
             int len;
-            int ptr = SimpleSerialization.Serialize(env.machine, env, null, value, out len);
+            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value, out len);
 
             Assert.Equal(4, ptr);
             Assert.Equal(8, len);
@@ -39,15 +40,46 @@ namespace DergwasmTests
         public void TestStringSerializesCorrectly()
         {
             TestEmscriptenEnv env = new TestEmscriptenEnv();
+            ResoniteEnv resoniteEnv = new ResoniteEnv(env.machine, null, env);
             string value = "1234";
             int len;
-            int ptr = SimpleSerialization.Serialize(env.machine, env, null, value, out len);
+            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value, out len);
 
             Assert.Equal(4, ptr);
             Assert.Equal(12, len);
             Assert.Equal(SimpleSerialization.SimpleType.String, env.machine.MemGet<int>(4));
             Assert.Equal(4, env.machine.MemGet<int>(8));
             Assert.Equal(0x34333231u, env.machine.MemGet<uint>(12));
+        }
+
+        [Fact]
+        public void TestBoolDeserializesCorrectly()
+        {
+            TestEmscriptenEnv env = new TestEmscriptenEnv();
+            ResoniteEnv resoniteEnv = new ResoniteEnv(env.machine, null, env);
+            bool value = true;
+            int len;
+            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value, out len);
+
+            object deserialized = SimpleSerialization.Deserialize(env.machine, resoniteEnv, ptr);
+
+            Assert.IsAssignableFrom<bool>(deserialized);
+            Assert.True((bool)deserialized);
+        }
+
+        [Fact]
+        public void TestStringDeserializesCorrectly()
+        {
+            TestEmscriptenEnv env = new TestEmscriptenEnv();
+            ResoniteEnv resoniteEnv = new ResoniteEnv(env.machine, null, env);
+            string value = "1234";
+            int len;
+            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value, out len);
+
+            object deserialized = SimpleSerialization.Deserialize(env.machine, resoniteEnv, ptr);
+
+            Assert.IsAssignableFrom<string>(deserialized);
+            Assert.Equal("1234", (string)deserialized);
         }
     }
 }
