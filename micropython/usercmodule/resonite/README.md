@@ -1,3 +1,7 @@
+This directory contains thin Micropython wrappers around the C API. The wrappers
+become available as the `resonitenative` module. These are used in the classes
+in the `resonite` module (in `micropython/fs/resonite`).
+
 Copy the contents of this directory and the c directory to micropython/user_modules/resonite:
 
 ```

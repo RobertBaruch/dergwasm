@@ -1,4 +1,6 @@
 mergeInto(LibraryManager.library, { component__get_type_name: function () { } });
+mergeInto(LibraryManager.library, { component__get_field_value: function () { } });
+mergeInto(LibraryManager.library, { component__set_field_value: function () { } });
 
 mergeInto(LibraryManager.library, { slot__root_slot: function () { } });
 mergeInto(LibraryManager.library, { slot__get_parent: function () { } });
