@@ -33,6 +33,16 @@ namespace Derg
             }
         }
 
+        // Returns a Span of sz bytes from the heap, given a static address offset and
+        // a dynamic address operand.
+        //
+        // From the spec (https://webassembly.github.io/spec/core/syntax/instructions.html#memory-instructions):
+        //
+        // "The static address offset is added to the dynamic address operand, yielding a
+        // 33 bit effective address that is the zero-based index at which the memory is accessed."
+        //
+        // This means that the 32-bit offset and address are unsigned, and their addition is NOT
+        // modulo 2^32.
         private static Span<byte> HeapSpan(
             Instruction instruction,
             Machine machine,
@@ -40,19 +50,18 @@ namespace Derg
             int sz
         )
         {
-            uint offset = frame.Pop().u32;
+            ulong offset = frame.Pop().u32;
             // Ignore Operands[0], the alignment.
-            uint base_addr = instruction.Operands[1].u32;
-            try
-            {
-                return machine.HeapSpan(base_addr + offset, (uint)sz);
-            }
-            catch (Exception)
+            ulong address = instruction.Operands[1].u32;
+            ulong size = (ulong)sz;
+            if (offset + address + size > (ulong)machine.Heap.Length)
             {
                 throw new Trap(
-                    $"Memory access out of bounds: base 0x{(uint)base_addr:X8} offset 0x{(uint)offset:X8}"
+                    $"Memory access out of bounds: offset 0x{offset:X8} address 0x{address:X8} size 0x{size:X8}"
                 );
             }
+            // Because the heap length cannot be greater than 2GB, we can safely cast everything to int.
+            return machine.HeapSpan((int)(offset + address), sz);
         }
 
         public static void I32Load(Instruction instruction, Machine machine, Frame frame) =>

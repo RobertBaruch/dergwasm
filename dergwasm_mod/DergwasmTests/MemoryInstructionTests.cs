@@ -36,6 +36,8 @@ namespace DergwasmTests
 
         [Theory]
         [InlineData(InstructionType.I32_LOAD, 0xFFFF, 0)]
+        [InlineData(InstructionType.I32_LOAD, -1, 1)]
+        [InlineData(InstructionType.I32_LOAD, 1, -1)]
         [InlineData(InstructionType.I32_LOAD, 0, 0xFFFF)]
         [InlineData(InstructionType.I64_LOAD, 0xFFFF, 0)]
         [InlineData(InstructionType.I64_LOAD, 0, 0xFFFF)]

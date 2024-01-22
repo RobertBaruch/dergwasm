@@ -45,7 +45,7 @@ namespace Derg
         {
             try
             {
-                Span<byte> mem = HeapSpan(ea, (uint)sizeof(T));
+                Span<byte> mem = HeapSpan((int)ea, sizeof(T));
                 fixed (byte* ptr = mem)
                 {
                     *(T*)ptr = value;
@@ -100,11 +100,28 @@ namespace Derg
             return memories[0];
         }
 
+        // Returns the backing byte array of the first memory (i.e. the heap).
         public byte[] Heap => memories[0].Data;
 
-        // Span accepts ints, but converts them internally to uints.
-        public Span<byte> HeapSpan(uint offset, uint sz) =>
-            new Span<byte>(Heap, (int)offset, (int)sz);
+        // Returns a Span of bytes over the heap, starting from the given offset,
+        // with the given size. Note that .NET limits arrays to 2GB, so negative
+        // offsets and sizes will lead to an out of bounds condition. Offsets and
+        // sizes are ints because that's the way .NET returns array lengths.
+        //
+        // Throws a Trap if the offset and size are out of bounds.
+        public Span<byte> HeapSpan(int offset, int sz)
+        {
+            try
+            {
+                return Heap.AsSpan(offset, sz);
+            }
+            catch (Exception)
+            {
+                throw new Trap(
+                    $"Memory access out of bounds: offset 0x{(uint)offset:X8} size 0x{(uint)sz:X8}"
+                );
+            }
+        }
 
         public int AddFunc(Func func)
         {
