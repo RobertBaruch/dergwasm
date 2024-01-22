@@ -1085,14 +1085,12 @@ namespace Derg
     public class EmscriptenExceptionInfo
     {
         EmscriptenEnv env;
-        Heap heap;
         int excPtr;
         int ptr;
 
         public EmscriptenExceptionInfo(EmscriptenEnv env, int excPtr)
         {
             this.env = env;
-            this.heap = new Heap(env.machine);
             this.excPtr = excPtr;
             this.ptr = excPtr - 24;
         }
@@ -1115,39 +1113,39 @@ namespace Derg
             // exceptions support.
             if (env.__cxa_is_pointer_type(frame, Type) != 0)
             {
-                return heap.IntAt(ptr);
+                return env.machine.HeapGet<int>(ptr);
             }
             return (AdjustedPtr != 0) ? AdjustedPtr : excPtr;
         }
 
         public int Type
         {
-            get => heap.IntAt(ptr + 4);
-            set => heap.SetIntAt(ptr + 4, value);
+            get => env.machine.HeapGet<int>(ptr + 4);
+            set => env.machine.HeapSet(ptr + 4, value);
         }
 
         public int Destructor
         {
-            get => heap.IntAt(ptr + 8);
-            set => heap.SetIntAt(ptr + 8, value);
+            get => env.machine.HeapGet<int>(ptr + 8);
+            set => env.machine.HeapSet(ptr + 8, value);
         }
 
         public bool Caught
         {
-            get => heap.ByteAt(ptr + 12) != 0;
-            set => heap.SetByteAt(ptr + 12, (byte)(value ? 1 : 0));
+            get => env.machine.HeapGet<byte>(ptr + 12) != 0;
+            set => env.machine.HeapSet(ptr + 12, (byte)(value ? 1 : 0));
         }
 
         public bool Rethrown
         {
-            get => heap.ByteAt(ptr + 13) != 0;
-            set => heap.SetByteAt(ptr + 13, (byte)(value ? 1 : 0));
+            get => env.machine.HeapGet<byte>(ptr + 13) != 0;
+            set => env.machine.HeapSet(ptr + 13, (byte)(value ? 1 : 0));
         }
 
         public int AdjustedPtr
         {
-            get => heap.IntAt(ptr + 16);
-            set => heap.SetIntAt(ptr + 16, value);
+            get => env.machine.HeapGet<int>(ptr + 16);
+            set => env.machine.HeapSet(ptr + 16, value);
         }
     }
 }
