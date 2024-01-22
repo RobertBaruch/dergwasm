@@ -22,6 +22,17 @@ namespace DergwasmTests
         {
             IntField = new Sync<int>();
             ComponentRefField = new SyncRef<TestComponent>();
+
+            // This nonsense is required because Component's ReferenceID has a private setter
+            // in a base class.
+            PropertyInfo propertyInfo = GetType().GetProperty("ReferenceID");
+            var setterMethod = propertyInfo.GetSetMethod(true);
+            if (setterMethod == null)
+                setterMethod = propertyInfo
+                    .DeclaringType
+                    .GetProperty("ReferenceID")
+                    .GetSetMethod(true);
+            setterMethod.Invoke(this, new object[] { new RefID(100) });
         }
 
         public void InternalSetIntField(int value)
@@ -81,6 +92,32 @@ namespace DergwasmTests
             ComponentUtils.SetFieldValue(testComponent, "IntField", 12);
 
             Assert.Equal(12, ComponentUtils.GetFieldValue(testComponent, "IntField"));
+        }
+
+        [Fact]
+        public void SetSyncRefTest()
+        {
+            var testComponent = new TestComponent();
+
+            ComponentUtils.SetFieldValue(testComponent, "ComponentRefField", testComponent);
+
+            Assert.Same(
+                testComponent,
+                ComponentUtils.GetFieldValue(testComponent, "ComponentRefField")
+            );
+        }
+
+        [Fact]
+        public void SetPropertyTest()
+        {
+            ResonitePatches.Apply();
+
+            var testComponent = new TestComponent();
+            testComponent.InternalSetIntField(1);
+
+            ComponentUtils.SetFieldValue(testComponent, "IntProperty", 12);
+
+            Assert.Equal(12, ComponentUtils.GetFieldValue(testComponent, "IntProperty"));
         }
     }
 }

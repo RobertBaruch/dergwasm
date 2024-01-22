@@ -15,7 +15,7 @@ namespace DergwasmTests
         public static void Apply()
         {
             if (Harmony.HasAnyPatches("dev.xekri.Dergwasm"))
-                throw new Exception();
+                return;
             Harmony harmony = new Harmony("dev.xekri.Dergwasm");
             harmony.PatchAll();
             Console.WriteLine("Patched!");

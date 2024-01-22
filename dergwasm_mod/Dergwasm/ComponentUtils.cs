@@ -64,7 +64,7 @@ namespace Derg
                 return false;
             object syncValue = fieldInfo.GetValue(component);
 
-            if (syncValue.GetType().IsOfGenericType(typeof(SyncField<>)))
+            if (syncValue.GetType().IsOfGenericType(typeof(Sync<>)))
             {
                 syncValue.GetType().GetProperty("Value").SetValue(syncValue, value);
                 return true;
