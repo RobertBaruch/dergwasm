@@ -15,20 +15,20 @@ namespace Derg
 
         public int IntAt(int offset)
         {
-            return BitConverter.ToInt32(machine.Memory0, offset);
+            return BitConverter.ToInt32(machine.Heap, offset);
         }
 
         public void SetIntAt(int offset, int val)
         {
             byte[] bytes = BitConverter.GetBytes(val);
-            Array.Copy(bytes, 0, machine.Memory0, offset, bytes.Length);
+            Array.Copy(bytes, 0, machine.Heap, offset, bytes.Length);
         }
 
         public byte ByteAt(int offset)
         {
-            return machine.Memory0[offset];
+            return machine.Heap[offset];
         }
 
-        public void SetByteAt(int offset, byte val) => machine.Memory0[offset] = val;
+        public void SetByteAt(int offset, byte val) => machine.Heap[offset] = val;
     }
 }

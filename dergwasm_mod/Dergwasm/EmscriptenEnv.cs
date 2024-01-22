@@ -91,24 +91,24 @@ namespace Derg
         public string GetUTF8StringFromMem(int ptr)
         {
             int endPtr = ptr;
-            while (machine.Memory0[endPtr] != 0)
+            while (machine.Heap[endPtr] != 0)
             {
                 endPtr++;
             }
-            return Encoding.UTF8.GetString(machine.Memory0, ptr, endPtr - ptr);
+            return Encoding.UTF8.GetString(machine.Heap, ptr, endPtr - ptr);
         }
 
         public string GetUTF8StringFromMem(int ptr, uint len)
         {
-            return Encoding.UTF8.GetString(machine.Memory0, ptr, (int)len);
+            return Encoding.UTF8.GetString(machine.Heap, ptr, (int)len);
         }
 
         // Writes a UTF-8 encoded string to the heap. Returns the number of bytes written.
         public int WriteUTF8StringToMem(int ptr, string s)
         {
             byte[] stringData = Encoding.UTF8.GetBytes(s);
-            Buffer.BlockCopy(stringData, 0, machine.Memory0, ptr, stringData.Length);
-            machine.Memory0[ptr + stringData.Length] = 0; // NUL-termination
+            Buffer.BlockCopy(stringData, 0, machine.Heap, ptr, stringData.Length);
+            machine.Heap[ptr + stringData.Length] = 0; // NUL-termination
             return stringData.Length + 1;
         }
 
@@ -860,7 +860,7 @@ namespace Derg
         public void emscripten_memcpy_js(Frame frame, int dest, int src, int len)
         {
             Console.WriteLine($"emscripten_memcpy_js({dest}, {src}, {len})");
-            byte[] mem = machine.Memory0;
+            byte[] mem = machine.Heap;
             try
             {
                 Array.Copy(mem, src, mem, dest, len);
@@ -1072,7 +1072,7 @@ namespace Derg
         public void mp_js_write(Frame frame, int ptr, int len)
         {
             byte[] data = new byte[len];
-            Array.Copy(machine.Memory0, ptr, data, 0, len);
+            Array.Copy(machine.Heap, ptr, data, 0, len);
             Console.WriteLine($"  MicroPython wrote: {System.Text.Encoding.UTF8.GetString(data)}");
             if (outputWriter != null)
             {

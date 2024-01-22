@@ -380,7 +380,7 @@ namespace Derg
                 return 0;
 
             if (lenPtr != 0)
-                machine.MemSet(lenPtr, len);
+                machine.HeapSet(lenPtr, len);
             return dataPtr;
         }
 
@@ -418,7 +418,7 @@ namespace Derg
             if (len == 0)
                 return 0;
 
-            machine.MemSet(dataPtrPtr, dataPtr);
+            machine.HeapSet(dataPtrPtr, dataPtr);
             return len;
         }
     }

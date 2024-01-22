@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-
 using FrooxEngine;
 
 namespace Derg
@@ -177,7 +176,7 @@ namespace Derg
                 Buffer.BlockCopy(
                     streams[fd].content,
                     (int)streams[fd].position,
-                    machine.Memory0,
+                    machine.Heap,
                     memptr,
                     nread
                 );
@@ -279,7 +278,7 @@ namespace Derg
             try
             {
                 Buffer.BlockCopy(
-                    machine.Memory0,
+                    machine.Heap,
                     memptr,
                     streams[fd].content,
                     (int)streams[fd].position,
@@ -434,7 +433,7 @@ namespace Derg
             if (iov == 0)
                 return -Errno.EFAULT;
 
-            MemoryStream iovStream = new MemoryStream(machine.Memory0);
+            MemoryStream iovStream = new MemoryStream(machine.Heap);
             iovStream.Position = iov;
             BinaryReader iovReader = new BinaryReader(iovStream);
 
@@ -454,7 +453,7 @@ namespace Derg
 
             if (nwrittenPtr != 0)
             {
-                machine.MemSet(nwrittenPtr, nwritten);
+                machine.HeapSet(nwrittenPtr, nwritten);
             }
             return 0;
         }
@@ -482,7 +481,7 @@ namespace Derg
             }
             if (newOffsetPtr != 0)
             {
-                machine.MemSet(newOffsetPtr, (long)pos);
+                machine.HeapSet(newOffsetPtr, (long)pos);
             }
             return 0;
         }
@@ -503,7 +502,7 @@ namespace Derg
             if (iov == 0)
                 return -Errno.EFAULT;
 
-            MemoryStream iovStream = new MemoryStream(machine.Memory0);
+            MemoryStream iovStream = new MemoryStream(machine.Heap);
             iovStream.Position = iov;
             BinaryReader iovReader = new BinaryReader(iovStream);
 
@@ -523,7 +522,7 @@ namespace Derg
 
             if (nreadPtr != 0)
             {
-                machine.MemSet(nreadPtr, nread);
+                machine.HeapSet(nreadPtr, nread);
             }
             return 0;
         }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Derg
 {
@@ -17,12 +16,12 @@ namespace Derg
         public List<Memory> memories = new List<Memory>();
         public List<byte[]> dataSegments = new List<byte[]>();
 
-        public unsafe T MemGet<T>(uint ea)
+        public unsafe T HeapGet<T>(uint ea)
             where T : unmanaged
         {
             try
             {
-                fixed (byte* ptr = &Memory0[ea])
+                fixed (byte* ptr = &Heap[ea])
                 {
                     return *(T*)ptr;
                 }
@@ -35,18 +34,18 @@ namespace Derg
             }
         }
 
-        public unsafe T MemGet<T>(int ea)
+        public unsafe T HeapGet<T>(int ea)
             where T : unmanaged
         {
-            return MemGet<T>((uint)ea);
+            return HeapGet<T>((uint)ea);
         }
 
-        public unsafe void MemSet<T>(uint ea, T value)
+        public unsafe void HeapSet<T>(uint ea, T value)
             where T : unmanaged
         {
             try
             {
-                Span<byte> mem = Span0(ea, (uint)sizeof(T));
+                Span<byte> mem = HeapSpan(ea, (uint)sizeof(T));
                 fixed (byte* ptr = mem)
                 {
                     *(T*)ptr = value;
@@ -60,10 +59,10 @@ namespace Derg
             }
         }
 
-        public unsafe void MemSet<T>(int ea, T value)
+        public unsafe void HeapSet<T>(int ea, T value)
             where T : unmanaged
         {
-            MemSet((uint)ea, value);
+            HeapSet((uint)ea, value);
         }
 
         public string MainModuleName
@@ -101,11 +100,11 @@ namespace Derg
             return memories[0];
         }
 
-        public byte[] Memory0 => memories[0].Data;
+        public byte[] Heap => memories[0].Data;
 
         // Span accepts ints, but converts them internally to uints.
-        public Span<byte> Span0(uint offset, uint sz) =>
-            new Span<byte>(memories[0].Data, (int)offset, (int)sz);
+        public Span<byte> HeapSpan(uint offset, uint sz) =>
+            new Span<byte>(Heap, (int)offset, (int)sz);
 
         public int AddFunc(Func func)
         {

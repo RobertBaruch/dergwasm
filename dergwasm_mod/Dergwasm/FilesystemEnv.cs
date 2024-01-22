@@ -1,9 +1,9 @@
-﻿using FrooxEngine;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using FrooxEngine;
 
 namespace Derg
 {
@@ -407,9 +407,9 @@ namespace Derg
                 return 0;
             try
             {
-                slot.GetComponent<ValueField<string>>().Value.Value = Encoding.UTF8.GetString(
-                    stream.content
-                );
+                slot.GetComponent<ValueField<string>>().Value.Value = Encoding
+                    .UTF8
+                    .GetString(stream.content);
             }
             catch (Exception)
             {
@@ -466,8 +466,8 @@ namespace Derg
             byte[] bytes = Encoding.UTF8.GetBytes(cwd);
             if (size < bytes.Length + 1)
                 return -Errno.ERANGE;
-            Array.Copy(bytes, 0, machine.Memory0, buf, bytes.Length);
-            machine.Memory0[buf + bytes.Length] = 0;
+            Array.Copy(bytes, 0, machine.Heap, buf, bytes.Length);
+            machine.Heap[buf + bytes.Length] = 0;
             return 0;
         }
 
@@ -607,7 +607,7 @@ namespace Derg
                 int size = Marshal.SizeOf(stat);
                 ptr = Marshal.AllocHGlobal(size);
                 Marshal.StructureToPtr(stat, ptr, true);
-                Marshal.Copy(ptr, machine.Memory0, buf, size);
+                Marshal.Copy(ptr, machine.Heap, buf, size);
             }
             finally
             {

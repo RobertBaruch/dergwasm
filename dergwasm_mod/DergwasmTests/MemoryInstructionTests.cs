@@ -17,7 +17,7 @@ namespace DergwasmTests
         [InlineData(InstructionType.I32_LOAD16_U, 0, 0, 0xA6A8)]
         public void TestI32Load(InstructionType insn, int offset, int base_addr, uint expected)
         {
-            Array.Copy(new byte[] { 0xA8, 0xA6, 0x34, 0x12, 0xFF }, machine.Memory0, 5);
+            Array.Copy(new byte[] { 0xA8, 0xA6, 0x34, 0x12, 0xFF }, machine.Heap, 5);
 
             // 0: I32_CONST offset
             // 1: I32_LOAD _ base_addr
@@ -70,7 +70,7 @@ namespace DergwasmTests
         [InlineData(InstructionType.I64_LOAD32_U, 0, 0, 0x00000000A4A3A2A1UL)]
         public void TestI64Load(InstructionType insn, int offset, int base_addr, ulong expected)
         {
-            Array.Copy(new byte[] { 0xA1, 0xA2, 0xA3, 0xA4, 5, 6, 7, 8, 9 }, machine.Memory0, 9);
+            Array.Copy(new byte[] { 0xA1, 0xA2, 0xA3, 0xA4, 5, 6, 7, 8, 9 }, machine.Heap, 9);
 
             // 0: I32_CONST offset
             // 1: I64_LOAD _ base_addr
@@ -93,7 +93,7 @@ namespace DergwasmTests
         [InlineData(1, 0, -1.94339031E+38f)]
         public void TestF32Load(int offset, int base_addr, float expected)
         {
-            Array.Copy(new byte[] { 0x78, 0x56, 0x34, 0x12, 0xFF }, machine.Memory0, 5);
+            Array.Copy(new byte[] { 0x78, 0x56, 0x34, 0x12, 0xFF }, machine.Heap, 5);
 
             // 0: I32_CONST offset
             // 1: F32_LOAD _ base_addr
@@ -120,7 +120,7 @@ namespace DergwasmTests
         [InlineData(1, 0, 3.7258146895053074E-265)]
         public void TestF64Load(int offset, int base_addr, double expected)
         {
-            Array.Copy(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 }, machine.Memory0, 9);
+            Array.Copy(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 }, machine.Heap, 9);
 
             // 0: I32_CONST offset
             // 1: F64_LOAD _ base_addr
@@ -170,7 +170,7 @@ namespace DergwasmTests
             machine.Step(3);
 
             Assert.Empty(machine.Frame.value_stack);
-            Assert.Equal(expected, MemoryInstructions.Convert<ulong>(machine.Memory0, 0));
+            Assert.Equal(expected, MemoryInstructions.Convert<ulong>(machine.Heap, 0));
         }
 
         [Theory]
@@ -198,7 +198,7 @@ namespace DergwasmTests
             machine.Step(3);
 
             Assert.Empty(machine.Frame.value_stack);
-            Assert.Equal(expected, MemoryInstructions.Convert<ulong>(machine.Memory0, 0));
+            Assert.Equal(expected, MemoryInstructions.Convert<ulong>(machine.Heap, 0));
         }
 
         [Theory]
@@ -274,8 +274,8 @@ namespace DergwasmTests
             machine.Step(3);
 
             Assert.Empty(machine.Frame.value_stack);
-            Assert.Equal(expected, MemoryInstructions.Convert<ulong>(machine.Memory0, 0));
-            Assert.Equal(expected8, machine.Memory0[8]);
+            Assert.Equal(expected, MemoryInstructions.Convert<ulong>(machine.Heap, 0));
+            Assert.Equal(expected8, machine.Heap[8]);
         }
 
         [Theory]
@@ -303,8 +303,8 @@ namespace DergwasmTests
             machine.Step(3);
 
             Assert.Empty(machine.Frame.value_stack);
-            Assert.Equal(expected, MemoryInstructions.Convert<ulong>(machine.Memory0, 0));
-            Assert.Equal(expected8, machine.Memory0[8]);
+            Assert.Equal(expected, MemoryInstructions.Convert<ulong>(machine.Heap, 0));
+            Assert.Equal(expected8, machine.Heap[8]);
         }
 
         [Theory]
@@ -351,7 +351,7 @@ namespace DergwasmTests
 
             Assert.Collection(machine.Frame.value_stack, v => Assert.Equal(expected_return, v.s32));
 
-            Assert.Equal(expected_size, machine.Memory0.Length);
+            Assert.Equal(expected_size, machine.Heap.Length);
         }
 
         [Theory]
@@ -380,7 +380,7 @@ namespace DergwasmTests
 
             Assert.Empty(machine.Frame.value_stack);
 
-            Assert.Equal(expected, new ArraySegment<byte>(machine.Memory0, 0, 5).ToArray());
+            Assert.Equal(expected, new ArraySegment<byte>(machine.Heap, 0, 5).ToArray());
         }
 
         [Theory]
@@ -411,7 +411,7 @@ namespace DergwasmTests
         [InlineData(1, 0, 3, new byte[] { 2, 3, 4, 4, 5 })]
         public void TestMemoryCopy(int s_offset, int d_offset, int sz, byte[] expected)
         {
-            Array.Copy(new byte[] { 1, 2, 3, 4, 5 }, machine.Memory0, 5);
+            Array.Copy(new byte[] { 1, 2, 3, 4, 5 }, machine.Heap, 5);
 
             // 0: I32_CONST d_offset
             // 1: I32_CONST s_offset
@@ -431,7 +431,7 @@ namespace DergwasmTests
 
             Assert.Empty(machine.Frame.value_stack);
 
-            Assert.Equal(expected, new ArraySegment<byte>(machine.Memory0, 0, 5).ToArray());
+            Assert.Equal(expected, new ArraySegment<byte>(machine.Heap, 0, 5).ToArray());
         }
 
         [Theory]
@@ -489,7 +489,7 @@ namespace DergwasmTests
 
             Assert.Empty(machine.Frame.value_stack);
 
-            Assert.Equal(expected, new ArraySegment<byte>(machine.Memory0, 0, 5).ToArray());
+            Assert.Equal(expected, new ArraySegment<byte>(machine.Heap, 0, 5).ToArray());
         }
 
         [Theory]
