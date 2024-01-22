@@ -127,8 +127,8 @@ public class Program
         frame.Label = new Label(1, 0);
         int stackPtr = emscriptenEnv.stackAlloc(frame, size);
 
-        Array.Copy(utf, 0, machine.Memory0, stackPtr, utf.Length);
-        machine.Memory0[stackPtr + utf.Length] = 0; // NUL-termination
+        Array.Copy(utf, 0, machine.Heap, stackPtr, utf.Length);
+        machine.Heap[stackPtr + utf.Length] = 0; // NUL-termination
 
         return stackPtr;
     }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Text;
-
 using Derg;
 using Xunit;
 
@@ -136,8 +135,8 @@ namespace DergwasmTests
         {
             Stream stream = wasi.CreateStream("test.txt", Encoding.UTF8.GetBytes("0123456789"));
 
-            Assert.Equal(-Errno.EFAULT, wasi.Read(stream.fd, machine.Memory0.Length, 1));
-            Assert.Equal(0, wasi.Read(stream.fd, machine.Memory0.Length, 0));
+            Assert.Equal(-Errno.EFAULT, wasi.Read(stream.fd, machine.Heap.Length, 1));
+            Assert.Equal(0, wasi.Read(stream.fd, machine.Heap.Length, 0));
         }
 
         [Fact]
@@ -291,8 +290,8 @@ namespace DergwasmTests
         {
             Stream stream = wasi.CreateStream("test.txt", Encoding.UTF8.GetBytes("0123456789"));
 
-            Assert.Equal(-Errno.EFAULT, wasi.Write(stream.fd, machine.Memory0.Length, 1));
-            Assert.Equal(0, wasi.Write(stream.fd, machine.Memory0.Length, 0));
+            Assert.Equal(-Errno.EFAULT, wasi.Write(stream.fd, machine.Heap.Length, 1));
+            Assert.Equal(0, wasi.Write(stream.fd, machine.Heap.Length, 0));
         }
 
         [Fact]

@@ -331,7 +331,7 @@ namespace Derg
 
             // There doesn't seem to be a way to directly copy the contents of a
             // MemoryStream to a byte array.
-            MemoryStream memoryStream = new MemoryStream(machine.Memory0, dataPtr, len);
+            MemoryStream memoryStream = new MemoryStream(machine.Heap, dataPtr, len);
             stream.Position = 0;
             stream.CopyTo(memoryStream);
             return dataPtr;
@@ -341,7 +341,7 @@ namespace Derg
         // couldn't be deserialized.
         public static object Deserialize(Machine machine, ResoniteEnv resoniteEnv, int dataPtr)
         {
-            MemoryStream memoryStream = new MemoryStream(machine.Memory0);
+            MemoryStream memoryStream = new MemoryStream(machine.Heap);
             BinaryReader reader = new BinaryReader(memoryStream);
             memoryStream.Position = dataPtr;
 

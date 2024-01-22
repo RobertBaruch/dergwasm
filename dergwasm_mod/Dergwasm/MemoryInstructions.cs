@@ -1,165 +1,177 @@
 ﻿using System;
-using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
 
 namespace Derg
 {
     public static class MemoryInstructions
     {
-        public static unsafe T Convert<T>(byte[] mem, uint ea)
-            where T : unmanaged
-        {
-            fixed (byte* ptr = &mem[ea])
-            {
-                return *(T*)ptr;
-            }
-        }
-
-        private static unsafe T Convert<T>(Span<byte> bytes)
-            where T : unmanaged
-        {
-            fixed (byte* ptr = bytes)
-            {
-                return *(T*)ptr;
-            }
-        }
-
-        private static unsafe void Store<T>(Span<byte> bytes, T value)
-            where T : unmanaged
-        {
-            fixed (byte* ptr = bytes)
-            {
-                *(T*)ptr = value;
-            }
-        }
-
-        private static Span<byte> Span0(
-            Instruction instruction,
-            Machine machine,
-            Frame frame,
-            int sz
-        )
-        {
-            uint offset = frame.Pop().u32;
-            // Ignore Operands[0], the alignment.
-            uint base_addr = instruction.Operands[1].u32;
-            try
-            {
-                return machine.Span0(base_addr + offset, (uint)sz);
-            }
-            catch (Exception)
-            {
-                throw new Trap(
-                    $"Memory access out of bounds: base 0x{(uint)base_addr:X8} offset 0x{(uint)offset:X8}"
-                );
-            }
-        }
-
         public static void I32Load(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(new Value { u32 = Convert<uint>(Span0(instruction, machine, frame, 4)) });
+            frame.Push(
+                new Value
+                {
+                    u32 = machine.HeapGet<uint>(frame.Pop().s32, instruction.Operands[1].s32)
+                }
+            );
 
         public static void I32Load8_S(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(new Value { s32 = (sbyte)Span0(instruction, machine, frame, 1)[0] });
+            frame.Push(
+                new Value
+                {
+                    s32 = machine.HeapGet<sbyte>(frame.Pop().s32, instruction.Operands[1].s32)
+                }
+            );
 
         public static void I32Load8_U(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(new Value { u32 = Span0(instruction, machine, frame, 1)[0] });
+            frame.Push(
+                new Value
+                {
+                    u32 = machine.HeapGet<byte>(frame.Pop().s32, instruction.Operands[1].s32)
+                }
+            );
 
         public static void I32Load16_S(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(new Value { s32 = Convert<short>(Span0(instruction, machine, frame, 2)) });
+            frame.Push(
+                new Value
+                {
+                    s32 = machine.HeapGet<short>(frame.Pop().s32, instruction.Operands[1].s32)
+                }
+            );
 
         public static void I32Load16_U(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(new Value { u32 = Convert<ushort>(Span0(instruction, machine, frame, 2)) });
+            frame.Push(
+                new Value
+                {
+                    u32 = machine.HeapGet<ushort>(frame.Pop().s32, instruction.Operands[1].s32)
+                }
+            );
 
         public static void I64Load(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(new Value { u64 = Convert<ulong>(Span0(instruction, machine, frame, 8)) });
+            frame.Push(
+                new Value
+                {
+                    u64 = machine.HeapGet<ulong>(frame.Pop().s32, instruction.Operands[1].s32)
+                }
+            );
 
         public static void I64Load8_S(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(new Value { s64 = (sbyte)Span0(instruction, machine, frame, 1)[0] });
+            frame.Push(
+                new Value
+                {
+                    s64 = machine.HeapGet<sbyte>(frame.Pop().s32, instruction.Operands[1].s32)
+                }
+            );
 
         public static void I64Load8_U(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(new Value { u64 = Span0(instruction, machine, frame, 1)[0] });
+            frame.Push(
+                new Value
+                {
+                    u64 = machine.HeapGet<byte>(frame.Pop().s32, instruction.Operands[1].s32)
+                }
+            );
 
         public static void I64Load16_S(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(new Value { s64 = Convert<short>(Span0(instruction, machine, frame, 2)) });
+            frame.Push(
+                new Value
+                {
+                    s64 = machine.HeapGet<short>(frame.Pop().s32, instruction.Operands[1].s32)
+                }
+            );
 
         public static void I64Load16_U(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(new Value { u64 = Convert<ushort>(Span0(instruction, machine, frame, 2)) });
+            frame.Push(
+                new Value
+                {
+                    u64 = machine.HeapGet<ushort>(frame.Pop().s32, instruction.Operands[1].s32)
+                }
+            );
 
         public static void I64Load32_S(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(new Value { s64 = Convert<int>(Span0(instruction, machine, frame, 2)) });
+            frame.Push(
+                new Value
+                {
+                    s64 = machine.HeapGet<int>(frame.Pop().s32, instruction.Operands[1].s32)
+                }
+            );
 
         public static void I64Load32_U(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(new Value { u64 = Convert<uint>(Span0(instruction, machine, frame, 2)) });
+            frame.Push(
+                new Value
+                {
+                    u64 = machine.HeapGet<uint>(frame.Pop().s32, instruction.Operands[1].s32)
+                }
+            );
 
         public static void F32Load(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(new Value { f32 = Convert<float>(Span0(instruction, machine, frame, 4)) });
+            frame.Push(
+                new Value
+                {
+                    f32 = machine.HeapGet<float>(frame.Pop().s32, instruction.Operands[1].s32)
+                }
+            );
 
         public static void F64Load(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(new Value { f64 = Convert<double>(Span0(instruction, machine, frame, 8)) });
+            frame.Push(
+                new Value
+                {
+                    f64 = machine.HeapGet<double>(frame.Pop().s32, instruction.Operands[1].s32)
+                }
+            );
 
         public static void I32Store(Instruction instruction, Machine machine, Frame frame)
         {
             uint val = frame.Pop().u32;
-            Span<byte> span = Span0(instruction, machine, frame, 4);
-            Store<uint>(span, val);
+            machine.HeapSet(frame.Pop().s32, instruction.Operands[1].s32, val);
         }
 
         public static void I32Store8(Instruction instruction, Machine machine, Frame frame)
         {
-            uint val = frame.Pop().u32;
-            Span0(instruction, machine, frame, 1)[0] = (byte)val;
+            byte val = (byte)frame.Pop().u32;
+            machine.HeapSet(frame.Pop().s32, instruction.Operands[1].s32, val);
         }
 
         public static void I32Store16(Instruction instruction, Machine machine, Frame frame)
         {
-            uint val = frame.Pop().u32;
-            Span<byte> span = Span0(instruction, machine, frame, 2);
-            Store<ushort>(span, (ushort)val);
+            ushort val = (ushort)frame.Pop().u32;
+            machine.HeapSet(frame.Pop().s32, instruction.Operands[1].s32, val);
         }
 
         public static void I64Store(Instruction instruction, Machine machine, Frame frame)
         {
             ulong val = frame.Pop().u64;
-            Span<byte> span = Span0(instruction, machine, frame, 8);
-            Store<ulong>(span, val);
+            machine.HeapSet(frame.Pop().s32, instruction.Operands[1].s32, val);
         }
 
         public static void I64Store8(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong val = frame.Pop().u64;
-            Span0(instruction, machine, frame, 1)[0] = (byte)val;
+            byte val = (byte)frame.Pop().u64;
+            machine.HeapSet(frame.Pop().s32, instruction.Operands[1].s32, val);
         }
 
         public static void I64Store16(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong val = frame.Pop().u64;
-            Span<byte> span = Span0(instruction, machine, frame, 2);
-            Store<ushort>(span, (ushort)val);
+            ushort val = (ushort)frame.Pop().u64;
+            machine.HeapSet(frame.Pop().s32, instruction.Operands[1].s32, val);
         }
 
         public static void I64Store32(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong val = frame.Pop().u64;
-            Span<byte> span = Span0(instruction, machine, frame, 4);
-            Store<uint>(span, (uint)val);
+            uint val = (uint)frame.Pop().u64;
+            machine.HeapSet(frame.Pop().s32, instruction.Operands[1].s32, val);
         }
 
         public static void F32Store(Instruction instruction, Machine machine, Frame frame)
         {
             float val = frame.Pop().f32;
-            Span<byte> span = Span0(instruction, machine, frame, 4);
-            Store<float>(span, val);
+            machine.HeapSet(frame.Pop().s32, instruction.Operands[1].s32, val);
         }
 
         public static void F64Store(Instruction instruction, Machine machine, Frame frame)
         {
             double val = frame.Pop().f64;
-            Span<byte> span = Span0(instruction, machine, frame, 8);
-            Store<double>(span, val);
+            machine.HeapSet(frame.Pop().s32, instruction.Operands[1].s32, val);
         }
 
         public static void MemorySize(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(new Value { u32 = (uint)machine.Memory0.Length >> 16 });
+            frame.Push(new Value { u32 = (uint)machine.Heap.Length >> 16 });
 
         public static void MemoryGrow(Instruction instruction, Machine machine, Frame frame)
         {
@@ -201,7 +213,7 @@ namespace Derg
             Memory mem = machine.GetMemoryFromIndex(0);
             try
             {
-                machine.Memory0.AsSpan<byte>((int)d, (int)n).Fill(val);
+                machine.Heap.AsSpan<byte>((int)d, (int)n).Fill(val);
             }
             catch (Exception e)
             {
@@ -252,7 +264,7 @@ namespace Derg
             uint d_offset = frame.Pop().u32;
             try
             {
-                Array.Copy(data, s_offset, machine.Memory0, d_offset, n);
+                Array.Copy(data, s_offset, machine.Heap, d_offset, n);
             }
             catch (Exception e)
             {

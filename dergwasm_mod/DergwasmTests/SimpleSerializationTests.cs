@@ -32,8 +32,8 @@ namespace DergwasmTests
 
             Assert.Equal(4, ptr);
             Assert.Equal(8, len);
-            Assert.Equal(SimpleSerialization.SimpleType.Bool, env.machine.MemGet<int>(4));
-            Assert.Equal(1, env.machine.MemGet<int>(8));
+            Assert.Equal(SimpleSerialization.SimpleType.Bool, env.machine.HeapGet<int>(4));
+            Assert.Equal(1, env.machine.HeapGet<int>(8));
         }
 
         [Fact]
@@ -47,9 +47,9 @@ namespace DergwasmTests
 
             Assert.Equal(4, ptr);
             Assert.Equal(12, len);
-            Assert.Equal(SimpleSerialization.SimpleType.String, env.machine.MemGet<int>(4));
-            Assert.Equal(4, env.machine.MemGet<int>(8));
-            Assert.Equal(0x34333231u, env.machine.MemGet<uint>(12));
+            Assert.Equal(SimpleSerialization.SimpleType.String, env.machine.HeapGet<int>(4));
+            Assert.Equal(4, env.machine.HeapGet<int>(8));
+            Assert.Equal(0x34333231u, env.machine.HeapGet<uint>(12));
         }
 
         [Fact]
