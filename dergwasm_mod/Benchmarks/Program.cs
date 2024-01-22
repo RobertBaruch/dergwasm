@@ -375,6 +375,77 @@ namespace DergwasmTests
         }
     }
 
+    // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3930/22H2/2022Update)
+    //    Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
+    //      [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+    //  .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
+    //
+    // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
+    //
+    // | Method         | N     | Mean     | Error   | StdDev   | Ratio |
+    // |--------------- |------ |---------:|--------:|---------:|------:|
+    // | LargeBlockCopy | 10000 | 496.4 us | 9.72 us | 10.81 us |  1.00 |
+    // |                |       |          |         |          |       |
+    // | LargeArrayCopy | 10000 | 460.3 us | 6.11 us |  5.71 us |  1.00 |
+    // |                |       |          |         |          |       |
+    // | SmallBlockCopy | 10000 | 210.2 us | 2.93 us |  2.45 us |  1.00 |
+    // |                |       |          |         |          |       |
+    // | SmallArrayCopy | 10000 | 221.6 us | 3.27 us |  2.90 us |  1.00 |
+    [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
+    public class MemoryCopyBenchmark : TestMachine
+    {
+        [Params(10000)]
+        public int N;
+
+        [Benchmark]
+        public byte[] LargeBlockCopy()
+        {
+            byte[] heap = Heap;
+            for (int i = 0; i < N; i++)
+            {
+                Buffer.BlockCopy(heap, 0, heap, 1, 1000);
+                Buffer.BlockCopy(heap, 1, heap, 0, 1000);
+            }
+            return heap;
+        }
+
+        [Benchmark]
+        public byte[] LargeArrayCopy()
+        {
+            byte[] heap = Heap;
+            for (int i = 0; i < N; i++)
+            {
+                Array.Copy(heap, 0, heap, 1, 1000);
+                Array.Copy(heap, 1, heap, 0, 1000);
+            }
+            return heap;
+        }
+
+        [Benchmark]
+        public byte[] SmallBlockCopy()
+        {
+            byte[] heap = Heap;
+            for (int i = 0; i < N; i++)
+            {
+                Buffer.BlockCopy(heap, 0, heap, 1, 8);
+                Buffer.BlockCopy(heap, 1, heap, 0, 8);
+            }
+            return heap;
+        }
+
+        [Benchmark]
+        public byte[] SmallArrayCopy()
+        {
+            byte[] heap = Heap;
+            for (int i = 0; i < N; i++)
+            {
+                Array.Copy(heap, 0, heap, 1, 8);
+                Array.Copy(heap, 1, heap, 0, 8);
+            }
+            return heap;
+        }
+    }
+
     public class Program
     {
         public static void Main(string[] args)
