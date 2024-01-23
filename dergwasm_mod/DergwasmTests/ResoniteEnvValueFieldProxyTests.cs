@@ -72,6 +72,21 @@ namespace DergwasmTests
         }
 
         [Fact]
+        public void GetSourceFailsOnBadRefIDTest()
+        {
+            Assert.Equal(0UL, env.value_field_proxy__get_source(frame, 101));
+        }
+
+        [Fact]
+        public void GetSourceFailsOnIncorrectComponentTest()
+        {
+            Sync<int> valueField = new Sync<int>();
+            SetRefId(valueField, 100);
+
+            Assert.Equal(0UL, env.value_field_proxy__get_source(frame, 100));
+        }
+
+        [Fact]
         public void GetSourceNullTest()
         {
             ValueFieldProxy<int> valueFieldProxy = new ValueFieldProxy<int>();
@@ -97,6 +112,21 @@ namespace DergwasmTests
         }
 
         [Fact]
+        public void GetValueFailsOnBadRefIDTest()
+        {
+            Assert.Equal(0, env.value_field_proxy__get_value(frame, 101, 0));
+        }
+
+        [Fact]
+        public void GetValueFailsOnIncorrectComponentTest()
+        {
+            Sync<int> valueField = new Sync<int>();
+            SetRefId(valueField, 100);
+
+            Assert.Equal(0, env.value_field_proxy__get_value(frame, 100, 0));
+        }
+
+        [Fact]
         public void GetValueTest()
         {
             Sync<int> valueField = new Sync<int>();
@@ -119,6 +149,21 @@ namespace DergwasmTests
         }
 
         [Fact]
+        public void SetSourceFailsOnBadRefIDTest()
+        {
+            Assert.Equal(-1, env.value_field_proxy__set_source(frame, 101, 100));
+        }
+
+        [Fact]
+        public void SetSourceFailsOnIncorrectComponentTest()
+        {
+            Sync<int> valueField = new Sync<int>();
+            SetRefId(valueField, 100);
+
+            Assert.Equal(-1, env.value_field_proxy__set_source(frame, 100, 100));
+        }
+
+        [Fact]
         public void SetSourceTest()
         {
             Sync<int> valueField = new Sync<int>();
@@ -131,6 +176,37 @@ namespace DergwasmTests
 
             Assert.Equal(0, env.value_field_proxy__set_source(frame, 101, 100));
             Assert.Equal(100UL, env.value_field_proxy__get_source(frame, 101));
+        }
+
+        [Fact]
+        public void SetSourceFailsOnIncorrectTypeTest()
+        {
+            Sync<uint> valueField = new Sync<uint>();
+            SetRefId(valueField, 100);
+            valueField.Value = 1;
+
+            ValueFieldProxy<int> valueFieldProxy = new ValueFieldProxy<int>();
+            Initialize(valueFieldProxy);
+            SetRefId(valueFieldProxy, 101);
+
+            Assert.Equal(-1, env.value_field_proxy__set_source(frame, 101, 100));
+        }
+
+        [Fact]
+        public void SetValueFailsOnBadRefIDTest()
+        {
+            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, 12, out int _);
+            Assert.Equal(-1, env.value_field_proxy__set_value(frame, 101, dataPtr));
+        }
+
+        [Fact]
+        public void SetValueFailsOnIncorrectComponentTest()
+        {
+            Sync<int> valueField = new Sync<int>();
+            SetRefId(valueField, 100);
+            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, 12, out int _);
+
+            Assert.Equal(-1, env.value_field_proxy__set_value(frame, 100, dataPtr));
         }
 
         [Fact]
@@ -148,6 +224,23 @@ namespace DergwasmTests
 
             Assert.Equal(0, env.value_field_proxy__set_value(frame, 101, dataPtr));
             Assert.Equal(12, valueFieldProxy.Source.Target.Value);
+        }
+
+        [Fact]
+        public void SetValueFailsOnIncorrectTypeTest()
+        {
+            Sync<int> valueField = new Sync<int>();
+            SetRefId(valueField, 100);
+            valueField.Value = 1;
+
+            ValueFieldProxy<int> valueFieldProxy = new ValueFieldProxy<int>();
+            Initialize(valueFieldProxy);
+            SetRefId(valueFieldProxy, 101);
+            valueFieldProxy.Source.Target = valueField;
+            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, 12U, out int _);
+
+            Assert.Equal(-1, env.value_field_proxy__set_value(frame, 101, dataPtr));
+            Assert.Equal(1, valueFieldProxy.Source.Target.Value);
         }
     }
 }
