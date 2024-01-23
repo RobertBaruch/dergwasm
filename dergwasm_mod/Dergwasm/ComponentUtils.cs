@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using Elements.Assets;
 using FrooxEngine;
 
 namespace Derg
@@ -16,8 +17,10 @@ namespace Derg
     // SyncList is NOT a SyncField.
     public static class ComponentUtils
     {
-        public static object GetFieldValue(Component component, string fieldName)
+        public static object GetFieldValue(object component, string fieldName)
         {
+            if (component == null)
+                return null;
             Type componentType = component.GetType();
             PropertyInfo propertyInfo = componentType.GetProperty(fieldName);
             if (propertyInfo != null)
@@ -46,8 +49,10 @@ namespace Derg
             return null;
         }
 
-        public static bool SetFieldValue(Component component, string fieldName, object value)
+        public static bool SetFieldValue(object component, string fieldName, object value)
         {
+            if (component == null)
+                return false;
             Type componentType = component.GetType();
             PropertyInfo propertyInfo = componentType.GetProperty(fieldName);
             if (propertyInfo != null)
