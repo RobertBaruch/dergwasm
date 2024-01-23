@@ -148,7 +148,7 @@ namespace DergwasmTests
         }
 
         [Fact]
-        public void SetValueNullFailsOnNonnullableTypeTest()
+        public void SetValueNullSetsDefaultOnNonnullableTypeTest()
         {
             ValueField<int> valueField = new ValueField<int>();
             Initialize(valueField);
@@ -156,8 +156,8 @@ namespace DergwasmTests
             valueField.Value.Value = 1;
             int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, null, out int _);
 
-            Assert.Equal(-1, env.value_field__set_value(frame, 100, dataPtr));
-            Assert.Equal(1, valueField.Value.Value);
+            Assert.Equal(0, env.value_field__set_value(frame, 100, dataPtr));
+            Assert.Equal(0, valueField.Value.Value);
         }
 
         [Fact]
@@ -174,7 +174,7 @@ namespace DergwasmTests
         }
 
         [Fact]
-        public void SetValueFailsOnBadSerialization()
+        public void SetValueSetsNullOnBadSerialization()
         {
             ValueField<int> valueField = new ValueField<int>();
             Initialize(valueField);
@@ -183,8 +183,8 @@ namespace DergwasmTests
             int dataPtr = emscriptenEnv.Malloc(frame, 4);
             env.machine.HeapSet<int>(dataPtr, SimpleSerialization.SimpleType.Unknown);
 
-            Assert.Equal(-1, env.value_field__set_value(frame, 100, dataPtr));
-            Assert.Equal(1, valueField.Value.Value);
+            Assert.Equal(0, env.value_field__set_value(frame, 100, dataPtr));
+            Assert.Equal(0, valueField.Value.Value);
         }
 
         [Fact]
