@@ -10,17 +10,6 @@ namespace DergwasmTests
 {
     public class SimpleSerializationTests
     {
-        class TestEmscriptenEnv : EmscriptenEnv
-        {
-            public TestEmscriptenEnv()
-                : base(new TestMachine()) { }
-
-            public override int Malloc(Frame frame, int size)
-            {
-                return 4;
-            }
-        }
-
         [Fact]
         public void TestBoolSerializesCorrectly()
         {
@@ -34,6 +23,20 @@ namespace DergwasmTests
             Assert.Equal(8, len);
             Assert.Equal(SimpleSerialization.SimpleType.Bool, env.machine.HeapGet<int>(4));
             Assert.Equal(1, env.machine.HeapGet<int>(8));
+        }
+
+        [Fact]
+        public void TestNullSerializesCorrectly()
+        {
+            TestEmscriptenEnv env = new TestEmscriptenEnv();
+            ResoniteEnv resoniteEnv = new ResoniteEnv(env.machine, null, env);
+            string value = null;
+            int len;
+            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value, out len);
+
+            Assert.Equal(4, ptr);
+            Assert.Equal(4, len);
+            Assert.Equal(SimpleSerialization.SimpleType.Null, env.machine.HeapGet<int>(4));
         }
 
         [Fact]
@@ -65,6 +68,20 @@ namespace DergwasmTests
 
             Assert.IsAssignableFrom<bool>(deserialized);
             Assert.True((bool)deserialized);
+        }
+
+        [Fact]
+        public void TestNullDeserializesCorrectly()
+        {
+            TestEmscriptenEnv env = new TestEmscriptenEnv();
+            ResoniteEnv resoniteEnv = new ResoniteEnv(env.machine, null, env);
+            string value = null;
+            int len;
+            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value, out len);
+
+            object deserialized = SimpleSerialization.Deserialize(env.machine, resoniteEnv, ptr);
+
+            Assert.Null(deserialized);
         }
 
         [Fact]

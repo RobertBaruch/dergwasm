@@ -14,13 +14,17 @@ namespace Derg
     public class ResoniteEnv
     {
         public Machine machine;
-        public World world;
+        IWorldServices worldServices;
         public EmscriptenEnv emscriptenEnv;
 
-        public ResoniteEnv(Machine machine, World world, EmscriptenEnv emscriptenEnv)
+        public ResoniteEnv(
+            Machine machine,
+            IWorldServices worldServices,
+            EmscriptenEnv emscriptenEnv
+        )
         {
             this.machine = machine;
-            this.world = world;
+            this.worldServices = worldServices;
             this.emscriptenEnv = emscriptenEnv;
         }
 
@@ -39,13 +43,13 @@ namespace Derg
             where T : class, IWorldElement
         {
             RefID refID = new RefID(slot_id);
-            return world.ReferenceController.GetObjectOrNull(refID) as T;
+            return worldServices.GetObjectOrNull(refID) as T;
         }
 
         public IWorldElement FromRefID(ulong slot_id)
         {
             RefID refID = new RefID(slot_id);
-            return world.ReferenceController.GetObjectOrNull(refID);
+            return worldServices.GetObjectOrNull(refID);
         }
 
         List<Value> ExtractArgs(Slot argsSlot, List<int> allocations)
@@ -230,6 +234,29 @@ namespace Derg
                 "slot__get_component",
                 slot__get_component
             );
+
+            machine.RegisterReturningHostFunc<ulong, int, int>(
+                "env",
+                "value_field__get_value",
+                value_field__get_value
+            );
+            machine.RegisterReturningHostFunc<ulong, int, int>(
+                "env",
+                "value_field__set_value",
+                value_field__set_value
+            );
+
+            machine.RegisterReturningHostFunc<ulong, ulong>(
+                "env",
+                "value_field_proxy__get_source",
+                value_field_proxy__get_source
+            );
+
+            machine.RegisterReturningHostFunc<ulong, ulong, int>(
+                "env",
+                "value_field_proxy__set_source",
+                value_field_proxy__set_source
+            );
         }
 
         //
@@ -238,7 +265,7 @@ namespace Derg
 
         public ulong slot__root_slot(Frame frame)
         {
-            Slot slot = world.RootSlot;
+            Slot slot = worldServices.GetRootSlot();
             return (ulong)slot.ReferenceID;
         }
 
@@ -366,12 +393,10 @@ namespace Derg
             int lenPtr
         )
         {
-            Component component = FromRefID<Component>(component_id);
-            if (component == null)
-                return 0;
             string fieldName = emscriptenEnv.GetUTF8StringFromMem(namePtr);
-            object value = ComponentUtils.GetFieldValue(component, fieldName);
-            if (value == null)
+            Component component = FromRefID<Component>(component_id);
+            object value;
+            if (!ComponentUtils.GetFieldValue(component, fieldName, out value))
                 return 0;
 
             int len;
@@ -394,32 +419,140 @@ namespace Derg
             int dataPtr
         )
         {
-            Component component = FromRefID<Component>(component_id);
-            if (component == null)
-                return -1;
             string fieldName = emscriptenEnv.GetUTF8StringFromMem(namePtr);
             object value = SimpleSerialization.Deserialize(machine, this, dataPtr);
             if (value == null)
                 return -1;
+
+            Component component = FromRefID<Component>(component_id);
             if (!ComponentUtils.SetFieldValue(component, fieldName, value))
                 return -1;
             return 0;
         }
 
-        public int value_field__get_value(Frame frame, ulong component_id, int dataPtrPtr)
+        // Gets the value of a ValueField. The value is serialized into an allocated area of
+        // the heap, and the pointer to it is returned. The length of the serialized value is
+        // placed in the heap at the given lenPtr, if the pointer is nonzero.
+        //
+        // Returns null if the value couldn't be gotten or the value couldn't be serialized.
+        public int value_field__get_value(Frame frame, ulong component_id, int lenPtr)
         {
-            ValueField<object> valueField = FromRefID<ValueField<object>>(component_id);
-            if (valueField == null)
+            IValueSource component = FromRefID<IValueSource>(component_id);
+            if (!(component?.GetType()?.IsOfGenericType(typeof(ValueField<>)) ?? false))
                 return 0;
-            object value = valueField.Value.Value;
+            object value = component.BoxedValue;
 
             int len;
             int dataPtr = SimpleSerialization.Serialize(machine, this, frame, value, out len);
             if (len == 0)
                 return 0;
 
-            machine.HeapSet(dataPtrPtr, dataPtr);
-            return len;
+            if (lenPtr != 0)
+                machine.HeapSet(lenPtr, len);
+            return dataPtr;
+        }
+
+        // Sets the value of a ValueField. The value is deserialized from memory.
+        //
+        // Returns 0 on success, or -1 if the component doesn't exist, the value
+        // couldn't be deserialized, or the value couldn't be set.
+        public int value_field__set_value(Frame frame, ulong component_id, int dataPtr)
+        {
+            Component component = FromRefID<Component>(component_id);
+            if (!(component?.GetType()?.IsOfGenericType(typeof(ValueField<>)) ?? false))
+                return -1;
+
+            object value = SimpleSerialization.Deserialize(machine, this, dataPtr);
+            if (!ComponentUtils.SetFieldValue(component, "Value", value))
+                return -1;
+
+            return 0;
+        }
+
+        // Returns the RefID of the field pointed to by the ValueFieldProxy component.
+        public ulong value_field_proxy__get_source(Frame frame, ulong component_id)
+        {
+            Component component = FromRefID<Component>(component_id);
+            if (!(component?.GetType()?.IsOfGenericType(typeof(ValueFieldProxy<>)) ?? false))
+                return 0;
+
+            object source;
+            if (!ComponentUtils.GetFieldValue(component, "Source", out source))
+                return 0;
+            IField field = source as IField;
+            return (ulong?)field?.ReferenceID ?? 0;
+        }
+
+        // Sets the RefID for the field pointed to by the ValueFieldProxy component.
+        //
+        // Returns 0 on success, or -1 if the component doesn't exist.
+        public int value_field_proxy__set_source(Frame frame, ulong component_id, ulong value)
+        {
+            Component component = FromRefID<Component>(component_id);
+            if (!(component?.GetType()?.IsOfGenericType(typeof(ValueFieldProxy<>)) ?? false))
+                return -1;
+
+            IField field = FromRefID<IField>(value);
+            if (!ComponentUtils.SetFieldValue(component, "Source", field))
+                return -1;
+            return 0;
+        }
+
+        // Returns the value of the field pointed to by the ValueFieldProxy component.
+        // The value is serialized into an allocated area of the heap, and the pointer to it
+        // is returned. The length of the serialized value is placed in the heap at the
+        // given lenPtr, if the pointer is nonzero.
+        //
+        // Returns null if the component doesn't exist, its source couldn't be gotten, or
+        // the value couldn't be serialized.
+        public int value_field_proxy__get_value(Frame frame, ulong component_id, int lenPtr)
+        {
+            Component component = FromRefID<Component>(component_id);
+            if (!(component?.GetType()?.IsOfGenericType(typeof(ValueFieldProxy<>)) ?? false))
+                return 0;
+
+            object value;
+            if (!ComponentUtils.GetFieldValue(component, "Value", out value))
+                return 0;
+
+            int len;
+            int dataPtr = SimpleSerialization.Serialize(machine, this, frame, value, out len);
+            if (len == 0)
+                return 0;
+
+            if (lenPtr != 0)
+                machine.HeapSet(lenPtr, len);
+            return dataPtr;
+        }
+
+        public int value_field_proxy__set_value(Frame frame, ulong component_id, int dataPtr)
+        {
+            Component component = FromRefID<Component>(component_id);
+            if (!(component?.GetType()?.IsOfGenericType(typeof(ValueFieldProxy<>)) ?? false))
+                return -1;
+
+            object source;
+            if (!ComponentUtils.GetFieldValue(component, "Source", out source))
+                return -1;
+            IField field = source as IField;
+
+            object value = SimpleSerialization.Deserialize(machine, this, dataPtr);
+            if (value == null)
+                return -1;
+
+            // TODO: Should we also check CanWrite?
+            try
+            {
+                field.BoxedValue = value;
+            }
+            catch (Exception e)
+            {
+                DergwasmMachine.Msg(
+                    $"Failed to set ValueFieldProxy value on object of type {component.GetType()}: {e}"
+                );
+                return -1;
+            }
+            return 0;
         }
     }
 }

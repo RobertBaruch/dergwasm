@@ -48,10 +48,12 @@ namespace Derg
             public const int Slot = 35;
             public const int User = 36;
             public const int UserRoot = 37;
+            public const int Null = 38;
         }
 
         // Serializes a "simple" value. A simple value is one of these:
         //
+        // * null (serialized as SimpleType.Null, so you will lose type information)
         // * bool, bool2, bool3, bool4
         // * int, int2, int3, int4
         // * uint, uint2, uint3, uint4
@@ -81,6 +83,10 @@ namespace Derg
 
             switch (value)
             {
+                case null:
+                    writer.Write(SimpleType.Null);
+                    break;
+
                 case bool b:
                     writer.Write(SimpleType.Bool);
                     writer.Write(b ? 1 : 0);
@@ -350,6 +356,9 @@ namespace Derg
                 int dataType = reader.ReadInt32();
                 switch (dataType)
                 {
+                    case SimpleType.Null:
+                        return null;
+
                     case SimpleType.Bool:
                         return reader.ReadInt32() != 0;
                     case SimpleType.Bool2:

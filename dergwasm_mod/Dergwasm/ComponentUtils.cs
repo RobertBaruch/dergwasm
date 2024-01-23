@@ -1,28 +1,46 @@
 ﻿using System;
 using System.Reflection;
+using Elements.Core; // For UniLog
 using FrooxEngine;
 
 namespace Derg
 {
-    // Utilities for working with the fields of a Component.
+    // Utilities for working primarily with the sync fields and properties of a
+    // Component, but they'll work with any object. Uses reflection.
     //
-    // Component fields can be:
+    // Sync fields can be:
     // * Sync (field for a value)
     // * SyncRef (field for a RefID; this includes component fields)
     // * SyncDelegate (field for a WorldDelegate)
+    // * SyncType (field for a System.Type)
     //
     // All of these are SyncFields.
     //
     // SyncList is NOT a SyncField.
     public static class ComponentUtils
     {
-        public static object GetFieldValue(Component component, string fieldName)
+        // Gets the value of a field on a component. Returns true on success, false
+        // if the component was null or if there was no property or field of the given
+        // name.
+        //
+        // For properties, this gets the property value.
+        // For Sync fields, this gets the Sync's value.
+        // For SyncRef fields, this gets the SyncRef's Target (not its value).
+        // For SyncDelegate fields, this gets the SyncDelegate's WorldDelegate.
+        // For SyncType fields, this gets the SyncType's held System.Type.
+        //
+        // Note that the value may be null if not set.
+        public static bool GetFieldValue(object component, string fieldName, out object value)
         {
+            value = null;
+            if (component == null)
+                return false;
             Type componentType = component.GetType();
             PropertyInfo propertyInfo = componentType.GetProperty(fieldName);
             if (propertyInfo != null)
             {
-                return propertyInfo.GetValue(component);
+                value = propertyInfo.GetValue(component);
+                return true;
             }
 
             FieldInfo fieldInfo = componentType.GetField(
@@ -30,52 +48,83 @@ namespace Derg
                 BindingFlags.Instance | BindingFlags.Public
             );
             if (fieldInfo == null)
-                return null;
-            object value = fieldInfo.GetValue(component);
+                return false;
+            value = fieldInfo.GetValue(component);
 
-            if (value.GetType().IsOfGenericType(typeof(Sync<>)))
+            if (
+                fieldInfo.FieldType.IsOfGenericType(typeof(Sync<>))
+                || fieldInfo.FieldType.IsOfGenericType(typeof(SyncDelegate<>))
+                || fieldInfo.FieldType == typeof(SyncType)
+            )
             {
-                // If the field is a Sync, we need to get the value of the Value property.
-                return value.GetType().GetProperty("Value").GetValue(value);
+                value = value.GetType().GetProperty("Value").GetValue(value);
+                return true;
             }
-            if (value.GetType().IsOfGenericType(typeof(SyncRef<>)))
+            if (fieldInfo.FieldType.IsOfGenericType(typeof(SyncRef<>)))
             {
-                // If the field is a SyncRef, we need to get the value of the Target property.
-                return value.GetType().GetProperty("Target").GetValue(value);
+                value = value.GetType().GetProperty("Target").GetValue(value);
+                return true;
             }
-            return null;
+            return true;
         }
 
-        public static bool SetFieldValue(Component component, string fieldName, object value)
+        // Sets the value of a field on a component. Returns true on success, false
+        // if the component was null, there was no property or field of the given
+        // name, or the property or field was not settable, or the value was of the
+        // wrong type.
+        //
+        // For properties, this sets the property value.
+        // For Sync fields, this sets the Sync's value.
+        // For SyncRef fields, this sets the SyncRef's Target (not its value).
+        // For SyncDelegate fields, this sets the SyncDelegate's WorldDelegate.
+        // For SyncType fields, this sets the SyncType's held System.Type.
+        public static bool SetFieldValue(object component, string fieldName, object value)
         {
-            Type componentType = component.GetType();
-            PropertyInfo propertyInfo = componentType.GetProperty(fieldName);
-            if (propertyInfo != null)
+            try
             {
-                propertyInfo.SetValue(component, value);
-                return false;
-            }
+                if (component == null)
+                    return false;
+                Type componentType = component.GetType();
+                PropertyInfo propertyInfo = componentType.GetProperty(fieldName);
+                if (propertyInfo != null)
+                {
+                    propertyInfo.SetValue(component, value);
+                    return true;
+                }
 
-            FieldInfo fieldInfo = componentType.GetField(
-                fieldName,
-                BindingFlags.Instance | BindingFlags.Public
-            );
-            if (fieldInfo == null)
-                return false;
-            object syncValue = fieldInfo.GetValue(component);
+                FieldInfo fieldInfo = componentType.GetField(
+                    fieldName,
+                    BindingFlags.Instance | BindingFlags.Public
+                );
+                if (fieldInfo == null)
+                    return false;
 
-            if (syncValue.GetType().IsOfGenericType(typeof(Sync<>)))
-            {
-                syncValue.GetType().GetProperty("Value").SetValue(syncValue, value);
+                if (
+                    fieldInfo.FieldType.IsOfGenericType(typeof(Sync<>))
+                    || fieldInfo.FieldType.IsOfGenericType(typeof(SyncDelegate<>))
+                    || fieldInfo.FieldType == typeof(SyncType)
+                )
+                {
+                    object field = fieldInfo.GetValue(component);
+                    field.GetType().GetProperty("Value").SetValue(field, value);
+                    return true;
+                }
+                if (fieldInfo.FieldType.IsOfGenericType(typeof(SyncRef<>)))
+                {
+                    object field = fieldInfo.GetValue(component);
+                    field.GetType().GetProperty("Target").SetValue(field, value);
+                    return true;
+                }
+                fieldInfo.SetValue(component, value);
                 return true;
             }
-            if (syncValue.GetType().IsOfGenericType(typeof(SyncRef<>)))
+            catch (Exception e) // Wrong type
             {
-                // If the field is a SyncRef, we need to get the value of the Target property.
-                syncValue.GetType().GetProperty("Target").SetValue(syncValue, value);
-                return true;
+                DergwasmMachine.Msg(
+                    $"Failed to set field value '{fieldName}' on object of type {component.GetType()}: {e}"
+                );
+                return false;
             }
-            return false;
         }
     }
 }
