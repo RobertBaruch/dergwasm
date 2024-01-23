@@ -218,7 +218,7 @@ namespace Derg
                 emscriptenWasi = new EmscriptenWasi(machine, emscriptenEnv);
                 emscriptenWasi.RegisterHostFuncs();
 
-                resoniteEnv = new ResoniteEnv(machine, world, emscriptenEnv);
+                resoniteEnv = new ResoniteEnv(machine, new WorldServices(world), emscriptenEnv);
                 resoniteEnv.RegisterHostFuncs();
 
                 filesystemEnv = new FilesystemEnv(machine, fsSlot, emscriptenEnv, emscriptenWasi);

@@ -14,13 +14,17 @@ namespace Derg
     public class ResoniteEnv
     {
         public Machine machine;
-        public World world;
+        IWorldServices worldServices;
         public EmscriptenEnv emscriptenEnv;
 
-        public ResoniteEnv(Machine machine, World world, EmscriptenEnv emscriptenEnv)
+        public ResoniteEnv(
+            Machine machine,
+            IWorldServices worldServices,
+            EmscriptenEnv emscriptenEnv
+        )
         {
             this.machine = machine;
-            this.world = world;
+            this.worldServices = worldServices;
             this.emscriptenEnv = emscriptenEnv;
         }
 
@@ -39,13 +43,13 @@ namespace Derg
             where T : class, IWorldElement
         {
             RefID refID = new RefID(slot_id);
-            return world.ReferenceController.GetObjectOrNull(refID) as T;
+            return worldServices.GetObjectOrNull(refID) as T;
         }
 
         public IWorldElement FromRefID(ulong slot_id)
         {
             RefID refID = new RefID(slot_id);
-            return world.ReferenceController.GetObjectOrNull(refID);
+            return worldServices.GetObjectOrNull(refID);
         }
 
         List<Value> ExtractArgs(Slot argsSlot, List<int> allocations)
@@ -261,7 +265,7 @@ namespace Derg
 
         public ulong slot__root_slot(Frame frame)
         {
-            Slot slot = world.RootSlot;
+            Slot slot = worldServices.GetRootSlot();
             return (ulong)slot.ReferenceID;
         }
 
@@ -434,9 +438,9 @@ namespace Derg
         public int value_field__get_value(Frame frame, ulong component_id, int lenPtr)
         {
             IValueSource component = FromRefID<IValueSource>(component_id);
-            object value = component?.BoxedValue;
-            if (value == null)
+            if (!(component?.GetType()?.IsOfGenericType(typeof(ValueField<>)) ?? false))
                 return 0;
+            object value = component.BoxedValue;
 
             int len;
             int dataPtr = SimpleSerialization.Serialize(machine, this, frame, value, out len);
@@ -454,13 +458,14 @@ namespace Derg
         // couldn't be deserialized, or the value couldn't be set.
         public int value_field__set_value(Frame frame, ulong component_id, int dataPtr)
         {
-            object value = SimpleSerialization.Deserialize(machine, this, dataPtr);
-            if (value == null)
-                return -1;
-            // Unfortunately the interfaces don't have a setter, so we have to use reflection.
             Component component = FromRefID<Component>(component_id);
+            if (!(component?.GetType()?.IsOfGenericType(typeof(ValueField<>)) ?? false))
+                return -1;
+
+            object value = SimpleSerialization.Deserialize(machine, this, dataPtr);
             if (!ComponentUtils.SetFieldValue(component, "Value", value))
                 return -1;
+
             return 0;
         }
 
