@@ -391,8 +391,8 @@ namespace Derg
         {
             string fieldName = emscriptenEnv.GetUTF8StringFromMem(namePtr);
             Component component = FromRefID<Component>(component_id);
-            object value = ComponentUtils.GetFieldValue(component, fieldName);
-            if (value == null)
+            object value;
+            if (!ComponentUtils.GetFieldValue(component, fieldName, out value))
                 return 0;
 
             int len;
@@ -468,7 +468,10 @@ namespace Derg
         public ulong value_field_proxy__get_source(Frame frame, ulong component_id)
         {
             Component component = FromRefID<Component>(component_id);
-            ISyncRef value = ComponentUtils.GetFieldValue(component, "Source") as ISyncRef;
+            object source;
+            if (!ComponentUtils.GetFieldValue(component, "Source", out source))
+                return 0;
+            ISyncRef value = source as ISyncRef;
             return (ulong?)value?.Value ?? 0;
         }
 
@@ -478,11 +481,11 @@ namespace Derg
         public int value_field_proxy__set_source(Frame frame, ulong component_id, ulong value)
         {
             Component component = FromRefID<Component>(component_id);
-            ISyncRef syncref = ComponentUtils.GetFieldValue(component, "Source") as ISyncRef;
-            if (syncref == null)
+            object source;
+            if (!ComponentUtils.GetFieldValue(component, "Source", out source))
                 return -1;
+            ISyncRef syncref = source as ISyncRef;
             IField fieldref = FromRefID<IField>(value);
-            // TODO: Check that the ref ID is for an IField of the correct type.
             if (!ComponentUtils.SetFieldValue(syncref, "Target", fieldref))
                 return -1;
             return 0;
@@ -498,8 +501,8 @@ namespace Derg
         public int value_field_proxy__get_value(Frame frame, ulong component_id, int lenPtr)
         {
             Component component = FromRefID<Component>(component_id);
-            object value = ComponentUtils.GetFieldValue(component, "Value");
-            if (value == null)
+            object value;
+            if (!ComponentUtils.GetFieldValue(component, "Value", out value))
                 return 0;
 
             int len;
@@ -518,15 +521,30 @@ namespace Derg
             if (value == null)
                 return -1;
             Component component = FromRefID<Component>(component_id);
-            ISyncRef syncref = ComponentUtils.GetFieldValue(component, "Source") as ISyncRef;
-            if (syncref == null)
+
+            object source;
+            if (!ComponentUtils.GetFieldValue(component, "Source", out source))
                 return -1;
-            IField fieldref = ComponentUtils.GetFieldValue(syncref, "Target") as IField;
+            ISyncRef syncref = source as ISyncRef;
+
+            object target;
+            if (!ComponentUtils.GetFieldValue(syncref, "Target", out target))
+                return -1;
+            IField fieldref = target as IField;
             if (fieldref == null)
                 return -1;
-            // TODO: Check that the value is of the correct type for the IField.
             // TODO: Should we also check CanWrite?
-            fieldref.BoxedValue = value;
+            try
+            {
+                fieldref.BoxedValue = value;
+            }
+            catch (Exception e)
+            {
+                DergwasmMachine.Msg(
+                    $"Failed to set ValueFieldProxy value on object of type {component.GetType()}: {e}"
+                );
+                return -1;
+            }
             return 0;
         }
     }

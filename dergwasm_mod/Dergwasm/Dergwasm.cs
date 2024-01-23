@@ -99,6 +99,7 @@ namespace Derg
                 UniLog.Log($"[Dergwasm] Couldn't find console slot to log this message: {msg}");
                 return;
             }
+            UniLog.Log($"[Dergwasm] {msg}");
             consoleSlot.GetComponent<FrooxEngine.UIX.Text>().Content.Value += msg;
         }
 
