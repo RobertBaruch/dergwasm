@@ -473,11 +473,14 @@ namespace Derg
         public ulong value_field_proxy__get_source(Frame frame, ulong component_id)
         {
             Component component = FromRefID<Component>(component_id);
+            if (!(component?.GetType()?.IsOfGenericType(typeof(ValueFieldProxy<>)) ?? false))
+                return 0;
+
             object source;
             if (!ComponentUtils.GetFieldValue(component, "Source", out source))
                 return 0;
-            ISyncRef value = source as ISyncRef;
-            return (ulong?)value?.Value ?? 0;
+            IField field = source as IField;
+            return (ulong?)field?.ReferenceID ?? 0;
         }
 
         // Sets the RefID for the field pointed to by the ValueFieldProxy component.
@@ -486,12 +489,11 @@ namespace Derg
         public int value_field_proxy__set_source(Frame frame, ulong component_id, ulong value)
         {
             Component component = FromRefID<Component>(component_id);
-            object source;
-            if (!ComponentUtils.GetFieldValue(component, "Source", out source))
+            if (!(component?.GetType()?.IsOfGenericType(typeof(ValueFieldProxy<>)) ?? false))
                 return -1;
-            ISyncRef syncref = source as ISyncRef;
-            IField fieldref = FromRefID<IField>(value);
-            if (!ComponentUtils.SetFieldValue(syncref, "Target", fieldref))
+
+            IField field = FromRefID<IField>(value);
+            if (!ComponentUtils.SetFieldValue(component, "Source", field))
                 return -1;
             return 0;
         }
@@ -506,6 +508,9 @@ namespace Derg
         public int value_field_proxy__get_value(Frame frame, ulong component_id, int lenPtr)
         {
             Component component = FromRefID<Component>(component_id);
+            if (!(component?.GetType()?.IsOfGenericType(typeof(ValueFieldProxy<>)) ?? false))
+                return 0;
+
             object value;
             if (!ComponentUtils.GetFieldValue(component, "Value", out value))
                 return 0;
@@ -522,26 +527,23 @@ namespace Derg
 
         public int value_field_proxy__set_value(Frame frame, ulong component_id, int dataPtr)
         {
-            object value = SimpleSerialization.Deserialize(machine, this, dataPtr);
-            if (value == null)
-                return -1;
             Component component = FromRefID<Component>(component_id);
+            if (!(component?.GetType()?.IsOfGenericType(typeof(ValueFieldProxy<>)) ?? false))
+                return -1;
 
             object source;
             if (!ComponentUtils.GetFieldValue(component, "Source", out source))
                 return -1;
-            ISyncRef syncref = source as ISyncRef;
+            IField field = source as IField;
 
-            object target;
-            if (!ComponentUtils.GetFieldValue(syncref, "Target", out target))
+            object value = SimpleSerialization.Deserialize(machine, this, dataPtr);
+            if (value == null)
                 return -1;
-            IField fieldref = target as IField;
-            if (fieldref == null)
-                return -1;
+
             // TODO: Should we also check CanWrite?
             try
             {
-                fieldref.BoxedValue = value;
+                field.BoxedValue = value;
             }
             catch (Exception e)
             {
