@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Elements.Core;
@@ -49,6 +50,7 @@ namespace Derg
             public const int User = 36;
             public const int UserRoot = 37;
             public const int Null = 38;
+            public const int RefIDList = 39;
         }
 
         // Serializes a "simple" value. A simple value is one of these:
@@ -63,7 +65,7 @@ namespace Derg
         // * double, double2, double3, double4, doubleQ
         // * string (serialized as length, then UTF-8 bytes)
         // * color, colorX
-        // * RefID
+        // * RefID, List<RefID>
         // * Slot, User, UserRoot (represented as their RefID)
         //
         // Allocates enough space for the serialized value in the machine heap, and
@@ -312,6 +314,13 @@ namespace Derg
                     writer.Write((ulong)refID);
                     break;
 
+                case List<RefID> refIDList:
+                    writer.Write(SimpleType.RefIDList);
+                    writer.Write(refIDList.Count);
+                    foreach (RefID id in refIDList)
+                        writer.Write((ulong)id);
+                    break;
+
                 case Slot slot:
                     writer.Write(SimpleType.Slot);
                     writer.Write((ulong)slot.ReferenceID);
@@ -517,6 +526,12 @@ namespace Derg
 
                     case SimpleType.RefID:
                         return (RefID)reader.ReadUInt64();
+                    case SimpleType.RefIDList:
+                        int refIDListLen = reader.ReadInt32();
+                        List<RefID> refIDList = new List<RefID>(refIDListLen);
+                        for (int i = 0; i < refIDListLen; i++)
+                            refIDList.Add((RefID)reader.ReadUInt64());
+                        return refIDList;
 
                     case SimpleType.Slot:
                         return resoniteEnv.FromRefID<Slot>(reader.ReadUInt64());

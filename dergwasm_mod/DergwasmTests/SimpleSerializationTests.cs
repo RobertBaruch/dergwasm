@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using Derg;
+using Elements.Core;
 using Xunit;
 
 namespace DergwasmTests
@@ -97,6 +94,21 @@ namespace DergwasmTests
 
             Assert.IsAssignableFrom<string>(deserialized);
             Assert.Equal("1234", (string)deserialized);
+        }
+
+        [Fact]
+        public void TestRefIDListDeserializesCorrectly()
+        {
+            TestEmscriptenEnv env = new TestEmscriptenEnv();
+            ResoniteEnv resoniteEnv = new ResoniteEnv(env.machine, null, env);
+            List<RefID> value = new List<RefID> { new RefID(100), new RefID(102), new RefID(90) };
+            int len;
+            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value, out len);
+
+            object deserialized = SimpleSerialization.Deserialize(env.machine, resoniteEnv, ptr);
+
+            Assert.IsAssignableFrom<List<RefID>>(deserialized);
+            Assert.Equal(value, (List<RefID>)deserialized);
         }
     }
 }
