@@ -580,6 +580,19 @@ namespace DergwasmTests
     // | Method        | N   | Mean     | Error    | StdDev   | Ratio |
     // |-------------- |---- |---------:|---------:|---------:|------:|
     // | Serialization | 200 | 40.27 us | 0.783 us | 0.694 us |  1.00 |
+    //
+    // With preallocated buffer:
+    //
+    // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3930/22H2/2022Update)
+    // Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
+    //   [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+    //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
+    //
+    // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
+    //
+    // | Method        | N   | Mean     | Error   | StdDev  | Ratio |
+    // |-------------- |---- |---------:|--------:|--------:|------:|
+    // | Serialization | 200 | 352.7 ns | 6.88 ns | 8.19 ns |  1.00 |
     [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
     public class MicropythonSerializationBenchmark
     {
@@ -603,13 +616,10 @@ namespace DergwasmTests
                 program.machine,
                 program.resoniteEnv,
                 frame,
-                N,
-                out int _
+                N
             );
-            int value = (int)
+            return (int)
                 SimpleSerialization.Deserialize(program.machine, program.resoniteEnv, dataPtr);
-            program.emscriptenEnv.Free(frame, dataPtr);
-            return value;
         }
     }
 
