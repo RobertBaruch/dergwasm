@@ -433,22 +433,23 @@ namespace Derg
             if (iov == 0)
                 return -Errno.EFAULT;
 
-            MemoryStream iovStream = new MemoryStream(machine.Heap);
-            iovStream.Position = iov;
-            BinaryReader iovReader = new BinaryReader(iovStream);
-
             uint nwritten = 0;
-
-            for (int i = 0; i < iovcnt; i++)
+            using (MemoryStream iovStream = new MemoryStream(machine.Heap))
             {
-                int ptr = iovReader.ReadInt32();
-                uint len = iovReader.ReadUInt32();
-                int ret = Write(fd, ptr, (int)len);
-                if (ret < 0)
+                iovStream.Position = iov;
+                BinaryReader iovReader = new BinaryReader(iovStream);
+
+                for (int i = 0; i < iovcnt; i++)
                 {
-                    return ret;
+                    int ptr = iovReader.ReadInt32();
+                    uint len = iovReader.ReadUInt32();
+                    int ret = Write(fd, ptr, (int)len);
+                    if (ret < 0)
+                    {
+                        return ret;
+                    }
+                    nwritten += (uint)ret;
                 }
-                nwritten += (uint)ret;
             }
 
             if (nwrittenPtr != 0)
@@ -502,22 +503,24 @@ namespace Derg
             if (iov == 0)
                 return -Errno.EFAULT;
 
-            MemoryStream iovStream = new MemoryStream(machine.Heap);
-            iovStream.Position = iov;
-            BinaryReader iovReader = new BinaryReader(iovStream);
-
             uint nread = 0;
 
-            for (int i = 0; i < iovcnt; i++)
+            using (MemoryStream iovStream = new MemoryStream(machine.Heap))
             {
-                int ptr = iovReader.ReadInt32();
-                uint len = iovReader.ReadUInt32();
-                int ret = Read(fd, ptr, (int)len);
-                if (ret < 0)
+                iovStream.Position = iov;
+                BinaryReader iovReader = new BinaryReader(iovStream);
+
+                for (int i = 0; i < iovcnt; i++)
                 {
-                    return ret;
+                    int ptr = iovReader.ReadInt32();
+                    uint len = iovReader.ReadUInt32();
+                    int ret = Read(fd, ptr, (int)len);
+                    if (ret < 0)
+                    {
+                        return ret;
+                    }
+                    nread += (uint)ret;
                 }
-                nread += (uint)ret;
             }
 
             if (nreadPtr != 0)
