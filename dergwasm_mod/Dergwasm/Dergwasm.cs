@@ -245,6 +245,10 @@ namespace Derg
                 // Run any initializers we might find.
                 MaybeRunEmscriptenCtors();
                 MaybeInitMicropython(64 * 1024);
+
+                // Initialize the primitive serialization buffer. This relies on
+                // having a working malloc in WASM.
+                SimpleSerialization.Initialize(resoniteEnv);
             }
             catch (Exception e)
             {

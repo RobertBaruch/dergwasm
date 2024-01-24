@@ -67,6 +67,22 @@ namespace Derg
             free(frame, ptr);
         }
 
+        // Allocates a UTF-8 encoded string in WASM memory in length-data format
+        // and returns the pointer to it. You can pass null as the frame if you're
+        // calling this from outside a WASM function. Otherwise pass the frame you're in.
+        public int AllocateUTF8StringInMemLenData(Frame frame, string s)
+        {
+            int stringLen = Encoding.UTF8.GetByteCount(s);
+            int stringPtr = Malloc(frame, 4 + stringLen);
+            machine.HeapSet<int>(stringPtr, stringLen);
+            WriteUTF8StringToMem(
+                stringPtr + 4,
+                s,
+                false /* nullTerminate */
+            );
+            return stringPtr;
+        }
+
         // Allocates a UTF-8 encoded string in WASM memory and returns the pointer to it.
         // You can pass null as the frame if you're calling this from outside a WASM function.
         // Otherwise pass the frame you're in.
@@ -112,7 +128,7 @@ namespace Derg
         }
 
         // Writes a UTF-8 encoded string to the heap. Returns the number of bytes written.
-        public int WriteUTF8StringToMem(int ptr, string s)
+        public int WriteUTF8StringToMem(int ptr, string s, bool nullTerminate = true)
         {
             byte[] stringData = Encoding.UTF8.GetBytes(s);
             Buffer.BlockCopy(stringData, 0, machine.Heap, ptr, stringData.Length);

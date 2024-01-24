@@ -7,17 +7,23 @@ namespace DergwasmTests
 {
     public class SimpleSerializationTests
     {
+        TestEmscriptenEnv env;
+        ResoniteEnv resoniteEnv;
+
+        public SimpleSerializationTests()
+        {
+            env = new TestEmscriptenEnv();
+            resoniteEnv = new ResoniteEnv(env.machine, null, env);
+            SimpleSerialization.Initialize(resoniteEnv);
+        }
+
         [Fact]
         public void TestBoolSerializesCorrectly()
         {
-            TestEmscriptenEnv env = new TestEmscriptenEnv();
-            ResoniteEnv resoniteEnv = new ResoniteEnv(env.machine, null, env);
             bool value = true;
-            int len;
-            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value, out len);
+            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value);
 
             Assert.Equal(4, ptr);
-            Assert.Equal(8, len);
             Assert.Equal(SimpleSerialization.SimpleType.Bool, env.machine.HeapGet<int>(4));
             Assert.Equal(1, env.machine.HeapGet<int>(8));
         }
@@ -25,41 +31,31 @@ namespace DergwasmTests
         [Fact]
         public void TestNullSerializesCorrectly()
         {
-            TestEmscriptenEnv env = new TestEmscriptenEnv();
-            ResoniteEnv resoniteEnv = new ResoniteEnv(env.machine, null, env);
             string value = null;
-            int len;
-            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value, out len);
+            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value);
 
             Assert.Equal(4, ptr);
-            Assert.Equal(4, len);
             Assert.Equal(SimpleSerialization.SimpleType.Null, env.machine.HeapGet<int>(4));
         }
 
         [Fact]
         public void TestStringSerializesCorrectly()
         {
-            TestEmscriptenEnv env = new TestEmscriptenEnv();
-            ResoniteEnv resoniteEnv = new ResoniteEnv(env.machine, null, env);
             string value = "1234";
-            int len;
-            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value, out len);
+            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value);
 
             Assert.Equal(4, ptr);
-            Assert.Equal(12, len);
             Assert.Equal(SimpleSerialization.SimpleType.String, env.machine.HeapGet<int>(4));
-            Assert.Equal(4, env.machine.HeapGet<int>(8));
-            Assert.Equal(0x34333231u, env.machine.HeapGet<uint>(12));
+            int stringPtr = env.machine.HeapGet<int>(8);
+            Assert.Equal(4, env.machine.HeapGet<int>(stringPtr));
+            Assert.Equal(0x34333231u, env.machine.HeapGet<uint>(stringPtr + 4));
         }
 
         [Fact]
         public void TestBoolDeserializesCorrectly()
         {
-            TestEmscriptenEnv env = new TestEmscriptenEnv();
-            ResoniteEnv resoniteEnv = new ResoniteEnv(env.machine, null, env);
             bool value = true;
-            int len;
-            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value, out len);
+            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value);
 
             object deserialized = SimpleSerialization.Deserialize(env.machine, resoniteEnv, ptr);
 
@@ -70,11 +66,8 @@ namespace DergwasmTests
         [Fact]
         public void TestNullDeserializesCorrectly()
         {
-            TestEmscriptenEnv env = new TestEmscriptenEnv();
-            ResoniteEnv resoniteEnv = new ResoniteEnv(env.machine, null, env);
             string value = null;
-            int len;
-            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value, out len);
+            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value);
 
             object deserialized = SimpleSerialization.Deserialize(env.machine, resoniteEnv, ptr);
 
@@ -84,11 +77,8 @@ namespace DergwasmTests
         [Fact]
         public void TestStringDeserializesCorrectly()
         {
-            TestEmscriptenEnv env = new TestEmscriptenEnv();
-            ResoniteEnv resoniteEnv = new ResoniteEnv(env.machine, null, env);
             string value = "1234";
-            int len;
-            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value, out len);
+            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value);
 
             object deserialized = SimpleSerialization.Deserialize(env.machine, resoniteEnv, ptr);
 
@@ -99,11 +89,8 @@ namespace DergwasmTests
         [Fact]
         public void TestRefIDListDeserializesCorrectly()
         {
-            TestEmscriptenEnv env = new TestEmscriptenEnv();
-            ResoniteEnv resoniteEnv = new ResoniteEnv(env.machine, null, env);
             List<RefID> value = new List<RefID> { new RefID(100), new RefID(102), new RefID(90) };
-            int len;
-            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value, out len);
+            int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value);
 
             object deserialized = SimpleSerialization.Deserialize(env.machine, resoniteEnv, ptr);
 
