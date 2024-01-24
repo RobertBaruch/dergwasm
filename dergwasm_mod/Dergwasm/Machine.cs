@@ -7,6 +7,14 @@ namespace Derg
     {
         bool debug = false;
         public string mainModuleName;
+
+        // mainModuleInstance is used only when EmscriptenEnv constructs an empty frame,
+        // since frames need to have a module instance. In that case we use the "main"
+        // module instance.
+        //
+        // The main module instance contains all the mappings of indexes to addresses (e.g.
+        // globals, funcs, and so on).
+        public ModuleInstance mainModuleInstance;
         public Dictionary<string, HostFunc> hostFuncs = new Dictionary<string, HostFunc>();
         public List<FuncType> funcTypes = new List<FuncType>(); // is this even used?
         public List<Func> funcs = new List<Func>();

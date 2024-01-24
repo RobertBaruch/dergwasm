@@ -238,6 +238,7 @@ namespace Derg
 
                 module.ResolveExterns(machine);
                 moduleInstance = module.Instantiate(machine);
+                machine.mainModuleInstance = moduleInstance;
                 CheckForUnimplementedInstructions();
                 Msg("No unimplemented WASM instructions found");
 

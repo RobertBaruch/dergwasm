@@ -20,6 +20,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\DergwasmTests\DergwasmTests.csproj" />
 		<ProjectReference Include="..\Dergwasm\Dergwasm.csproj" />
+		<ProjectReference Include="..\LoadModule\LoadModule.csproj" />
 	</ItemGroup>
 
 </Project>

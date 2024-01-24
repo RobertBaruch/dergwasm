@@ -14,7 +14,7 @@ namespace Derg
     {
         public static readonly uint Magic = 0x6D736100U;
         public static readonly uint Version = 1U;
-        public static readonly bool Debug = true;
+        public static bool Debug = false;
 
         public string ModuleName;
         public List<CustomData> customData = new List<CustomData>();

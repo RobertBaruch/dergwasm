@@ -446,6 +446,82 @@ namespace DergwasmTests
         }
     }
 
+    // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3930/22H2/2022Update)
+    // Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
+    //   [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+    //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
+    //
+    // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
+    //
+    // | Method          | Mean     | Error   | StdDev   | Ratio |
+    // |---------------- |---------:|--------:|---------:|------:|
+    // | LoadMicropython | 279.6 ms | 5.55 ms | 14.52 ms |  1.00 |
+    [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
+    public class MicropythonLoadBenchmark
+    {
+        [Benchmark]
+        public DergwasmLoadModule.Program LoadMicropython()
+        {
+            return new DergwasmLoadModule.Program("../../../../../firmware.wasm");
+        }
+    }
+
+    // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3930/22H2/2022Update)
+    // Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
+    //   [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+    //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
+    //
+    // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
+    //
+    // | Method     | N   | Mean     | Error     | StdDev    | Ratio |
+    // |----------- |---- |---------:|----------:|----------:|------:|
+    // | MallocFree | 200 | 8.800 ms | 0.1695 ms | 0.2262 ms |  1.00 |
+    [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
+    public class MicropythonMallocFreeBenchmark
+    {
+        DergwasmLoadModule.Program program;
+
+        [Params(200)]
+        public int N;
+
+        public MicropythonMallocFreeBenchmark()
+        {
+            program = new DergwasmLoadModule.Program("../../../../../firmware.wasm");
+            program.InitMicropython(64 * 1024);
+        }
+
+        [Benchmark]
+        public Machine MallocFree()
+        {
+            // Allocates N/2 segments, then frees every other one, then allocates N/2 more segments,
+            // then frees everything.
+            Frame frame = program.emscriptenEnv.EmptyFrame();
+            List<int> dataPtrs = new List<int>(N);
+            for (int i = 0; i < N / 2; i++)
+            {
+                dataPtrs.Add(program.emscriptenEnv.Malloc(frame, 4 * i + 4));
+            }
+            for (int i = 0; i < N / 2; i += 2)
+            {
+                program.emscriptenEnv.Free(frame, dataPtrs[i]);
+            }
+            List<int> moreDataPtrs = new List<int>(N);
+            for (int i = N / 2 - 1; i >= 0; i--)
+            {
+                moreDataPtrs.Add(program.emscriptenEnv.Malloc(frame, 4 * i + 4));
+            }
+            for (int i = 1; i < N / 2; i += 2)
+            {
+                program.emscriptenEnv.Free(frame, dataPtrs[i]);
+            }
+            for (int i = 0; i < N / 2; i++)
+            {
+                program.emscriptenEnv.Free(frame, moreDataPtrs[i]);
+            }
+            return program.machine;
+        }
+    }
+
     public class Program
     {
         public static void Main(string[] args)

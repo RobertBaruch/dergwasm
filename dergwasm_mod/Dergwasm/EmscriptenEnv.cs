@@ -44,7 +44,7 @@ namespace Derg
         // a WASM function.
         public Frame EmptyFrame(ModuleFunc f = null)
         {
-            Frame frame = new Frame(f, DergwasmMachine.moduleInstance, null);
+            Frame frame = new Frame(f, machine.mainModuleInstance, null);
             frame.Label = new Label(0, 0);
             return frame;
         }
@@ -57,6 +57,14 @@ namespace Derg
                 frame = EmptyFrame();
 
             return malloc(frame, size);
+        }
+
+        public void Free(Frame frame, int ptr)
+        {
+            if (frame == null)
+                frame = EmptyFrame();
+
+            free(frame, ptr);
         }
 
         // Allocates a UTF-8 encoded string in WASM memory and returns the pointer to it.

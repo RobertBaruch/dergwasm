@@ -1,4 +1,6 @@
-﻿namespace Derg
+﻿using System;
+
+namespace Derg
 {
     public static class VariableInstructions
     {
