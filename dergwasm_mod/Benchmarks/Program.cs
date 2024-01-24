@@ -571,6 +571,49 @@ namespace DergwasmTests
     }
 
     // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3930/22H2/2022Update)
+    //    Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
+    //      [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+    //  .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
+    //
+    // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
+    //
+    // | Method        | N   | Mean     | Error    | StdDev   | Ratio |
+    // |-------------- |---- |---------:|---------:|---------:|------:|
+    // | Serialization | 200 | 40.27 us | 0.783 us | 0.694 us |  1.00 |
+    [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
+    public class MicropythonSerializationBenchmark
+    {
+        DergwasmLoadModule.Program program;
+        Frame frame;
+
+        [Params(200)]
+        public int N;
+
+        public MicropythonSerializationBenchmark()
+        {
+            program = new DergwasmLoadModule.Program("../../../../../firmware.wasm");
+            program.InitMicropython(64 * 1024);
+            frame = program.emscriptenEnv.EmptyFrame();
+        }
+
+        [Benchmark]
+        public int Serialization()
+        {
+            int dataPtr = SimpleSerialization.Serialize(
+                program.machine,
+                program.resoniteEnv,
+                frame,
+                N,
+                out int _
+            );
+            int value = (int)
+                SimpleSerialization.Deserialize(program.machine, program.resoniteEnv, dataPtr);
+            program.emscriptenEnv.Free(frame, dataPtr);
+            return value;
+        }
+    }
+
+    // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3930/22H2/2022Update)
     // Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
     //   [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
     //  .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
