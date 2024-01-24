@@ -579,7 +579,7 @@ namespace DergwasmTests
     //
     // | Method        | N   | Mean     | Error    | StdDev   | Ratio |
     // |-------------- |---- |---------:|---------:|---------:|------:|
-    // | Serialization | 200 | 40.27 us | 0.783 us | 0.694 us |  1.00 |
+    // | Serialization |     | 40.27 us | 0.783 us | 0.694 us |  1.00 |
     //
     // With preallocated buffer:
     //
@@ -592,15 +592,12 @@ namespace DergwasmTests
     //
     // | Method        | N   | Mean     | Error   | StdDev  | Ratio |
     // |-------------- |---- |---------:|--------:|--------:|------:|
-    // | Serialization | 200 | 352.7 ns | 6.88 ns | 8.19 ns |  1.00 |
+    // | Serialization |     | 352.7 ns | 6.88 ns | 8.19 ns |  1.00 |
     [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
     public class MicropythonSerializationBenchmark
     {
         DergwasmLoadModule.Program program;
         Frame frame;
-
-        [Params(200)]
-        public int N;
 
         public MicropythonSerializationBenchmark()
         {
