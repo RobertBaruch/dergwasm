@@ -114,7 +114,7 @@ namespace DergwasmTests
         [Fact]
         public void GetValueFailsOnBadRefIDTest()
         {
-            Assert.Equal(0, env.value_field_proxy__get_value(frame, 101, 0));
+            Assert.Equal(0, env.value_field_proxy__get_value(frame, 101));
         }
 
         [Fact]
@@ -123,7 +123,7 @@ namespace DergwasmTests
             Sync<int> valueField = new Sync<int>();
             SetRefId(valueField, 100);
 
-            Assert.Equal(0, env.value_field_proxy__get_value(frame, 100, 0));
+            Assert.Equal(0, env.value_field_proxy__get_value(frame, 100));
         }
 
         [Fact]
@@ -138,10 +138,8 @@ namespace DergwasmTests
             SetRefId(valueFieldProxy, 101);
             valueFieldProxy.Source.Target = valueField;
 
-            int lenPtr = emscriptenEnv.Malloc(frame, sizeof(int));
-            int dataPtr = env.value_field_proxy__get_value(frame, 101, lenPtr);
+            int dataPtr = env.value_field_proxy__get_value(frame, 101);
 
-            Assert.Equal(8, env.machine.HeapGet<int>(lenPtr));
             object value = SimpleSerialization.Deserialize(this, env, dataPtr);
             Assert.NotNull(value);
             Assert.IsType<int>(value);
@@ -195,7 +193,7 @@ namespace DergwasmTests
         [Fact]
         public void SetValueFailsOnBadRefIDTest()
         {
-            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, 12, out int _);
+            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, 12);
             Assert.Equal(-1, env.value_field_proxy__set_value(frame, 101, dataPtr));
         }
 
@@ -204,7 +202,7 @@ namespace DergwasmTests
         {
             Sync<int> valueField = new Sync<int>();
             SetRefId(valueField, 100);
-            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, 12, out int _);
+            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, 12);
 
             Assert.Equal(-1, env.value_field_proxy__set_value(frame, 100, dataPtr));
         }
@@ -220,7 +218,7 @@ namespace DergwasmTests
             Initialize(valueFieldProxy);
             SetRefId(valueFieldProxy, 101);
             valueFieldProxy.Source.Target = valueField;
-            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, 12, out int _);
+            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, 12);
 
             Assert.Equal(0, env.value_field_proxy__set_value(frame, 101, dataPtr));
             Assert.Equal(12, valueFieldProxy.Source.Target.Value);
@@ -237,7 +235,7 @@ namespace DergwasmTests
             Initialize(valueFieldProxy);
             SetRefId(valueFieldProxy, 101);
             valueFieldProxy.Source.Target = valueField;
-            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, 12U, out int _);
+            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, 12U);
 
             Assert.Equal(-1, env.value_field_proxy__set_value(frame, 101, dataPtr));
             Assert.Equal(1, valueFieldProxy.Source.Target.Value);

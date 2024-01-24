@@ -170,7 +170,7 @@ namespace Derg
         // This only needs to be called once, when the WASM Machine is initialized and loaded.
         public void RegisterHostFuncs()
         {
-            machine.RegisterReturningHostFunc<ulong, int, int, int>(
+            machine.RegisterReturningHostFunc<ulong, int, int>(
                 "env",
                 "component__get_field_value",
                 component__get_field_value
@@ -235,7 +235,7 @@ namespace Derg
                 slot__get_component
             );
 
-            machine.RegisterReturningHostFunc<ulong, int, int>(
+            machine.RegisterReturningHostFunc<ulong, int>(
                 "env",
                 "value_field__get_value",
                 value_field__get_value
@@ -368,8 +368,7 @@ namespace Derg
 
         // Gets the value of a field on a component. The field name is in the given string.
         // The value is serialized into an allocated area of the heap, and the pointer to it
-        // is returned. The length of the serialized value is placed in the heap at the
-        // given lenPtr, if the pointer is nonzero.
+        // is returned.
         //
         // Returns null if the field doesn't exist, couldn't be gotten, or the value couldn't
         // be serialized.
@@ -386,12 +385,7 @@ namespace Derg
         // There are also SyncLists.
         //
         // Currently we only support properties, Sync, and SyncRef.
-        public int component__get_field_value(
-            Frame frame,
-            ulong component_id,
-            int namePtr,
-            int lenPtr
-        )
+        public int component__get_field_value(Frame frame, ulong component_id, int namePtr)
         {
             string fieldName = emscriptenEnv.GetUTF8StringFromMem(namePtr);
             Component component = FromRefID<Component>(component_id);
@@ -399,14 +393,7 @@ namespace Derg
             if (!ComponentUtils.GetFieldValue(component, fieldName, out value))
                 return 0;
 
-            int len;
-            int dataPtr = SimpleSerialization.Serialize(machine, this, frame, value, out len);
-            if (len == 0)
-                return 0;
-
-            if (lenPtr != 0)
-                machine.HeapSet(lenPtr, len);
-            return dataPtr;
+            return SimpleSerialization.Serialize(machine, this, frame, value);
         }
 
         // Sets the value of a field on a component. The field name is in the given string.
@@ -431,25 +418,17 @@ namespace Derg
         }
 
         // Gets the value of a ValueField. The value is serialized into an allocated area of
-        // the heap, and the pointer to it is returned. The length of the serialized value is
-        // placed in the heap at the given lenPtr, if the pointer is nonzero.
+        // the heap, and the pointer to it is returned.
         //
         // Returns null if the value couldn't be gotten or the value couldn't be serialized.
-        public int value_field__get_value(Frame frame, ulong component_id, int lenPtr)
+        public int value_field__get_value(Frame frame, ulong component_id)
         {
             IValueSource component = FromRefID<IValueSource>(component_id);
             if (!(component?.GetType()?.IsOfGenericType(typeof(ValueField<>)) ?? false))
                 return 0;
             object value = component.BoxedValue;
 
-            int len;
-            int dataPtr = SimpleSerialization.Serialize(machine, this, frame, value, out len);
-            if (len == 0)
-                return 0;
-
-            if (lenPtr != 0)
-                machine.HeapSet(lenPtr, len);
-            return dataPtr;
+            return SimpleSerialization.Serialize(machine, this, frame, value);
         }
 
         // Sets the value of a ValueField. The value is deserialized from memory.
@@ -500,12 +479,11 @@ namespace Derg
 
         // Returns the value of the field pointed to by the ValueFieldProxy component.
         // The value is serialized into an allocated area of the heap, and the pointer to it
-        // is returned. The length of the serialized value is placed in the heap at the
-        // given lenPtr, if the pointer is nonzero.
+        // is returned.
         //
         // Returns null if the component doesn't exist, its source couldn't be gotten, or
         // the value couldn't be serialized.
-        public int value_field_proxy__get_value(Frame frame, ulong component_id, int lenPtr)
+        public int value_field_proxy__get_value(Frame frame, ulong component_id)
         {
             Component component = FromRefID<Component>(component_id);
             if (!(component?.GetType()?.IsOfGenericType(typeof(ValueFieldProxy<>)) ?? false))
@@ -515,14 +493,7 @@ namespace Derg
             if (!ComponentUtils.GetFieldValue(component, "Value", out value))
                 return 0;
 
-            int len;
-            int dataPtr = SimpleSerialization.Serialize(machine, this, frame, value, out len);
-            if (len == 0)
-                return 0;
-
-            if (lenPtr != 0)
-                machine.HeapSet(lenPtr, len);
-            return dataPtr;
+            return SimpleSerialization.Serialize(machine, this, frame, value);
         }
 
         public int value_field_proxy__set_value(Frame frame, ulong component_id, int dataPtr)

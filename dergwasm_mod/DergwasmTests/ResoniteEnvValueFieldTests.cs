@@ -19,6 +19,7 @@ namespace DergwasmTests
             worldServices = new TestWorldServices();
             emscriptenEnv = new TestEmscriptenEnv();
             env = new ResoniteEnv(this, worldServices, emscriptenEnv);
+            SimpleSerialization.Initialize(env);
             frame = emscriptenEnv.EmptyFrame(null);
         }
 
@@ -78,7 +79,7 @@ namespace DergwasmTests
             Initialize(valueField);
             SetRefId(valueField, 100);
 
-            int dataPtr = env.value_field__get_value(frame, 100, 0);
+            int dataPtr = env.value_field__get_value(frame, 100);
 
             Assert.NotEqual(0, dataPtr);
 
@@ -93,7 +94,7 @@ namespace DergwasmTests
             Initialize(valueField);
             SetRefId(valueField, 100);
 
-            int dataPtr = env.value_field__get_value(frame, 100, 0);
+            int dataPtr = env.value_field__get_value(frame, 100);
 
             Assert.NotEqual(0, dataPtr);
 
@@ -111,7 +112,7 @@ namespace DergwasmTests
             SetRefId(valueField, 100);
             valueField.Value.Value = 1;
 
-            int dataPtr = env.value_field__get_value(frame, 100, 0);
+            int dataPtr = env.value_field__get_value(frame, 100);
 
             Assert.NotEqual(0, dataPtr);
 
@@ -121,27 +122,13 @@ namespace DergwasmTests
         }
 
         [Fact]
-        public void GetValueWithLengthTest()
-        {
-            ValueField<int> valueField = new ValueField<int>();
-            Initialize(valueField);
-            SetRefId(valueField, 100);
-            valueField.Value.Value = 1;
-            int lenPtr = emscriptenEnv.Malloc(frame, sizeof(int));
-
-            env.value_field__get_value(frame, 100, lenPtr);
-
-            Assert.Equal(8, env.machine.HeapGet<int>(lenPtr));
-        }
-
-        [Fact]
         public void SetValueTest()
         {
             ValueField<int> valueField = new ValueField<int>();
             Initialize(valueField);
             SetRefId(valueField, 100);
             valueField.Value.Value = 1;
-            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, 12, out int _);
+            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, 12);
 
             Assert.Equal(0, env.value_field__set_value(frame, 100, dataPtr));
             Assert.Equal(12, valueField.Value.Value);
@@ -154,7 +141,7 @@ namespace DergwasmTests
             Initialize(valueField);
             SetRefId(valueField, 100);
             valueField.Value.Value = 1;
-            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, null, out int _);
+            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, null);
 
             Assert.Equal(0, env.value_field__set_value(frame, 100, dataPtr));
             Assert.Equal(0, valueField.Value.Value);
@@ -167,7 +154,7 @@ namespace DergwasmTests
             Initialize(valueField);
             SetRefId(valueField, 100);
             valueField.Value.Value = "12";
-            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, null, out int _);
+            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, null);
 
             Assert.Equal(0, env.value_field__set_value(frame, 100, dataPtr));
             Assert.Null(valueField.Value.Value);
@@ -194,7 +181,7 @@ namespace DergwasmTests
             Initialize(valueField);
             SetRefId(valueField, 100);
             valueField.Value.Value = 1;
-            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, 12u, out int _);
+            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, 12u);
 
             Assert.Equal(-1, env.value_field__set_value(frame, 100, dataPtr));
             Assert.Equal(1, valueField.Value.Value);
@@ -203,7 +190,7 @@ namespace DergwasmTests
         [Fact]
         public void SetValueFailsOnNonexistentRefID()
         {
-            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, 12, out int _);
+            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, 12);
 
             Assert.Equal(-1, env.value_field__set_value(frame, 200, dataPtr));
         }
@@ -212,7 +199,7 @@ namespace DergwasmTests
         public void SetValueFailsOnRefIDNotValueField()
         {
             EmptyComponent component = new EmptyComponent(100);
-            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, 12, out int _);
+            int dataPtr = SimpleSerialization.Serialize(env.machine, env, frame, 12);
 
             Assert.Equal(-1, env.value_field__set_value(frame, 100, dataPtr));
         }
