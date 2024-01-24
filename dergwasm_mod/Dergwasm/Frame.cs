@@ -191,7 +191,8 @@ namespace Derg
         // any return values are popped off the new frame and placed on the current frame's stack.
         void InvokeHostFunc(Machine machine, HostFunc f)
         {
-            Console.WriteLine($"Invoking host func {f.ModuleName}.{f.Name}");
+            if (machine.Debug)
+                Console.WriteLine($"Invoking host func {f.ModuleName}.{f.Name}");
 
             int arity = f.Proxy.Arity();
             int args = f.Proxy.NumArgs();

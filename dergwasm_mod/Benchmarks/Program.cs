@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Reflection;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 using Derg;
+using Elements.Core;
+using FrooxEngine;
 
 namespace DergwasmTests
 {
@@ -267,6 +270,51 @@ namespace DergwasmTests
     }
 
     // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3930/22H2/2022Update)
+    // Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
+    //   [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+    //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
+    //
+    // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
+    //
+    // | Method       | N    | Mean     | Error   | StdDev  | Ratio |
+    // |------------- |----- |---------:|--------:|--------:|------:|
+    // | HostFuncCall | 1000 | 444.9 us | 8.36 us | 9.30 us |  1.00 |
+    [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
+    public class HostFuncCallBenchmark : InstructionTestFixture
+    {
+        [Params(1000)]
+        public int N;
+
+        public HostFuncCallBenchmark()
+        {
+            // 0: I32_CONST 10
+            // 1: I32_CONST 20
+            // 2: CALL 4
+            // 3: NOP
+            //
+            // Func 14 (= idx 4): host func
+            machine.SetProgram(0, I32Const(10), I32Const(20), Call(4), Nop());
+            machine.SetHostFuncAt(
+                14,
+                new ReturningHostProxy<int, int, int>((Frame f, int a, int b) => a - b)
+            );
+        }
+
+        [Benchmark]
+        public int HostFuncCall()
+        {
+            int sum = 0;
+            for (int i = 0; i < N; i++)
+            {
+                machine.Frame.PC = 0;
+                machine.Step(3);
+                sum += machine.Frame.Pop().s32;
+            }
+            return sum;
+        }
+    }
+
+    // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3930/22H2/2022Update)
     //  Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
     //      [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
     //  .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
@@ -519,6 +567,92 @@ namespace DergwasmTests
                 program.emscriptenEnv.Free(frame, moreDataPtrs[i]);
             }
             return program.machine;
+        }
+    }
+
+    // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3930/22H2/2022Update)
+    // Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
+    //   [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+    //  .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
+    //
+    // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
+    //
+    // | Method      | N   | Mean     | Error    | StdDev   | Ratio |
+    // |------------ |---- |---------:|---------:|---------:|------:|
+    // | GetIntField | 100 | 53.97 us | 1.034 us | 0.917 us |  1.00 |
+    [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
+    public class MicropythonGetIntFieldBenchmark
+    {
+        DergwasmLoadModule.Program program;
+        TestComponent testComponent;
+
+        [Params(100)]
+        public int N;
+
+        public class TestComponent : Component
+        {
+            public Sync<int> IntField;
+            public SyncRef<TestComponent> ComponentRefField;
+            public SyncRef<IField<int>> IntFieldRefField;
+            public SyncType TypeField;
+
+            public int IntProperty
+            {
+                get { return IntField.Value; }
+                set { IntField.Value = value; }
+            }
+
+            void SetRefId(object obj, ulong i)
+            {
+                // This nonsense is required because Component's ReferenceID has a private setter
+                // in a base class.
+                PropertyInfo propertyInfo = obj.GetType().GetProperty("ReferenceID");
+                var setterMethod = propertyInfo.GetSetMethod(true);
+                if (setterMethod == null)
+                    setterMethod = propertyInfo
+                        .DeclaringType
+                        .GetProperty("ReferenceID")
+                        .GetSetMethod(true);
+                setterMethod.Invoke(obj, new object[] { new RefID(i) });
+            }
+
+            public TestComponent()
+            {
+                IntField = new Sync<int>();
+                ComponentRefField = new SyncRef<TestComponent>();
+                IntFieldRefField = new SyncRef<IField<int>>();
+                TypeField = new SyncType();
+
+                SetRefId(this, 100);
+                SetRefId(IntField, 101);
+                SetRefId(ComponentRefField, 102);
+                SetRefId(IntFieldRefField, 103);
+                SetRefId(TypeField, 104);
+            }
+        }
+
+        public MicropythonGetIntFieldBenchmark()
+        {
+            ResonitePatches.Apply();
+
+            program = new DergwasmLoadModule.Program("../../../../../firmware.wasm");
+            program.InitMicropython(64 * 1024);
+            testComponent = new TestComponent();
+            testComponent.IntField.Value = 1;
+        }
+
+        [Benchmark]
+        public object GetIntField()
+        {
+            Frame frame = program.emscriptenEnv.EmptyFrame();
+            int sum = 0;
+            object value;
+            for (int i = 0; i < N; i++)
+            {
+                ComponentUtils.GetFieldValue(testComponent, "IntField", out value);
+                sum += (int)value;
+            }
+            return sum;
         }
     }
 
