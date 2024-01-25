@@ -613,7 +613,7 @@ namespace DergwasmTests
                 program.machine,
                 program.resoniteEnv,
                 frame,
-                N
+                100
             );
             return (int)
                 SimpleSerialization.Deserialize(program.machine, program.resoniteEnv, dataPtr);
