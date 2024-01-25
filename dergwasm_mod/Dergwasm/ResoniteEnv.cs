@@ -257,6 +257,12 @@ namespace Derg
                 "value_field_proxy__set_source",
                 value_field_proxy__set_source
             );
+
+            machine.RegisterReturningHostFunc<ulong, int>(
+                "env",
+                "value_field__get_value<int>",
+                value_field__get_value_64<int>
+            );
         }
 
         //
@@ -429,6 +435,15 @@ namespace Derg
             object value = component.BoxedValue;
 
             return SimpleSerialization.Serialize(machine, this, frame, value);
+        }
+
+        // Gets the value of a ValueField<T> where T can be represented in 64 bits
+        // or fewer. The value is returned directly.
+        public T value_field__get_value_64<T>(Frame frame, ulong component_id)
+            where T : unmanaged
+        {
+            ValueField<T> component = FromRefID<ValueField<T>>(component_id);
+            return component.Value.Value;
         }
 
         // Sets the value of a ValueField. The value is deserialized from memory.
