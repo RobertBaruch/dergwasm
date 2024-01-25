@@ -706,6 +706,81 @@ namespace DergwasmTests
         }
     }
 
+    // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3930/22H2/2022Update)
+    // Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
+    //   [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+    //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
+    //
+    // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
+    //
+    // | Method       | Mean      | Error    | StdDev    | Ratio |
+    // |------------- |----------:|---------:|----------:|------:|
+    // | GetIntField  | 539.77 ns | 8.447 ns | 10.683 ns |  1.00 |
+    // |              |           |          |           |       |
+    // | GetIntField2 |  24.77 ns | 0.203 ns |  0.169 ns |  1.00 |
+    [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
+    public class GetValueFieldIntBenchmark : TestMachine
+    {
+        TestWorldServices worldServices;
+        ResoniteEnv env;
+        TestEmscriptenEnv emscriptenEnv;
+        Frame frame;
+        ValueField<int> valueField;
+
+        public GetValueFieldIntBenchmark()
+        {
+            ResonitePatches.Apply();
+            worldServices = new TestWorldServices();
+            emscriptenEnv = new TestEmscriptenEnv();
+            env = new ResoniteEnv(this, worldServices, emscriptenEnv);
+            SimpleSerialization.Initialize(env);
+            frame = emscriptenEnv.EmptyFrame(null);
+            valueField = new ValueField<int>();
+            Initialize(valueField);
+            SetRefId(valueField, 100);
+        }
+
+        void SetRefId(IWorldElement obj, ulong i)
+        {
+            // This nonsense is required because a WorldElement's ReferenceID has a private setter
+            // in a base class.
+            PropertyInfo propertyInfo = obj.GetType().GetProperty("ReferenceID");
+            var setterMethod = propertyInfo.GetSetMethod(true);
+            if (setterMethod == null)
+                setterMethod = propertyInfo
+                    .DeclaringType
+                    .GetProperty("ReferenceID")
+                    .GetSetMethod(true);
+            setterMethod.Invoke(obj, new object[] { new RefID(i) });
+            worldServices.AddRefID(obj, i);
+        }
+
+        void Initialize(Component component)
+        {
+            component
+                .GetType()
+                .GetMethod("InitializeSyncMembers", BindingFlags.NonPublic | BindingFlags.Instance)
+                .Invoke(component, new object[] { });
+            component
+                .GetType()
+                .GetMethod("OnAwake", BindingFlags.NonPublic | BindingFlags.Instance)
+                .Invoke(component, new object[] { });
+        }
+
+        [Benchmark]
+        public int GetIntField()
+        {
+            int dataPtr = env.value_field__get_value(frame, 100);
+            return (int)SimpleSerialization.Deserialize(this, env, dataPtr);
+        }
+
+        [Benchmark]
+        public int GetIntField2()
+        {
+            return env.value_field__get_value_64<int>(frame, 100);
+        }
+    }
+
     public class Program
     {
         public static void Main(string[] args)
