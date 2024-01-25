@@ -30,16 +30,6 @@ namespace Derg
 
         public IWasmAllocator Allocator;
 
-        public unsafe T MemGet<T>(uint ea)
-            where T : unmanaged
-        {
-            Span<byte> mem = HeapSpan(addr, sizeof(T));
-            fixed (byte* ptr = mem)
-            {
-                return *(T*)ptr;
-            }
-        }
-
         // Gets a value from the heap at the given offset plus the given address ("address"
         // in the sense of "address within the memory starting at the offset").
         //
@@ -57,7 +47,7 @@ namespace Derg
         // Sets a value on the heap at the given address.
         //
         // Throws a Trap if the address + value size is out of bounds.
-        public unsafe void HeapSet<T>(int addr, T value)
+        public unsafe void HeapSet<T>(Pointer<T> addr, T value)
             where T : unmanaged
         {
             Span<byte> mem = HeapSpan(addr, sizeof(T));
@@ -125,16 +115,16 @@ namespace Derg
         // sizes are ints because that's the way .NET returns array lengths.
         //
         // Throws a Trap if the offset and size are out of bounds.
-        public Span<byte> HeapSpan(int offset, int sz)
+        public Span<byte> HeapSpan(Pointer offset, int sz)
         {
             try
             {
-                return Heap.AsSpan(offset, sz);
+                return Heap.AsSpan(offset.Ptr, sz);
             }
             catch (Exception)
             {
                 throw new Trap(
-                    $"Memory access out of bounds: offset 0x{(uint)offset:X8} size 0x{(uint)sz:X8}"
+                    $"Memory access out of bounds: offset 0x{(uint)offset.Ptr:X8} size 0x{(uint)sz:X8}"
                 );
             }
         }

@@ -62,17 +62,12 @@ namespace Derg.Modules
 
             var machine = Expression.Parameter(typeof(Machine), "machine");
             var frame = Expression.Parameter(typeof(Frame), "frame");
-            var ctxExp = Expression.Variable(typeof(MemoryContext), "ctx");
 
             var argsCount = 0;
             var parameters = new List<Expression>();
             foreach (var param in method.GetParameters())
             {
-                if (param.ParameterType == typeof(MemoryContext))
-                {
-                    parameters.Add(ctxExp);
-                }
-                else if (param.ParameterType == typeof(Machine))
+                if (param.ParameterType == typeof(Machine))
                 {
                     parameters.Add(machine);
                 }
@@ -86,22 +81,20 @@ namespace Derg.Modules
                     var value = Expression.Call(
                         Expression.New(marshallerType), marshallerType.GetMethod(nameof(IMarshaller<int>.FromValue)),
                         Expression.Call(frame, typeof(Frame).GetMethods().First(m => m.Name == "Pop" && !m.IsGenericMethod)),
-                        ctxExp);
+                        machine, frame);
                     argsCount++;
                     parameters.Add(value);
                 }
             }
 
-            var body = Expression.Block(new[] { ctxExp },
-                Expression.Assign(ctxExp, Expression.New(typeof(MemoryContext).GetConstructor(new[] { typeof(Machine), typeof(Frame) }), machine, frame)),
-                Expression.Call(context, method, parameters));
+            var callImpl = Expression.Lambda<Action<Machine, Frame>>(Expression.Call(context, method, parameters), machine, frame);
 
             var funcCtor = Expression.New(typeof(HostFunc).GetConstructors().First(),
                 Expression.Constant(module),
                 Expression.Constant(name),
                 Expression.Constant(new FuncType()),
                 Expression.New(typeof(ActionHostProxy).GetConstructors().First(),
-                    Expression.Lambda<Action<Machine, Frame>>(body, machine, frame),
+                    callImpl,
                     Expression.Constant(argsCount),
                     Expression.Constant(/*arity*/0))
                 );

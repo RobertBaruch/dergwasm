@@ -10,7 +10,7 @@ namespace Derg.Mem
 
         public int Length(in string obj) => PtrMarshaller.Length(default);
 
-        public Buffer<byte> PutString(string obj, in MemoryContext ctx)
+        public Buffer<byte> PutString(string obj, Machine machine, Frame frame)
         {
             // Allocate the string.
             var buffer = ctx.Allocate(Encoding.UTF8.GetByteCount(obj) + 1);
@@ -21,7 +21,7 @@ namespace Derg.Mem
             return buffer;
         }
 
-        public unsafe string GetString(Buffer<byte> ptr, in MemoryContext ctx)
+        public unsafe string GetString(Buffer<byte> ptr, Machine machine, Frame frame)
         {
             var view = ctx.View(ptr);
             fixed (byte* p = view)
@@ -30,14 +30,14 @@ namespace Derg.Mem
             }
         }
 
-        public void ToMem(in string obj, Span<byte> memory, in MemoryContext ctx)
+        public void ToMem(in string obj, Span<byte> memory, Machine machine, Frame frame)
         {
             var buffer = PutString(obj, in ctx);
 
             PtrMarshaller.ToMem(buffer, memory, in ctx);
         }
 
-        public unsafe string FromMem(ReadOnlySpan<byte> memory, in MemoryContext ctx)
+        public unsafe string FromMem(ReadOnlySpan<byte> memory, Machine machine, Frame frame)
         {
             var ptr = PtrMarshaller.FromMem(memory, in ctx);
             var buffPtr = ptr.Reinterpret<byte>();
@@ -49,14 +49,14 @@ namespace Derg.Mem
             }
         }
 
-        public Value ToValue(in string obj, in MemoryContext ctx)
+        public Value ToValue(in string obj, Machine machine, Frame frame)
         {
             var buffer = PutString(obj, in ctx);
             // Store the ptr only, as this is null terminated.
             return Value.From(buffer.Ptr);
         }
 
-        public string FromValue(in Value value, in MemoryContext ctx)
+        public string FromValue(in Value value, Machine machine, Frame frame)
         {
             var ptr = new Pointer<byte>(value.As<int>());
 

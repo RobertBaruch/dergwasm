@@ -148,62 +148,29 @@ namespace Derg
             switch (val)
             {
                 case bool v:
-                    return new Value(v);
+                    return new Value { s32 = v ? 1 : 0 };
                 case byte v:
-                    return new Value(v);
+                    return new Value { s32 = v };
                 case sbyte v:
-                    return new Value(v);
+                    return new Value  { s32 = v };
                 case short v:
-                    return new Value(v);
+                    return new Value  { s32 = v };
                 case ushort v:
-                    return new Value(v);
+                    return new Value  { s32 = v};
                 case int v:
-                    return new Value(v);
+                    return new Value  { s32 = v };
                 case uint v:
-                    return new Value(v);
+                    return new Value  { u32 = v };
                 case long v:
-                    return new Value(v);
+                    return new Value { s64 = v};
                 case ulong v:
-                    return new Value(v);
+                    return new Value { u64 = v};
                 case float v:
-                    return new Value(v);
+                    return new Value { f32 = v};
                 case double v:
-                    return new Value(v);
+                    return new Value { f64 = v};
                 case Pointer v:
-                    return new Value(v.Ptr);
-                default:
-                    throw new Exception($"Unknown type {typeof(T)}");
-            }
-        }
-
-        public static Value From<T>(T val)
-        {
-            switch (val)
-            {
-                case bool v:
-                    return new Value(v);
-                case byte v:
-                    return new Value(v);
-                case sbyte v:
-                    return new Value(v);
-                case short v:
-                    return new Value(v);
-                case ushort v:
-                    return new Value(v);
-                case int v:
-                    return new Value(v);
-                case uint v:
-                    return new Value(v);
-                case long v:
-                    return new Value(v);
-                case ulong v:
-                    return new Value(v);
-                case float v:
-                    return new Value(v);
-                case double v:
-                    return new Value(v);
-                case Pointer v:
-                    return new Value(v.Ptr);
+                    return new Value { s32 = v.Ptr};
                 default:
                     throw new Exception($"Unknown type {typeof(T)}");
             }

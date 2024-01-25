@@ -3,6 +3,7 @@ using System.Text;
 using Derg.Wasm;
 using System.Threading.Tasks;
 using FrooxEngine;
+using System.Runtime.InteropServices;
 
 namespace Derg
 {
@@ -11,8 +12,9 @@ namespace Derg
     public class LongjmpException : Exception
     {
         public LongjmpException()
-            : base() {
-            }
+            : base()
+        {
+        }
     }
 
     public static class Errno
@@ -816,6 +818,16 @@ namespace Derg
                 outputWriter(System.Text.Encoding.UTF8.GetString(data));
             }
         }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct EmscriptenException
+    {
+        public int Type;
+        public int Destructor;
+        public byte Caught;
+        public int Rethrown;
+        public int AdjustedPtr;
     }
 
     // Ported from the Emscripted JavaScript output. Untested.

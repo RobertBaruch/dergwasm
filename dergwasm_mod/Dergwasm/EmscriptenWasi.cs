@@ -435,17 +435,24 @@ namespace Derg
         // Returns:
         //    0 on success, or -ERRNO on failure.
         [ModFn("fd_write")]
-        int FdWrite(in MemoryContext ctx, int fd, int iov, int iovcnt, int nwrittenPtr)
+        int FdWrite(Frame frame, int fd, int iov, int iovcnt, int nwrittenPtr)
         {
             if (iov == 0)
                 return -Errno.EFAULT;
+            if (fd != 1)
+            {
+                return -Errno.EBADF;
+            }
+
+            Memory mem = machine.GetMemoryFromIndex(0);
+
+            MemoryStream iovStream = new MemoryStream(mem.Data);
+            iovStream.Position = iov;
+            BinaryReader iovReader = new BinaryReader(iovStream);
 
             uint nwritten = 0;
-            using (MemoryStream iovStream = new MemoryStream(machine.Heap))
-            {
-                iovStream.Position = iov;
-                BinaryReader iovReader = new BinaryReader(iovStream);
 
+            {
                 for (int i = 0; i < iovcnt; i++)
                 {
                     int ptr = iovReader.ReadInt32();
@@ -480,7 +487,7 @@ namespace Derg
         // Returns:
         //    0 on success, or -ERRNO on failure.
         [ModFn("fd_seek")]
-        int FdSeek(in MemoryContext ctx, int fd, long offset, uint whence, Pointer<uint> newOffsetPtr)
+        int FdSeek(Frame frame, int fd, long offset, uint whence, Pointer<uint> newOffsetPtr)
         {
             int errno;
             ulong pos = LSeek(fd, offset, whence, out errno);
@@ -547,7 +554,7 @@ namespace Derg
         // Returns:
         //    0 on success, or -ERRNO on failure.
         [ModFn("fd_close")]
-        int FdClose(Frame frame, int fd) => Close(fd);
+        int FdClose(Frame frame, int fd) => fd_close(fd);
 
         // Syncs the file to "disk".
         //

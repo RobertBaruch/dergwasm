@@ -9,16 +9,16 @@ namespace Derg.Mem
         /// </summary>
         int Length(in T obj);
 
-        void ToMem(in T obj, Span<byte> memory, in MemoryContext ctx);
-        T FromMem(ReadOnlySpan<byte> memory, in MemoryContext ctx);
+        void ToMem(in T obj, Span<byte> memory, Machine machine, Frame frame);
+        T FromMem(ReadOnlySpan<byte> memory, Machine machine, Frame frame);
 
         /// <summary>
         /// Converts an object into a single value object.
         /// </summary>
-        Value ToValue(in T obj, in MemoryContext ctx);
+        Value ToValue(in T obj, Machine machine, Frame frame);
         /// <summary>
         /// Converts a single value object into this object.
         /// </summary>
-        T FromValue(in Value value, in MemoryContext ctx);
+        T FromValue(in Value value, Machine machine, Frame frame);
     }
 }

@@ -6,7 +6,7 @@ namespace Derg.Mem
     {
         public unsafe int Length(in T len) => sizeof(T);
 
-        public unsafe T FromMem(ReadOnlySpan<byte> memory, in MemoryContext ctx)
+        public unsafe T FromMem(ReadOnlySpan<byte> memory, Machine machine, Frame frame)
         {
             fixed (byte* p = memory)
             {
@@ -14,7 +14,7 @@ namespace Derg.Mem
             }
         }
 
-        public unsafe void ToMem(in T obj, Span<byte> memory, in MemoryContext ctx)
+        public unsafe void ToMem(in T obj, Span<byte> memory, Machine machine, Frame frame)
         {
             fixed (byte* p = memory)
             {
@@ -22,12 +22,12 @@ namespace Derg.Mem
             }
         }
 
-        public Value ToValue(in T obj, in MemoryContext ctx)
+        public Value ToValue(in T obj, Machine machine, Frame frame)
         {
             return Value.From(obj);
         }
 
-        public T FromValue(in Value value, in MemoryContext ctx)
+        public T FromValue(in Value value, Machine machine, Frame frame)
         {
             return value.As<T>();
         }
