@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using Derg.Modules;
+using Derg.Wasm;
 
 namespace Derg
 {
@@ -24,18 +26,9 @@ namespace Derg
         public List<Memory> memories = new List<Memory>();
         public List<byte[]> dataSegments = new List<byte[]>();
 
-        // Gets a value from the heap at the given address.
-        //
-        // Throws a Trap if the address + value size is out of bounds.
-        public unsafe T HeapGet<T>(int addr)
-            where T : unmanaged
-        {
-            Span<byte> mem = HeapSpan(addr, sizeof(T));
-            fixed (byte* ptr = mem)
-            {
-                return *(T*)ptr;
-            }
-        }
+        public List<IHostModule> HostModules = new List<IHostModule>();
+
+        public IWasmAllocator Allocator;
 
         // Gets a value from the heap at the given offset plus the given address ("address"
         // in the sense of "address within the memory starting at the offset").
@@ -54,7 +47,7 @@ namespace Derg
         // Sets a value on the heap at the given address.
         //
         // Throws a Trap if the address + value size is out of bounds.
-        public unsafe void HeapSet<T>(int addr, T value)
+        public unsafe void HeapSet<T>(Pointer<T> addr, T value)
             where T : unmanaged
         {
             Span<byte> mem = HeapSpan(addr, sizeof(T));
@@ -122,16 +115,16 @@ namespace Derg
         // sizes are ints because that's the way .NET returns array lengths.
         //
         // Throws a Trap if the offset and size are out of bounds.
-        public Span<byte> HeapSpan(int offset, int sz)
+        public Span<byte> HeapSpan(Pointer offset, int sz)
         {
             try
             {
-                return Heap.AsSpan(offset, sz);
+                return Heap.AsSpan(offset.Ptr, sz);
             }
             catch (Exception)
             {
                 throw new Trap(
-                    $"Memory access out of bounds: offset 0x{(uint)offset:X8} size 0x{(uint)sz:X8}"
+                    $"Memory access out of bounds: offset 0x{(uint)offset.Ptr:X8} size 0x{(uint)sz:X8}"
                 );
             }
         }
