@@ -49,7 +49,7 @@ namespace DergwasmTests
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.REF_NULL, insn.Type);
-            Assert.Collection(insn.Operands, e => Assert.Equal(1U, e.value.U32));
+            Assert.Collection(insn.Operands, e => Assert.Equal(1U, e.value.u32));
         }
 
         [Fact]
@@ -65,7 +65,7 @@ namespace DergwasmTests
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.V128_CONST, insn.Type);
-            Assert.Collection(insn.Operands, e => Assert.Equal(0x8877665544332211UL, e.value.U64));
+            Assert.Collection(insn.Operands, e => Assert.Equal(0x8877665544332211UL, e.value.u64));
         }
 
         [Fact]
@@ -80,7 +80,7 @@ namespace DergwasmTests
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.BR, insn.Type);
-            Assert.Collection(insn.Operands, e => Assert.Equal(1U, e.value.U32));
+            Assert.Collection(insn.Operands, e => Assert.Equal(1U, e.value.u32));
         }
 
         [Fact]
@@ -98,8 +98,8 @@ namespace DergwasmTests
             Assert.Equal(InstructionType.TABLE_INIT, insn.Type);
             Assert.Collection(
                 insn.Operands,
-                e => Assert.Equal(1U, e.value.U32),
-                e => Assert.Equal(2U, e.value.U32)
+                e => Assert.Equal(1U, e.value.u32),
+                e => Assert.Equal(2U, e.value.u32)
             );
         }
 
@@ -118,8 +118,8 @@ namespace DergwasmTests
             Assert.Equal(InstructionType.I32_LOAD, insn.Type);
             Assert.Collection(
                 insn.Operands,
-                e => Assert.Equal(1U, e.value.U32),
-                e => Assert.Equal(2U, e.value.U32)
+                e => Assert.Equal(1U, e.value.u32),
+                e => Assert.Equal(2U, e.value.u32)
             );
         }
 
@@ -139,9 +139,9 @@ namespace DergwasmTests
             Assert.Equal(InstructionType.V128_LOAD8_LANE, insn.Type);
             Assert.Collection(
                 insn.Operands,
-                e => Assert.Equal(1U, e.value.U32),
-                e => Assert.Equal(2U, e.value.U32),
-                e => Assert.Equal(3U, e.value.U32)
+                e => Assert.Equal(1U, e.value.u32),
+                e => Assert.Equal(2U, e.value.u32),
+                e => Assert.Equal(3U, e.value.u32)
             );
         }
 
@@ -157,7 +157,7 @@ namespace DergwasmTests
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.I8X16_EXTRACT_LANE_S, insn.Type);
-            Assert.Collection(insn.Operands, e => Assert.Equal(1U, e.value.U32));
+            Assert.Collection(insn.Operands, e => Assert.Equal(1U, e.value.u32));
         }
 
         [Fact]
@@ -189,22 +189,22 @@ namespace DergwasmTests
             Assert.Equal(InstructionType.I8X16_SHUFFLE, insn.Type);
             Assert.Collection(
                 insn.Operands,
-                e => Assert.Equal(1U, e.value.U32),
-                e => Assert.Equal(2U, e.value.U32),
-                e => Assert.Equal(3U, e.value.U32),
-                e => Assert.Equal(4U, e.value.U32),
-                e => Assert.Equal(5U, e.value.U32),
-                e => Assert.Equal(6U, e.value.U32),
-                e => Assert.Equal(7U, e.value.U32),
-                e => Assert.Equal(8U, e.value.U32),
-                e => Assert.Equal(9U, e.value.U32),
-                e => Assert.Equal(10U, e.value.U32),
-                e => Assert.Equal(11U, e.value.U32),
-                e => Assert.Equal(12U, e.value.U32),
-                e => Assert.Equal(13U, e.value.U32),
-                e => Assert.Equal(14U, e.value.U32),
-                e => Assert.Equal(15U, e.value.U32),
-                e => Assert.Equal(16U, e.value.U32)
+                e => Assert.Equal(1U, e.value.u32),
+                e => Assert.Equal(2U, e.value.u32),
+                e => Assert.Equal(3U, e.value.u32),
+                e => Assert.Equal(4U, e.value.u32),
+                e => Assert.Equal(5U, e.value.u32),
+                e => Assert.Equal(6U, e.value.u32),
+                e => Assert.Equal(7U, e.value.u32),
+                e => Assert.Equal(8U, e.value.u32),
+                e => Assert.Equal(9U, e.value.u32),
+                e => Assert.Equal(10U, e.value.u32),
+                e => Assert.Equal(11U, e.value.u32),
+                e => Assert.Equal(12U, e.value.u32),
+                e => Assert.Equal(13U, e.value.u32),
+                e => Assert.Equal(14U, e.value.u32),
+                e => Assert.Equal(15U, e.value.u32),
+                e => Assert.Equal(16U, e.value.u32)
             );
         }
 
@@ -226,10 +226,10 @@ namespace DergwasmTests
             Assert.Equal(InstructionType.SELECT_VEC, insn.Type);
             Assert.Collection(
                 insn.Operands,
-                e => Assert.Equal(1U, e.value.U32),
-                e => Assert.Equal(2U, e.value.U32),
-                e => Assert.Equal(3U, e.value.U32),
-                e => Assert.Equal(4U, e.value.U32)
+                e => Assert.Equal(1U, e.value.u32),
+                e => Assert.Equal(2U, e.value.u32),
+                e => Assert.Equal(3U, e.value.u32),
+                e => Assert.Equal(4U, e.value.u32)
             );
         }
 
@@ -247,7 +247,7 @@ namespace DergwasmTests
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.I32_CONST, insn.Type);
-            Assert.Collection(insn.Operands, e => Assert.Equal(data, e.value.U32));
+            Assert.Collection(insn.Operands, e => Assert.Equal(data, e.value.u32));
         }
 
         [Theory]
@@ -264,7 +264,7 @@ namespace DergwasmTests
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.I64_CONST, insn.Type);
-            Assert.Collection(insn.Operands, e => Assert.Equal(data, e.value.U64));
+            Assert.Collection(insn.Operands, e => Assert.Equal(data, e.value.u64));
         }
 
         [Fact]
@@ -280,7 +280,7 @@ namespace DergwasmTests
 
             Assert.Equal(InstructionType.F32_CONST, insn.Type);
             Assert.Single(insn.Operands);
-            Assert.Collection(insn.Operands, e => Assert.Equal(3.14159f, e.value.F32));
+            Assert.Collection(insn.Operands, e => Assert.Equal(3.14159f, e.value.f32));
         }
 
         [Fact]
@@ -295,7 +295,7 @@ namespace DergwasmTests
             UnflattenedInstruction insn = UnflattenedInstruction.Decode(new BinaryReader(stream));
 
             Assert.Equal(InstructionType.F64_CONST, insn.Type);
-            Assert.Collection(insn.Operands, e => Assert.Equal(3.14159, e.value.F64));
+            Assert.Collection(insn.Operands, e => Assert.Equal(3.14159, e.value.f64));
         }
 
         [Fact]
@@ -317,11 +317,11 @@ namespace DergwasmTests
             Assert.Equal(InstructionType.BR_TABLE, insn.Type);
             Assert.Collection(
                 insn.Operands,
-                e => Assert.Equal(1U, e.value.U32),
-                e => Assert.Equal(2U, e.value.U32),
-                e => Assert.Equal(3U, e.value.U32),
-                e => Assert.Equal(4U, e.value.U32),
-                e => Assert.Equal(5U, e.value.U32)
+                e => Assert.Equal(1U, e.value.u32),
+                e => Assert.Equal(2U, e.value.u32),
+                e => Assert.Equal(3U, e.value.u32),
+                e => Assert.Equal(4U, e.value.u32),
+                e => Assert.Equal(5U, e.value.u32)
             );
         }
 
@@ -479,7 +479,8 @@ namespace DergwasmTests
             stream.WriteOpcode(InstructionType.END);
             stream.Position = 0;
 
-            List<Instruction> instructions = Expr.Decode(new BinaryReader(stream)).Flatten(0);
+            List<Instruction> instructions = new List<Instruction>();
+            Expr.Decode(new BinaryReader(stream)).Flatten(instructions);
 
             Assert.Collection(
                 instructions,
@@ -502,18 +503,19 @@ namespace DergwasmTests
             stream.WriteOpcode(InstructionType.END);
             stream.Position = 0;
 
-            List<Instruction> instructions = Expr.Decode(new BinaryReader(stream)).Flatten(100);
+            List<Instruction> instructions = new List<Instruction>();
+            Expr.Decode(new BinaryReader(stream)).Flatten(instructions);
 
             Assert.Collection(
                 instructions,
-                e => Assert.Equal(InstructionType.BLOCK, e.Type), // 100
-                e => Assert.Equal(InstructionType.NOP, e.Type), // 101
-                e => Assert.Equal(InstructionType.END, e.Type), // 102
-                e => Assert.Equal(InstructionType.NOP, e.Type), // 103
-                e => Assert.Equal(InstructionType.END, e.Type) // 104
+                e => Assert.Equal(InstructionType.BLOCK, e.Type), // 0
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 1
+                e => Assert.Equal(InstructionType.END, e.Type), // 2
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 3
+                e => Assert.Equal(InstructionType.END, e.Type) // 4
             );
 
-            Assert.Equal(103, instructions[0].Operands[0].GetTarget());
+            Assert.Equal(3, instructions[0].Operands[0].GetTarget());
         }
 
         [Fact]
@@ -529,18 +531,19 @@ namespace DergwasmTests
             stream.WriteOpcode(InstructionType.END);
             stream.Position = 0;
 
-            List<Instruction> instructions = Expr.Decode(new BinaryReader(stream)).Flatten(100);
+            List<Instruction> instructions = new List<Instruction>();
+            Expr.Decode(new BinaryReader(stream)).Flatten(instructions);
 
             Assert.Collection(
                 instructions,
-                e => Assert.Equal(InstructionType.LOOP, e.Type), // 100
-                e => Assert.Equal(InstructionType.NOP, e.Type), // 101
-                e => Assert.Equal(InstructionType.END, e.Type), // 102
-                e => Assert.Equal(InstructionType.NOP, e.Type), // 103
-                e => Assert.Equal(InstructionType.END, e.Type) // 104
+                e => Assert.Equal(InstructionType.LOOP, e.Type), // 0
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 1
+                e => Assert.Equal(InstructionType.END, e.Type), // 2
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 3
+                e => Assert.Equal(InstructionType.END, e.Type) // 4
             );
 
-            Assert.Equal(100, instructions[0].Operands[0].GetTarget());
+            Assert.Equal(0, instructions[0].Operands[0].GetTarget());
         }
 
         [Fact]
@@ -556,19 +559,20 @@ namespace DergwasmTests
             stream.WriteOpcode(InstructionType.END);
             stream.Position = 0;
 
-            List<Instruction> instructions = Expr.Decode(new BinaryReader(stream)).Flatten(100);
+            List<Instruction> instructions = new List<Instruction>();
+            Expr.Decode(new BinaryReader(stream)).Flatten(instructions);
 
             Assert.Collection(
                 instructions,
-                e => Assert.Equal(InstructionType.IF, e.Type), // 100
-                e => Assert.Equal(InstructionType.NOP, e.Type), // 101
-                e => Assert.Equal(InstructionType.END, e.Type), // 102
-                e => Assert.Equal(InstructionType.NOP, e.Type), // 103
-                e => Assert.Equal(InstructionType.END, e.Type) // 104
+                e => Assert.Equal(InstructionType.IF, e.Type), // 0
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 1
+                e => Assert.Equal(InstructionType.END, e.Type), // 2
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 3
+                e => Assert.Equal(InstructionType.END, e.Type) // 4
             );
 
-            Assert.Equal(103, instructions[0].Operands[0].GetTarget());
-            Assert.Equal(103, instructions[0].Operands[0].GetElseTarget());
+            Assert.Equal(3, instructions[0].Operands[0].GetTarget());
+            Assert.Equal(3, instructions[0].Operands[0].GetElseTarget());
         }
 
         [Fact]
@@ -586,21 +590,22 @@ namespace DergwasmTests
             stream.WriteOpcode(InstructionType.END);
             stream.Position = 0;
 
-            List<Instruction> instructions = Expr.Decode(new BinaryReader(stream)).Flatten(100);
+            List<Instruction> instructions = new List<Instruction>();
+            Expr.Decode(new BinaryReader(stream)).Flatten(instructions);
 
             Assert.Collection(
                 instructions,
-                e => Assert.Equal(InstructionType.IF, e.Type), // 100
-                e => Assert.Equal(InstructionType.NOP, e.Type), // 101
-                e => Assert.Equal(InstructionType.ELSE, e.Type), // 102
-                e => Assert.Equal(InstructionType.NOP, e.Type), // 103
-                e => Assert.Equal(InstructionType.END, e.Type), // 104
-                e => Assert.Equal(InstructionType.NOP, e.Type), // 105
-                e => Assert.Equal(InstructionType.END, e.Type) // 106
+                e => Assert.Equal(InstructionType.IF, e.Type), // 0
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 1
+                e => Assert.Equal(InstructionType.ELSE, e.Type), // 2
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 3
+                e => Assert.Equal(InstructionType.END, e.Type), // 4
+                e => Assert.Equal(InstructionType.NOP, e.Type), // 5
+                e => Assert.Equal(InstructionType.END, e.Type) // 6
             );
 
-            Assert.Equal(105, instructions[0].Operands[0].GetTarget());
-            Assert.Equal(103, instructions[0].Operands[0].GetElseTarget());
+            Assert.Equal(5, instructions[0].Operands[0].GetTarget());
+            Assert.Equal(3, instructions[0].Operands[0].GetElseTarget());
         }
     }
 }

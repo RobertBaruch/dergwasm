@@ -6,6 +6,8 @@
 
 #include "resonite_api_types.h"
 
+// Slot-related functions that WASM can call.
+
 extern resonite_slot_refid_t slot__root_slot();
 
 // Returns the active user for the given slot.
@@ -51,5 +53,8 @@ extern resonite_slot_refid_t slot__find_child_by_name(resonite_slot_refid_t slot
 
 extern resonite_slot_refid_t slot__find_child_by_tag(resonite_slot_refid_t slot_id,
     const char* tag, int max_depth);
+
+extern resonite_component_refid_t slot__get_component(resonite_slot_refid_t slot_id,
+    const char* component_type_name);
 
 #endif // __RESONITE_RESONITE_SLOT_API_H__

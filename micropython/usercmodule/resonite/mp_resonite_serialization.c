@@ -1,19 +1,90 @@
-#include "mp_resonite_slot.h"
+#include "mp_resonite_serialization.h"
 
+#include <cstdint.h>
 #include <string.h>
 
 #include "py/obj.h"
 #include "py/runtime.h"
-#include "resonite_slot_api.h"
 #include "mp_resonite_utils.h"
 
-mp_obj_t resonite_new_Slot_or_none(resonite_slot_refid_t reference_id) {
-    if (reference_id == 0) {
+static mp_obj_t deserialize_bool(uint8_t* data) {
+    return mp_obj_new_bool(*(int*)data);
+}
+
+static mp_obj_t deserialize_bool2(uint8_t* data) {
+    return mp_obj_new_tuple(2, (mp_obj_t[]) {
+        mp_obj_new_bool(*(int*)data),
+            mp_obj_new_bool(*(int*)(data + 4)),
+    });
+}
+
+static mp_obj_t deserialize_bool3(uint8_t* data) {
+    return mp_obj_new_tuple(3, (mp_obj_t[]) {
+        mp_obj_new_bool(*(int*)data),
+            mp_obj_new_bool(*(int*)(data + 4)),
+            mp_obj_new_bool(*(int*)(data + 8)),
+    });
+}
+
+static mp_obj_t deserialize_bool4(uint8_t* data) {
+    return mp_obj_new_tuple(4, (mp_obj_t[]) {
+        mp_obj_new_bool(*(int*)data),
+            mp_obj_new_bool(*(int*)(data + 4)),
+            mp_obj_new_bool(*(int*)(data + 8)),
+            mp_obj_new_bool(*(int*)(data + 12)),
+    });
+}
+
+static mp_obj_t_deserialize_int(uint8_t* data) {
+    return mp_obj_new_int(*(int*)data);
+}
+
+static mp_obj_t_deserialize_int2(uint8_t* data) {
+    return mp_obj_new_tuple(2, (mp_obj_t[]) {
+        mp_obj_new_int(*(int*)data),
+            mp_obj_new_int(*(int*)(data + 4)),
+    });
+}
+
+static mp_obj_t_deserialize_int3(uint8_t* data) {
+    return mp_obj_new_tuple(3, (mp_obj_t[]) {
+        mp_obj_new_int(*(int*)data),
+            mp_obj_new_int(*(int*)(data + 4)),
+            mp_obj_new_int(*(int*)(data + 8)),
+    });
+}
+
+static mp_obj_t_deserialize_int4(uint8_t* data) {
+    return mp_obj_new_tuple(4, (mp_obj_t[]) {
+        mp_obj_new_int(*(int*)data),
+            mp_obj_new_int(*(int*)(data + 4)),
+            mp_obj_new_int(*(int*)(data + 8)),
+            mp_obj_new_int(*(int*)(data + 12)),
+    });
+}
+
+mp_obj_t resonite_deserialize(uint8_t* data) {
+    resonite_serialization_type_t type = (resonite_serialization_type_t) * (int*)data;
+    switch (type) {
+    case RESONITE_SERIALIZATION_TYPE_BOOL:
+        return deserialize_bool(data + 4);
+    case RESONITE_SERIALIZATION_TYPE_BOOL2:
+        return deserialize_bool2(data + 4);
+    case RESONITE_SERIALIZATION_TYPE_BOOL3:
+        return deserialize_bool3(data + 4);
+    case RESONITE_SERIALIZATION_TYPE_BOOL4:
+        return deserialize_bool4(data + 4);
+    case RESONITE_SERIALIZATION_TYPE_INT:
+        return deserialize_int(data + 4);
+    case RESONITE_SERIALIZATION_TYPE_INT2:
+        return deserialize_int2(data + 4);
+    case RESONITE_SERIALIZATION_TYPE_INT3:
+        return deserialize_int3(data + 4);
+    case RESONITE_SERIALIZATION_TYPE_INT4:
+        return deserialize_int4(data + 4);
+    default:
         return mp_const_none;
     }
-    resonite_Slot_obj_t* self = mp_obj_malloc(resonite_Slot_obj_t, &resonite_Slot_type);
-    self->reference_id = reference_id;
-    return MP_OBJ_FROM_PTR(self);
 }
 
 mp_obj_t resonite_new_Slot(resonite_slot_refid_t reference_id) {

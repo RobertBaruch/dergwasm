@@ -88,7 +88,6 @@ namespace Derg
         public static EmscriptenWasi emscriptenWasi = null;
         public static ResoniteEnv resoniteEnv = null;
         public static FilesystemEnv filesystemEnv = null;
-        public static UtilEnv utilEnv = null;
         public static Slot dergwasmSlot = null;
         public static Slot consoleSlot = null;
         public static Slot fsSlot = null; // The equivalent of the root directory in a filesystem.
@@ -100,6 +99,7 @@ namespace Derg
                 UniLog.Log($"[Dergwasm] Couldn't find console slot to log this message: {msg}");
                 return;
             }
+            UniLog.Log($"[Dergwasm] {msg}");
             consoleSlot.GetComponent<FrooxEngine.UIX.Text>().Content.Value += msg;
         }
 
@@ -110,7 +110,7 @@ namespace Derg
 
         public static void DebugMemHex(int ptr, int size)
         {
-            Span<byte> mem = machine.Span0((uint)ptr, (uint)size);
+            Span<byte> mem = machine.HeapSpan(ptr, size);
             string collect = "";
             for (int i = 0; i < mem.Length; ++i)
             {
@@ -133,7 +133,6 @@ namespace Derg
             emscriptenEnv = null;
             emscriptenWasi = null;
             resoniteEnv = null;
-            utilEnv = null;
             filesystemEnv = null;
             DergwasmMachine.dergwasmSlot = null;
             consoleSlot = null;
@@ -219,10 +218,7 @@ namespace Derg
                 emscriptenWasi = new EmscriptenWasi(machine, emscriptenEnv);
                 emscriptenWasi.RegisterHostFuncs();
 
-                utilEnv = new UtilEnv(machine, emscriptenEnv);
-                utilEnv.RegisterHostFuncs();
-
-                resoniteEnv = new ResoniteEnv(machine, world, emscriptenEnv);
+                resoniteEnv = new ResoniteEnv(machine, new WorldServices(world), emscriptenEnv);
                 resoniteEnv.RegisterHostFuncs();
 
                 filesystemEnv = new FilesystemEnv(machine, fsSlot, emscriptenEnv, emscriptenWasi);
@@ -242,12 +238,17 @@ namespace Derg
 
                 module.ResolveExterns(machine);
                 moduleInstance = module.Instantiate(machine);
+                machine.mainModuleInstance = moduleInstance;
                 CheckForUnimplementedInstructions();
                 Msg("No unimplemented WASM instructions found");
 
                 // Run any initializers we might find.
                 MaybeRunEmscriptenCtors();
                 MaybeInitMicropython(64 * 1024);
+
+                // Initialize the primitive serialization buffer. This relies on
+                // having a working malloc in WASM.
+                SimpleSerialization.Initialize(resoniteEnv);
             }
             catch (Exception e)
             {
@@ -305,7 +306,7 @@ namespace Derg
             {
                 Frame frame = new Frame(mp_js_init as ModuleFunc, moduleInstance, null);
                 frame.Label = new Label(1, 0);
-                frame.Push(new Value(stackSizeBytes));
+                frame.Push(new Value { s32 = stackSizeBytes });
                 frame.InvokeFunc(machine, mp_js_init);
                 Msg("Completed mp_js_init");
             }

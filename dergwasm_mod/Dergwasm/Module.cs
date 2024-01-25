@@ -1,11 +1,11 @@
-﻿using LEB128;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using LEB128;
 
 namespace Derg
 {
@@ -14,7 +14,7 @@ namespace Derg
     {
         public static readonly uint Magic = 0x6D736100U;
         public static readonly uint Version = 1U;
-        public static readonly bool Debug = true;
+        public static bool Debug = false;
 
         public string ModuleName;
         public List<CustomData> customData = new List<CustomData>();
@@ -71,8 +71,12 @@ namespace Derg
             return module;
         }
 
-        public static List<Instruction> ReadExpr(BinaryReader stream) =>
-            Expr.Decode(stream).Flatten(0);
+        public static List<Instruction> ReadExpr(BinaryReader stream)
+        {
+            List<Instruction> list = new List<Instruction>();
+            Expr.Decode(stream).Flatten(list);
+            return list;
+        }
 
         // You should resolve externs for all modules before instantiating any of them. This only
         // matches names. The func types will be validated during instantiation.
@@ -290,9 +294,9 @@ namespace Derg
             for (int i = 0; i < numFuncs; i++)
             {
                 int funcTypeIdx = (int)stream.ReadLEB128Unsigned();
-                module.Funcs.Add(
-                    new ModuleFunc(module.ModuleName, $"${i}", module.FuncTypes[funcTypeIdx])
-                );
+                module
+                    .Funcs
+                    .Add(new ModuleFunc(module.ModuleName, $"${i}", module.FuncTypes[funcTypeIdx]));
             }
         }
 

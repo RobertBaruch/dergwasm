@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Derg.Wasm;
 using LEB128;
 
@@ -54,78 +54,62 @@ namespace Derg
     // on the correct types, it means that we don't have to store type information.
     //
     // Note: block operands are not values on the stack, but rather values in a block's operands.
-    public readonly struct Value
+    [StructLayout(LayoutKind.Explicit)]
+    public struct Value
     {
-        public readonly ulong value_lo;
-        public readonly ulong value_hi;
+        [FieldOffset(0)]
+        public int s32;
 
-        public Value(ulong value_lo, ulong value_hi)
-        {
-            this.value_lo = value_lo;
-            this.value_hi = value_hi;
-        }
+        [FieldOffset(0)]
+        public uint u32;
 
-        public Value(Value value)
-        {
-            value_lo = value.value_lo;
-            value_hi = value.value_hi;
-        }
+        [FieldOffset(0)]
+        public long s64;
 
-        public Value(bool b)
-        {
-            value_lo = b ? 1UL : 0;
-            value_hi = 0;
-        }
+        [FieldOffset(0)]
+        public ulong u64;
 
-        public unsafe Value(float f32)
+        [FieldOffset(0)]
+        public float f32;
+
+        [FieldOffset(0)]
+        public double f64;
+
+        [FieldOffset(8)]
+        public ulong value_hi;
+
+        // This is highly expensive because it does boxing and unboxing. It takes about
+        // 4.5x the time to get a value this way. If you already know the type of the
+        // value you're popping, then extract it yourself.
+        public T As<T>()
+            where T : unmanaged
         {
-            fixed (ulong* ptr = &value_lo)
+            switch (Type.GetTypeCode(typeof(T)))
             {
-                *(float*)ptr = f32;
-            }
-            value_hi = 0;
-        }
+                case TypeCode.Int32:
+                    return (T)Convert.ChangeType(s32, typeof(T));
 
-        public unsafe Value(double f64)
-        {
-            fixed (ulong* ptr = &value_lo)
-            {
-                *(double*)ptr = f64;
-            }
-            value_hi = 0;
-        }
+                case TypeCode.UInt32:
+                    return (T)Convert.ChangeType(u32, typeof(T));
 
-        public unsafe Value(uint i32)
-        {
-            fixed (ulong* ptr = &value_lo)
-            {
-                *(uint*)ptr = i32;
-            }
-            value_hi = 0;
-        }
+                case TypeCode.Int64:
+                    return (T)Convert.ChangeType(s64, typeof(T));
 
-        public unsafe Value(int i32)
-        {
-            fixed (ulong* ptr = &value_lo)
-            {
-                *(int*)ptr = i32;
-            }
-            value_hi = 0;
-        }
+                case TypeCode.UInt64:
+                    return (T)Convert.ChangeType(u64, typeof(T));
 
-        public unsafe Value(ulong i64)
-        {
-            value_lo = i64;
-            value_hi = 0;
-        }
+                case TypeCode.Single:
+                    return (T)Convert.ChangeType(f32, typeof(T));
 
-        public unsafe Value(long i64)
-        {
-            fixed (ulong* ptr = &value_lo)
-            {
-                *(long*)ptr = i64;
+                case TypeCode.Double:
+                    return (T)Convert.ChangeType(f64, typeof(T));
+
+                case TypeCode.Boolean:
+                    return (T)Convert.ChangeType(Bool, typeof(T));
+
+                default:
+                    throw new Trap($"Invalid Value.As type {Type.GetTypeCode(typeof(T))}");
             }
-            value_hi = 0;
         }
 
         public static ValueType ValueType<T>()
@@ -192,81 +176,47 @@ namespace Derg
             }
         }
 
-        public unsafe float F32
+        public static Value From<T>(T val)
         {
-            get
+            switch (val)
             {
-                fixed (ulong* ptr = &value_lo)
-                {
-                    return *(float*)ptr;
-                }
+                case bool v:
+                    return new Value(v);
+                case byte v:
+                    return new Value(v);
+                case sbyte v:
+                    return new Value(v);
+                case short v:
+                    return new Value(v);
+                case ushort v:
+                    return new Value(v);
+                case int v:
+                    return new Value(v);
+                case uint v:
+                    return new Value(v);
+                case long v:
+                    return new Value(v);
+                case ulong v:
+                    return new Value(v);
+                case float v:
+                    return new Value(v);
+                case double v:
+                    return new Value(v);
+                case Pointer v:
+                    return new Value(v.Ptr);
+                default:
+                    throw new Exception($"Unknown type {typeof(T)}");
             }
         }
 
-        public unsafe double F64
-        {
-            get
-            {
-                fixed (ulong* ptr = &value_lo)
-                {
-                    return *(double*)ptr;
-                }
-            }
-        }
-
-        public unsafe uint U32
-        {
-            get
-            {
-                fixed (ulong* ptr = &value_lo)
-                {
-                    return *(uint*)ptr;
-                }
-            }
-        }
-
-        public unsafe int S32
-        {
-            get
-            {
-                fixed (ulong* ptr = &value_lo)
-                {
-                    return *(int*)ptr;
-                }
-            }
-        }
-
-        public int Int => S32;
-
-        public unsafe ulong U64 => value_lo;
-
-        public unsafe long S64
-        {
-            get
-            {
-                fixed (ulong* ptr = &value_lo)
-                {
-                    return *(long*)ptr;
-                }
-            }
-        }
-
-        public bool Bool => value_lo != 0 || value_hi != 0;
-
-        public unsafe T As<T>()
-            where T : unmanaged
-        {
-            fixed (ulong* ptr = &value_lo)
-            {
-                return *(T*)ptr;
-            }
-        }
+        // Bools are represented as unsigned ints.
+        public bool Bool => u32 != 0;
 
         // Only valid if the value is a block operand.
-        public int GetTarget() => (int)(value_lo & 0xFFFFFFFF);
+        public int GetTarget() => (int)(u64 & 0xFFFFFFFF);
 
         // Only valid if the value is a block operand.
-        public int GetElseTarget() => (int)(value_lo >> 32);
+        public int GetElseTarget() => (int)(u64 >> 32);
 
         // Only valid if the value is a block operand.
         public BlockType GetBlockType() => (BlockType)(value_hi & 0b11);
@@ -281,20 +231,20 @@ namespace Derg
         public ReferenceValueType GetRefType() => (ReferenceValueType)value_hi;
 
         // Only valid if the value is a reference type.
-        public bool IsNullRef() => value_lo == 0 && value_hi == 0;
+        public bool IsNullRef() => u64 == 0 && value_hi == 0;
 
         // Only valid if the value is a reference type.
-        public int RefAddr => (int)value_lo;
+        public int RefAddr => s32;
 
         public static Value RefOfFuncAddr(int addr) =>
-            new Value((ulong)addr, (ulong)ReferenceValueType.FUNCREF);
+            new Value { u64 = (ulong)addr, value_hi = (ulong)ReferenceValueType.FUNCREF };
 
         public static Value RefOfExternAddr(int addr) =>
-            new Value((ulong)addr, (ulong)ReferenceValueType.EXTERNREF);
+            new Value { u64 = (ulong)addr, value_hi = (ulong)ReferenceValueType.EXTERNREF };
 
         public override string ToString()
         {
-            return $"Value[hi={value_hi:X16}, lo={value_lo:X16}]";
+            return $"Value[hi={value_hi:X16}, u64={u64:X16}]";
         }
     }
 

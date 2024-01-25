@@ -1,9 +1,9 @@
-﻿using FrooxEngine;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using FrooxEngine;
 
 namespace Derg
 {
@@ -128,31 +128,25 @@ namespace Derg
         // A struct returned by stat. 96 bytes.
         //
         // The layout is based on emscripten/src/generated_struct_info32.json.
-        [StructLayout(LayoutKind.Explicit)]
+        [StructLayout(LayoutKind.Sequential)]
         public struct Stat
         {
             // ID of device containing the file.
-            [FieldOffset(0)]
             public int st_dev;
 
             // File type and mode.
-            [FieldOffset(4)]
             public int st_mode;
 
             // Number of hard links.
-            [FieldOffset(8)]
             public int st_nlink;
 
             // User ID of owner.
-            [FieldOffset(12)]
             public int st_uid;
 
             // Group ID of owner.
-            [FieldOffset(16)]
             public int st_gid;
 
             // Device ID (if special file).
-            [FieldOffset(20)]
             public int st_rdev;
 
             // Total size, in bytes. If this is a symbolic link (which we don't support)
@@ -161,44 +155,34 @@ namespace Derg
             //
             // Although this is a ulong, we only use files to store strings, and .NET can
             // only store strings up to 2GB in size.
-            [FieldOffset(24)]
             public ulong st_size;
 
             // The preferred block size for efficient filesystem I/O.
-            [FieldOffset(32)]
             public int st_blksize;
 
             // Number of 512-byte blocks allocated. For Resonite, this is
             // just ceil(st_size/512).
-            [FieldOffset(36)]
             public int st_blocks;
 
             // Time of last access, seconds part.
-            [FieldOffset(40)]
             public long st_atime_sec;
 
             // Time of last access, nanoseconds part.
-            [FieldOffset(48)]
             public long st_atime_nsec;
 
             // Time of last modification, seconds part.
-            [FieldOffset(56)]
             public long st_mtime_sec;
 
             // Time of last modification, nanoseconds part.
-            [FieldOffset(64)]
             public long st_mtime_nsec;
 
             // Time of last status change, seconds part.
-            [FieldOffset(72)]
             public long st_ctime_sec;
 
             // Time of last status change, nanoseconds part.
-            [FieldOffset(80)]
             public long st_ctime_nsec;
 
             // Inode number.
-            [FieldOffset(88)]
             public long st_ino;
         }
 
@@ -206,7 +190,7 @@ namespace Derg
         //
         // The layout is based on emscripten/src/generated_struct_info32.json.
         [StructLayout(LayoutKind.Explicit)]
-        public struct Dirent
+        public unsafe struct Dirent
         {
             // Inode number.
             [FieldOffset(0)]
@@ -228,8 +212,8 @@ namespace Derg
             public byte d_type;
 
             // The filename, NUL-terminated.
-            [FieldOffset(19), MarshalAs(UnmanagedType.ByValArray, SizeConst = 256)]
-            public byte[] d_name;
+            [FieldOffset(19)]
+            public fixed byte d_name[256];
         }
 
         public static class OpenFlags
@@ -276,6 +260,7 @@ namespace Derg
                 return dir;
             }
 
+            DergwasmMachine.Msg($"calculateAt: dir={dir}, path={path}");
             if (dir == "/")
             {
                 return dir + path;
@@ -311,7 +296,7 @@ namespace Derg
                     continue;
                 if (element == "..")
                 {
-                    if (slot.Parent == slot)
+                    if (slot.Parent == fsRoot)
                         continue;
                     slot = slot.Parent;
                     normalized_elements.RemoveAt(normalized_elements.Count - 1);
@@ -348,7 +333,7 @@ namespace Derg
                     continue;
                 if (element == "..")
                 {
-                    if (slot.Parent == slot)
+                    if (slot.Parent == fsRoot)
                         continue;
                     slot = slot.Parent;
                     normalized_elements.RemoveAt(normalized_elements.Count - 1);
@@ -407,6 +392,32 @@ namespace Derg
             return 0;
         }
 
+        // Writes the content of the given stream to its slot.
+        //
+        // Returns 0 on success, or -ERRNO on failure.
+        //
+        // If the data is not valid UTF-8, returns -EINVAL.
+        int sync(Stream stream)
+        {
+            Slot slot;
+            int err = get_slot_for_absolute_path(stream.path, out slot, out _);
+            if (err != 0)
+                return err;
+            if (!slot_is_regular_file(slot))
+                return 0;
+            try
+            {
+                slot.GetComponent<ValueField<string>>().Value.Value = Encoding
+                    .UTF8
+                    .GetString(stream.content);
+            }
+            catch (Exception)
+            {
+                return -Errno.EINVAL;
+            }
+            return 0;
+        }
+
         // syscalls, from emscripten/src/library_syscall.js
 
         // Changes the current working directory of the WASM machine.
@@ -455,8 +466,8 @@ namespace Derg
             byte[] bytes = Encoding.UTF8.GetBytes(cwd);
             if (size < bytes.Length + 1)
                 return -Errno.ERANGE;
-            Array.Copy(bytes, 0, machine.Memory0, buf, bytes.Length);
-            machine.Memory0[buf + bytes.Length] = 0;
+            Array.Copy(bytes, 0, machine.Heap, buf, bytes.Length);
+            machine.Heap[buf + bytes.Length] = 0;
             return 0;
         }
 
@@ -504,7 +515,7 @@ namespace Derg
                 return -Errno.EINVAL;
             }
 
-            int fd = wasi.createStream(slot, normalized_path).fd;
+            int fd = wasi.CreateStream(slot, normalized_path, sync).fd;
             DergwasmMachine.Msg($"__syscall_openat: fd={fd}");
             return fd;
         }
@@ -596,7 +607,7 @@ namespace Derg
                 int size = Marshal.SizeOf(stat);
                 ptr = Marshal.AllocHGlobal(size);
                 Marshal.StructureToPtr(stat, ptr, true);
-                Marshal.Copy(ptr, machine.Memory0, buf, size);
+                Marshal.Copy(ptr, machine.Heap, buf, size);
             }
             finally
             {

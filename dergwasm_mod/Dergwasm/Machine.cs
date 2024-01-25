@@ -9,6 +9,14 @@ namespace Derg
     {
         bool debug = false;
         public string mainModuleName;
+
+        // mainModuleInstance is used only when EmscriptenEnv constructs an empty frame,
+        // since frames need to have a module instance. In that case we use the "main"
+        // module instance.
+        //
+        // The main module instance contains all the mappings of indexes to addresses (e.g.
+        // globals, funcs, and so on).
+        public ModuleInstance mainModuleInstance;
         public Dictionary<string, HostFunc> hostFuncs = new Dictionary<string, HostFunc>();
         public List<FuncType> funcTypes = new List<FuncType>(); // is this even used?
         public List<Func> funcs = new List<Func>();
@@ -25,50 +33,52 @@ namespace Derg
         public unsafe T MemGet<T>(uint ea)
             where T : unmanaged
         {
-            try
+            Span<byte> mem = HeapSpan(addr, sizeof(T));
+            fixed (byte* ptr = mem)
             {
-                fixed (byte* ptr = &Memory0[ea])
-                {
-                    return *(T*)ptr;
-                }
-            }
-            catch (Exception)
-            {
-                throw new Trap(
-                    $"Memory access out of bounds: reading {sizeof(T)} bytes at 0x{ea:X8}"
-                );
+                return *(T*)ptr;
             }
         }
 
-        public unsafe T MemGet<T>(int ea)
+        // Gets a value from the heap at the given offset plus the given address ("address"
+        // in the sense of "address within the memory starting at the offset").
+        //
+        // Throws a Trap if the offset + address + size of value is out of bounds.
+        public unsafe T HeapGet<T>(int offset, int addr)
             where T : unmanaged
         {
-            return MemGet<T>((uint)ea);
-        }
-
-        public unsafe void MemSet<T>(uint ea, T value)
-            where T : unmanaged
-        {
-            try
+            Span<byte> mem = HeapSpan(offset, addr, sizeof(T));
+            fixed (byte* ptr = mem)
             {
-                Span<byte> mem = Span0(ea, (uint)sizeof(T));
-                fixed (byte* ptr = mem)
-                {
-                    *(T*)ptr = value;
-                }
-            }
-            catch (Exception)
-            {
-                throw new Trap(
-                    $"Memory access out of bounds: writing {sizeof(T)} bytes at 0x{ea:X8}"
-                );
+                return *(T*)ptr;
             }
         }
 
-        public unsafe void MemSet<T>(int ea, T value)
+        // Sets a value on the heap at the given address.
+        //
+        // Throws a Trap if the address + value size is out of bounds.
+        public unsafe void HeapSet<T>(int addr, T value)
             where T : unmanaged
         {
-            MemSet((uint)ea, value);
+            Span<byte> mem = HeapSpan(addr, sizeof(T));
+            fixed (byte* ptr = mem)
+            {
+                *(T*)ptr = value;
+            }
+        }
+
+        // Gets a value on the heap at the given offset plus the given address ("address"
+        // in the sense of "address within the memory starting at the offset").
+        //
+        // Throws a Trap if the offset + address + size of value is out of bounds.
+        public unsafe void HeapSet<T>(int offset, int addr, T value)
+            where T : unmanaged
+        {
+            Span<byte> mem = HeapSpan(offset, addr, sizeof(T));
+            fixed (byte* ptr = mem)
+            {
+                *(T*)ptr = value;
+            }
         }
 
         public string MainModuleName
@@ -106,11 +116,59 @@ namespace Derg
             return memories[0];
         }
 
-        public byte[] Memory0 => memories[0].Data;
+        // Returns the backing byte array of the first memory (i.e. the heap).
+        public byte[] Heap => memories[0].Data;
 
-        // Span accepts ints, but converts them internally to uints.
-        public Span<byte> Span0(uint offset, uint sz) =>
-            new Span<byte>(memories[0].Data, (int)offset, (int)sz);
+        // Returns a Span of bytes over the heap, starting from the given offset,
+        // with the given size. Note that .NET limits arrays to 2GB, so negative
+        // offsets and sizes will lead to an out of bounds condition. Offsets and
+        // sizes are ints because that's the way .NET returns array lengths.
+        //
+        // Throws a Trap if the offset and size are out of bounds.
+        public Span<byte> HeapSpan(int offset, int sz)
+        {
+            try
+            {
+                return Heap.AsSpan(offset, sz);
+            }
+            catch (Exception)
+            {
+                throw new Trap(
+                    $"Memory access out of bounds: offset 0x{(uint)offset:X8} size 0x{(uint)sz:X8}"
+                );
+            }
+        }
+
+        // Returns a Span of bytes over the heap, starting from the given offset,
+        // plus the given address ("address" in the sense of "address within the memory starting
+        // at the offset") with the given size. Note that .NET limits arrays to 2GB, so negative
+        // offsets and sizes will lead to an out of bounds condition. Offsets and
+        // sizes are ints because that's the way .NET returns array lengths.
+        //
+        // From the spec (https://webassembly.github.io/spec/core/syntax/instructions.html#memory-instructions):
+        //
+        // "The static address offset is added to the dynamic address operand, yielding a
+        // 33 bit effective address that is the zero-based index at which the memory is accessed."
+        //
+        // This means that the 32-bit offset and address are unsigned, and their addition is NOT
+        // modulo 2^32.
+        //
+        // Throws a Trap if the offset + address + size are out of bounds.
+        public Span<byte> HeapSpan(int offset, int address, int sz)
+        {
+            // Treat as uint, but do ulong math to avoid overflow.
+            ulong long_offset = (uint)offset;
+            ulong long_address = (uint)address;
+            ulong long_size = (uint)sz;
+            if (long_offset + long_address + long_size > (ulong)Heap.Length)
+            {
+                throw new Trap(
+                    $"Memory access out of bounds: offset 0x{offset:X8} address 0x{address:X8} size 0x{sz:X8}"
+                );
+            }
+            // Because the heap length cannot be greater than 2GB, we can safely cast everything to int.
+            return Heap.AsSpan(offset + address, sz);
+        }
 
         public int AddFunc(Func func)
         {

@@ -276,30 +276,28 @@ class Component:
           reference_id: The Component's ReferenceID.
         """
 
-class ValueField[T](Component):
+class ValueField(Component):
 	"""A ValueField storing a value of type T."""
-	def __init__(self, reference_id: int, value_type: type[T]):
+	def __init__(self, reference_id: int, value_type: SimpleType):
 		"""
 		Makes a new ValueField instance holding a type of value_type.
-        We must pass the type of the value as a type hint, because
-        while the Python runtime may not care, C# does.
 
 		Args:
 		  reference_id: The ValueField's ReferenceID.
           value_type: The type of the value.
 		"""
 
-    def get_value_type(self) -> type:
+    def get_value_type(self) -> SimpleType:
 		"""Returns the type of the value stored in this ValueField."""
 
-	def get_value(self) -> T:
+	def get_value(self) -> Any:
 		"""Returns the value of this ValueField.
 
 		ProtoFlux equivalent: ValueFields/GetValue
 		FrooxEngine equivalent: ValueField.Value
 		"""
 
-	def set_value(self, value: T) -> None:
+	def set_value(self, value: Any) -> None:
 		"""Sets the value of this ValueField.
 
 		ProtoFlux equivalent: ValueFields/SetValue

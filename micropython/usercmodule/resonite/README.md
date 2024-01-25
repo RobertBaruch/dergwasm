@@ -1,12 +1,19 @@
-Copy the contents of this directory to micropython/user_modules/resonite.
+Copy the contents of this directory and the c directory to micropython/user_modules/resonite:
+
+```
+cd ports/webassembly
+cp <dergwasm-root>/c/* ../../user_modules/resonite
+cp <dergwasm-root>/micropython/usercmodule/resonite ../../user_modules/resonite
+```
 
 Then compile with:
 
 ```
-cd ports/webassembly
 make clean
 make V=1 USER_C_MODULES=../../user_modules
 ```
+
+You will also have to copy <<dergwasm-root>>/micropython/fs to slots under the Dergwasm slot in your world.
 
 See [micropython-usermod](https://micropython-usermod.readthedocs.io/) (slightly out of date) and
 [MicroPython external C modules](https://docs.micropython.org/en/latest/develop/cmodules.html).

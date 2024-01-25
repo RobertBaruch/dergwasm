@@ -51,74 +51,77 @@ namespace Derg
 
         // Count leading zeros.
         public static void I32Clz(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(clz(frame.Pop<uint>(), 32));
+            frame.Push(clz(frame.Pop().u32, 32));
 
         // Count leading zeros.
         public static void I64Clz(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(clz(frame.Pop<ulong>(), 64));
+            frame.Push(clz(frame.Pop().u64, 64));
 
         // Count trailing zeros.
         public static void I32Ctz(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(ctz(frame.Pop<uint>(), 32));
+            frame.Push(ctz(frame.Pop().u32, 32));
 
         // Count trailing zeros.
         public static void I64Ctz(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(ctz(frame.Pop<ulong>(), 64));
+            frame.Push(ctz(frame.Pop().u64, 64));
 
         // Count ones.
         public static void I32Popcnt(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(popcnt(frame.Pop<uint>()));
+            frame.Push(popcnt(frame.Pop().u32));
 
         // Count ones.
         public static void I64Popcnt(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(popcnt(frame.Pop<ulong>()));
+            frame.Push(popcnt(frame.Pop().u64));
 
         public static void I32Add(Instruction instruction, Machine machine, Frame frame)
         {
-            uint c2 = frame.Pop<uint>();
-            uint c1 = frame.Pop<uint>();
+            uint c2 = frame.Pop().u32;
+            uint c1 = frame.Pop().u32;
             frame.Push(c1 + c2);
+            //uint c2 = frame.value2_stack.Pop().u32;
+            //uint c1 = frame.value2_stack.Pop().u32;
+            //frame.value2_stack.Push(new Value2 { u32 = c1 + c2 });
         }
 
         public static void I64Add(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong c2 = frame.Pop<ulong>();
-            ulong c1 = frame.Pop<ulong>();
+            ulong c2 = frame.Pop().u64;
+            ulong c1 = frame.Pop().u64;
             frame.Push(c1 + c2);
         }
 
         public static void I32Sub(Instruction instruction, Machine machine, Frame frame)
         {
-            uint c2 = frame.Pop<uint>();
-            uint c1 = frame.Pop<uint>();
+            uint c2 = frame.Pop().u32;
+            uint c1 = frame.Pop().u32;
             frame.Push(c1 - c2);
         }
 
         public static void I64Sub(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong c2 = frame.Pop<ulong>();
-            ulong c1 = frame.Pop<ulong>();
+            ulong c2 = frame.Pop().u64;
+            ulong c1 = frame.Pop().u64;
             frame.Push(c1 - c2);
         }
 
         public static void I32Mul(Instruction instruction, Machine machine, Frame frame)
         {
-            uint c2 = frame.Pop<uint>();
-            uint c1 = frame.Pop<uint>();
+            uint c2 = frame.Pop().u32;
+            uint c1 = frame.Pop().u32;
             frame.Push(c1 * c2);
         }
 
         public static void I64Mul(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong c2 = frame.Pop<ulong>();
-            ulong c1 = frame.Pop<ulong>();
+            ulong c2 = frame.Pop().u64;
+            ulong c1 = frame.Pop().u64;
             frame.Push(c1 * c2);
         }
 
         public static void I32DivU(Instruction instruction, Machine machine, Frame frame)
         {
-            uint c2 = frame.Pop<uint>();
-            uint c1 = frame.Pop<uint>();
+            uint c2 = frame.Pop().u32;
+            uint c1 = frame.Pop().u32;
             try
             {
                 frame.Push(c1 / c2);
@@ -131,8 +134,8 @@ namespace Derg
 
         public static void I64DivU(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong c2 = frame.Pop<ulong>();
-            ulong c1 = frame.Pop<ulong>();
+            ulong c2 = frame.Pop().u64;
+            ulong c1 = frame.Pop().u64;
             try
             {
                 frame.Push(c1 / c2);
@@ -145,8 +148,8 @@ namespace Derg
 
         public static void I32DivS(Instruction instruction, Machine machine, Frame frame)
         {
-            int c2 = frame.Pop<int>();
-            int c1 = frame.Pop<int>();
+            int c2 = frame.Pop().s32;
+            int c1 = frame.Pop().s32;
             try
             {
                 frame.Push(c1 / c2);
@@ -159,8 +162,8 @@ namespace Derg
 
         public static void I64DivS(Instruction instruction, Machine machine, Frame frame)
         {
-            long c2 = frame.Pop<long>();
-            long c1 = frame.Pop<long>();
+            long c2 = frame.Pop().s64;
+            long c1 = frame.Pop().s64;
             try
             {
                 frame.Push(c1 / c2);
@@ -173,8 +176,8 @@ namespace Derg
 
         public static void I32RemU(Instruction instruction, Machine machine, Frame frame)
         {
-            uint c2 = frame.Pop<uint>();
-            uint c1 = frame.Pop<uint>();
+            uint c2 = frame.Pop().u32;
+            uint c1 = frame.Pop().u32;
             try
             {
                 frame.Push(c1 % c2);
@@ -187,8 +190,8 @@ namespace Derg
 
         public static void I64RemU(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong c2 = frame.Pop<ulong>();
-            ulong c1 = frame.Pop<ulong>();
+            ulong c2 = frame.Pop().u64;
+            ulong c1 = frame.Pop().u64;
             try
             {
                 frame.Push(c1 % c2);
@@ -201,8 +204,8 @@ namespace Derg
 
         public static void I32RemS(Instruction instruction, Machine machine, Frame frame)
         {
-            int c2 = frame.Pop<int>();
-            int c1 = frame.Pop<int>();
+            int c2 = frame.Pop().s32;
+            int c1 = frame.Pop().s32;
             try
             {
                 frame.Push(c1 % c2);
@@ -215,8 +218,8 @@ namespace Derg
 
         public static void I64RemS(Instruction instruction, Machine machine, Frame frame)
         {
-            long c2 = frame.Pop<long>();
-            long c1 = frame.Pop<long>();
+            long c2 = frame.Pop().s64;
+            long c1 = frame.Pop().s64;
             try
             {
                 frame.Push(c1 % c2);
@@ -229,567 +232,567 @@ namespace Derg
 
         public static void I32And(Instruction instruction, Machine machine, Frame frame)
         {
-            uint c2 = frame.Pop<uint>();
-            uint c1 = frame.Pop<uint>();
+            uint c2 = frame.Pop().u32;
+            uint c1 = frame.Pop().u32;
             frame.Push(c1 & c2);
         }
 
         public static void I64And(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong c2 = frame.Pop<ulong>();
-            ulong c1 = frame.Pop<ulong>();
+            ulong c2 = frame.Pop().u64;
+            ulong c1 = frame.Pop().u64;
             frame.Push(c1 & c2);
         }
 
         public static void I32Or(Instruction instruction, Machine machine, Frame frame)
         {
-            uint c2 = frame.Pop<uint>();
-            uint c1 = frame.Pop<uint>();
+            uint c2 = frame.Pop().u32;
+            uint c1 = frame.Pop().u32;
             frame.Push(c1 | c2);
         }
 
         public static void I64Or(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong c2 = frame.Pop<ulong>();
-            ulong c1 = frame.Pop<ulong>();
+            ulong c2 = frame.Pop().u64;
+            ulong c1 = frame.Pop().u64;
             frame.Push(c1 | c2);
         }
 
         public static void I32Xor(Instruction instruction, Machine machine, Frame frame)
         {
-            uint c2 = frame.Pop<uint>();
-            uint c1 = frame.Pop<uint>();
+            uint c2 = frame.Pop().u32;
+            uint c1 = frame.Pop().u32;
             frame.Push(c1 ^ c2);
         }
 
         public static void I64Xor(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong c2 = frame.Pop<ulong>();
-            ulong c1 = frame.Pop<ulong>();
+            ulong c2 = frame.Pop().u64;
+            ulong c1 = frame.Pop().u64;
             frame.Push(c1 ^ c2);
         }
 
         public static void I32Shl(Instruction instruction, Machine machine, Frame frame)
         {
-            uint c2 = frame.Pop<uint>();
-            uint c1 = frame.Pop<uint>();
+            uint c2 = frame.Pop().u32;
+            uint c1 = frame.Pop().u32;
             frame.Push(c1 << (int)(c2 & 31U));
         }
 
         public static void I64Shl(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong c2 = frame.Pop<ulong>();
-            ulong c1 = frame.Pop<ulong>();
+            ulong c2 = frame.Pop().u64;
+            ulong c1 = frame.Pop().u64;
             frame.Push(c1 << (int)(c2 & 63U));
         }
 
         public static void I32ShrS(Instruction instruction, Machine machine, Frame frame)
         {
-            uint c2 = frame.Pop<uint>();
-            int c1 = frame.Pop<int>();
+            uint c2 = frame.Pop().u32;
+            int c1 = frame.Pop().s32;
             frame.Push(c1 >> (int)(c2 & 31U));
         }
 
         public static void I64ShrS(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong c2 = frame.Pop<ulong>();
-            long c1 = frame.Pop<long>();
+            ulong c2 = frame.Pop().u64;
+            long c1 = frame.Pop().s64;
             frame.Push(c1 >> (int)(c2 & 63U));
         }
 
         public static void I32ShrU(Instruction instruction, Machine machine, Frame frame)
         {
-            uint c2 = frame.Pop<uint>();
-            uint c1 = frame.Pop<uint>();
+            uint c2 = frame.Pop().u32;
+            uint c1 = frame.Pop().u32;
             frame.Push(c1 >> (int)(c2 & 31U));
         }
 
         public static void I64ShrU(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong c2 = frame.Pop<ulong>();
-            ulong c1 = frame.Pop<ulong>();
+            ulong c2 = frame.Pop().u64;
+            ulong c1 = frame.Pop().u64;
             frame.Push(c1 >> (int)(c2 & 63U));
         }
 
         public static void I32Rotl(Instruction instruction, Machine machine, Frame frame)
         {
-            uint c2 = frame.Pop<uint>();
-            uint c1 = frame.Pop<uint>();
+            uint c2 = frame.Pop().u32;
+            uint c1 = frame.Pop().u32;
             c2 &= 31;
             frame.Push((c1 << (int)c2) | (c1 >> (int)(32 - c2)));
         }
 
         public static void I64Rotl(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong c2 = frame.Pop<ulong>();
-            ulong c1 = frame.Pop<ulong>();
+            ulong c2 = frame.Pop().u64;
+            ulong c1 = frame.Pop().u64;
             c2 &= 63;
             frame.Push((c1 << (int)c2) | (c1 >> (int)(64 - c2)));
         }
 
         public static void I32Rotr(Instruction instruction, Machine machine, Frame frame)
         {
-            uint c2 = frame.Pop<uint>();
-            uint c1 = frame.Pop<uint>();
+            uint c2 = frame.Pop().u32;
+            uint c1 = frame.Pop().u32;
             c2 &= 31;
             frame.Push((c1 >> (int)c2) | (c1 << (int)(32 - c2)));
         }
 
         public static void I64Rotr(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong c2 = frame.Pop<ulong>();
-            ulong c1 = frame.Pop<ulong>();
+            ulong c2 = frame.Pop().u64;
+            ulong c1 = frame.Pop().u64;
             c2 &= 63;
             frame.Push((c1 >> (int)c2) | (c1 << (int)(64 - c2)));
         }
 
         public static void I32Eqz(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(frame.Pop<uint>() == 0);
+            frame.Push(frame.Pop().u32 == 0);
 
         public static void I64Eqz(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(frame.Pop<ulong>() == 0);
+            frame.Push(frame.Pop().u64 == 0);
 
         public static void I32Eq(Instruction instruction, Machine machine, Frame frame)
         {
-            uint c2 = frame.Pop<uint>();
-            uint c1 = frame.Pop<uint>();
+            uint c2 = frame.Pop().u32;
+            uint c1 = frame.Pop().u32;
             frame.Push(c1 == c2);
         }
 
         public static void I64Eq(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong c2 = frame.Pop<ulong>();
-            ulong c1 = frame.Pop<ulong>();
+            ulong c2 = frame.Pop().u64;
+            ulong c1 = frame.Pop().u64;
             frame.Push(c1 == c2);
         }
 
         public static void I32Ne(Instruction instruction, Machine machine, Frame frame)
         {
-            uint c2 = frame.Pop<uint>();
-            uint c1 = frame.Pop<uint>();
+            uint c2 = frame.Pop().u32;
+            uint c1 = frame.Pop().u32;
             frame.Push(c1 != c2);
         }
 
         public static void I64Ne(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong c2 = frame.Pop<ulong>();
-            ulong c1 = frame.Pop<ulong>();
+            ulong c2 = frame.Pop().u64;
+            ulong c1 = frame.Pop().u64;
             frame.Push(c1 != c2);
         }
 
         public static void I32LtS(Instruction instruction, Machine machine, Frame frame)
         {
-            int c2 = frame.Pop<int>();
-            int c1 = frame.Pop<int>();
+            int c2 = frame.Pop().s32;
+            int c1 = frame.Pop().s32;
             frame.Push(c1 < c2);
         }
 
         public static void I32LtU(Instruction instruction, Machine machine, Frame frame)
         {
-            uint c2 = frame.Pop<uint>();
-            uint c1 = frame.Pop<uint>();
+            uint c2 = frame.Pop().u32;
+            uint c1 = frame.Pop().u32;
             frame.Push(c1 < c2);
         }
 
         public static void I32GtS(Instruction instruction, Machine machine, Frame frame)
         {
-            int c2 = frame.Pop<int>();
-            int c1 = frame.Pop<int>();
+            int c2 = frame.Pop().s32;
+            int c1 = frame.Pop().s32;
             frame.Push(c1 > c2);
         }
 
         public static void I32GtU(Instruction instruction, Machine machine, Frame frame)
         {
-            uint c2 = frame.Pop<uint>();
-            uint c1 = frame.Pop<uint>();
+            uint c2 = frame.Pop().u32;
+            uint c1 = frame.Pop().u32;
             frame.Push(c1 > c2);
         }
 
         public static void I32LeS(Instruction instruction, Machine machine, Frame frame)
         {
-            int c2 = frame.Pop<int>();
-            int c1 = frame.Pop<int>();
+            int c2 = frame.Pop().s32;
+            int c1 = frame.Pop().s32;
             frame.Push(c1 <= c2);
         }
 
         public static void I32LeU(Instruction instruction, Machine machine, Frame frame)
         {
-            uint c2 = frame.Pop<uint>();
-            uint c1 = frame.Pop<uint>();
+            uint c2 = frame.Pop().u32;
+            uint c1 = frame.Pop().u32;
             frame.Push(c1 <= c2);
         }
 
         public static void I32GeS(Instruction instruction, Machine machine, Frame frame)
         {
-            int c2 = frame.Pop<int>();
-            int c1 = frame.Pop<int>();
+            int c2 = frame.Pop().s32;
+            int c1 = frame.Pop().s32;
             frame.Push(c1 >= c2);
         }
 
         public static void I32GeU(Instruction instruction, Machine machine, Frame frame)
         {
-            uint c2 = frame.Pop<uint>();
-            uint c1 = frame.Pop<uint>();
+            uint c2 = frame.Pop().u32;
+            uint c1 = frame.Pop().u32;
             frame.Push(c1 >= c2);
         }
 
         public static void I64LtS(Instruction instruction, Machine machine, Frame frame)
         {
-            long c2 = frame.Pop<long>();
-            long c1 = frame.Pop<long>();
+            long c2 = frame.Pop().s64;
+            long c1 = frame.Pop().s64;
             frame.Push(c1 < c2);
         }
 
         public static void I64LtU(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong c2 = frame.Pop<ulong>();
-            ulong c1 = frame.Pop<ulong>();
+            ulong c2 = frame.Pop().u64;
+            ulong c1 = frame.Pop().u64;
             frame.Push(c1 < c2);
         }
 
         public static void I64GtS(Instruction instruction, Machine machine, Frame frame)
         {
-            long c2 = frame.Pop<long>();
-            long c1 = frame.Pop<long>();
+            long c2 = frame.Pop().s64;
+            long c1 = frame.Pop().s64;
             frame.Push(c1 > c2);
         }
 
         public static void I64GtU(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong c2 = frame.Pop<ulong>();
-            ulong c1 = frame.Pop<ulong>();
+            ulong c2 = frame.Pop().u64;
+            ulong c1 = frame.Pop().u64;
             frame.Push(c1 > c2);
         }
 
         public static void I64LeS(Instruction instruction, Machine machine, Frame frame)
         {
-            long c2 = frame.Pop<long>();
-            long c1 = frame.Pop<long>();
+            long c2 = frame.Pop().s64;
+            long c1 = frame.Pop().s64;
             frame.Push(c1 <= c2);
         }
 
         public static void I64LeU(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong c2 = frame.Pop<ulong>();
-            ulong c1 = frame.Pop<ulong>();
+            ulong c2 = frame.Pop().u64;
+            ulong c1 = frame.Pop().u64;
             frame.Push(c1 <= c2);
         }
 
         public static void I64GeS(Instruction instruction, Machine machine, Frame frame)
         {
-            long c2 = frame.Pop<long>();
-            long c1 = frame.Pop<long>();
+            long c2 = frame.Pop().s64;
+            long c1 = frame.Pop().s64;
             frame.Push(c1 >= c2);
         }
 
         public static void I64GeU(Instruction instruction, Machine machine, Frame frame)
         {
-            ulong c2 = frame.Pop<ulong>();
-            ulong c1 = frame.Pop<ulong>();
+            ulong c2 = frame.Pop().u64;
+            ulong c1 = frame.Pop().u64;
             frame.Push(c1 >= c2);
         }
 
         public static void I32Extend8S(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((int)frame.Pop<sbyte>());
+            frame.Push((int)(sbyte)(frame.Pop().u32 & 0xFF));
 
         public static void I32Extend16S(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((int)frame.Pop<short>());
+            frame.Push((int)(short)(frame.Pop().u32 & 0xFFFF));
 
         public static void I64Extend8S(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((long)frame.Pop<sbyte>());
+            frame.Push((long)(sbyte)(frame.Pop().u32 & 0xFF));
 
         public static void I64Extend16S(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((long)frame.Pop<short>());
+            frame.Push((long)(short)(frame.Pop().u32 & 0xFFFF));
 
         public static void I64Extend32S(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((long)frame.Pop<int>());
+            frame.Push((long)frame.Pop().s32);
 
         public static void I32WrapI64(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((uint)(frame.Pop<ulong>() & 0xFFFFFFFF));
+            frame.Push((uint)(frame.Pop().u64 & 0xFFFFFFFF));
 
         public static void I64ExtendI32S(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((long)frame.Pop<int>());
+            frame.Push((long)frame.Pop().s32);
 
         public static void I64ExtendI32U(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((long)frame.Pop<uint>());
+            frame.Push((long)frame.Pop().u32);
 
         public static void F32Abs(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((float)Math.Abs(frame.Pop<float>()));
+            frame.Push((float)Math.Abs(frame.Pop().f32));
 
         public static void F64Abs(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(Math.Abs(frame.Pop<double>()));
+            frame.Push(Math.Abs(frame.Pop().f64));
 
         public static void F32Neg(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(-frame.Pop<float>());
+            frame.Push(-frame.Pop().f32);
 
         public static void F64Neg(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(-frame.Pop<double>());
+            frame.Push(-frame.Pop().f64);
 
         public static void F32Sqrt(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((float)Math.Sqrt(frame.Pop<float>()));
+            frame.Push((float)Math.Sqrt(frame.Pop().f32));
 
         public static void F64Sqrt(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(Math.Sqrt(frame.Pop<double>()));
+            frame.Push(Math.Sqrt(frame.Pop().f64));
 
         public static void F32Ceil(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((float)Math.Ceiling(frame.Pop<float>()));
+            frame.Push((float)Math.Ceiling(frame.Pop().f32));
 
         public static void F64Ceil(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(Math.Ceiling(frame.Pop<double>()));
+            frame.Push(Math.Ceiling(frame.Pop().f64));
 
         public static void F32Floor(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((float)Math.Floor(frame.Pop<float>()));
+            frame.Push((float)Math.Floor(frame.Pop().f32));
 
         public static void F64Floor(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(Math.Floor(frame.Pop<double>()));
+            frame.Push(Math.Floor(frame.Pop().f64));
 
         public static void F32Trunc(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((float)Math.Truncate(frame.Pop<float>()));
+            frame.Push((float)Math.Truncate(frame.Pop().f32));
 
         public static void F64Trunc(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(Math.Truncate(frame.Pop<double>()));
+            frame.Push(Math.Truncate(frame.Pop().f64));
 
         public static void F32Nearest(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((float)Math.Round(frame.Pop<float>()));
+            frame.Push((float)Math.Round(frame.Pop().f32));
 
         public static void F64Nearest(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push(Math.Round(frame.Pop<double>()));
+            frame.Push(Math.Round(frame.Pop().f64));
 
         public static void F32Add(Instruction instruction, Machine machine, Frame frame)
         {
-            float c2 = frame.Pop<float>();
-            float c1 = frame.Pop<float>();
+            float c2 = frame.Pop().f32;
+            float c1 = frame.Pop().f32;
             frame.Push(c1 + c2);
         }
 
         public static void F64Add(Instruction instruction, Machine machine, Frame frame)
         {
-            double c2 = frame.Pop<double>();
-            double c1 = frame.Pop<double>();
+            double c2 = frame.Pop().f64;
+            double c1 = frame.Pop().f64;
             frame.Push(c1 + c2);
         }
 
         public static void F32Sub(Instruction instruction, Machine machine, Frame frame)
         {
-            float c2 = frame.Pop<float>();
-            float c1 = frame.Pop<float>();
+            float c2 = frame.Pop().f32;
+            float c1 = frame.Pop().f32;
             frame.Push(c1 - c2);
         }
 
         public static void F64Sub(Instruction instruction, Machine machine, Frame frame)
         {
-            double c2 = frame.Pop<double>();
-            double c1 = frame.Pop<double>();
+            double c2 = frame.Pop().f64;
+            double c1 = frame.Pop().f64;
             frame.Push(c1 - c2);
         }
 
         public static void F32Mul(Instruction instruction, Machine machine, Frame frame)
         {
-            float c2 = frame.Pop<float>();
-            float c1 = frame.Pop<float>();
+            float c2 = frame.Pop().f32;
+            float c1 = frame.Pop().f32;
             frame.Push(c1 * c2);
         }
 
         public static void F64Mul(Instruction instruction, Machine machine, Frame frame)
         {
-            double c2 = frame.Pop<double>();
-            double c1 = frame.Pop<double>();
+            double c2 = frame.Pop().f64;
+            double c1 = frame.Pop().f64;
             frame.Push(c1 * c2);
         }
 
         public static void F32Div(Instruction instruction, Machine machine, Frame frame)
         {
-            float c2 = frame.Pop<float>();
-            float c1 = frame.Pop<float>();
+            float c2 = frame.Pop().f32;
+            float c1 = frame.Pop().f32;
             frame.Push(c1 / c2);
         }
 
         public static void F64Div(Instruction instruction, Machine machine, Frame frame)
         {
-            double c2 = frame.Pop<double>();
-            double c1 = frame.Pop<double>();
+            double c2 = frame.Pop().f64;
+            double c1 = frame.Pop().f64;
             frame.Push(c1 / c2);
         }
 
         public static void F32Min(Instruction instruction, Machine machine, Frame frame)
         {
-            float c2 = frame.Pop<float>();
-            float c1 = frame.Pop<float>();
+            float c2 = frame.Pop().f32;
+            float c1 = frame.Pop().f32;
             frame.Push(Math.Min(c1, c2));
         }
 
         public static void F64Min(Instruction instruction, Machine machine, Frame frame)
         {
-            double c2 = frame.Pop<double>();
-            double c1 = frame.Pop<double>();
+            double c2 = frame.Pop().f64;
+            double c1 = frame.Pop().f64;
             frame.Push(Math.Min(c1, c2));
         }
 
         public static void F32Max(Instruction instruction, Machine machine, Frame frame)
         {
-            float c2 = frame.Pop<float>();
-            float c1 = frame.Pop<float>();
+            float c2 = frame.Pop().f32;
+            float c1 = frame.Pop().f32;
             frame.Push(Math.Max(c1, c2));
         }
 
         public static void F64Max(Instruction instruction, Machine machine, Frame frame)
         {
-            double c2 = frame.Pop<double>();
-            double c1 = frame.Pop<double>();
+            double c2 = frame.Pop().f64;
+            double c1 = frame.Pop().f64;
             frame.Push(Math.Max(c1, c2));
         }
 
         public static void F32Copysign(Instruction instruction, Machine machine, Frame frame)
         {
-            float c2 = frame.Pop<float>();
-            float c1 = frame.Pop<float>();
+            float c2 = frame.Pop().f32;
+            float c1 = frame.Pop().f32;
             frame.Push(Math.Sign(c2) * Math.Abs(c1));
         }
 
         public static void F64Copysign(Instruction instruction, Machine machine, Frame frame)
         {
-            double c2 = frame.Pop<double>();
-            double c1 = frame.Pop<double>();
+            double c2 = frame.Pop().f64;
+            double c1 = frame.Pop().f64;
             frame.Push(Math.Sign(c2) * Math.Abs(c1));
         }
 
         public static void F32Eq(Instruction instruction, Machine machine, Frame frame)
         {
-            float c2 = frame.Pop<float>();
-            float c1 = frame.Pop<float>();
+            float c2 = frame.Pop().f32;
+            float c1 = frame.Pop().f32;
             frame.Push(c1 == c2);
         }
 
         public static void F64Eq(Instruction instruction, Machine machine, Frame frame)
         {
-            double c2 = frame.Pop<double>();
-            double c1 = frame.Pop<double>();
+            double c2 = frame.Pop().f64;
+            double c1 = frame.Pop().f64;
             frame.Push(c1 == c2);
         }
 
         public static void F32Ne(Instruction instruction, Machine machine, Frame frame)
         {
-            float c2 = frame.Pop<float>();
-            float c1 = frame.Pop<float>();
+            float c2 = frame.Pop().f32;
+            float c1 = frame.Pop().f32;
             frame.Push(c1 != c2);
         }
 
         public static void F64Ne(Instruction instruction, Machine machine, Frame frame)
         {
-            double c2 = frame.Pop<double>();
-            double c1 = frame.Pop<double>();
+            double c2 = frame.Pop().f64;
+            double c1 = frame.Pop().f64;
             frame.Push(c1 != c2);
         }
 
         public static void F32Lt(Instruction instruction, Machine machine, Frame frame)
         {
-            float c2 = frame.Pop<float>();
-            float c1 = frame.Pop<float>();
+            float c2 = frame.Pop().f32;
+            float c1 = frame.Pop().f32;
             frame.Push(c1 < c2);
         }
 
         public static void F64Lt(Instruction instruction, Machine machine, Frame frame)
         {
-            double c2 = frame.Pop<double>();
-            double c1 = frame.Pop<double>();
+            double c2 = frame.Pop().f64;
+            double c1 = frame.Pop().f64;
             frame.Push(c1 < c2);
         }
 
         public static void F32Gt(Instruction instruction, Machine machine, Frame frame)
         {
-            float c2 = frame.Pop<float>();
-            float c1 = frame.Pop<float>();
+            float c2 = frame.Pop().f32;
+            float c1 = frame.Pop().f32;
             frame.Push(c1 > c2);
         }
 
         public static void F64Gt(Instruction instruction, Machine machine, Frame frame)
         {
-            double c2 = frame.Pop<double>();
-            double c1 = frame.Pop<double>();
+            double c2 = frame.Pop().f64;
+            double c1 = frame.Pop().f64;
             frame.Push(c1 > c2);
         }
 
         public static void F32Le(Instruction instruction, Machine machine, Frame frame)
         {
-            float c2 = frame.Pop<float>();
-            float c1 = frame.Pop<float>();
+            float c2 = frame.Pop().f32;
+            float c1 = frame.Pop().f32;
             frame.Push(c1 <= c2);
         }
 
         public static void F64Le(Instruction instruction, Machine machine, Frame frame)
         {
-            double c2 = frame.Pop<double>();
-            double c1 = frame.Pop<double>();
+            double c2 = frame.Pop().f64;
+            double c1 = frame.Pop().f64;
             frame.Push(c1 <= c2);
         }
 
         public static void F32Ge(Instruction instruction, Machine machine, Frame frame)
         {
-            float c2 = frame.Pop<float>();
-            float c1 = frame.Pop<float>();
+            float c2 = frame.Pop().f32;
+            float c1 = frame.Pop().f32;
             frame.Push(c1 >= c2);
         }
 
         public static void F64Ge(Instruction instruction, Machine machine, Frame frame)
         {
-            double c2 = frame.Pop<double>();
-            double c1 = frame.Pop<double>();
+            double c2 = frame.Pop().f64;
+            double c1 = frame.Pop().f64;
             frame.Push(c1 >= c2);
         }
 
         public static void I32TruncF32S(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((int)frame.Pop<float>());
+            frame.Push((int)frame.Pop().f32);
 
         public static void I32TruncF32U(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((uint)frame.Pop<float>());
+            frame.Push((uint)frame.Pop().f32);
 
         public static void I32TruncF64S(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((int)frame.Pop<double>());
+            frame.Push((int)frame.Pop().f64);
 
         public static void I32TruncF64U(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((uint)frame.Pop<double>());
+            frame.Push((uint)frame.Pop().f64);
 
         public static void I64TruncF32S(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((long)frame.Pop<float>());
+            frame.Push((long)frame.Pop().f32);
 
         public static void I64TruncF32U(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((ulong)frame.Pop<float>());
+            frame.Push((ulong)frame.Pop().f32);
 
         public static void I64TruncF64S(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((long)frame.Pop<double>());
+            frame.Push((long)frame.Pop().f64);
 
         public static void I64TruncF64U(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((ulong)frame.Pop<double>());
+            frame.Push((ulong)frame.Pop().f64);
 
         public static void F32DemoteF64(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((float)frame.Pop<double>());
+            frame.Push((float)frame.Pop().f64);
 
         public static void F64PromoteF32(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((double)frame.Pop<float>());
+            frame.Push((double)frame.Pop().f32);
 
         public static void F32ConvertI32S(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((float)frame.Pop<int>());
+            frame.Push((float)frame.Pop().s32);
 
         public static void F32ConvertI32U(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((float)frame.Pop<uint>());
+            frame.Push((float)frame.Pop().u32);
 
         public static void F32ConvertI64S(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((float)frame.Pop<long>());
+            frame.Push((float)frame.Pop().s64);
 
         public static void F32ConvertI64U(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((float)frame.Pop<ulong>());
+            frame.Push((float)frame.Pop().u64);
 
         public static void F64ConvertI32S(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((double)frame.Pop<int>());
+            frame.Push((double)frame.Pop().s32);
 
         public static void F64ConvertI32U(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((double)frame.Pop<uint>());
+            frame.Push((double)frame.Pop().u32);
 
         public static void F64ConvertI64S(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((double)frame.Pop<long>());
+            frame.Push((double)frame.Pop().s64);
 
         public static void F64ConvertI64U(Instruction instruction, Machine machine, Frame frame) =>
-            frame.Push((double)frame.Pop<ulong>());
+            frame.Push((double)frame.Pop().u64);
 
         // Reinterpretations are no-ops, because we don't have a separate type in Value.
         public static void I32ReinterpretF32(

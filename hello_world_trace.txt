@@ -1,0 +1,1389 @@
+Reading WASM file 'hello_world.wasm'
+Reading 10 types
+Reading 2 imports
+Module requires imported function[0] env.emscripten_memcpy_js (I32, I32, I32) -> ()
+Module requires imported function[1] wasi_snapshot_preview1.fd_write (I32, I32, I32, I32) -> (I32)
+Reading 13 functions
+Reading 1 tables
+Reading 1 memories
+Reading 2 globals
+Reading 9 exports
+Exporting function $0 as __wasm_call_ctors () -> ()
+Exporting function $1 as main (I32, I32) -> (I32)
+Exporting table $0 as __indirect_function_table
+Exporting function $7 as __errno_location () -> (I32)
+Exporting function $9 as stackSave () -> (I32)
+Exporting function $10 as stackRestore (I32) -> ()
+Exporting function $11 as stackAlloc (I32) -> (I32)
+Exporting function $12 as dynCall_jiji (I32, I32, I32, I32, I32) -> (I32)
+Reading 1 element segments
+Reading 13 function bodies
+Reading 6 data segments
+Instruction: I32_CONST Value[hi=0000000000000000, u64=0000000000000400]
+Instruction: END
+Reading 12 bytes of data
+Instruction: I32_CONST Value[hi=0000000000000000, u64=0000000000000410]
+Instruction: END
+Reading 1 bytes of data
+Instruction: I32_CONST Value[hi=0000000000000000, u64=000000000000041C]
+Instruction: END
+Reading 1 bytes of data
+Instruction: I32_CONST Value[hi=0000000000000000, u64=0000000000000434]
+Instruction: END
+Reading 14 bytes of data
+Instruction: I32_CONST Value[hi=0000000000000000, u64=000000000000044C]
+Instruction: END
+Reading 1 bytes of data
+Instruction: I32_CONST Value[hi=0000000000000000, u64=000000000000045C]
+Instruction: END
+Reading 5 bytes of data
+hello_world.<init_global_0> [0] I32_CONST Value[hi=0000000000000000, u64=00000000000108B0]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000108B0]
+hello_world.<init_global_0> [1] END
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000108B0]
+Initialized global 0 to Value[hi=0000000000000000, u64=00000000000108B0]
+hello_world.<init_global_1> [0] I32_CONST Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.<init_global_1> [1] END
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+Initialized global 1 to Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.<offset_for_element_seg_0_into_table_0> [0] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.<offset_for_element_seg_0_into_table_0> [1] END
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.<offset_for_data_seg_0_into_memory_0> [0] I32_CONST Value[hi=0000000000000000, u64=0000000000000400]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.<offset_for_data_seg_0_into_memory_0> [1] END
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.<offset_for_data_seg_1_into_memory_0> [0] I32_CONST Value[hi=0000000000000000, u64=0000000000000410]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000410]
+hello_world.<offset_for_data_seg_1_into_memory_0> [1] END
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000410]
+hello_world.<offset_for_data_seg_2_into_memory_0> [0] I32_CONST Value[hi=0000000000000000, u64=000000000000041C]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000041C]
+hello_world.<offset_for_data_seg_2_into_memory_0> [1] END
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000041C]
+hello_world.<offset_for_data_seg_3_into_memory_0> [0] I32_CONST Value[hi=0000000000000000, u64=0000000000000434]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000434]
+hello_world.<offset_for_data_seg_3_into_memory_0> [1] END
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000434]
+hello_world.<offset_for_data_seg_4_into_memory_0> [0] I32_CONST Value[hi=0000000000000000, u64=000000000000044C]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000044C]
+hello_world.<offset_for_data_seg_4_into_memory_0> [1] END
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000044C]
+hello_world.<offset_for_data_seg_5_into_memory_0> [0] I32_CONST Value[hi=0000000000000000, u64=000000000000045C]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000045C]
+hello_world.<offset_for_data_seg_5_into_memory_0> [1] END
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000045C]
+Running __wasm_call_ctors
+Invoking module func hello_world.__wasm_call_ctors
+hello_world.__wasm_call_ctors [0] END
+   Top of stack: <empty>
+Running main
+Invoking module func hello_world.main
+  arg 0: Value[hi=0000000000000000, u64=0000000000000000]
+  arg 1: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [0] I32_CONST Value[hi=0000000000000000, u64=000000000000045C]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000045C]
+hello_world.main [1] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000FFFFFFFF]
+hello_world.main [2] DROP
+   Top of stack: <empty>
+hello_world.main [3] BLOCK Value[hi=0000000000000001, u64=00000000000000B7]
+   Top of stack: <empty>
+hello_world.main [4] I32_CONST Value[hi=0000000000000000, u64=FFFFFFFFFFFFFFFF]
+   Top of stack <0>: Value[hi=0000000000000000, u64=FFFFFFFFFFFFFFFF]
+hello_world.main [5] I32_CONST Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [6] BLOCK Value[hi=00000000000001FE, u64=000000000000005D]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [7] BLOCK Value[hi=00000000000001FE, u64=0000000000000048]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [8] BLOCK Value[hi=0000000000000001, u64=0000000000000044]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [9] BLOCK Value[hi=0000000000000001, u64=0000000000000025]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [10] I32_CONST Value[hi=0000000000000000, u64=0000000000000400]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.main [11] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.main [12] I32_CONST Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <3>: Value[hi=0000000000000000, u64=0000000000000003]
+hello_world.main [13] I32_AND
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [14] I32_EQZ
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.main [15] BR_IF Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [37] LOOP Value[hi=0000000000000001, u64=0000000000000025]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [38] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.main [39] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.main [40] I32_CONST Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <3>: Value[hi=0000000000000000, u64=0000000000000004]
+hello_world.main [41] I32_ADD
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000404]
+hello_world.main [42] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [43] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.main [44] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000006C6C6568]
+hello_world.main [45] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000006C6C6568]
+hello_world.main [46] I32_CONST Value[hi=0000000000000000, u64=FFFFFFFFFFFFFFFF]
+   Top of stack <3>: Value[hi=0000000000000000, u64=FFFFFFFFFFFFFFFF]
+hello_world.main [47] I32_XOR
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000093939A97]
+hello_world.main [48] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <3>: Value[hi=0000000000000000, u64=000000006C6C6568]
+hello_world.main [49] I32_CONST Value[hi=0000000000000000, u64=0000000001010101]
+   Top of stack <4>: Value[hi=0000000000000000, u64=0000000001010101]
+hello_world.main [50] I32_SUB
+   Top of stack <3>: Value[hi=0000000000000000, u64=000000006B6B6467]
+hello_world.main [51] I32_AND
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000003030007]
+hello_world.main [52] I32_CONST Value[hi=0000000000000000, u64=FFFFFFFF80808080]
+   Top of stack <3>: Value[hi=0000000000000000, u64=FFFFFFFF80808080]
+hello_world.main [53] I32_AND
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [54] I32_EQZ
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.main [55] BR_IF Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [37] LOOP Value[hi=0000000000000001, u64=0000000000000025]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [38] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000404]
+hello_world.main [39] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000404]
+hello_world.main [40] I32_CONST Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <3>: Value[hi=0000000000000000, u64=0000000000000004]
+hello_world.main [41] I32_ADD
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000408]
+hello_world.main [42] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [43] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000404]
+hello_world.main [44] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000006F77206F]
+hello_world.main [45] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000006F77206F]
+hello_world.main [46] I32_CONST Value[hi=0000000000000000, u64=FFFFFFFFFFFFFFFF]
+   Top of stack <3>: Value[hi=0000000000000000, u64=FFFFFFFFFFFFFFFF]
+hello_world.main [47] I32_XOR
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000009088DF90]
+hello_world.main [48] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <3>: Value[hi=0000000000000000, u64=000000006F77206F]
+hello_world.main [49] I32_CONST Value[hi=0000000000000000, u64=0000000001010101]
+   Top of stack <4>: Value[hi=0000000000000000, u64=0000000001010101]
+hello_world.main [50] I32_SUB
+   Top of stack <3>: Value[hi=0000000000000000, u64=000000006E761F6E]
+hello_world.main [51] I32_AND
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000001F00]
+hello_world.main [52] I32_CONST Value[hi=0000000000000000, u64=FFFFFFFF80808080]
+   Top of stack <3>: Value[hi=0000000000000000, u64=FFFFFFFF80808080]
+hello_world.main [53] I32_AND
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [54] I32_EQZ
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.main [55] BR_IF Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [37] LOOP Value[hi=0000000000000001, u64=0000000000000025]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [38] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000408]
+hello_world.main [39] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000408]
+hello_world.main [40] I32_CONST Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <3>: Value[hi=0000000000000000, u64=0000000000000004]
+hello_world.main [41] I32_ADD
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000000000040C]
+hello_world.main [42] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [43] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000408]
+hello_world.main [44] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000021646C72]
+hello_world.main [45] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000021646C72]
+hello_world.main [46] I32_CONST Value[hi=0000000000000000, u64=FFFFFFFFFFFFFFFF]
+   Top of stack <3>: Value[hi=0000000000000000, u64=FFFFFFFFFFFFFFFF]
+hello_world.main [47] I32_XOR
+   Top of stack <2>: Value[hi=0000000000000000, u64=00000000DE9B938D]
+hello_world.main [48] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <3>: Value[hi=0000000000000000, u64=0000000021646C72]
+hello_world.main [49] I32_CONST Value[hi=0000000000000000, u64=0000000001010101]
+   Top of stack <4>: Value[hi=0000000000000000, u64=0000000001010101]
+hello_world.main [50] I32_SUB
+   Top of stack <3>: Value[hi=0000000000000000, u64=0000000020636B71]
+hello_world.main [51] I32_AND
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000030301]
+hello_world.main [52] I32_CONST Value[hi=0000000000000000, u64=FFFFFFFF80808080]
+   Top of stack <3>: Value[hi=0000000000000000, u64=FFFFFFFF80808080]
+hello_world.main [53] I32_AND
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [54] I32_EQZ
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.main [55] BR_IF Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [37] LOOP Value[hi=0000000000000001, u64=0000000000000025]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [38] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000000000040C]
+hello_world.main [39] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000000000040C]
+hello_world.main [40] I32_CONST Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <3>: Value[hi=0000000000000000, u64=0000000000000004]
+hello_world.main [41] I32_ADD
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000410]
+hello_world.main [42] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [43] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000000000040C]
+hello_world.main [44] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [45] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [46] I32_CONST Value[hi=0000000000000000, u64=FFFFFFFFFFFFFFFF]
+   Top of stack <3>: Value[hi=0000000000000000, u64=FFFFFFFFFFFFFFFF]
+hello_world.main [47] I32_XOR
+   Top of stack <2>: Value[hi=0000000000000000, u64=00000000FFFFFFFF]
+hello_world.main [48] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <3>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [49] I32_CONST Value[hi=0000000000000000, u64=0000000001010101]
+   Top of stack <4>: Value[hi=0000000000000000, u64=0000000001010101]
+hello_world.main [50] I32_SUB
+   Top of stack <3>: Value[hi=0000000000000000, u64=00000000FEFEFEFF]
+hello_world.main [51] I32_AND
+   Top of stack <2>: Value[hi=0000000000000000, u64=00000000FEFEFEFF]
+hello_world.main [52] I32_CONST Value[hi=0000000000000000, u64=FFFFFFFF80808080]
+   Top of stack <3>: Value[hi=0000000000000000, u64=FFFFFFFF80808080]
+hello_world.main [53] I32_AND
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000080808080]
+hello_world.main [54] I32_EQZ
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [55] BR_IF Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [56] END
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [57] LOOP Value[hi=0000000000000001, u64=0000000000000039]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [58] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000000000040C]
+hello_world.main [59] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000000000040C]
+hello_world.main [60] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <3>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.main [61] I32_ADD
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000000000040D]
+hello_world.main [62] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [63] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000000000040C]
+hello_world.main [64] I32_LOAD8_U Value[hi=0000000000000000, u64=0000000000000000], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [65] BR_IF Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [66] END
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [67] END
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [68] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000000000040C]
+hello_world.main [69] I32_CONST Value[hi=0000000000000000, u64=0000000000000400]
+   Top of stack <3>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.main [70] I32_SUB
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.main [71] END
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.main [72] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.main [73] BLOCK Value[hi=00000000000001FE, u64=0000000000000056]
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.main [74] I32_CONST Value[hi=0000000000000000, u64=000000000000045C]
+   Top of stack <3>: Value[hi=0000000000000000, u64=000000000000045C]
+hello_world.main [75] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <3>: Value[hi=0000000000000000, u64=00000000FFFFFFFF]
+hello_world.main [76] I32_CONST Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <4>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [77] I32_LT_S
+   Top of stack <3>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.main [78] IF Value[hi=0000000000000001, u64=0000005300000053]
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.main [79] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <3>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.main [80] CALL Value[hi=0000000000000000, u64=0000000000000005]
+Invoking module func hello_world.$3
+  arg 0: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.$3 [0] BLOCK Value[hi=0000000000000001, u64=000000000000015F]
+   Top of stack: <empty>
+hello_world.$3 [1] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.$3 [2] I32_CONST Value[hi=0000000000000000, u64=0000000000000420]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000420]
+hello_world.$3 [3] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$3 [4] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$3 [5] IF Value[hi=00000000000001FE, u64=000000080000000D]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.$3 [8] CALL Value[hi=0000000000000000, u64=0000000000000004]
+Invoking module func hello_world.$2
+hello_world.$2 [0] I32_CONST Value[hi=0000000000000000, u64=0000000000000458]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000458]
+hello_world.$2 [1] I32_CONST Value[hi=0000000000000000, u64=0000000000000458]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000458]
+hello_world.$2 [2] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$2 [3] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$2 [4] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$2 [5] I32_SUB
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000FFFFFFFF]
+hello_world.$2 [6] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$2 [7] I32_OR
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000FFFFFFFF]
+hello_world.$2 [8] I32_STORE Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.$2 [9] I32_CONST Value[hi=0000000000000000, u64=0000000000000410]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000410]
+hello_world.$2 [10] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000005]
+hello_world.$2 [11] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000005]
+hello_world.$2 [12] I32_CONST Value[hi=0000000000000000, u64=0000000000000008]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000008]
+hello_world.$2 [13] I32_AND
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$2 [14] IF Value[hi=0000000000000001, u64=0000001700000017]
+   Top of stack: <empty>
+hello_world.$2 [23] I32_CONST Value[hi=0000000000000000, u64=0000000000000414]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000414]
+hello_world.$2 [24] I64_CONST Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$2 [25] I64_STORE Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.$2 [26] I32_CONST Value[hi=0000000000000000, u64=000000000000042C]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000042C]
+hello_world.$2 [27] I32_CONST Value[hi=0000000000000000, u64=000000000000043C]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000043C]
+hello_world.$2 [28] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$2 [29] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$2 [30] I32_STORE Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.$2 [31] I32_CONST Value[hi=0000000000000000, u64=0000000000000424]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000424]
+hello_world.$2 [32] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$2 [33] I32_STORE Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.$2 [34] I32_CONST Value[hi=0000000000000000, u64=0000000000000420]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000420]
+hello_world.$2 [35] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$2 [36] I32_CONST Value[hi=0000000000000000, u64=0000000000000440]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000440]
+hello_world.$2 [37] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$2 [38] I32_ADD
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000008A8]
+hello_world.$2 [39] I32_STORE Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.$2 [40] I32_CONST Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$2 [41] END
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$3 [9] BR_IF Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.$3 [10] I32_CONST Value[hi=0000000000000000, u64=0000000000000420]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000420]
+hello_world.$3 [11] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000008A8]
+hello_world.$3 [12] END
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000008A8]
+hello_world.$3 [13] I32_CONST Value[hi=0000000000000000, u64=0000000000000424]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000424]
+hello_world.$3 [14] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$3 [15] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <2>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$3 [16] I32_SUB
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$3 [17] I32_GT_U
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$3 [18] IF Value[hi=0000000000000001, u64=0000001B0000001B]
+   Top of stack: <empty>
+hello_world.$3 [27] BLOCK Value[hi=0000000000000001, u64=0000000000000052]
+   Top of stack: <empty>
+hello_world.$3 [28] BLOCK Value[hi=0000000000000001, u64=000000000000004D]
+   Top of stack: <empty>
+hello_world.$3 [29] I32_CONST Value[hi=0000000000000000, u64=0000000000000460]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000460]
+hello_world.$3 [30] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.$3 [31] I32_CONST Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$3 [32] I32_LT_S
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$3 [33] BR_IF Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.$3 [34] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.$3 [35] I32_EQZ
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$3 [36] BR_IF Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.$3 [37] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.$3 [38] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack: <empty>
+hello_world.$3 [39] LOOP Value[hi=0000000000000001, u64=0000000000000027]
+   Top of stack: <empty>
+hello_world.$3 [40] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.$3 [41] I32_CONST Value[hi=0000000000000000, u64=0000000000000400]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$3 [42] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000040C]
+hello_world.$3 [43] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000040C]
+hello_world.$3 [44] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [45] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000040B]
+hello_world.$3 [46] I32_LOAD8_U Value[hi=0000000000000000, u64=0000000000000000], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000021]
+hello_world.$3 [47] I32_CONST Value[hi=0000000000000000, u64=000000000000000A]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.$3 [48] I32_NE
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [49] IF Value[hi=0000000000000001, u64=0000003900000039]
+   Top of stack: <empty>
+hello_world.$3 [50] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.$3 [51] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [52] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000B]
+hello_world.$3 [53] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000B]
+hello_world.$3 [54] BR_IF Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack: <empty>
+hello_world.$3 [39] LOOP Value[hi=0000000000000001, u64=0000000000000027]
+   Top of stack: <empty>
+hello_world.$3 [40] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000B]
+hello_world.$3 [41] I32_CONST Value[hi=0000000000000000, u64=0000000000000400]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$3 [42] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000040B]
+hello_world.$3 [43] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000040B]
+hello_world.$3 [44] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [45] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000040A]
+hello_world.$3 [46] I32_LOAD8_U Value[hi=0000000000000000, u64=0000000000000000], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000064]
+hello_world.$3 [47] I32_CONST Value[hi=0000000000000000, u64=000000000000000A]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.$3 [48] I32_NE
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [49] IF Value[hi=0000000000000001, u64=0000003900000039]
+   Top of stack: <empty>
+hello_world.$3 [50] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000B]
+hello_world.$3 [51] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [52] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.$3 [53] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.$3 [54] BR_IF Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack: <empty>
+hello_world.$3 [39] LOOP Value[hi=0000000000000001, u64=0000000000000027]
+   Top of stack: <empty>
+hello_world.$3 [40] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.$3 [41] I32_CONST Value[hi=0000000000000000, u64=0000000000000400]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$3 [42] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000040A]
+hello_world.$3 [43] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000040A]
+hello_world.$3 [44] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [45] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000409]
+hello_world.$3 [46] I32_LOAD8_U Value[hi=0000000000000000, u64=0000000000000000], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000006C]
+hello_world.$3 [47] I32_CONST Value[hi=0000000000000000, u64=000000000000000A]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.$3 [48] I32_NE
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [49] IF Value[hi=0000000000000001, u64=0000003900000039]
+   Top of stack: <empty>
+hello_world.$3 [50] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.$3 [51] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [52] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000009]
+hello_world.$3 [53] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000009]
+hello_world.$3 [54] BR_IF Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack: <empty>
+hello_world.$3 [39] LOOP Value[hi=0000000000000001, u64=0000000000000027]
+   Top of stack: <empty>
+hello_world.$3 [40] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000009]
+hello_world.$3 [41] I32_CONST Value[hi=0000000000000000, u64=0000000000000400]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$3 [42] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000409]
+hello_world.$3 [43] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000409]
+hello_world.$3 [44] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [45] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000408]
+hello_world.$3 [46] I32_LOAD8_U Value[hi=0000000000000000, u64=0000000000000000], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000072]
+hello_world.$3 [47] I32_CONST Value[hi=0000000000000000, u64=000000000000000A]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.$3 [48] I32_NE
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [49] IF Value[hi=0000000000000001, u64=0000003900000039]
+   Top of stack: <empty>
+hello_world.$3 [50] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000009]
+hello_world.$3 [51] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [52] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000008]
+hello_world.$3 [53] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000008]
+hello_world.$3 [54] BR_IF Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack: <empty>
+hello_world.$3 [39] LOOP Value[hi=0000000000000001, u64=0000000000000027]
+   Top of stack: <empty>
+hello_world.$3 [40] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000008]
+hello_world.$3 [41] I32_CONST Value[hi=0000000000000000, u64=0000000000000400]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$3 [42] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000408]
+hello_world.$3 [43] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000408]
+hello_world.$3 [44] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [45] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000407]
+hello_world.$3 [46] I32_LOAD8_U Value[hi=0000000000000000, u64=0000000000000000], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000006F]
+hello_world.$3 [47] I32_CONST Value[hi=0000000000000000, u64=000000000000000A]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.$3 [48] I32_NE
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [49] IF Value[hi=0000000000000001, u64=0000003900000039]
+   Top of stack: <empty>
+hello_world.$3 [50] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000008]
+hello_world.$3 [51] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [52] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000007]
+hello_world.$3 [53] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000007]
+hello_world.$3 [54] BR_IF Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack: <empty>
+hello_world.$3 [39] LOOP Value[hi=0000000000000001, u64=0000000000000027]
+   Top of stack: <empty>
+hello_world.$3 [40] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000007]
+hello_world.$3 [41] I32_CONST Value[hi=0000000000000000, u64=0000000000000400]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$3 [42] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000407]
+hello_world.$3 [43] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000407]
+hello_world.$3 [44] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [45] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000406]
+hello_world.$3 [46] I32_LOAD8_U Value[hi=0000000000000000, u64=0000000000000000], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000077]
+hello_world.$3 [47] I32_CONST Value[hi=0000000000000000, u64=000000000000000A]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.$3 [48] I32_NE
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [49] IF Value[hi=0000000000000001, u64=0000003900000039]
+   Top of stack: <empty>
+hello_world.$3 [50] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000007]
+hello_world.$3 [51] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [52] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000006]
+hello_world.$3 [53] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000006]
+hello_world.$3 [54] BR_IF Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack: <empty>
+hello_world.$3 [39] LOOP Value[hi=0000000000000001, u64=0000000000000027]
+   Top of stack: <empty>
+hello_world.$3 [40] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000006]
+hello_world.$3 [41] I32_CONST Value[hi=0000000000000000, u64=0000000000000400]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$3 [42] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000406]
+hello_world.$3 [43] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000406]
+hello_world.$3 [44] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [45] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000405]
+hello_world.$3 [46] I32_LOAD8_U Value[hi=0000000000000000, u64=0000000000000000], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000020]
+hello_world.$3 [47] I32_CONST Value[hi=0000000000000000, u64=000000000000000A]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.$3 [48] I32_NE
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [49] IF Value[hi=0000000000000001, u64=0000003900000039]
+   Top of stack: <empty>
+hello_world.$3 [50] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000006]
+hello_world.$3 [51] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [52] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000005]
+hello_world.$3 [53] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000005]
+hello_world.$3 [54] BR_IF Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack: <empty>
+hello_world.$3 [39] LOOP Value[hi=0000000000000001, u64=0000000000000027]
+   Top of stack: <empty>
+hello_world.$3 [40] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000005]
+hello_world.$3 [41] I32_CONST Value[hi=0000000000000000, u64=0000000000000400]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$3 [42] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000405]
+hello_world.$3 [43] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000405]
+hello_world.$3 [44] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [45] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000404]
+hello_world.$3 [46] I32_LOAD8_U Value[hi=0000000000000000, u64=0000000000000000], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000006F]
+hello_world.$3 [47] I32_CONST Value[hi=0000000000000000, u64=000000000000000A]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.$3 [48] I32_NE
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [49] IF Value[hi=0000000000000001, u64=0000003900000039]
+   Top of stack: <empty>
+hello_world.$3 [50] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000005]
+hello_world.$3 [51] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [52] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000004]
+hello_world.$3 [53] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000004]
+hello_world.$3 [54] BR_IF Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack: <empty>
+hello_world.$3 [39] LOOP Value[hi=0000000000000001, u64=0000000000000027]
+   Top of stack: <empty>
+hello_world.$3 [40] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000004]
+hello_world.$3 [41] I32_CONST Value[hi=0000000000000000, u64=0000000000000400]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$3 [42] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000404]
+hello_world.$3 [43] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000404]
+hello_world.$3 [44] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [45] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000403]
+hello_world.$3 [46] I32_LOAD8_U Value[hi=0000000000000000, u64=0000000000000000], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000006C]
+hello_world.$3 [47] I32_CONST Value[hi=0000000000000000, u64=000000000000000A]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.$3 [48] I32_NE
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [49] IF Value[hi=0000000000000001, u64=0000003900000039]
+   Top of stack: <empty>
+hello_world.$3 [50] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000004]
+hello_world.$3 [51] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [52] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000003]
+hello_world.$3 [53] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000003]
+hello_world.$3 [54] BR_IF Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack: <empty>
+hello_world.$3 [39] LOOP Value[hi=0000000000000001, u64=0000000000000027]
+   Top of stack: <empty>
+hello_world.$3 [40] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000003]
+hello_world.$3 [41] I32_CONST Value[hi=0000000000000000, u64=0000000000000400]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$3 [42] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000403]
+hello_world.$3 [43] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000403]
+hello_world.$3 [44] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [45] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000402]
+hello_world.$3 [46] I32_LOAD8_U Value[hi=0000000000000000, u64=0000000000000000], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000006C]
+hello_world.$3 [47] I32_CONST Value[hi=0000000000000000, u64=000000000000000A]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.$3 [48] I32_NE
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [49] IF Value[hi=0000000000000001, u64=0000003900000039]
+   Top of stack: <empty>
+hello_world.$3 [50] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000003]
+hello_world.$3 [51] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [52] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000002]
+hello_world.$3 [53] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000002]
+hello_world.$3 [54] BR_IF Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack: <empty>
+hello_world.$3 [39] LOOP Value[hi=0000000000000001, u64=0000000000000027]
+   Top of stack: <empty>
+hello_world.$3 [40] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000002]
+hello_world.$3 [41] I32_CONST Value[hi=0000000000000000, u64=0000000000000400]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$3 [42] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000402]
+hello_world.$3 [43] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000402]
+hello_world.$3 [44] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [45] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000401]
+hello_world.$3 [46] I32_LOAD8_U Value[hi=0000000000000000, u64=0000000000000000], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000065]
+hello_world.$3 [47] I32_CONST Value[hi=0000000000000000, u64=000000000000000A]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.$3 [48] I32_NE
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [49] IF Value[hi=0000000000000001, u64=0000003900000039]
+   Top of stack: <empty>
+hello_world.$3 [50] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000002]
+hello_world.$3 [51] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [52] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [53] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [54] BR_IF Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack: <empty>
+hello_world.$3 [39] LOOP Value[hi=0000000000000001, u64=0000000000000027]
+   Top of stack: <empty>
+hello_world.$3 [40] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [41] I32_CONST Value[hi=0000000000000000, u64=0000000000000400]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$3 [42] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000401]
+hello_world.$3 [43] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000401]
+hello_world.$3 [44] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [45] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$3 [46] I32_LOAD8_U Value[hi=0000000000000000, u64=0000000000000000], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000068]
+hello_world.$3 [47] I32_CONST Value[hi=0000000000000000, u64=000000000000000A]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.$3 [48] I32_NE
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [49] IF Value[hi=0000000000000001, u64=0000003900000039]
+   Top of stack: <empty>
+hello_world.$3 [50] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [51] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [52] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$3 [53] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$3 [54] BR_IF Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack: <empty>
+hello_world.$3 [55] BR Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack: <empty>
+hello_world.$3 [77] I32_CONST Value[hi=0000000000000000, u64=0000000000000400]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$3 [78] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack: <empty>
+hello_world.$3 [79] I32_CONST Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$3 [80] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack: <empty>
+hello_world.$3 [81] END
+   Top of stack: <empty>
+hello_world.$3 [82] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$3 [83] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack: <empty>
+hello_world.$3 [84] BLOCK Value[hi=0000000000000001, u64=0000000000000154]
+   Top of stack: <empty>
+hello_world.$3 [85] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.$3 [86] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.$3 [87] I32_CONST Value[hi=0000000000000000, u64=0000000000000200]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000200]
+hello_world.$3 [88] I32_GE_U
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$3 [89] IF Value[hi=0000000000000001, u64=0000006000000060]
+   Top of stack: <empty>
+hello_world.$3 [96] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.$3 [97] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$3 [98] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004B4]
+hello_world.$3 [99] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000005]
+   Top of stack: <empty>
+hello_world.$3 [100] BLOCK Value[hi=0000000000000001, u64=000000000000013D]
+   Top of stack: <empty>
+hello_world.$3 [101] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$3 [102] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$3 [103] I32_XOR
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000000A8]
+hello_world.$3 [104] I32_CONST Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000003]
+hello_world.$3 [105] I32_AND
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$3 [106] I32_EQZ
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [107] IF Value[hi=0000000000000001, u64=0000010A0000010A]
+   Top of stack: <empty>
+hello_world.$3 [108] BLOCK Value[hi=0000000000000001, u64=0000000000000096]
+   Top of stack: <empty>
+hello_world.$3 [109] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$3 [110] I32_CONST Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000003]
+hello_world.$3 [111] I32_AND
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$3 [112] I32_EQZ
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [113] IF Value[hi=0000000000000001, u64=0000007600000076]
+   Top of stack: <empty>
+hello_world.$3 [114] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$3 [115] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack: <empty>
+hello_world.$3 [116] BR Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack: <empty>
+hello_world.$3 [150] BLOCK Value[hi=0000000000000001, u64=00000000000000F3]
+   Top of stack: <empty>
+hello_world.$3 [151] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000005]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004B4]
+hello_world.$3 [152] I32_CONST Value[hi=0000000000000000, u64=FFFFFFFFFFFFFFFC]
+   Top of stack <1>: Value[hi=0000000000000000, u64=FFFFFFFFFFFFFFFC]
+hello_world.$3 [153] I32_AND
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004B4]
+hello_world.$3 [154] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000006]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004B4]
+hello_world.$3 [155] I32_CONST Value[hi=0000000000000000, u64=0000000000000040]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000040]
+hello_world.$3 [156] I32_LT_U
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$3 [157] BR_IF Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.$3 [158] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$3 [159] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000006]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004B4]
+hello_world.$3 [160] I32_CONST Value[hi=0000000000000000, u64=FFFFFFFFFFFFFFC0]
+   Top of stack <2>: Value[hi=0000000000000000, u64=FFFFFFFFFFFFFFC0]
+hello_world.$3 [161] I32_ADD
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000474]
+hello_world.$3 [162] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000474]
+hello_world.$3 [163] I32_GT_U
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [164] BR_IF Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.$3 [243] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$3 [244] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000006]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004B4]
+hello_world.$3 [245] I32_GE_U
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$3 [246] BR_IF Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack: <empty>
+hello_world.$3 [247] LOOP Value[hi=0000000000000001, u64=00000000000000F7]
+   Top of stack: <empty>
+hello_world.$3 [248] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$3 [249] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$3 [250] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000006C6C6568]
+hello_world.$3 [251] I32_STORE Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.$3 [252] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$3 [253] I32_CONST Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000004]
+hello_world.$3 [254] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000404]
+hello_world.$3 [255] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack: <empty>
+hello_world.$3 [256] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$3 [257] I32_CONST Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000004]
+hello_world.$3 [258] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004AC]
+hello_world.$3 [259] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004AC]
+hello_world.$3 [260] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000006]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004B4]
+hello_world.$3 [261] I32_LT_U
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [262] BR_IF Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.$3 [247] LOOP Value[hi=0000000000000001, u64=00000000000000F7]
+   Top of stack: <empty>
+hello_world.$3 [248] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004AC]
+hello_world.$3 [249] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000404]
+hello_world.$3 [250] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000006F77206F]
+hello_world.$3 [251] I32_STORE Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.$3 [252] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000404]
+hello_world.$3 [253] I32_CONST Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000004]
+hello_world.$3 [254] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000408]
+hello_world.$3 [255] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack: <empty>
+hello_world.$3 [256] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004AC]
+hello_world.$3 [257] I32_CONST Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000004]
+hello_world.$3 [258] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004B0]
+hello_world.$3 [259] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004B0]
+hello_world.$3 [260] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000006]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004B4]
+hello_world.$3 [261] I32_LT_U
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$3 [262] BR_IF Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.$3 [247] LOOP Value[hi=0000000000000001, u64=00000000000000F7]
+   Top of stack: <empty>
+hello_world.$3 [248] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004B0]
+hello_world.$3 [249] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000408]
+hello_world.$3 [250] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000021646C72]
+hello_world.$3 [251] I32_STORE Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.$3 [252] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000408]
+hello_world.$3 [253] I32_CONST Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000004]
+hello_world.$3 [254] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000040C]
+hello_world.$3 [255] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack: <empty>
+hello_world.$3 [256] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004B0]
+hello_world.$3 [257] I32_CONST Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000004]
+hello_world.$3 [258] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004B4]
+hello_world.$3 [259] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004B4]
+hello_world.$3 [260] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000006]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004B4]
+hello_world.$3 [261] I32_LT_U
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$3 [262] BR_IF Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.$3 [263] END
+   Top of stack: <empty>
+hello_world.$3 [264] BR Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack: <empty>
+hello_world.$3 [317] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004B4]
+hello_world.$3 [318] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000005]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004B4]
+hello_world.$3 [319] I32_LT_U
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$3 [320] IF Value[hi=0000000000000001, u64=0000015300000153]
+   Top of stack: <empty>
+hello_world.$3 [339] END
+   Top of stack: <empty>
+hello_world.$3 [340] I32_CONST Value[hi=0000000000000000, u64=0000000000000424]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000424]
+hello_world.$3 [341] I32_CONST Value[hi=0000000000000000, u64=0000000000000424]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000424]
+hello_world.$3 [342] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$3 [343] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.$3 [344] I32_ADD
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004B4]
+hello_world.$3 [345] I32_STORE Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.$3 [346] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.$3 [347] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$3 [348] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.$3 [349] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack: <empty>
+hello_world.$3 [350] END
+   Top of stack: <empty>
+hello_world.$3 [351] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.$3 [352] END
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000C]
+   Top of stack <3>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.main [81] BR Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <3>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.main [86] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <3>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.main [87] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <4>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.main [88] I32_EQ
+   Top of stack <3>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.main [89] BR_IF Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.main [93] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <3>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.main [94] I32_NE
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [95] SELECT
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [96] I32_CONST Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [97] I32_LT_S
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [98] BR_IF Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.main [99] BLOCK Value[hi=0000000000000001, u64=000000000000007A]
+   Top of stack: <empty>
+hello_world.main [100] I32_CONST Value[hi=0000000000000000, u64=0000000000000460]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000460]
+hello_world.main [101] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.main [102] I32_CONST Value[hi=0000000000000000, u64=000000000000000A]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.main [103] I32_EQ
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.main [104] BR_IF Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.main [122] GLOBAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000108B0]
+hello_world.main [123] I32_CONST Value[hi=0000000000000000, u64=0000000000000010]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000010]
+hello_world.main [124] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000108A0]
+hello_world.main [125] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000108A0]
+hello_world.main [126] GLOBAL_SET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.main [127] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000108A0]
+hello_world.main [128] I32_CONST Value[hi=0000000000000000, u64=000000000000000A]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.main [129] I32_STORE8 Value[hi=0000000000000000, u64=0000000000000000], Value[hi=0000000000000000, u64=000000000000000F]
+   Top of stack: <empty>
+hello_world.main [130] BLOCK Value[hi=0000000000000001, u64=00000000000000B2]
+   Top of stack: <empty>
+hello_world.main [131] BLOCK Value[hi=0000000000000001, u64=00000000000000A3]
+   Top of stack: <empty>
+hello_world.main [132] I32_CONST Value[hi=0000000000000000, u64=0000000000000420]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000420]
+hello_world.main [133] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000008A8]
+hello_world.main [134] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000008A8]
+hello_world.main [135] IF Value[hi=00000000000001FE, u64=0000008A0000008F]
+   Top of stack: <empty>
+hello_world.main [136] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000008A8]
+hello_world.main [137] ELSE
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000008A8]
+hello_world.main [143] I32_CONST Value[hi=0000000000000000, u64=0000000000000424]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000424]
+hello_world.main [144] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004B4]
+hello_world.main [145] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004B4]
+hello_world.main [146] I32_EQ
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [147] BR_IF Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.main [148] I32_CONST Value[hi=0000000000000000, u64=0000000000000460]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000460]
+hello_world.main [149] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.main [150] I32_CONST Value[hi=0000000000000000, u64=000000000000000A]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.main [151] I32_EQ
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.main [152] BR_IF Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.main [163] I32_CONST Value[hi=0000000000000000, u64=0000000000000410]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000410]
+hello_world.main [164] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000108A0]
+hello_world.main [165] I32_CONST Value[hi=0000000000000000, u64=000000000000000F]
+   Top of stack <2>: Value[hi=0000000000000000, u64=000000000000000F]
+hello_world.main [166] I32_ADD
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000108AF]
+hello_world.main [167] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.main [168] I32_CONST Value[hi=0000000000000000, u64=0000000000000434]
+   Top of stack <3>: Value[hi=0000000000000000, u64=0000000000000434]
+hello_world.main [169] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <3>: Value[hi=0000000000000000, u64=0000000000000002]
+hello_world.main [170] CALL_INDIRECT Value[hi=0000000000000000, u64=0000000000000000], Value[hi=0000000000000000, u64=0000000000000000]
+Invoking module func hello_world.$4
+  arg 0: Value[hi=0000000000000000, u64=0000000000000410]
+  arg 1: Value[hi=0000000000000000, u64=00000000000108AF]
+  arg 2: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$4 [0] GLOBAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000108A0]
+hello_world.$4 [1] I32_CONST Value[hi=0000000000000000, u64=0000000000000020]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000020]
+hello_world.$4 [2] I32_SUB
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000010880]
+hello_world.$4 [3] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000010880]
+hello_world.$4 [4] GLOBAL_SET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.$4 [5] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000010880]
+hello_world.$4 [6] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000410]
+hello_world.$4 [7] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=000000000000001C]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$4 [8] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$4 [9] I32_STORE Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000010]
+   Top of stack: <empty>
+hello_world.$4 [10] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000410]
+hello_world.$4 [11] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000014]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000004B4]
+hello_world.$4 [12] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000005]
+   Top of stack: <empty>
+hello_world.$4 [13] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000010880]
+hello_world.$4 [14] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$4 [15] I32_STORE Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=000000000000001C]
+   Top of stack: <empty>
+hello_world.$4 [16] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000010880]
+hello_world.$4 [17] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000108AF]
+hello_world.$4 [18] I32_STORE Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000018]
+   Top of stack: <empty>
+hello_world.$4 [19] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000010880]
+hello_world.$4 [20] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000005]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004B4]
+hello_world.$4 [21] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack <2>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$4 [22] I32_SUB
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.$4 [23] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.$4 [24] I32_STORE Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000014]
+   Top of stack: <empty>
+hello_world.$4 [25] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.$4 [26] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$4 [27] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000D]
+hello_world.$4 [28] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000006]
+   Top of stack: <empty>
+hello_world.$4 [29] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000010880]
+hello_world.$4 [30] I32_CONST Value[hi=0000000000000000, u64=0000000000000010]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000010]
+hello_world.$4 [31] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000010890]
+hello_world.$4 [32] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000004]
+   Top of stack: <empty>
+hello_world.$4 [33] I32_CONST Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000002]
+hello_world.$4 [34] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000007]
+   Top of stack: <empty>
+hello_world.$4 [35] BLOCK Value[hi=00000000000001FE, u64=00000000000000AA]
+   Top of stack: <empty>
+hello_world.$4 [36] BLOCK Value[hi=0000000000000001, u64=0000000000000093]
+   Top of stack: <empty>
+hello_world.$4 [37] BLOCK Value[hi=0000000000000001, u64=0000000000000082]
+   Top of stack: <empty>
+hello_world.$4 [38] BLOCK Value[hi=0000000000000001, u64=000000000000007D]
+   Top of stack: <empty>
+hello_world.$4 [39] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000410]
+hello_world.$4 [40] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=000000000000003C]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$4 [41] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000010880]
+hello_world.$4 [42] I32_CONST Value[hi=0000000000000000, u64=0000000000000010]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000010]
+hello_world.$4 [43] I32_ADD
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000010890]
+hello_world.$4 [44] I32_CONST Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000002]
+hello_world.$4 [45] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <3>: Value[hi=0000000000000000, u64=0000000000010880]
+hello_world.$4 [46] I32_CONST Value[hi=0000000000000000, u64=000000000000000C]
+   Top of stack <4>: Value[hi=0000000000000000, u64=000000000000000C]
+hello_world.$4 [47] I32_ADD
+   Top of stack <3>: Value[hi=0000000000000000, u64=000000000001088C]
+hello_world.$4 [48] CALL Value[hi=0000000000000000, u64=0000000000000001]
+Invoking host func wasi_snapshot_preview1.fd_write
+hello world!
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$4 [49] CALL Value[hi=0000000000000000, u64=000000000000000A]
+Invoking module func hello_world.$8
+  arg 0: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$8 [0] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$8 [1] I32_EQZ
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$8 [2] IF Value[hi=0000000000000001, u64=0000000600000006]
+   Top of stack: <empty>
+hello_world.$8 [3] I32_CONST Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$8 [4] RETURN
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.$4 [50] IF Value[hi=0000000000000001, u64=0000003700000037]
+   Top of stack: <empty>
+hello_world.$4 [55] LOOP Value[hi=0000000000000001, u64=0000000000000037]
+   Top of stack: <empty>
+hello_world.$4 [56] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000006]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000D]
+hello_world.$4 [57] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000010880]
+hello_world.$4 [58] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=000000000000000C]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000000D]
+hello_world.$4 [59] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=000000000000000D]
+hello_world.$4 [60] I32_EQ
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$4 [61] BR_IF Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack: <empty>
+hello_world.$4 [130] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000410]
+hello_world.$4 [131] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000410]
+hello_world.$4 [132] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=000000000000002C]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$4 [133] LOCAL_TEE Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$4 [134] I32_STORE Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=000000000000001C]
+   Top of stack: <empty>
+hello_world.$4 [135] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000410]
+hello_world.$4 [136] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$4 [137] I32_STORE Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000014]
+   Top of stack: <empty>
+hello_world.$4 [138] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000410]
+hello_world.$4 [139] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000004A8]
+hello_world.$4 [140] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000410]
+hello_world.$4 [141] I32_LOAD Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000030]
+   Top of stack <2>: Value[hi=0000000000000000, u64=0000000000000400]
+hello_world.$4 [142] I32_ADD
+   Top of stack <1>: Value[hi=0000000000000000, u64=00000000000008A8]
+hello_world.$4 [143] I32_STORE Value[hi=0000000000000000, u64=0000000000000002], Value[hi=0000000000000000, u64=0000000000000010]
+   Top of stack: <empty>
+hello_world.$4 [144] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000002]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$4 [145] BR Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$4 [170] LOCAL_SET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack: <empty>
+hello_world.$4 [171] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000003]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000010880]
+hello_world.$4 [172] I32_CONST Value[hi=0000000000000000, u64=0000000000000020]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000020]
+hello_world.$4 [173] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000108A0]
+hello_world.$4 [174] GLOBAL_SET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.$4 [175] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.$4 [176] END
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.main [171] I32_CONST Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000001]
+hello_world.main [172] I32_NE
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [173] BR_IF Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.main [174] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000108A0]
+hello_world.main [175] I32_LOAD8_U Value[hi=0000000000000000, u64=0000000000000000], Value[hi=0000000000000000, u64=000000000000000F]
+   Top of stack <0>: Value[hi=0000000000000000, u64=000000000000000A]
+hello_world.main [176] DROP
+   Top of stack: <empty>
+hello_world.main [177] END
+   Top of stack: <empty>
+hello_world.main [178] LOCAL_GET Value[hi=0000000000000000, u64=0000000000000001]
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000108A0]
+hello_world.main [179] I32_CONST Value[hi=0000000000000000, u64=0000000000000010]
+   Top of stack <1>: Value[hi=0000000000000000, u64=0000000000000010]
+hello_world.main [180] I32_ADD
+   Top of stack <0>: Value[hi=0000000000000000, u64=00000000000108B0]
+hello_world.main [181] GLOBAL_SET Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack: <empty>
+hello_world.main [182] END
+   Top of stack: <empty>
+hello_world.main [183] I32_CONST Value[hi=0000000000000000, u64=0000000000000000]
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+hello_world.main [184] END
+   Top of stack <0>: Value[hi=0000000000000000, u64=0000000000000000]
+
+C:\Users\rober\Documents\dergwasm\dergwasm_mod\LoadModule\bin\Debug\net472\LoadModule.exe (process 4624) exited with code 0.
+To automatically close the console when debugging stops, enable Tools->Options->Debugging->Automatically close the console when debugging stops.
