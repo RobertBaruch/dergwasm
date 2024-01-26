@@ -235,6 +235,39 @@ namespace Derg
                 slot__get_component
             );
 
+            machine.RegisterReturningHostFunc<ulong, int, int, int, int>(
+                "env",
+                "component__get_member",
+                component__get_member
+            );
+
+            void RegisterValueGetSet<T>(
+                string name,
+                Func<Frame, ulong, int, int> valueGet,
+                Func<Frame, ulong, int, int> valueSet
+                ) where T : unmanaged
+            {
+                machine.RegisterReturningHostFunc<ulong, int, int>(
+                    "env",
+                    $"value__get_{name}",
+                    value__get<T>
+                );
+                machine.RegisterReturningHostFunc<ulong, int, int>(
+                    "env",
+                    $"value_set_{name}",
+                    value__set<T>
+                );
+            }
+
+            void RegisterBlitValueGetSet<T>(string name) where T : unmanaged
+            {
+                RegisterValueGetSet<T>(name, value__get<T>, value__set<T>);
+            }
+
+            RegisterBlitValueGetSet<int>("int");
+            RegisterBlitValueGetSet<float>("float");
+            RegisterBlitValueGetSet<double>("double");
+
             machine.RegisterReturningHostFunc<ulong, int>(
                 "env",
                 "value_field__get_value",
@@ -414,6 +447,69 @@ namespace Derg
             Component component = FromRefID<Component>(component_id);
             if (!ComponentUtils.SetFieldValue(component, fieldName, value))
                 return -1;
+            return 0;
+        }
+
+        public enum ResoniteType : int
+        {
+            Unknown = 0x0,
+            // TODO: Renumber this to actually make sense.
+            ValueInt = 0x1,
+        }
+
+        private static ResoniteType GetResoniteType(Type type)
+        {
+            if (typeof(IValue<int>).IsAssignableFrom(type))
+            {
+                return ResoniteType.ValueInt;
+            }
+            return ResoniteType.Unknown;
+        }
+
+        public int component__get_member(Frame frame, ulong componentRefId, int namePtr, int outTypePtr, int outRefId)
+        {
+            Component component = FromRefID<Component>(componentRefId);
+            if (component == null)
+            {
+                return -1;
+            }
+
+            string fieldName = emscriptenEnv.GetUTF8StringFromMem(namePtr);
+            if (fieldName == null)
+            {
+                return -1;
+            }
+
+            var member = component.GetSyncMember(fieldName);
+            if (member == null)
+            {
+                return -1;
+            }
+
+            machine.HeapSet<int>(outTypePtr, (int)GetResoniteType(member.GetType()));
+            machine.HeapSet<ulong>(outRefId, (ulong)member.ReferenceID);
+            return 0;
+        }
+
+        public int value__get<T>(Frame frame, ulong refId, int outPtr) where T : unmanaged
+        {
+            var value = FromRefID<IValue<T>>(refId);
+            if (value == null)
+            {
+                return -1;
+            }
+            machine.HeapSet(outPtr, value.Value);
+            return 0;
+        }
+
+        public int value__set<T>(Frame frame, ulong refId, int inPtr) where T : unmanaged
+        {
+            var value = FromRefID<IValue<T>>(refId);
+            if (value == null)
+            {
+                return -1;
+            }
+            value.Value = machine.HeapGet<T>(inPtr);
             return 0;
         }
 

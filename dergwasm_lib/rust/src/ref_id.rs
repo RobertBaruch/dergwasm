@@ -3,6 +3,9 @@ use std::marker::PhantomData;
 #[repr(C)]
 pub struct RefId<T>(u64, PhantomData<T>);
 
+#[repr(C)]
+pub struct Unknown;
+
 impl<T> std::fmt::Debug for RefId<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         f.debug_tuple("RefId")
@@ -42,5 +45,11 @@ where
         } else {
             None
         }
+    }
+}
+
+impl RefId<Unknown> {
+    pub fn reinterpret<T>(self) -> RefId<T> {
+        RefId::<T>(self.0, Default::default())
     }
 }
