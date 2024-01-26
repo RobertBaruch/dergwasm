@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 using Elements.Core;
 using FrooxEngine;
 
@@ -14,7 +13,7 @@ namespace Derg
     public class ResoniteEnv
     {
         public Machine machine;
-        IWorldServices worldServices;
+        public IWorldServices worldServices;
         public EmscriptenEnv emscriptenEnv;
 
         public ResoniteEnv(
@@ -400,6 +399,25 @@ namespace Derg
                 return 0;
 
             return SimpleSerialization.Serialize(machine, this, frame, value);
+        }
+
+        // Gets the value of a Sync<T> field, for types of T that are 64 bits or less.
+        public T component__get_field_value_64<T>(Frame frame, ulong component_id, int namePtr)
+            where T : unmanaged
+        {
+            string fieldName = emscriptenEnv.GetUTF8StringFromMem(namePtr);
+            Component component = FromRefID<Component>(component_id);
+            //Func<Component, Sync<T>> getter = ComponentUtils.GetFieldGetter<T>(
+            //    component.GetType(),
+            //    fieldName
+            //);
+
+            //if (getter == null)
+            //    return default(T);
+
+            //return getter(component).Value;
+            // return ComponentUtils.GetField<T>(component, fieldName);
+            return default(T);
         }
 
         // Sets the value of a field on a component. The field name is in the given string.

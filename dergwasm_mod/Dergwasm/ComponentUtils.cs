@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
+using System.Text;
 using Elements.Core; // For UniLog
 using FrooxEngine;
 
@@ -124,6 +127,118 @@ namespace Derg
                     $"Failed to set field value '{fieldName}' on object of type {component.GetType()}: {e}"
                 );
                 return false;
+            }
+        }
+
+        // Caches the getter functions for a component's IField<T> fields, keyed on typeof(T).
+        public static Dictionary<Type, System.Collections.IDictionary> getters =
+            new Dictionary<Type, System.Collections.IDictionary>();
+
+        // Gets the dictionary of component type -> field name -> getter function.
+        public static Dictionary<
+            Type,
+            Dictionary<string, Func<Component, IField<T>>>
+        > GetFieldDict<T>()
+        {
+            Type type = typeof(T);
+            if (!getters.ContainsKey(type))
+                getters[type] =
+                    new Dictionary<Type, Dictionary<string, Func<Component, IField<T>>>>();
+            return (Dictionary<Type, Dictionary<string, Func<Component, IField<T>>>>)getters[type];
+        }
+
+        // Gets the getter function for a field on a component. Returns null on failure.
+        public static T GetFieldGetter<T>(Component component, string fieldName)
+        {
+            Type componentType = component.GetType();
+            Dictionary<Type, Dictionary<string, Func<Component, IField<T>>>> fieldDict =
+                GetFieldDict<T>();
+            if (!fieldDict.ContainsKey(componentType))
+                fieldDict[componentType] = new Dictionary<string, Func<Component, IField<T>>>();
+            if (fieldDict[componentType].ContainsKey(fieldName))
+            {
+                return fieldDict[componentType][fieldName](component).Value;
+            }
+
+            FieldInfo fieldInfo = componentType.GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.Public
+            );
+            if (fieldInfo == null)
+                return default(T);
+
+            if (!fieldInfo.FieldType.IsOfGenericType(typeof(IField<>)))
+                return default(T);
+
+            Func<Component, IField<T>> getter = c => (IField<T>)fieldInfo.GetValue(c);
+            fieldDict[componentType][fieldName] = getter;
+            return getter(component).Value;
+        }
+
+        // Gets the value of a field on a component. Returns true on success.
+        public static bool GetField<T>(Component component, string fieldName, out T value)
+        {
+            value = default(T);
+            FieldInfo fieldInfo = component
+                .GetType()
+                .GetField(fieldName, BindingFlags.Instance | BindingFlags.Public);
+            if (fieldInfo == null)
+                return false;
+
+            if (!fieldInfo.FieldType.IsOfGenericType(typeof(IField<>)))
+                return false;
+
+            value = ((IField<T>)fieldInfo.GetValue(component)).Value;
+            return true;
+        }
+
+        public static bool GetField<T>(IWorldServices worldServices, RefID fieldref, out T value)
+        {
+            value = default(T);
+            IField<T> field = worldServices.GetObjectOrNull(fieldref) as IField<T>;
+            if (field == null)
+                return false;
+            value = field.Value;
+            return true;
+        }
+
+        public enum SyncMemberType
+        {
+            Unknown = 0,
+            Sync = 1,
+            SyncRef = 2,
+        }
+
+        public static byte[] GetFieldMap(Component component)
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+                BinaryWriter writer = new BinaryWriter(stream);
+
+                writer.Write(component.SyncMemberCount);
+                for (int i = 0; i < component.SyncMemberCount; ++i)
+                {
+                    FieldInfo field = component.GetSyncMemberFieldInfo(i);
+                    byte[] stringData = Encoding.UTF8.GetBytes(field.Name);
+                    writer.Write(stringData.Length);
+                    writer.Write(stringData);
+                    Type fieldType = field.FieldType;
+                    if (fieldType.IsOfGenericType(typeof(Sync<>)))
+                    {
+                        writer.Write((int)SyncMemberType.Sync);
+                    }
+                    else if (fieldType.IsOfGenericType(typeof(SyncRef<>)))
+                    {
+                        writer.Write((int)SyncMemberType.SyncRef);
+                    }
+                    else
+                    {
+                        writer.Write((int)SyncMemberType.Unknown);
+                    }
+                    writer.Write((ulong)component.GetSyncMember(i).ReferenceID);
+                }
+
+                return stream.ToArray();
             }
         }
     }

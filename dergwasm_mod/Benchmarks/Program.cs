@@ -623,18 +623,22 @@ namespace DergwasmTests
     // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3930/22H2/2022Update)
     // Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
     //   [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
-    //  .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
+    //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
     //
     // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
     //
-    // | Method      | N   | Mean     | Error    | StdDev   | Ratio |
-    // |------------ |---- |---------:|---------:|---------:|------:|
-    // | GetIntField | 100 | 53.97 us | 1.034 us | 0.917 us |  1.00 |
+    // | Method       | N   | Mean       | Error     | StdDev    | Ratio | RatioSD |
+    // |------------- |---- |-----------:|----------:|----------:|------:|--------:|
+    // | GetIntField  | 100 |  53.830 us | 1.0715 us | 1.1909 us |  1.00 |    0.00 |
+    // | GetIntField2 | 100 | 113.671 us | 2.1629 us | 2.1243 us |  2.10 |    0.06 |
+    // | GetIntField3 | 100 |  24.331 us | 0.4828 us | 1.2289 us |  0.45 |    0.03 |
+    // | GetIntField4 | 100 |   2.283 us | 0.0321 us | 0.0268 us |  0.04 |    0.00 |
     [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
     public class MicropythonGetIntFieldBenchmark
     {
         DergwasmLoadModule.Program program;
         TestComponent testComponent;
+        TestWorldServices worldServices;
 
         [Params(100)]
         public int N;
@@ -645,6 +649,7 @@ namespace DergwasmTests
             public SyncRef<TestComponent> ComponentRefField;
             public SyncRef<IField<int>> IntFieldRefField;
             public SyncType TypeField;
+            TestWorldServices worldServices;
 
             public int IntProperty
             {
@@ -652,7 +657,7 @@ namespace DergwasmTests
                 set { IntField.Value = value; }
             }
 
-            void SetRefId(object obj, ulong i)
+            void SetRefId(IWorldElement obj, ulong i)
             {
                 // This nonsense is required because Component's ReferenceID has a private setter
                 // in a base class.
@@ -664,10 +669,12 @@ namespace DergwasmTests
                         .GetProperty("ReferenceID")
                         .GetSetMethod(true);
                 setterMethod.Invoke(obj, new object[] { new RefID(i) });
+                worldServices.AddRefID(obj, i);
             }
 
-            public TestComponent()
+            public TestComponent(TestWorldServices worldServices)
             {
+                this.worldServices = worldServices;
                 IntField = new Sync<int>();
                 ComponentRefField = new SyncRef<TestComponent>();
                 IntFieldRefField = new SyncRef<IField<int>>();
@@ -686,21 +693,59 @@ namespace DergwasmTests
             ResonitePatches.Apply();
 
             program = new DergwasmLoadModule.Program("../../../../../firmware.wasm");
+            program.resoniteEnv.worldServices = worldServices = new TestWorldServices();
             program.InitMicropython(64 * 1024);
-            testComponent = new TestComponent();
+            testComponent = new TestComponent(worldServices);
             testComponent.IntField.Value = 1;
         }
 
-        [Benchmark]
+        [Benchmark(Baseline = true)]
         public object GetIntField()
         {
-            Frame frame = program.emscriptenEnv.EmptyFrame();
             int sum = 0;
             object value;
             for (int i = 0; i < N; i++)
             {
                 ComponentUtils.GetFieldValue(testComponent, "IntField", out value);
                 sum += (int)value;
+            }
+            return sum;
+        }
+
+        [Benchmark]
+        public object GetIntField2()
+        {
+            int sum = 0;
+            for (int i = 0; i < N; i++)
+            {
+                int value;
+                ComponentUtils.GetField<int>(testComponent, "IntField", out value);
+                sum += value;
+            }
+            return sum;
+        }
+
+        [Benchmark]
+        public object GetIntField3()
+        {
+            int sum = 0;
+            for (int i = 0; i < N; i++)
+            {
+                sum += ComponentUtils.GetFieldGetter<int>(testComponent, "IntField");
+            }
+            return sum;
+        }
+
+        [Benchmark]
+        public object GetIntField4()
+        {
+            int sum = 0;
+            RefID fieldID = testComponent.IntField.ReferenceID;
+            for (int i = 0; i < N; i++)
+            {
+                int value;
+                ComponentUtils.GetField<int>(worldServices, fieldID, out value);
+                sum += value;
             }
             return sum;
         }
