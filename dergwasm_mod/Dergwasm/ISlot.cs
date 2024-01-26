@@ -5,10 +5,10 @@ using FrooxEngine;
 namespace Derg
 {
     // An interface for a slot in a world, for testability.
-    public interface ISlot
+    public interface ISlot : IWorldElement
     {
-        ISlot Parent { get; set; }
-        RefID ReferenceID { get; }
+        new ISlot Parent { get; set; }
+
         ISlot FindChild(Predicate<Slot> filter, int maxDepth = -1);
 
         ISlot FindChild(string name);

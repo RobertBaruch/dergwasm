@@ -20,9 +20,44 @@ namespace Derg
             set => slot.Parent = ((SlotProxy)value).slot;
         }
 
+        IWorldElement IWorldElement.Parent
+        {
+            get
+            {
+                IWorldElement parent = Parent;
+                return parent;
+            }
+        }
+
         public RefID ReferenceID
         {
             get => slot.ReferenceID;
+        }
+
+        public string Name
+        {
+            get => slot.Name;
+            set => slot.Name = value;
+        }
+
+        public World World
+        {
+            get => slot.World;
+        }
+
+        public bool IsLocalElement
+        {
+            get => slot.IsLocalElement;
+        }
+
+        public bool IsPersistent
+        {
+            get => slot.IsPersistent;
+        }
+
+        public bool IsRemoved
+        {
+            get => slot.IsRemoved;
         }
 
         public SlotProxy(Slot slot)
@@ -45,5 +80,25 @@ namespace Derg
             where T : Component, new() => slot.AttachComponent(runOnAttachBehavior, beforeAttach);
 
         public void Destroy() => slot.Destroy();
+
+        public void ChildChanged(IWorldElement child)
+        {
+            throw new NotImplementedException();
+        }
+
+        public DataTreeNode Save(SaveControl control)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Load(DataTreeNode node, LoadControl control)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string GetSyncMemberName(ISyncMember member)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
