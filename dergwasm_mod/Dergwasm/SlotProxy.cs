@@ -39,6 +39,12 @@ namespace Derg
             set => slot.Name = value;
         }
 
+        public string Tag
+        {
+            get => slot.Tag;
+            set => slot.Tag = value;
+        }
+
         public World World => slot.World;
 
         public bool IsLocalElement => slot.IsLocalElement;
@@ -52,8 +58,11 @@ namespace Derg
             this.slot = slot;
         }
 
-        public ISlot FindChild(Predicate<Slot> filter, int maxDepth = -1) =>
-            new SlotProxy(slot.FindChild(filter, maxDepth));
+        public ISlot FindChild(Predicate<ISlot> filter, int maxDepth = -1)
+        {
+            Predicate<Slot> slotFilter = (s) => filter(new SlotProxy(s));
+            return new SlotProxy(slot.FindChild(slotFilter, maxDepth));
+        }
 
         public ISlot FindChild(string name) => new SlotProxy(slot.FindChild(name));
 

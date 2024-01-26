@@ -9,7 +9,9 @@ namespace Derg
     {
         new ISlot Parent { get; set; }
 
-        ISlot FindChild(Predicate<Slot> filter, int maxDepth = -1);
+        string Tag { get; set; }
+
+        ISlot FindChild(Predicate<ISlot> filter, int maxDepth = -1);
 
         ISlot FindChild(string name);
 
