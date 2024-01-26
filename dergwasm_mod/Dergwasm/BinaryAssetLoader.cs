@@ -1,30 +1,25 @@
-﻿using Elements.Core; // For UniLog
-using FrooxEngine;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.IO;
-using System.Linq;
-using System.Text;
+﻿using System;
 using System.Threading.Tasks;
-
-using Derg;
+using Elements.Core; // For UniLog
+using FrooxEngine;
 
 namespace Derg
 {
     public class BinaryAssetLoader
     {
         public StaticBinary Binary;
-        public Engine Engine;
-        public Slot ByteDisplay;
-        public World world;
+        public ISlot ByteDisplay;
+        public IWorldServices worldServices;
 
-        public BinaryAssetLoader(World world, StaticBinary binary, Slot byteDisplay)
+        public BinaryAssetLoader(
+            IWorldServices worldServices,
+            StaticBinary binary,
+            ISlot byteDisplay
+        )
         {
-            Engine = world.Engine;
             Binary = binary;
             ByteDisplay = byteDisplay;
-            this.world = world;
+            this.worldServices = worldServices;
         }
 
         // Code adapted from BinaryExportable.Export.
@@ -38,9 +33,7 @@ namespace Derg
                 metadata.IsProcessing.Value = true;
             Uri url = Binary.URL.Value;
             await new ToBackground();
-            string file = await binaryAssetLoader.Engine.AssetManager
-                .GatherAssetFile(url, 100f)
-                .ConfigureAwait(false);
+            string file = await worldServices.GatherAssetFile(url, 100f).ConfigureAwait(false);
             UniLog.Log($"[Dergwasm] Gathered binary asset file {file}");
             //if (file != null)
             //{
@@ -51,9 +44,10 @@ namespace Derg
             await new ToWorld();
             if (metadata != null)
                 metadata.IsProcessing.Value = false;
-            ByteDisplay.GetComponent<TextRenderer>().Text.Value = $"Loaded to {file}";
+            if (ByteDisplay != null)
+                ByteDisplay.GetComponent<TextRenderer>().Text.Value = $"Loaded to {file}";
 
-            DergwasmMachine.Init(world, file);
+            DergwasmMachine.Init(worldServices, file);
             return file;
         }
     }
