@@ -25,14 +25,13 @@ namespace Derg
             get
             {
                 IWorldElement parent = Parent;
+                if (parent.GetType() == typeof(Slot))
+                    return new SlotProxy((Slot)parent);
                 return parent;
             }
         }
 
-        public RefID ReferenceID
-        {
-            get => slot.ReferenceID;
-        }
+        public RefID ReferenceID => slot.ReferenceID;
 
         public string Name
         {
@@ -40,25 +39,13 @@ namespace Derg
             set => slot.Name = value;
         }
 
-        public World World
-        {
-            get => slot.World;
-        }
+        public World World => slot.World;
 
-        public bool IsLocalElement
-        {
-            get => slot.IsLocalElement;
-        }
+        public bool IsLocalElement => slot.IsLocalElement;
 
-        public bool IsPersistent
-        {
-            get => slot.IsPersistent;
-        }
+        public bool IsPersistent => slot.IsPersistent;
 
-        public bool IsRemoved
-        {
-            get => slot.IsRemoved;
-        }
+        public bool IsRemoved => slot.IsRemoved;
 
         public SlotProxy(Slot slot)
         {
@@ -81,24 +68,13 @@ namespace Derg
 
         public void Destroy() => slot.Destroy();
 
-        public void ChildChanged(IWorldElement child)
-        {
-            throw new NotImplementedException();
-        }
+        // This is private in Slot, so we'd never call it.
+        void IWorldElement.ChildChanged(IWorldElement child) => throw new NotImplementedException();
 
-        public DataTreeNode Save(SaveControl control)
-        {
-            throw new NotImplementedException();
-        }
+        public DataTreeNode Save(SaveControl control) => slot.Save(control);
 
-        public void Load(DataTreeNode node, LoadControl control)
-        {
-            throw new NotImplementedException();
-        }
+        public void Load(DataTreeNode node, LoadControl control) => slot.Load(node, control);
 
-        public string GetSyncMemberName(ISyncMember member)
-        {
-            throw new NotImplementedException();
-        }
+        public string GetSyncMemberName(ISyncMember member) => slot.GetSyncMemberName(member);
     }
 }
