@@ -9,6 +9,11 @@ namespace DergwasmTests
         public TestEmscriptenEnv()
             : base(new TestMachine()) { }
 
+        public void ResetMalloc()
+        {
+            ptr = 4;
+        }
+
         public override int Malloc(Frame frame, int size)
         {
             int result = ptr;

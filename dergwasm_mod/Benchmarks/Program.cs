@@ -627,80 +627,91 @@ namespace DergwasmTests
     //
     // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
     //
-    // | Method      | N   | Mean     | Error    | StdDev   | Ratio |
-    // |------------ |---- |---------:|---------:|---------:|------:|
-    // | GetIntField | 100 | 53.97 us | 1.034 us | 0.917 us |  1.00 |
+    // | Method                          | N   | Mean      | Error     | StdDev    | Ratio |
+    // |-------------------------------- |---- |----------:|----------:|----------:|------:|
+    // | ComponentUtils_GetIntField      | 100 | 55.716 us | 0.7795 us | 0.6509 us |  1.00 |
+    // | ValueGet_GetIntField_UnknownRef | 100 | 29.038 us | 0.4454 us | 0.3948 us |  0.52 |
+    // | ValueGet_GetIntField_KnownRef   | 100 |  7.395 us | 0.1234 us | 0.1267 us |  0.13 |
     [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
-    public class MicropythonGetIntFieldBenchmark
+    public class GetIntFieldBenchmark : TestMachine
     {
-        DergwasmLoadModule.Program program;
+        FakeWorldServices worldServices;
+        ResoniteEnv env;
+        TestEmscriptenEnv emscriptenEnv;
         TestComponent testComponent;
+        Frame frame;
 
         [Params(100)]
         public int N;
 
-        public class TestComponent : Component
-        {
-            public Sync<int> IntField;
-            public SyncRef<TestComponent> ComponentRefField;
-            public SyncRef<IField<int>> IntFieldRefField;
-            public SyncType TypeField;
-
-            public int IntProperty
-            {
-                get { return IntField.Value; }
-                set { IntField.Value = value; }
-            }
-
-            void SetRefId(object obj, ulong i)
-            {
-                // This nonsense is required because Component's ReferenceID has a private setter
-                // in a base class.
-                PropertyInfo propertyInfo = obj.GetType().GetProperty("ReferenceID");
-                var setterMethod = propertyInfo.GetSetMethod(true);
-                if (setterMethod == null)
-                    setterMethod = propertyInfo
-                        .DeclaringType
-                        .GetProperty("ReferenceID")
-                        .GetSetMethod(true);
-                setterMethod.Invoke(obj, new object[] { new RefID(i) });
-            }
-
-            public TestComponent()
-            {
-                IntField = new Sync<int>();
-                ComponentRefField = new SyncRef<TestComponent>();
-                IntFieldRefField = new SyncRef<IField<int>>();
-                TypeField = new SyncType();
-
-                SetRefId(this, 100);
-                SetRefId(IntField, 101);
-                SetRefId(ComponentRefField, 102);
-                SetRefId(IntFieldRefField, 103);
-                SetRefId(TypeField, 104);
-            }
-        }
-
-        public MicropythonGetIntFieldBenchmark()
+        public GetIntFieldBenchmark()
         {
             ResonitePatches.Apply();
+            worldServices = new FakeWorldServices();
+            emscriptenEnv = new TestEmscriptenEnv();
+            env = new ResoniteEnv(this, worldServices, emscriptenEnv);
+            SimpleSerialization.Initialize(env);
+            frame = emscriptenEnv.EmptyFrame();
 
-            program = new DergwasmLoadModule.Program("../../../../../firmware.wasm");
-            program.InitMicropython(64 * 1024);
-            testComponent = new TestComponent();
+            testComponent = new TestComponent(worldServices);
+            testComponent.Initialize();
             testComponent.IntField.Value = 1;
         }
 
-        [Benchmark]
-        public object GetIntField()
+        [Benchmark(Baseline = true)]
+        public object ComponentUtils_GetIntField()
         {
-            Frame frame = program.emscriptenEnv.EmptyFrame();
             int sum = 0;
             object value;
             for (int i = 0; i < N; i++)
             {
                 ComponentUtils.GetFieldValue(testComponent, "IntField", out value);
                 sum += (int)value;
+            }
+            return sum;
+        }
+
+        [Benchmark]
+        public object ValueGet_GetIntField_UnknownRef()
+        {
+            emscriptenEnv.ResetMalloc();
+            int sum = 0;
+            int namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
+            int outTypePtr = namePtr + 100;
+            int outRefIdPtr = outTypePtr + sizeof(int);
+            int outPtr = outRefIdPtr + sizeof(ulong);
+            ulong refId = (ulong)testComponent.ReferenceID;
+
+            for (int i = 0; i < N; i++)
+            {
+                if (env.component__get_member(frame, refId, namePtr, outTypePtr, outRefIdPtr) != 0)
+                {
+                    throw new Exception("component__get_member failed");
+                }
+                if (env.value__get<int>(frame, HeapGet<ulong>(outRefIdPtr), outPtr) != 0)
+                {
+                    throw new Exception("value__get failed");
+                }
+                sum += HeapGet<int>(outPtr);
+            }
+            return sum;
+        }
+
+        [Benchmark]
+        public object ValueGet_GetIntField_KnownRef()
+        {
+            emscriptenEnv.ResetMalloc();
+            int sum = 0;
+            int outPtr = 4;
+            ulong refId = (ulong)testComponent.IntField.ReferenceID;
+
+            for (int i = 0; i < N; i++)
+            {
+                if (env.value__get<int>(frame, refId, outPtr) != 0)
+                {
+                    throw new Exception("value__get failed");
+                }
+                sum += HeapGet<int>(outPtr);
             }
             return sum;
         }

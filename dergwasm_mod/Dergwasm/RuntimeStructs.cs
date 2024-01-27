@@ -55,6 +55,11 @@ namespace Derg
             return Minimum.Equals(other.Minimum) && Maximum.Equals(other.Maximum);
         }
 
+        public override bool Equals(object other)
+        {
+            return other is Limits limits && Equals(limits);
+        }
+
         public override int GetHashCode()
         {
             return (Minimum, Maximum).GetHashCode();
@@ -166,6 +171,11 @@ namespace Derg
         public bool Equals(TableType other)
         {
             return Limits.Equals(other.Limits) && ElementType.Equals(other.ElementType);
+        }
+
+        public override bool Equals(object other)
+        {
+            return other is TableType tableType && Equals(tableType);
         }
 
         public override int GetHashCode()

@@ -278,6 +278,11 @@ namespace Derg
             return args.SequenceEqual(other.args) && returns.SequenceEqual(other.returns);
         }
 
+        public override bool Equals(object other)
+        {
+            return other is FuncType funcType && Equals(funcType);
+        }
+
         public override int GetHashCode()
         {
             return (args, returns).GetHashCode();
