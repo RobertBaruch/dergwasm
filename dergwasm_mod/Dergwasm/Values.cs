@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -44,6 +45,25 @@ namespace Derg
 
         // A type(void) signature, where value_hi >> 2 is the ValueType for the type.
         RETURNING_BLOCK = 2,
+    }
+
+    public static class ValueGetter
+    {
+        static Dictionary<Type, Delegate> valueGetters = new Dictionary<Type, Delegate>
+        {
+            { typeof(int), new Func<Value, int>(v => v.s32) },
+            { typeof(uint), new Func<Value, uint>(v => v.u32) },
+            { typeof(long), new Func<Value, long>(v => v.s64) },
+            { typeof(ulong), new Func<Value, ulong>(v => v.u64) },
+            { typeof(float), new Func<Value, float>(v => v.f32) },
+            { typeof(double), new Func<Value, double>(v => v.f64) },
+            { typeof(bool), new Func<Value, bool>(v => v.Bool) },
+        };
+
+        public static T As<T>(Value value)
+        {
+            return ((Func<Value, T>)valueGetters[typeof(T)])(value);
+        }
     }
 
     // A value. It is fixed to 128 bits long, which can store

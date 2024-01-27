@@ -221,7 +221,7 @@ namespace DergwasmTests
         // | Method     | Mean     | Error    | StdDev   | Median   | Ratio |
         // |----------- |---------:|---------:|---------:|---------:|------:|
         // | PushPopInt | 22.30 ns | 0.414 ns | 0.991 ns | 21.96 ns |  1.00 |
-        [Benchmark]
+        [Benchmark(Baseline = true)]
         public int PushPopInt()
         {
             int x = 0;
