@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Derg.Wasm;
 using FrooxEngine;
 using Derg.Mem;
 using Derg.Modules;
@@ -468,7 +469,7 @@ namespace Derg
 
             if (nwrittenPtr != 0)
             {
-                machine.HeapSet(nwrittenPtr, nwritten);
+                machine.HeapSet(new Ptr<uint>(nwrittenPtr), nwritten);
             }
             return 0;
         }
@@ -497,7 +498,7 @@ namespace Derg
             }
             if (newOffsetPtr != 0)
             {
-                machine.HeapSet(newOffsetPtr, (long)pos);
+                machine.HeapSet(new Ptr<long>(newOffsetPtr), (long)pos);
             }
             return 0;
         }
@@ -541,7 +542,7 @@ namespace Derg
 
             if (nreadPtr != 0)
             {
-                machine.HeapSet(nreadPtr, nread);
+                machine.HeapSet(new Ptr<uint>(nreadPtr), nread);
             }
             return 0;
         }

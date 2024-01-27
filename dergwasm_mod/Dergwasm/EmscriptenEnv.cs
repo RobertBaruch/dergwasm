@@ -2,6 +2,7 @@
 using System.Text;
 using Derg.Wasm;
 using System.Threading.Tasks;
+using Derg.Wasm;
 using FrooxEngine;
 using System.Runtime.InteropServices;
 
@@ -50,6 +51,10 @@ namespace Derg
             return frame;
         }
 
+        Ptr IWasmAllocator.Malloc(Frame frame, int size) => new Ptr(Malloc(frame, size));
+
+        public void Free(Frame frame, Ptr buffer) => Free(frame, buffer.Addr);
+
         // Allocates `size` bytes in WASM memory and returns the pointer to it.
         // Virtual for testing.
         public virtual Pointer Malloc(Frame frame, int size)
@@ -76,15 +81,14 @@ namespace Derg
         // Allocates a UTF-8 encoded string in WASM memory in length-data format
         // and returns the pointer to it. You can pass null as the frame if you're
         // calling this from outside a WASM function. Otherwise pass the frame you're in.
-        public int AllocateUTF8StringInMemLenData(Frame frame, string s)
+        public PrefixBuff<byte> AllocateUTF8StringInMemLenData(Frame frame, string s, bool nullTerminated = false)
         {
-            int stringLen = Encoding.UTF8.GetByteCount(s);
-            int stringPtr = Malloc(frame, 4 + stringLen);
-            machine.HeapSet<int>(stringPtr, stringLen);
+            int stringLen = Encoding.UTF8.GetByteCount(s) + (nullTerminated ? 1 : 0);
+            PrefixBuff<byte> stringPtr = machine.HeapAllocPrefix<byte>(frame, stringLen);
             WriteUTF8StringToMem(
-                stringPtr + 4,
+                stringPtr.BufferStart,
                 s,
-                false /* nullTerminate */
+                nullTerminated
             );
             return stringPtr;
         }
@@ -92,29 +96,11 @@ namespace Derg
         // Allocates a UTF-8 encoded string in WASM memory and returns the pointer to it.
         // You can pass null as the frame if you're calling this from outside a WASM function.
         // Otherwise pass the frame you're in.
-        public int AllocateUTF8StringInMem(Frame frame, string s)
+        public Buff<byte> AllocateUTF8StringInMem(Frame frame, string s, bool nullTerminated = true)
         {
-            return AllocateUTF8StringInMemWithPadding(frame, 0, s, out _);
-        }
-
-        public int AllocateUTF8StringInMem(Frame frame, string s, out int allocated_size)
-        {
-            return AllocateUTF8StringInMemWithPadding(frame, 0, s, out allocated_size);
-        }
-
-        // Allocates a UTF-8 encoded string in WASM memory, with padding *before* the string.
-        // You can pass null as the frame if you're calling this from outside a WASM function.
-        // Otherwise pass the frame you're in.
-        public int AllocateUTF8StringInMemWithPadding(
-            Frame frame,
-            int padding,
-            string s,
-            out int allocated_size
-        )
-        {
-            int stringPtr = Malloc(frame, padding + Encoding.UTF8.GetByteCount(s) + 1);
-            int len = WriteUTF8StringToMem(stringPtr + padding, s);
-            allocated_size = padding + len;
+            int stringLen = Encoding.UTF8.GetByteCount(s) + (nullTerminated ? 1 : 0);
+            Buff<byte> stringPtr = machine.HeapAlloc<byte>(frame, stringLen);
+            WriteUTF8StringToMem(stringPtr.Ptr, s, nullTerminated);
             return stringPtr;
         }
 
@@ -134,12 +120,16 @@ namespace Derg
         }
 
         // Writes a UTF-8 encoded string to the heap. Returns the number of bytes written.
-        public int WriteUTF8StringToMem(int ptr, string s, bool nullTerminate = true)
+        public int WriteUTF8StringToMem(Ptr<byte> ptr, string s, bool nullTerminated = false)
         {
             byte[] stringData = Encoding.UTF8.GetBytes(s);
-            Buffer.BlockCopy(stringData, 0, machine.Heap, ptr, stringData.Length);
-            machine.Heap[ptr + stringData.Length] = 0; // NUL-termination
-            return stringData.Length + 1;
+            Buffer.BlockCopy(stringData, 0, machine.Heap, ptr.Addr, stringData.Length);
+            if (nullTerminated)
+            {
+                machine.Heap[ptr.Addr + stringData.Length] = 0; // NUL-termination
+                return stringData.Length + 1;
+            }
+            return stringData.Length;
         }
 
         // Returns a funcref.

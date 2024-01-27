@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Derg;
+using Derg.Wasm;
 using Elements.Core;
 using Xunit;
 
@@ -24,8 +25,8 @@ namespace DergwasmTests
             int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value);
 
             Assert.Equal(4, ptr);
-            Assert.Equal(SimpleSerialization.SimpleType.Bool, env.machine.HeapGet<int>(4));
-            Assert.Equal(1, env.machine.HeapGet<int>(8));
+            Assert.Equal(SimpleSerialization.SimpleType.Bool, env.machine.HeapGet(new Ptr<int>(4)));
+            Assert.Equal(1, env.machine.HeapGet(new Ptr<int>(8)));
         }
 
         [Fact]
@@ -35,7 +36,7 @@ namespace DergwasmTests
             int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value);
 
             Assert.Equal(4, ptr);
-            Assert.Equal(SimpleSerialization.SimpleType.Null, env.machine.HeapGet<int>(4));
+            Assert.Equal(SimpleSerialization.SimpleType.Null, env.machine.HeapGet<int>(new Ptr<int>(4)));
         }
 
         [Fact]
@@ -45,10 +46,10 @@ namespace DergwasmTests
             int ptr = SimpleSerialization.Serialize(env.machine, resoniteEnv, null, value);
 
             Assert.Equal(4, ptr);
-            Assert.Equal(SimpleSerialization.SimpleType.String, env.machine.HeapGet<int>(4));
-            int stringPtr = env.machine.HeapGet<int>(8);
-            Assert.Equal(4, env.machine.HeapGet<int>(stringPtr));
-            Assert.Equal(0x34333231u, env.machine.HeapGet<uint>(stringPtr + 4));
+            Assert.Equal(SimpleSerialization.SimpleType.String, env.machine.HeapGet(new Ptr<int>(4)));
+            var stringPtr = env.machine.HeapGet(new Ptr<PrefixBuff>(8));
+            Assert.Equal(4, env.machine.HeapGet(stringPtr.Length));
+            Assert.Equal(0x34333231u, env.machine.HeapGet(stringPtr.BufferStart.Reinterpret<uint>()));
         }
 
         [Fact]

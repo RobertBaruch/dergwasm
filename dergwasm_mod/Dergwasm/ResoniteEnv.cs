@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
+using Derg.Wasm;
 using Elements.Core;
 using FrooxEngine;
 
@@ -51,7 +53,7 @@ namespace Derg
             return worldServices.GetObjectOrNull(refID);
         }
 
-        List<Value> ExtractArgs(Slot argsSlot, List<int> allocations)
+        List<Value> ExtractArgs(Slot argsSlot, List<Ptr> allocations)
         {
             List<Value> args = new List<Value>();
 
@@ -65,10 +67,10 @@ namespace Derg
                 {
                     if (c is ValueField<string> stringField)
                     {
-                        int ptr = emscriptenEnv.AllocateUTF8StringInMem(null, stringField.Value);
-                        allocations.Add(ptr);
-                        args.Add(new Value { s32 = ptr });
-                        DergwasmMachine.Msg($"String arg, ptr = 0x{ptr:X8}");
+                        var buf = emscriptenEnv.AllocateUTF8StringInMem(null, stringField.Value);
+                        allocations.Add(buf.Ptr);
+                        args.Add(new Value { s32 = buf.Ptr.Addr });
+                        DergwasmMachine.Msg($"String arg, ptr = 0x{buf.Ptr.Addr:X8}");
                         break;
                     }
 
@@ -141,7 +143,7 @@ namespace Derg
                 DergwasmMachine.Msg("No ValueField<string> component found on args slot");
                 return;
             }
-            List<int> argAllocations = new List<int>();
+            List<Ptr> argAllocations = new List<Ptr>();
             List<Value> args = ExtractArgs(argsSlot, argAllocations);
 
             try
@@ -154,9 +156,9 @@ namespace Derg
             }
             finally
             {
-                foreach (int ptr in argAllocations)
+                foreach (Ptr ptr in argAllocations)
                 {
-                    emscriptenEnv.free(emscriptenEnv.EmptyFrame(), ptr);
+                    emscriptenEnv.free(emscriptenEnv.EmptyFrame(), ptr.Addr);
                 }
                 DergwasmMachine.Msg("Call complete");
             }
@@ -297,7 +299,7 @@ namespace Derg
         {
             Slot slot = FromRefID<Slot>(slot_id);
             string name = slot?.Name ?? "";
-            return emscriptenEnv.AllocateUTF8StringInMem(frame, name);
+            return emscriptenEnv.AllocateUTF8StringInMem(frame, name).Ptr.Addr;
         }
 
         public void slot__set_name(Frame frame, ulong slot_id, int ptr)
@@ -363,7 +365,7 @@ namespace Derg
         {
             Component c = FromRefID<Component>(component_id);
             string typeName = c?.GetType().GetNiceName() ?? "";
-            return emscriptenEnv.AllocateUTF8StringInMem(frame, typeName);
+            return emscriptenEnv.AllocateUTF8StringInMem(frame, typeName).Ptr.Addr;
         }
 
         public enum ResoniteType : int
@@ -409,8 +411,8 @@ namespace Derg
                 return -1;
             }
 
-            machine.HeapSet<int>(outTypePtr, (int)GetResoniteType(member.GetType()));
-            machine.HeapSet<ulong>(outRefIdPtr, (ulong)member.ReferenceID);
+            machine.HeapSet(new Ptr<int>(outTypePtr), (int)GetResoniteType(member.GetType()));
+            machine.HeapSet(new Ptr<ulong>(outRefIdPtr), (ulong)member.ReferenceID);
             return 0;
         }
 
@@ -426,7 +428,7 @@ namespace Derg
             {
                 return -1;
             }
-            machine.HeapSet(outPtr, value.Value);
+            machine.HeapSet(new Ptr<T>(outPtr), value.Value);
             return 0;
         }
 
@@ -442,7 +444,7 @@ namespace Derg
             {
                 return -1;
             }
-            value.Value = machine.HeapGet<T>(inPtr);
+            value.Value = machine.HeapGet(new Ptr<T>(inPtr));
             return 0;
         }
     }

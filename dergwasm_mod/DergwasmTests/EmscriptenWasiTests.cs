@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using Derg;
+using Derg.Wasm;
 using Xunit;
 
 namespace DergwasmTests
@@ -250,7 +251,7 @@ namespace DergwasmTests
         public void WriteFromHeap()
         {
             Stream stream = wasi.CreateStream("test.txt", Encoding.UTF8.GetBytes("0123456789"));
-            env.WriteUTF8StringToMem(0, "abcdefghijk");
+            env.WriteUTF8StringToMem(new Ptr<byte>(0), "abcdefghijk");
 
             Assert.Equal(1, wasi.Write(stream.fd, 0, 1));
             Assert.Equal("a123456789", Encoding.UTF8.GetString(stream.content));
@@ -315,7 +316,7 @@ namespace DergwasmTests
             string output = "";
             env.outputWriter = (string str) => output += str;
 
-            env.WriteUTF8StringToMem(0, "012345");
+            env.WriteUTF8StringToMem(new Ptr<byte>(0), "012345");
 
             Assert.Equal(6, wasi.Write(EmscriptenWasi.FD_STDOUT, 0, 6));
             Assert.Equal("012345", output);
