@@ -306,7 +306,7 @@ namespace Derg
                     machine.DropElementSegment(ElementSegmentsMap[i]);
                     continue;
                 }
-                if (elementSegmentSpec is PassiveDataSegment)
+                if (elementSegmentSpec is PassiveElementSegmentSpec)
                 {
                     continue;
                 }

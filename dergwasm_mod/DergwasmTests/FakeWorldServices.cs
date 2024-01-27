@@ -38,11 +38,13 @@ namespace DergwasmTests
             assetFiles.Add(uri, file);
         }
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         public override async ValueTask<string> GatherAssetFile(
             Uri assetURL,
             float priority,
             DB_Endpoint? overrideEndpoint = null
         ) => assetFiles[assetURL];
+#pragma warning restore CS1998
 
         public override string GetName() => "TestWorld";
 
