@@ -40,28 +40,28 @@ impl From<RefId<Self>> for Slot {
 }
 
 impl Slot {
-    pub fn get_root_slot() -> Slot {
+    pub fn root_slot() -> Slot {
         unsafe { slot__root_slot() }.filter_invalid().unwrap()
     }
 
-    pub fn get_parent(&self) -> Option<Slot> {
+    pub fn parent(&self) -> Option<Slot> {
         unsafe { slot__get_parent(self.0) }.filter_invalid()
     }
 
-    pub fn get_active_user(&self) -> Option<User> {
+    pub fn active_user(&self) -> Option<User> {
         unsafe { slot__get_active_user(self.0) }.filter_invalid()
     }
 
-    pub fn get_active_user_root(&self) -> Option<UserRoot> {
+    pub fn active_user_root(&self) -> Option<UserRoot> {
         unsafe { slot__get_active_user_root(self.0) }.filter_invalid()
     }
 
-    pub fn get_object_root(&self, only_explicit: bool) -> Option<Slot> {
+    pub fn object_root(&self, only_explicit: bool) -> Option<Slot> {
         unsafe { slot__get_object_root(self.0, if only_explicit { 1 } else { 0 }) }
             .filter_invalid()
     }
 
-    pub fn get_name(&self) -> Option<String> {
+    pub fn name(&self) -> Option<String> {
         let str = unsafe { slot__get_name(self.0) };
         Some(str.to_str()?.to_string())
     }
