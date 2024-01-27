@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Elements.Core;
 using FrooxEngine;
+using SkyFrost.Base;
 
 namespace Derg
 {
@@ -17,14 +15,30 @@ namespace Derg
             this.world = world;
         }
 
-        public override IWorldElement GetObjectOrNull(RefID refID)
+        public override string GetName() => world.Name;
+
+        public override IWorldElement GetObjectOrNull(RefID refID) =>
+            world.ReferenceController.GetObjectOrNull(refID);
+
+        public override ISlot GetRootSlot() => new SlotProxy(world.RootSlot);
+
+        public override async ValueTask<string> GatherAssetFile(
+            Uri assetURL,
+            float priority,
+            DB_Endpoint? overrideEndpoint = null
+        ) => await world.Engine.AssetManager.GatherAssetFile(assetURL, priority, overrideEndpoint);
+
+        public override Task<T> StartTask<T>(Func<Task<T>> task, IUpdatable updatable = null) =>
+            world.Coroutines.StartTask<T>(task, updatable);
+
+        public override async void ToBackground()
         {
-            return world.ReferenceController.GetObjectOrNull(refID);
+            await new ToBackground();
         }
 
-        public override Slot GetRootSlot()
+        public override async void ToWorld()
         {
-            return world.RootSlot;
+            await new ToWorld();
         }
     }
 }

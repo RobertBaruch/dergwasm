@@ -716,7 +716,7 @@ namespace Derg
                         elemIndexExprs[i] = Module.ReadExpr(stream);
                     }
                     return new ActiveElementSegmentSpec(
-                        ValueType.FUNCREF,
+                        elemType,
                         offsetExpr,
                         tableIdx,
                         elemIndexExprs

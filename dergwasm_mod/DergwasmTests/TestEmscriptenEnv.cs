@@ -11,6 +11,11 @@ namespace DergwasmTests
                 machine.Allocator = this;
              }
 
+        public void ResetMalloc()
+        {
+            ptr = 4;
+        }
+
         public override int Malloc(Frame frame, int size)
         {
             int result = ptr;

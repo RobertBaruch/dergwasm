@@ -15,7 +15,7 @@ namespace Derg
     public class ResoniteEnv
     {
         public Machine machine;
-        IWorldServices worldServices;
+        public IWorldServices worldServices;
         public EmscriptenEnv emscriptenEnv;
 
         public ResoniteEnv(
@@ -171,20 +171,15 @@ namespace Derg
         // This only needs to be called once, when the WASM Machine is initialized and loaded.
         public void RegisterHostFuncs()
         {
-            machine.RegisterReturningHostFunc<ulong, int, int>(
+            machine.RegisterReturningHostFunc<ulong, int, int, int, int>(
                 "env",
-                "component__get_field_value",
-                component__get_field_value
+                "component__get_member",
+                component__get_member
             );
             machine.RegisterReturningHostFunc<ulong, int>(
                 "env",
                 "component__get_type_name",
                 component__get_type_name
-            );
-            machine.RegisterReturningHostFunc<ulong, int, int, int>(
-                "env",
-                "component__set_field_value",
-                component__set_field_value
             );
 
             machine.RegisterReturningHostFunc<ulong>("env", "slot__root_slot", slot__root_slot);
@@ -236,28 +231,34 @@ namespace Derg
                 slot__get_component
             );
 
-            machine.RegisterReturningHostFunc<ulong, int>(
-                "env",
-                "value_field__get_value",
-                value_field__get_value
-            );
-            machine.RegisterReturningHostFunc<ulong, int, int>(
-                "env",
-                "value_field__set_value",
-                value_field__set_value
-            );
+            void RegisterValueGetSet<T>(
+                string name,
+                Func<Frame, ulong, int, int> valueGet,
+                Func<Frame, ulong, int, int> valueSet
+            )
+                where T : unmanaged
+            {
+                machine.RegisterReturningHostFunc<ulong, int, int>(
+                    "env",
+                    $"value__get_{name}",
+                    value__get<T>
+                );
+                machine.RegisterReturningHostFunc<ulong, int, int>(
+                    "env",
+                    $"value__set_{name}",
+                    value__set<T>
+                );
+            }
 
-            machine.RegisterReturningHostFunc<ulong, ulong>(
-                "env",
-                "value_field_proxy__get_source",
-                value_field_proxy__get_source
-            );
+            void RegisterBlitValueGetSet<T>(string name)
+                where T : unmanaged
+            {
+                RegisterValueGetSet<T>(name, value__get<T>, value__set<T>);
+            }
 
-            machine.RegisterReturningHostFunc<ulong, ulong, int>(
-                "env",
-                "value_field_proxy__set_source",
-                value_field_proxy__set_source
-            );
+            RegisterBlitValueGetSet<int>("int");
+            RegisterBlitValueGetSet<float>("float");
+            RegisterBlitValueGetSet<double>("double");
         }
 
         //
@@ -266,7 +267,7 @@ namespace Derg
 
         public ulong slot__root_slot(Frame frame)
         {
-            Slot slot = worldServices.GetRootSlot();
+            ISlot slot = worldServices.GetRootSlot();
             return (ulong)slot.ReferenceID;
         }
 
@@ -367,163 +368,83 @@ namespace Derg
             return emscriptenEnv.AllocateUTF8StringInMem(frame, typeName).Ptr.Addr;
         }
 
-        // Gets the value of a field on a component. The field name is in the given string.
-        // The value is serialized into an allocated area of the heap, and the pointer to it
-        // is returned.
-        //
-        // Returns null if the field doesn't exist, couldn't be gotten, or the value couldn't
-        // be serialized.
-        //
-        // Fields of components are Sync, SyncRef, or SyncDelegate.
-        //
-        // Sync<T> fields contain values, and are SyncField<T>.
-        // SyncRef<T> fields are SyncField<RefID>, where a SyncField contains a field reference (?).
-        // SyncDelegate fields are SyncField<WorldDelegate>.
-        // A WorldDelegate is a {target RefID, method string, type} tuple.
-        //
-        // Some fields are actually properties.
-        //
-        // There are also SyncLists.
-        //
-        // Currently we only support properties, Sync, and SyncRef.
-        public int component__get_field_value(Frame frame, ulong component_id, int namePtr)
+        public enum ResoniteType : int
         {
-            string fieldName = emscriptenEnv.GetUTF8StringFromMem(namePtr);
-            Component component = FromRefID<Component>(component_id);
-            object value;
-            if (!ComponentUtils.GetFieldValue(component, fieldName, out value))
-                return 0;
+            Unknown = 0x0,
 
-            return SimpleSerialization.Serialize(machine, this, frame, value);
+            // TODO: Renumber this to actually make sense.
+            ValueInt = 0x1,
         }
 
-        // Sets the value of a field on a component. The field name is in the given string.
-        // The value is deserialized from memory. Returns 0 on success, or -1 if the field
-        // doesn't exist, couldn't be set, or the value couldn't be deserialized.
-        public int component__set_field_value(
+        private static ResoniteType GetResoniteType(Type type)
+        {
+            if (typeof(IValue<int>).IsAssignableFrom(type))
+            {
+                return ResoniteType.ValueInt;
+            }
+            return ResoniteType.Unknown;
+        }
+
+        public int component__get_member(
             Frame frame,
-            ulong component_id,
+            ulong componentRefId,
             int namePtr,
-            int dataPtr
+            int outTypePtr,
+            int outRefIdPtr
         )
         {
+            Component component = FromRefID<Component>(componentRefId);
+            if (component == null || namePtr == 0 || outTypePtr == 0 || outRefIdPtr == 0)
+            {
+                return -1;
+            }
+
             string fieldName = emscriptenEnv.GetUTF8StringFromMem(namePtr);
-            object value = SimpleSerialization.Deserialize(machine, this, dataPtr);
-            if (value == null)
-                return -1;
-
-            Component component = FromRefID<Component>(component_id);
-            if (!ComponentUtils.SetFieldValue(component, fieldName, value))
-                return -1;
-            return 0;
-        }
-
-        // Gets the value of a ValueField. The value is serialized into an allocated area of
-        // the heap, and the pointer to it is returned.
-        //
-        // Returns null if the value couldn't be gotten or the value couldn't be serialized.
-        public int value_field__get_value(Frame frame, ulong component_id)
-        {
-            IValueSource component = FromRefID<IValueSource>(component_id);
-            if (!(component?.GetType()?.IsOfGenericType(typeof(ValueField<>)) ?? false))
-                return 0;
-            object value = component.BoxedValue;
-
-            return SimpleSerialization.Serialize(machine, this, frame, value);
-        }
-
-        // Sets the value of a ValueField. The value is deserialized from memory.
-        //
-        // Returns 0 on success, or -1 if the component doesn't exist, the value
-        // couldn't be deserialized, or the value couldn't be set.
-        public int value_field__set_value(Frame frame, ulong component_id, int dataPtr)
-        {
-            Component component = FromRefID<Component>(component_id);
-            if (!(component?.GetType()?.IsOfGenericType(typeof(ValueField<>)) ?? false))
-                return -1;
-
-            object value = SimpleSerialization.Deserialize(machine, this, dataPtr);
-            if (!ComponentUtils.SetFieldValue(component, "Value", value))
-                return -1;
-
-            return 0;
-        }
-
-        // Returns the RefID of the field pointed to by the ValueFieldProxy component.
-        public ulong value_field_proxy__get_source(Frame frame, ulong component_id)
-        {
-            Component component = FromRefID<Component>(component_id);
-            if (!(component?.GetType()?.IsOfGenericType(typeof(ValueFieldProxy<>)) ?? false))
-                return 0;
-
-            object source;
-            if (!ComponentUtils.GetFieldValue(component, "Source", out source))
-                return 0;
-            IField field = source as IField;
-            return (ulong?)field?.ReferenceID ?? 0;
-        }
-
-        // Sets the RefID for the field pointed to by the ValueFieldProxy component.
-        //
-        // Returns 0 on success, or -1 if the component doesn't exist.
-        public int value_field_proxy__set_source(Frame frame, ulong component_id, ulong value)
-        {
-            Component component = FromRefID<Component>(component_id);
-            if (!(component?.GetType()?.IsOfGenericType(typeof(ValueFieldProxy<>)) ?? false))
-                return -1;
-
-            IField field = FromRefID<IField>(value);
-            if (!ComponentUtils.SetFieldValue(component, "Source", field))
-                return -1;
-            return 0;
-        }
-
-        // Returns the value of the field pointed to by the ValueFieldProxy component.
-        // The value is serialized into an allocated area of the heap, and the pointer to it
-        // is returned.
-        //
-        // Returns null if the component doesn't exist, its source couldn't be gotten, or
-        // the value couldn't be serialized.
-        public int value_field_proxy__get_value(Frame frame, ulong component_id)
-        {
-            Component component = FromRefID<Component>(component_id);
-            if (!(component?.GetType()?.IsOfGenericType(typeof(ValueFieldProxy<>)) ?? false))
-                return 0;
-
-            object value;
-            if (!ComponentUtils.GetFieldValue(component, "Value", out value))
-                return 0;
-
-            return SimpleSerialization.Serialize(machine, this, frame, value);
-        }
-
-        public int value_field_proxy__set_value(Frame frame, ulong component_id, int dataPtr)
-        {
-            Component component = FromRefID<Component>(component_id);
-            if (!(component?.GetType()?.IsOfGenericType(typeof(ValueFieldProxy<>)) ?? false))
-                return -1;
-
-            object source;
-            if (!ComponentUtils.GetFieldValue(component, "Source", out source))
-                return -1;
-            IField field = source as IField;
-
-            object value = SimpleSerialization.Deserialize(machine, this, dataPtr);
-            if (value == null)
-                return -1;
-
-            // TODO: Should we also check CanWrite?
-            try
+            if (fieldName == null)
             {
-                field.BoxedValue = value;
-            }
-            catch (Exception e)
-            {
-                DergwasmMachine.Msg(
-                    $"Failed to set ValueFieldProxy value on object of type {component.GetType()}: {e}"
-                );
                 return -1;
             }
+
+            var member = component.GetSyncMember(fieldName);
+            if (member == null)
+            {
+                return -1;
+            }
+
+            machine.HeapSet<int>(outTypePtr, (int)GetResoniteType(member.GetType()));
+            machine.HeapSet<ulong>(outRefIdPtr, (ulong)member.ReferenceID);
+            return 0;
+        }
+
+        public int value__get<T>(Frame frame, ulong refId, int outPtr)
+            where T : unmanaged
+        {
+            if (outPtr == 0)
+            {
+                return -1;
+            }
+            var value = FromRefID<IValue<T>>(refId);
+            if (value == null)
+            {
+                return -1;
+            }
+            machine.HeapSet(outPtr, value.Value);
+            return 0;
+        }
+
+        public int value__set<T>(Frame frame, ulong refId, int inPtr)
+            where T : unmanaged
+        {
+            if (inPtr == 0)
+            {
+                return -1;
+            }
+            var value = FromRefID<IValue<T>>(refId);
+            if (value == null)
+            {
+                return -1;
+            }
+            value.Value = machine.HeapGet<T>(inPtr);
             return 0;
         }
     }

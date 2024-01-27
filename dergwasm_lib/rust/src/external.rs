@@ -1,3 +1,4 @@
+use std::ptr::NonNull;
 
 extern "C" {
     //fn malloc(size: usize) -> *mut u8;
@@ -6,20 +7,13 @@ extern "C" {
 
 #[repr(C)]
 pub struct Extern<T> {
-    ptr: *mut T,
+    ptr: Option<NonNull<T>>,
 }
 
 impl<T> Extern<T> {
-    pub fn is_null(&self) -> bool {
-        self.ptr.is_null()
-    }
-
     pub fn get(&self) -> Option<&T> {
-        if self.is_null() {
-            None
-        } else {
-            Some(unsafe { &*self.ptr })
-        }
+        let ptr = self.ptr?;
+        Some(unsafe { ptr.as_ref() })
     }
 }
 
@@ -32,9 +26,9 @@ impl Extern<std::ffi::c_char> {
 
 impl<T> Drop for Extern<T> {
     fn drop(&mut self) {
-        if !self.ptr.is_null() {
+        if let Some(ptr) = self.ptr {
             unsafe {
-                free(self.ptr as *mut u8);
+                free(ptr.as_ptr() as *mut u8);
             }
         }
     }

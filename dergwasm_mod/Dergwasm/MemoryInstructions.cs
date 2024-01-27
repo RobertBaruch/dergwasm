@@ -215,7 +215,7 @@ namespace Derg
             {
                 machine.Heap.AsSpan<byte>((int)d, (int)n).Fill(val);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 throw new Trap(
                     $"memory.fill: Access out of bounds: offset 0x{d:X8} length 0x{n:X8} bytes"
@@ -238,7 +238,7 @@ namespace Derg
             {
                 Array.Copy(mem.Data, s, mem.Data, d, n);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 throw new Trap(
                     $"memory.copy: Access out of bounds: source offset 0x{s:X8}, destination offset 0x{d:X8}, length 0x{n:X8} bytes"
@@ -266,7 +266,7 @@ namespace Derg
             {
                 Array.Copy(data, s_offset, machine.Heap, d_offset, n);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 throw new Trap(
                     $"memory.init: Access out of bounds: source index {dataidx} offset 0x{s_offset:X8}, destination offset 0x{d_offset:X8}, length 0x{n:X8} bytes"
