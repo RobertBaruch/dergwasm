@@ -411,8 +411,8 @@ namespace Derg
                 return -1;
             }
 
-            machine.HeapSet<int>(outTypePtr, (int)GetResoniteType(member.GetType()));
-            machine.HeapSet<ulong>(outRefIdPtr, (ulong)member.ReferenceID);
+            machine.HeapSet(new Ptr<int>(outTypePtr), (int)GetResoniteType(member.GetType()));
+            machine.HeapSet(new Ptr<ulong>(outRefIdPtr), (ulong)member.ReferenceID);
             return 0;
         }
 
@@ -428,7 +428,7 @@ namespace Derg
             {
                 return -1;
             }
-            machine.HeapSet(outPtr, value.Value);
+            machine.HeapSet(new Ptr<T>(outPtr), value.Value);
             return 0;
         }
 
@@ -444,7 +444,7 @@ namespace Derg
             {
                 return -1;
             }
-            value.Value = machine.HeapGet<T>(inPtr);
+            value.Value = machine.HeapGet(new Ptr<T>(inPtr));
             return 0;
         }
     }

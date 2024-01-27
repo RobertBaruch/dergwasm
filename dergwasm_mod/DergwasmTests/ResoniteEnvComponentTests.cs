@@ -1,4 +1,5 @@
 ﻿using Derg;
+using Derg.Wasm;
 using Xunit;
 
 namespace DergwasmTests
@@ -27,8 +28,8 @@ namespace DergwasmTests
         [Fact]
         public void GetMemberTest()
         {
-            int namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
-            int outTypePtr = namePtr + 100;
+            Buff<byte> namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
+            int outTypePtr = namePtr.Ptr.Addr + 100;
             int outRefIdPtr = outTypePtr + sizeof(int);
 
             Assert.Equal(
@@ -36,22 +37,22 @@ namespace DergwasmTests
                 env.component__get_member(
                     frame,
                     (ulong)testComponent.ReferenceID,
-                    namePtr,
+                    namePtr.Ptr.Addr,
                     outTypePtr,
                     outRefIdPtr
                 )
             );
             Assert.Equal(
                 ResoniteEnv.ResoniteType.ValueInt,
-                (ResoniteEnv.ResoniteType)HeapGet<int>(outTypePtr)
+                (ResoniteEnv.ResoniteType)HeapGet(new Ptr<int>(outTypePtr))
             );
-            Assert.Equal(testComponent.IntField.ReferenceID, HeapGet<ulong>(outRefIdPtr));
+            Assert.Equal(testComponent.IntField.ReferenceID, HeapGet(new Ptr<ulong>(outRefIdPtr)));
         }
 
         [Fact]
         public void GetMemberFailsOnNonexistentRefID()
         {
-            int namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
+            int namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField").Ptr.Addr;
             int outTypePtr = namePtr + 100;
             int outRefIdPtr = outTypePtr + sizeof(int);
 
@@ -70,7 +71,7 @@ namespace DergwasmTests
         [Fact]
         public void GetMemberFailsOnNoncomponentRefID()
         {
-            int namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
+            int namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField").Ptr.Addr;
             int outTypePtr = namePtr + 100;
             int outRefIdPtr = outTypePtr + sizeof(int);
 
@@ -108,7 +109,7 @@ namespace DergwasmTests
         [Fact]
         public void GetMemberFailsOnNullTypePtr()
         {
-            int namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
+            int namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField").Ptr.Addr;
             int outTypePtr = 0;
             int outRefIdPtr = outTypePtr + sizeof(int);
 
@@ -127,7 +128,7 @@ namespace DergwasmTests
         [Fact]
         public void GetMemberFailsOnNullRefIdPtr()
         {
-            int namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
+            int namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField").Ptr.Addr;
             int outTypePtr = namePtr + 100;
             int outRefIdPtr = 0;
 
@@ -146,7 +147,7 @@ namespace DergwasmTests
         [Fact]
         public void GetMemberFailsOnNonexistentField()
         {
-            int namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "CatFace");
+            int namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "CatFace").Ptr.Addr;
             int outTypePtr = namePtr + 100;
             int outRefIdPtr = outTypePtr + sizeof(int);
 

@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Derg;
+using Derg.Wasm;
 using Elements.Core;
 using FrooxEngine;
 using Xunit;
@@ -36,7 +37,7 @@ namespace DergwasmTests
                 0,
                 env.value__get<int>(frame, (ulong)testComponent.IntField.ReferenceID, dataPtr)
             );
-            Assert.Equal(0, HeapGet<int>(dataPtr));
+            Assert.Equal(0, HeapGet(new Ptr<int>(dataPtr)));
         }
 
         [Fact]
@@ -49,7 +50,7 @@ namespace DergwasmTests
                 0,
                 env.value__get<int>(frame, (ulong)testComponent.IntField.ReferenceID, dataPtr)
             );
-            Assert.Equal(1, HeapGet<int>(dataPtr));
+            Assert.Equal(1, HeapGet(new Ptr<int>(dataPtr)));
         }
 
         [Fact]
@@ -86,7 +87,7 @@ namespace DergwasmTests
                 0,
                 env.value__get<float>(frame, (ulong)testComponent.FloatField.ReferenceID, dataPtr)
             );
-            Assert.Equal(1, HeapGet<float>(dataPtr));
+            Assert.Equal(1, HeapGet(new Ptr<float>(dataPtr)));
         }
 
         [Fact]
@@ -99,14 +100,14 @@ namespace DergwasmTests
                 0,
                 env.value__get<double>(frame, (ulong)testComponent.DoubleField.ReferenceID, dataPtr)
             );
-            Assert.Equal(1, HeapGet<double>(dataPtr));
+            Assert.Equal(1, HeapGet(new Ptr<double>(dataPtr)));
         }
 
         [Fact]
         public void SetValueTest()
         {
             int dataPtr = 4;
-            HeapSet<int>(dataPtr, 12);
+            HeapSet(new Ptr<int>(dataPtr), 12);
             Assert.Equal(
                 0,
                 env.value__set<int>(frame, (ulong)testComponent.IntField.ReferenceID, dataPtr)
