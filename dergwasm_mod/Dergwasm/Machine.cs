@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Derg.Wasm;
 
 namespace Derg
 {
@@ -24,13 +25,33 @@ namespace Derg
         public List<Memory> memories = new List<Memory>();
         public List<byte[]> dataSegments = new List<byte[]>();
 
-        // Gets a value from the heap at the given address.
+        public IWasmAllocator Allocator;
+
+        public unsafe Ptr<T> HeapAlloc<T>(Frame frame) where T : unmanaged
+        {
+            return Allocator.Malloc(frame, sizeof(T)).Reinterpret<T>();
+        }
+
+        public unsafe Buff<T> HeapAlloc<T>(Frame frame, int count) where T : unmanaged
+        {
+            return Allocator.Malloc(frame, sizeof(T) * count).Reinterpret<T>().ToBuffer(count);
+        }
+
+        public unsafe PrefixBuff<T> HeapAllocPrefix<T>(Frame frame, int count) where T : unmanaged
+        {
+            var prefix = new PrefixBuff<T>(Allocator.Malloc(frame, sizeof(int) + sizeof(T) * count));
+            HeapSet(prefix.Length, count);
+            return prefix;
+        }
+
+        // Gets a value from the heap at the given offset plus the given address ("address"
+        // in the sense of "address within the memory starting at the offset").
         //
-        // Throws a Trap if the address + value size is out of bounds.
-        public unsafe T HeapGet<T>(int addr)
+        // Throws a Trap if the offset + address + size of value is out of bounds.
+        public unsafe T HeapGet<T>(Ptr<T> addr)
             where T : unmanaged
         {
-            Span<byte> mem = HeapSpan(addr, sizeof(T));
+            Span<byte> mem = HeapSpan(addr);
             fixed (byte* ptr = mem)
             {
                 return *(T*)ptr;
@@ -54,7 +75,7 @@ namespace Derg
         // Sets a value on the heap at the given address.
         //
         // Throws a Trap if the address + value size is out of bounds.
-        public unsafe void HeapSet<T>(int addr, T value)
+        public unsafe void HeapSet<T>(Ptr<T> addr, T value)
             where T : unmanaged
         {
             Span<byte> mem = HeapSpan(addr, sizeof(T));
@@ -122,16 +143,24 @@ namespace Derg
         // sizes are ints because that's the way .NET returns array lengths.
         //
         // Throws a Trap if the offset and size are out of bounds.
-        public Span<byte> HeapSpan(int offset, int sz)
+        public unsafe Span<byte> HeapSpan<T>(Ptr<T> offset) where T : unmanaged => HeapSpan(offset, sizeof(T));
+
+        // Returns a Span of bytes over the heap, starting from the given offset,
+        // with the given size. Note that .NET limits arrays to 2GB, so negative
+        // offsets and sizes will lead to an out of bounds condition. Offsets and
+        // sizes are ints because that's the way .NET returns array lengths.
+        //
+        // Throws a Trap if the offset and size are out of bounds.
+        public Span<byte> HeapSpan(Ptr offset, int sz)
         {
             try
             {
-                return Heap.AsSpan(offset, sz);
+                return Heap.AsSpan(offset.Addr, sz);
             }
             catch (Exception)
             {
                 throw new Trap(
-                    $"Memory access out of bounds: offset 0x{(uint)offset:X8} size 0x{(uint)sz:X8}"
+                    $"Memory access out of bounds: offset 0x{(uint)offset.Addr:X8} size 0x{(uint)sz:X8}"
                 );
             }
         }
