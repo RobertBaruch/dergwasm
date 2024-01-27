@@ -186,7 +186,7 @@ namespace Derg
             );
 
             machine.RegisterReturningHostFunc<ulong>("env", "slot__root_slot", slot__root_slot);
-            machine.RegisterReturningHostFunc<WRefId<Slot>, WRefId<Slot>>(
+            machine.RegisterReturningHostFunc<WasmRefID<Slot>, WasmRefID<Slot>>(
                 "env",
                 "slot__get_parent",
                 slot__get_parent
@@ -236,17 +236,17 @@ namespace Derg
 
             void RegisterValueGetSet<T>(
                 string name,
-                Func<Frame, WRefId<IValue<T>>, Ptr<T>, ResoniteError> valueGet,
-                Func<Frame, WRefId<IValue<T>>, Ptr<T>, ResoniteError> valueSet
+                Func<Frame, WasmRefID<IValue<T>>, Ptr<T>, ResoniteError> valueGet,
+                Func<Frame, WasmRefID<IValue<T>>, Ptr<T>, ResoniteError> valueSet
             )
                 where T : unmanaged
             {
-                machine.RegisterReturningHostFunc<WRefId<IValue<T>>, Ptr<T>, ResoniteError>(
+                machine.RegisterReturningHostFunc<WasmRefID<IValue<T>>, Ptr<T>, ResoniteError>(
                     "env",
                     $"value__get_{name}",
                     value__get<T>
                 );
-                machine.RegisterReturningHostFunc<WRefId<IValue<T>>, Ptr<T>, ResoniteError>(
+                machine.RegisterReturningHostFunc<WasmRefID<IValue<T>>, Ptr<T>, ResoniteError>(
                     "env",
                     $"value__set_{name}",
                     value__set<T>
@@ -274,7 +274,7 @@ namespace Derg
             return (ulong)slot.ReferenceID;
         }
 
-        public WRefId<Slot> slot__get_parent(Frame frame, WRefId<Slot> slot)
+        public WasmRefID<Slot> slot__get_parent(Frame frame, WasmRefID<Slot> slot)
         {
             return slot.Get(worldServices)?.Parent.GetWasmRef() ?? default;
         }
@@ -418,7 +418,7 @@ namespace Derg
             return 0;
         }
 
-        public ResoniteError value__get<T>(Frame frame, WRefId<IValue<T>> refId, Ptr<T> outPtr)
+        public ResoniteError value__get<T>(Frame frame, WasmRefID<IValue<T>> refId, Ptr<T> outPtr)
             where T : unmanaged
         {
             if (outPtr.IsNull)
@@ -434,7 +434,7 @@ namespace Derg
             return ResoniteError.Success;
         }
 
-        public ResoniteError value__set<T>(Frame frame, WRefId<IValue<T>> refId, Ptr<T> inPtr)
+        public ResoniteError value__set<T>(Frame frame, WasmRefID<IValue<T>> refId, Ptr<T> inPtr)
             where T : unmanaged
         {
             if (inPtr.IsNull)

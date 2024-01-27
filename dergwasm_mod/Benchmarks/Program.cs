@@ -694,7 +694,7 @@ namespace DergwasmTests
                 {
                     throw new Exception("component__get_member failed");
                 }
-                if (env.value__get(frame, new WRefId<IValue<int>>(HeapGet(outRefIdPtr)), outPtr) != 0)
+                if (env.value__get(frame, new WasmRefID<IValue<int>>(HeapGet(outRefIdPtr)), outPtr) != 0)
                 {
                     throw new Exception("value__get failed");
                 }

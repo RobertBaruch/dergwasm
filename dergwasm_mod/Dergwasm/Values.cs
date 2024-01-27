@@ -77,7 +77,6 @@ namespace Derg
             Add(v => (ResoniteError)v.s32, v => new Value { s32 = (int)v });
             Add(v => new Ptr(v.s32), v => new Value { s32 = v.Addr });
             Add(v => new RefID(v.u64), v => new Value { u64 = (ulong)v });
-            Add(v => new WRefId(v.u64), v => new Value { u64 = v.Id });
         }
 
         private static void Add<T>(Func<Value, T> getter, Func<T, Value> setter)
@@ -96,7 +95,7 @@ namespace Derg
                     var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
                     return method.CreateDelegate<Func<Value, T>>();
                 }
-                if (typeof(T).GetGenericTypeDefinition() == typeof(WRefId<>))
+                if (typeof(T).GetGenericTypeDefinition() == typeof(WasmRefID<>))
                 {
                     var genericMethod = typeof(ValueAccessor).GetMethod(nameof(WRefIdGetter));
                     var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
@@ -111,9 +110,9 @@ namespace Derg
             return v => new Ptr<T>(v.s32);
         }
 
-        private static Func<Value, WRefId<T>> WRefIdGetter<T>() where T : class, IWorldElement
+        private static Func<Value, WasmRefID<T>> WRefIdGetter<T>() where T : class, IWorldElement
         {
-            return v => new WRefId<T>(v.u64);
+            return v => new WasmRefID<T>(v.u64);
         }
 
         private static Func<T, Value> CreateSetter<T>()
@@ -126,7 +125,7 @@ namespace Derg
                     var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
                     return method.CreateDelegate<Func<T, Value>>();
                 }
-                if (typeof(T).GetGenericTypeDefinition() == typeof(WRefId<>))
+                if (typeof(T).GetGenericTypeDefinition() == typeof(WasmRefID<>))
                 {
                     var genericMethod = typeof(ValueAccessor).GetMethod(nameof(WRefIdGetter));
                     var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
@@ -141,7 +140,7 @@ namespace Derg
             return v => new Value { s32 = v.Addr };
         }
 
-        private static Func<WRefId<T>, Value> WRefIdSetter<T>() where T : class, IWorldElement
+        private static Func<WasmRefID<T>, Value> WRefIdSetter<T>() where T : class, IWorldElement
         {
             return v => new Value { u64 = v.Id };
         }

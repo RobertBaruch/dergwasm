@@ -55,7 +55,7 @@ namespace DergwasmTests
         [Fact]
         public void GetValueFailsOnNonexistentRefID()
         {
-            Assert.Equal(ResoniteError.InvalidRefId, env.value__get(frame, new WRefId<IValue<int>>(0xFFFFFFFFFFFFFFFFUL), new Ptr<int>(4)));
+            Assert.Equal(ResoniteError.InvalidRefId, env.value__get(frame, new WasmRefID<IValue<int>>(0xFFFFFFFFFFFFFFFFUL), new Ptr<int>(4)));
         }
 
         [Fact]
@@ -63,7 +63,7 @@ namespace DergwasmTests
         {
             Assert.Equal(
                 ResoniteError.InvalidRefId,
-                env.value__get(frame, new WRefId<IValue<double>>(testComponent.IntField.ReferenceID), new Ptr<double>(4))
+                env.value__get(frame, new WasmRefID<IValue<double>>(testComponent.IntField.ReferenceID), new Ptr<double>(4))
             );
         }
 
@@ -118,7 +118,7 @@ namespace DergwasmTests
         public void SetValueFailsOnNonexistentRefID()
         {
             var dataPtr = new Ptr<int>(4);
-            Assert.Equal(ResoniteError.InvalidRefId, env.value__set(frame, new WRefId<IValue<int>>(0xFFFFFFFFFFFFFFFFUL), dataPtr));
+            Assert.Equal(ResoniteError.InvalidRefId, env.value__set(frame, new WasmRefID<IValue<int>>(0xFFFFFFFFFFFFFFFFUL), dataPtr));
         }
 
         [Fact]
@@ -127,7 +127,7 @@ namespace DergwasmTests
             var dataPtr = new Ptr<double>(4);
             Assert.Equal(
                 ResoniteError.InvalidRefId,
-                env.value__set(frame, new WRefId<IValue<double>>(testComponent.IntField.ReferenceID), dataPtr)
+                env.value__set(frame, new WasmRefID<IValue<double>>(testComponent.IntField.ReferenceID), dataPtr)
             );
         }
 
