@@ -29,7 +29,6 @@ namespace Derg
     }
 
     public class HostProxy<T1> : HostProxy
-        where T1 : unmanaged
     {
         Action<Frame, T1> func;
 
@@ -47,8 +46,6 @@ namespace Derg
     }
 
     public class HostProxy<T1, T2> : HostProxy
-        where T1 : unmanaged
-        where T2 : unmanaged
     {
         Action<Frame, T1, T2> func;
 
@@ -66,9 +63,6 @@ namespace Derg
     }
 
     public class HostProxy<T1, T2, T3> : HostProxy
-        where T1 : unmanaged
-        where T2 : unmanaged
-        where T3 : unmanaged
     {
         Action<Frame, T1, T2, T3> func;
 
@@ -91,10 +85,6 @@ namespace Derg
     }
 
     public class HostProxy<T1, T2, T3, T4> : HostProxy
-        where T1 : unmanaged
-        where T2 : unmanaged
-        where T3 : unmanaged
-        where T4 : unmanaged
     {
         Action<Frame, T1, T2, T3, T4> func;
 
@@ -118,11 +108,6 @@ namespace Derg
     }
 
     public class HostProxy<T1, T2, T3, T4, T5> : HostProxy
-        where T1 : unmanaged
-        where T2 : unmanaged
-        where T3 : unmanaged
-        where T4 : unmanaged
-        where T5 : unmanaged
     {
         Action<Frame, T1, T2, T3, T4, T5> func;
 
@@ -147,12 +132,6 @@ namespace Derg
     }
 
     public class HostProxy<T1, T2, T3, T4, T5, T6> : HostProxy
-        where T1 : unmanaged
-        where T2 : unmanaged
-        where T3 : unmanaged
-        where T4 : unmanaged
-        where T5 : unmanaged
-        where T6 : unmanaged
     {
         Action<Frame, T1, T2, T3, T4, T5, T6> func;
 
@@ -196,8 +175,6 @@ namespace Derg
     }
 
     public class ReturningHostProxy<T1, R> : HostProxy
-        where T1 : unmanaged
-        where R : unmanaged
     {
         Func<Frame, T1, R> func;
 
@@ -217,9 +194,6 @@ namespace Derg
     }
 
     public class ReturningHostProxy<T1, T2, R> : HostProxy
-        where T1 : unmanaged
-        where T2 : unmanaged
-        where R : unmanaged
     {
         Func<Frame, T1, T2, R> func;
 
@@ -239,10 +213,6 @@ namespace Derg
     }
 
     public class ReturningHostProxy<T1, T2, T3, R> : HostProxy
-        where T1 : unmanaged
-        where T2 : unmanaged
-        where T3 : unmanaged
-        where R : unmanaged
     {
         Func<Frame, T1, T2, T3, R> func;
 
@@ -269,11 +239,6 @@ namespace Derg
     }
 
     public class ReturningHostProxy<T1, T2, T3, T4, R> : HostProxy
-        where T1 : unmanaged
-        where T2 : unmanaged
-        where T3 : unmanaged
-        where T4 : unmanaged
-        where R : unmanaged
     {
         Func<Frame, T1, T2, T3, T4, R> func;
 
@@ -301,12 +266,6 @@ namespace Derg
     }
 
     public class ReturningHostProxy<T1, T2, T3, T4, T5, R> : HostProxy
-        where T1 : unmanaged
-        where T2 : unmanaged
-        where T3 : unmanaged
-        where T4 : unmanaged
-        where T5 : unmanaged
-        where R : unmanaged
     {
         Func<Frame, T1, T2, T3, T4, T5, R> func;
 
@@ -335,13 +294,6 @@ namespace Derg
     }
 
     public class ReturningHostProxy<T1, T2, T3, T4, T5, T6, R> : HostProxy
-        where T1 : unmanaged
-        where T2 : unmanaged
-        where T3 : unmanaged
-        where T4 : unmanaged
-        where T5 : unmanaged
-        where T6 : unmanaged
-        where R : unmanaged
     {
         Func<Frame, T1, T2, T3, T4, T5, T6, R> func;
 

@@ -1,12 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 using Derg.Wasm;
 using Elements.Core;
 using FrooxEngine;
 
 namespace Derg
 {
+    public enum ResoniteError : int {
+        Success = 0,
+        NullArgument = -1,
+        InvalidRefId = -2,
+    }
+
     // Provides the functions in resonite_api.h. A ResoniteEnv, like a Machine, is specific
     // to a World.
     //
@@ -40,17 +45,15 @@ namespace Derg
             return FromRefID(slot_id_lo, slot_id_hi) as T;
         }
 
-        public T FromRefID<T>(ulong slot_id)
+        public T FromRefID<T>(RefID slot_id)
             where T : class, IWorldElement
         {
-            RefID refID = new RefID(slot_id);
-            return worldServices.GetObjectOrNull(refID) as T;
+            return worldServices.GetObjectOrNull(slot_id) as T;
         }
 
-        public IWorldElement FromRefID(ulong slot_id)
+        public IWorldElement FromRefID(RefID slot_id)
         {
-            RefID refID = new RefID(slot_id);
-            return worldServices.GetObjectOrNull(refID);
+            return worldServices.GetObjectOrNull(slot_id);
         }
 
         List<Value> ExtractArgs(Slot argsSlot, List<Ptr> allocations)
@@ -183,7 +186,7 @@ namespace Derg
             );
 
             machine.RegisterReturningHostFunc<ulong>("env", "slot__root_slot", slot__root_slot);
-            machine.RegisterReturningHostFunc<ulong, ulong>(
+            machine.RegisterReturningHostFunc<WRefId<Slot>, WRefId<Slot>>(
                 "env",
                 "slot__get_parent",
                 slot__get_parent
@@ -233,17 +236,17 @@ namespace Derg
 
             void RegisterValueGetSet<T>(
                 string name,
-                Func<Frame, ulong, int, int> valueGet,
-                Func<Frame, ulong, int, int> valueSet
+                Func<Frame, WRefId<IValue<T>>, Ptr<T>, ResoniteError> valueGet,
+                Func<Frame, WRefId<IValue<T>>, Ptr<T>, ResoniteError> valueSet
             )
                 where T : unmanaged
             {
-                machine.RegisterReturningHostFunc<ulong, int, int>(
+                machine.RegisterReturningHostFunc<WRefId<IValue<T>>, Ptr<T>, ResoniteError>(
                     "env",
                     $"value__get_{name}",
                     value__get<T>
                 );
-                machine.RegisterReturningHostFunc<ulong, int, int>(
+                machine.RegisterReturningHostFunc<WRefId<IValue<T>>, Ptr<T>, ResoniteError>(
                     "env",
                     $"value__set_{name}",
                     value__set<T>
@@ -271,10 +274,9 @@ namespace Derg
             return (ulong)slot.ReferenceID;
         }
 
-        public ulong slot__get_parent(Frame frame, ulong slot_id)
+        public WRefId<Slot> slot__get_parent(Frame frame, WRefId<Slot> slot)
         {
-            Slot slot = FromRefID<Slot>(slot_id);
-            return ((ulong?)slot?.Parent?.ReferenceID) ?? 0;
+            return slot.Get(worldServices)?.Parent.GetWasmRef() ?? default;
         }
 
         public ulong slot__get_active_user(Frame frame, ulong slot_id)
@@ -416,36 +418,36 @@ namespace Derg
             return 0;
         }
 
-        public int value__get<T>(Frame frame, ulong refId, int outPtr)
+        public ResoniteError value__get<T>(Frame frame, WRefId<IValue<T>> refId, Ptr<T> outPtr)
             where T : unmanaged
         {
-            if (outPtr == 0)
+            if (outPtr.IsNull)
             {
-                return -1;
+                return ResoniteError.NullArgument;
             }
-            var value = FromRefID<IValue<T>>(refId);
+            var value = refId.Get(worldServices);
             if (value == null)
             {
-                return -1;
+                return ResoniteError.InvalidRefId;
             }
-            machine.HeapSet(new Ptr<T>(outPtr), value.Value);
-            return 0;
+            machine.HeapSet(outPtr, value.Value);
+            return ResoniteError.Success;
         }
 
-        public int value__set<T>(Frame frame, ulong refId, int inPtr)
+        public ResoniteError value__set<T>(Frame frame, WRefId<IValue<T>> refId, Ptr<T> inPtr)
             where T : unmanaged
         {
-            if (inPtr == 0)
+            if (inPtr.IsNull)
             {
-                return -1;
+                return ResoniteError.NullArgument;
             }
-            var value = FromRefID<IValue<T>>(refId);
+            var value = refId.Get(worldServices);
             if (value == null)
             {
-                return -1;
+                return ResoniteError.InvalidRefId;
             }
-            value.Value = machine.HeapGet(new Ptr<T>(inPtr));
-            return 0;
+            value.Value = machine.HeapGet(inPtr);
+            return ResoniteError.Success;
         }
     }
 }

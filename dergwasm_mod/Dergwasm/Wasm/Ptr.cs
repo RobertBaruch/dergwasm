@@ -32,7 +32,7 @@ namespace Derg.Wasm
     {
         public readonly int Addr;
 
-        public bool Valid => Addr != 0;
+        public bool IsNull => Addr == 0;
 
         public static Ptr<T> Null => new Ptr<T>(0);
 

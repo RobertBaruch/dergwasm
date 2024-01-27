@@ -1,9 +1,18 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Runtime.InteropServices;
+using Derg.Wasm;
+using Elements.Core;
+using FrooxEngine;
 using LEB128;
+using Microsoft.Win32;
+using MonoMod.Utils;
+using ProtoFlux.Core;
 
 namespace Derg
 {
@@ -47,18 +56,118 @@ namespace Derg
         RETURNING_BLOCK = 2,
     }
 
-    public static class ValueGetter
+    public static class ValueAccessor
     {
-        public static Dictionary<Type, Delegate> valueGetters = new Dictionary<Type, Delegate>
+        private static readonly ConcurrentDictionary<Type, Delegate> valueGetters = new ConcurrentDictionary<Type, Delegate>();
+        private static readonly ConcurrentDictionary<Type, Delegate> valueSetters = new ConcurrentDictionary<Type, Delegate>();
+
+        static ValueAccessor()
         {
-            { typeof(int), new Func<Value, int>(v => v.s32) },
-            { typeof(uint), new Func<Value, uint>(v => v.u32) },
-            { typeof(long), new Func<Value, long>(v => v.s64) },
-            { typeof(ulong), new Func<Value, ulong>(v => v.u64) },
-            { typeof(float), new Func<Value, float>(v => v.f32) },
-            { typeof(double), new Func<Value, double>(v => v.f64) },
-            { typeof(bool), new Func<Value, bool>(v => v.Bool) },
-        };
+            // Identity
+            Add(v => v, v => v);
+            // Primitives
+            Add(v => v.s32, v => new Value { s32 = v });
+            Add(v => v.u32, v => new Value { u32 = v });
+            Add(v => v.s64, v => new Value { s64 = v });
+            Add(v => v.u64, v => new Value { u64 = v });
+            Add(v => v.f32, v => new Value { f32 = v });
+            Add(v => v.f64, v => new Value { f64 = v });
+            Add(v => v.Bool, v => new Value { s32 = v ? 1 : 0 });
+            // Complex Primitives
+            Add(v => (ResoniteError)v.s32, v => new Value { s32 = (int)v });
+            Add(v => new Ptr(v.s32), v => new Value { s32 = v.Addr });
+            Add(v => new RefID(v.u64), v => new Value { u64 = (ulong)v });
+            Add(v => new WRefId(v.u64), v => new Value { u64 = v.Id });
+        }
+
+        private static void Add<T>(Func<Value, T> getter, Func<T, Value> setter)
+        {
+            valueGetters.TryAdd(typeof(T), getter);
+            valueSetters.TryAdd(typeof(T), setter);
+        }
+
+        private static Func<Value, T> CreateGetter<T>()
+        {
+            if (typeof(T).IsConstructedGenericType)
+            {
+                if (typeof(T).GetGenericTypeDefinition() == typeof(Ptr<>))
+                {
+                    var genericMethod = typeof(ValueAccessor).GetMethod(nameof(PtrGetter));
+                    var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
+                    return method.CreateDelegate<Func<Value, T>>();
+                }
+                if (typeof(T).GetGenericTypeDefinition() == typeof(WRefId<>))
+                {
+                    var genericMethod = typeof(ValueAccessor).GetMethod(nameof(WRefIdGetter));
+                    var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
+                    return method.CreateDelegate<Func<Value, T>>();
+                }
+            }
+            throw new NotImplementedException();
+        }
+
+        private static Func<Value, Ptr<T>> PtrGetter<T>() where T : unmanaged
+        {
+            return v => new Ptr<T>(v.s32);
+        }
+
+        private static Func<Value, WRefId<T>> WRefIdGetter<T>() where T : class, IWorldElement
+        {
+            return v => new WRefId<T>(v.u64);
+        }
+
+        private static Func<T, Value> CreateSetter<T>()
+        {
+            if (typeof(T).IsConstructedGenericType)
+            {
+                if (typeof(T).GetGenericTypeDefinition() == typeof(Ptr<>))
+                {
+                    var genericMethod = typeof(ValueAccessor).GetMethod(nameof(PtrGetter));
+                    var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
+                    return method.CreateDelegate<Func<T, Value>>();
+                }
+                if (typeof(T).GetGenericTypeDefinition() == typeof(WRefId<>))
+                {
+                    var genericMethod = typeof(ValueAccessor).GetMethod(nameof(WRefIdGetter));
+                    var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
+                    return method.CreateDelegate<Func<T, Value>>();
+                }
+            }
+            throw new NotImplementedException();
+        }
+
+        private static Func<Ptr<T>, Value> PtrSetter<T>() where T : unmanaged
+        {
+            return v => new Value { s32 = v.Addr };
+        }
+
+        private static Func<WRefId<T>, Value> WRefIdSetter<T>() where T : class, IWorldElement
+        {
+            return v => new Value { u64 = v.Id };
+        }
+
+        public static Func<Value, T> GetConverter<T>()
+        {
+            return (Func<Value, T>)valueGetters.GetOrAdd(typeof(T), k => CreateGetter<T>());
+        }
+
+        public static Func<T, Value> SetConverter<T>()
+        {
+            return (Func<T, Value>)valueSetters.GetOrAdd(typeof(T), k => CreateSetter<T>());
+        }
+    }
+
+    /// <summary>
+    /// A wrapper for <see cref="ValueAccessor"/> that stores retrieved accessors in static fields.
+    /// These fields will be built and accessed once, then retrieved in constant time.
+    /// </summary>
+    public static class ValueAccessor<T>
+    {
+        private static readonly Func<Value, T> _getter = ValueAccessor.GetConverter<T>();
+        private static readonly Func<T, Value> _setter = ValueAccessor.SetConverter<T>();
+
+        public static T Get(in Value val) => _getter(val);
+        public static Value Set(in T val) => _setter(val);
     }
 
     // A value. It is fixed to 128 bits long, which can store
@@ -96,44 +205,36 @@ namespace Derg
         // It takes about 2.8x the time to get a value this way. If you already know
         // the type of the value you're popping, then extract it yourself.
         public T As<T>()
-            where T : unmanaged
         {
-            if (!ValueGetter.valueGetters.TryGetValue(typeof(T), out Delegate getter))
-            {
-                throw new Trap($"Invalid Value.As type {Type.GetTypeCode(typeof(T))}");
-            }
-            return ((Func<Value, T>)getter)(this);
+            return ValueAccessor<T>.Get(this);
         }
 
-        public static ValueType ValueType<T>()
+        public static Value From<T>(T value)
         {
-            switch (Type.GetTypeCode(typeof(T)))
+            return ValueAccessor<T>.Set(value);
+        }
+
+        public unsafe static ValueType ValueType<T>()
+        {
+            if (typeof(T) == typeof(float))
             {
-                case TypeCode.Boolean:
-                    return Derg.ValueType.I32;
-                case TypeCode.Byte:
-                    return Derg.ValueType.I32;
-                case TypeCode.SByte:
-                    return Derg.ValueType.I32;
-                case TypeCode.Int16:
-                    return Derg.ValueType.I32;
-                case TypeCode.UInt16:
-                    return Derg.ValueType.I32;
-                case TypeCode.Int32:
-                    return Derg.ValueType.I32;
-                case TypeCode.UInt32:
-                    return Derg.ValueType.I32;
-                case TypeCode.Int64:
-                    return Derg.ValueType.I64;
-                case TypeCode.UInt64:
-                    return Derg.ValueType.I64;
-                case TypeCode.Single:
-                    return Derg.ValueType.F32;
-                case TypeCode.Double:
-                    return Derg.ValueType.F64;
-                default:
-                    throw new Exception($"Unknown type {typeof(T)}");
+                return Derg.ValueType.F32;
             }
+            else if (typeof(T) == typeof(double))
+            {
+                return Derg.ValueType.F32;
+            }
+#pragma warning disable CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
+            else if (sizeof(T) <= 4)
+            {
+                return Derg.ValueType.I32;
+            }
+            else if (sizeof(T) == 8)
+            {
+                return Derg.ValueType.I64;
+            }
+#pragma warning restore CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
+            throw new Exception($"Unknown type {typeof(T)}");
         }
 
         // Bools are represented as unsigned ints.
