@@ -169,11 +169,6 @@ namespace Derg
         // This only needs to be called once, when the WASM Machine is initialized and loaded.
         public void RegisterHostFuncs()
         {
-            machine.RegisterReturningHostFunc<ulong, int, int>(
-                "env",
-                "component__get_field_value",
-                component__get_field_value
-            );
             machine.RegisterReturningHostFunc<ulong, int, int, int, int>(
                 "env",
                 "component__get_member",
@@ -183,11 +178,6 @@ namespace Derg
                 "env",
                 "component__get_type_name",
                 component__get_type_name
-            );
-            machine.RegisterReturningHostFunc<ulong, int, int, int>(
-                "env",
-                "component__set_field_value",
-                component__set_field_value
             );
 
             machine.RegisterReturningHostFunc<ulong>("env", "slot__root_slot", slot__root_slot);
@@ -374,57 +364,6 @@ namespace Derg
             Component c = FromRefID<Component>(component_id);
             string typeName = c?.GetType().GetNiceName() ?? "";
             return emscriptenEnv.AllocateUTF8StringInMem(frame, typeName);
-        }
-
-        // Gets the value of a field on a component. The field name is in the given string.
-        // The value is serialized into an allocated area of the heap, and the pointer to it
-        // is returned.
-        //
-        // Returns null if the field doesn't exist, couldn't be gotten, or the value couldn't
-        // be serialized.
-        //
-        // Fields of components are Sync, SyncRef, or SyncDelegate.
-        //
-        // Sync<T> fields contain values, and are SyncField<T>.
-        // SyncRef<T> fields are SyncField<RefID>, where a SyncField contains a field reference (?).
-        // SyncDelegate fields are SyncField<WorldDelegate>.
-        // A WorldDelegate is a {target RefID, method string, type} tuple.
-        //
-        // Some fields are actually properties.
-        //
-        // There are also SyncLists.
-        //
-        // Currently we only support properties, Sync, and SyncRef.
-        public int component__get_field_value(Frame frame, ulong component_id, int namePtr)
-        {
-            string fieldName = emscriptenEnv.GetUTF8StringFromMem(namePtr);
-            Component component = FromRefID<Component>(component_id);
-            object value;
-            if (!ComponentUtils.GetFieldValue(component, fieldName, out value))
-                return 0;
-
-            return SimpleSerialization.Serialize(machine, this, frame, value);
-        }
-
-        // Sets the value of a field on a component. The field name is in the given string.
-        // The value is deserialized from memory. Returns 0 on success, or -1 if the field
-        // doesn't exist, couldn't be set, or the value couldn't be deserialized.
-        public int component__set_field_value(
-            Frame frame,
-            ulong component_id,
-            int namePtr,
-            int dataPtr
-        )
-        {
-            string fieldName = emscriptenEnv.GetUTF8StringFromMem(namePtr);
-            object value = SimpleSerialization.Deserialize(machine, this, dataPtr);
-            if (value == null)
-                return -1;
-
-            Component component = FromRefID<Component>(component_id);
-            if (!ComponentUtils.SetFieldValue(component, fieldName, value))
-                return -1;
-            return 0;
         }
 
         public enum ResoniteType : int
