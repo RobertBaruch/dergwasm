@@ -265,7 +265,7 @@ namespace Derg
 
         public ulong slot__root_slot(Frame frame)
         {
-            Slot slot = worldServices.GetRootSlot();
+            ISlot slot = worldServices.GetRootSlot();
             return (ulong)slot.ReferenceID;
         }
 

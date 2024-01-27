@@ -95,7 +95,7 @@ namespace Derg
         // the normalized path to the slot.
         //
         // We do not support binary files yet.
-        public Stream CreateStream(Slot slot, string path, Func<Stream, int> syncer = null)
+        public Stream CreateStream(ISlot slot, string path, Func<Stream, int> syncer = null)
         {
             return CreateStream(
                 path,

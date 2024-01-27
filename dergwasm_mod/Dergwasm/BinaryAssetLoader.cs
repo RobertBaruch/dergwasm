@@ -1,60 +1,52 @@
-﻿using Elements.Core; // For UniLog
-using FrooxEngine;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.IO;
-using System.Linq;
-using System.Text;
+﻿using System;
 using System.Threading.Tasks;
-
-using Derg;
+using Elements.Core; // For UniLog
+using FrooxEngine;
 
 namespace Derg
 {
     public class BinaryAssetLoader
     {
-        public StaticBinary Binary;
-        public Engine Engine;
-        public Slot ByteDisplay;
-        public World world;
+        public ISlot BinarySlot;
+        public ISlot ByteDisplay;
+        public IWorldServices worldServices;
 
-        public BinaryAssetLoader(World world, StaticBinary binary, Slot byteDisplay)
+        public BinaryAssetLoader(IWorldServices worldServices, ISlot binarySlot, ISlot byteDisplay)
         {
-            Engine = world.Engine;
-            Binary = binary;
+            BinarySlot = binarySlot;
             ByteDisplay = byteDisplay;
-            this.world = world;
+            this.worldServices = worldServices;
         }
 
         // Code adapted from BinaryExportable.Export.
         public async Task<string> Load()
         {
             BinaryAssetLoader binaryAssetLoader = this;
-            //if (exportType < 0 || exportType >= 1)
-            //    throw new ArgumentOutOfRangeException(nameof(exportType));
-            FileMetadata metadata = Binary?.Slot.GetComponent<FileMetadata>();
+            StaticBinary binary = BinarySlot.GetComponent<StaticBinary>();
+            if (binary == null)
+            {
+                DergwasmMachine.Msg(
+                    $"Couldn't access WASM StaticBinary component in world {worldServices.GetName()}"
+                );
+                return null;
+            }
+            FileMetadata metadata = BinarySlot.GetComponent<FileMetadata>();
             if (metadata != null)
                 metadata.IsProcessing.Value = true;
-            Uri url = Binary.URL.Value;
-            await new ToBackground();
-            string file = await binaryAssetLoader.Engine.AssetManager
-                .GatherAssetFile(url, 100f)
-                .ConfigureAwait(false);
-            UniLog.Log($"[Dergwasm] Gathered binary asset file {file}");
-            //if (file != null)
-            //{
-            //    string str = Path.Combine(folder, name);
-            //    File.Copy(file, str, true);
-            //    File.SetAttributes(str, FileAttributes.Normal);
-            //}
-            await new ToWorld();
+            Uri url = binary.URL.Value;
+
+            worldServices.ToBackground();
+            string filename = await worldServices.GatherAssetFile(url, 100f);
+            UniLog.Log($"[Dergwasm] Gathered binary asset file {filename}");
+            worldServices.ToWorld();
+
             if (metadata != null)
                 metadata.IsProcessing.Value = false;
-            ByteDisplay.GetComponent<TextRenderer>().Text.Value = $"Loaded to {file}";
+            if (ByteDisplay != null)
+                ByteDisplay.GetComponent<TextRenderer>().Text.Value = $"Loaded to {filename}";
 
-            DergwasmMachine.Init(world, file);
-            return file;
+            DergwasmMachine.Init(worldServices, filename);
+            return filename;
         }
     }
 }
