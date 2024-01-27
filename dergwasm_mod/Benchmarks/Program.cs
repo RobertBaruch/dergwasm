@@ -190,10 +190,10 @@ namespace DergwasmTests
     //
     // | Method             | N   | Mean     | Error     | StdDev    | Ratio | RatioSD |
     // |------------------- |---- |---------:|----------:|----------:|------:|--------:|
-    // | BaselinePushPopInt | 100 | 1.308 us | 0.0262 us | 0.0331 us |  1.00 |    0.00 |
-    // | PopAsInt           | 100 | 3.670 us | 0.0710 us | 0.0629 us |  2.77 |    0.07 |
-    // | PushOverloadInt    | 100 | 1.229 us | 0.0063 us | 0.0053 us |  0.93 |    0.02 |
-    // | PushGenericInt     | 100 | 2.082 us | 0.0379 us | 0.0355 us |  1.58 |    0.06 |
+    // | BaselinePushPopInt | 100 | 1.223 us | 0.0092 us | 0.0082 us |  1.00 |    0.00 |
+    // | PopAsInt           | 100 | 1.506 us | 0.0191 us | 0.0169 us |  1.23 |    0.02 |
+    // | PushOverloadInt    | 100 | 1.240 us | 0.0225 us | 0.0350 us |  1.03 |    0.04 |
+    // | PushGenericInt     | 100 | 1.485 us | 0.0120 us | 0.0106 us |  1.21 |    0.01 |
     [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
     public class PushPop : TestMachine
     {
@@ -276,7 +276,7 @@ namespace DergwasmTests
     //
     // | Method       | N    | Mean     | Error   | StdDev  | Ratio |
     // |------------- |----- |---------:|--------:|--------:|------:|
-    // | HostFuncCall | 1000 | 444.9 us | 8.36 us | 9.30 us |  1.00 |
+    // | HostFuncCall | 1000 | 314.0 us | 4.39 us | 4.11 us |  1.00 |
     [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
     public class HostFuncCallBenchmark : InstructionTestFixture
     {
@@ -694,7 +694,10 @@ namespace DergwasmTests
                 {
                     throw new Exception("component__get_member failed");
                 }
-                if (env.value__get(frame, new WasmRefID<IValue<int>>(HeapGet(outRefIdPtr)), outPtr) != 0)
+                if (
+                    env.value__get(frame, new WasmRefID<IValue<int>>(HeapGet(outRefIdPtr)), outPtr)
+                    != 0
+                )
                 {
                     throw new Exception("value__get failed");
                 }
@@ -709,7 +712,8 @@ namespace DergwasmTests
             emscriptenEnv.ResetMalloc();
             int sum = 0;
             Ptr<int> outPtr = new Ptr<int>(4);
-            var refId = testComponent.IntField.GetWasmRef<IValue<int>>();;
+            var refId = testComponent.IntField.GetWasmRef<IValue<int>>();
+            ;
 
             for (int i = 0; i < N; i++)
             {
