@@ -694,11 +694,11 @@ namespace DergwasmTests
                 {
                     throw new Exception("component__get_member failed");
                 }
-                if (env.value__get<int>(frame, HeapGet(outRefIdPtr), outPtr.Addr) != 0)
+                if (env.value__get(frame, new WRefId<IValue<int>>(HeapGet(outRefIdPtr)), outPtr) != 0)
                 {
                     throw new Exception("value__get failed");
                 }
-                sum += HeapGet<int>(outPtr);
+                sum += HeapGet(outPtr);
             }
             return sum;
         }
@@ -709,11 +709,11 @@ namespace DergwasmTests
             emscriptenEnv.ResetMalloc();
             int sum = 0;
             Ptr<int> outPtr = new Ptr<int>(4);
-            ulong refId = (ulong)testComponent.IntField.ReferenceID;
+            var refId = testComponent.IntField.GetWasmRef<IValue<int>>();;
 
             for (int i = 0; i < N; i++)
             {
-                if (env.value__get<int>(frame, refId, outPtr.Addr) != 0)
+                if (env.value__get(frame, refId, outPtr) != 0)
                 {
                     throw new Exception("value__get failed");
                 }
