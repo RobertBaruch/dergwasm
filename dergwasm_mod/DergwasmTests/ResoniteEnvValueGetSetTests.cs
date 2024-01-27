@@ -14,58 +14,6 @@ namespace DergwasmTests
         Frame frame;
         TestComponent testComponent;
 
-        public class TestComponent : Component
-        {
-            FakeWorldServices worldServices;
-            public Sync<int> IntField;
-            public Sync<float> FloatField;
-            public Sync<double> DoubleField;
-            public SyncRef<TestComponent> ComponentRefField;
-            public SyncRef<IField<int>> IntFieldRefField;
-            public SyncType TypeField;
-
-            public TestComponent(FakeWorldServices worldServices)
-            {
-                this.worldServices = worldServices;
-            }
-
-            protected override void InitializeSyncMembers()
-            {
-                IntField = new Sync<int>();
-                FloatField = new Sync<float>();
-                DoubleField = new Sync<double>();
-                ComponentRefField = new SyncRef<TestComponent>();
-                IntFieldRefField = new SyncRef<IField<int>>();
-                TypeField = new SyncType();
-
-                SetRefId(this);
-                SetRefId(IntField);
-                SetRefId(FloatField);
-                SetRefId(DoubleField);
-                SetRefId(ComponentRefField);
-                SetRefId(IntFieldRefField);
-                SetRefId(TypeField);
-            }
-
-            protected override void OnAwake() { }
-
-            void SetRefId(IWorldElement obj)
-            {
-                // This nonsense is required because Component's ReferenceID has a private setter
-                // in a base class.
-                PropertyInfo propertyInfo = obj.GetType().GetProperty("ReferenceID");
-                var setterMethod = propertyInfo.GetSetMethod(true);
-                if (setterMethod == null)
-                    setterMethod = propertyInfo
-                        .DeclaringType
-                        .GetProperty("ReferenceID")
-                        .GetSetMethod(true);
-                RefID refID = worldServices.GetNextRefID();
-                setterMethod.Invoke(obj, new object[] { refID });
-                worldServices.AddRefID(obj, refID);
-            }
-        }
-
         public ResoniteEnvValueGetSetTests()
         {
             ResonitePatches.Apply();
