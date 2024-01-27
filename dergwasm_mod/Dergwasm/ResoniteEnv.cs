@@ -475,19 +475,15 @@ namespace Derg
             ulong componentRefId,
             int namePtr,
             int outTypePtr,
-            int outRefId
+            int outRefIdPtr
         )
         {
             Component component = FromRefID<Component>(componentRefId);
-            if (component == null)
+            if (component == null || namePtr == 0 || outTypePtr == 0 || outRefIdPtr == 0)
             {
                 return -1;
             }
 
-            if (namePtr == 0)
-            {
-                return -1;
-            }
             string fieldName = emscriptenEnv.GetUTF8StringFromMem(namePtr);
             if (fieldName == null)
             {
@@ -500,17 +496,8 @@ namespace Derg
                 return -1;
             }
 
-            if (outTypePtr == 0)
-            {
-                return -1;
-            }
-            if (outRefId == 0)
-            {
-                return -1;
-            }
-
             machine.HeapSet<int>(outTypePtr, (int)GetResoniteType(member.GetType()));
-            machine.HeapSet<ulong>(outRefId, (ulong)member.ReferenceID);
+            machine.HeapSet<ulong>(outRefIdPtr, (ulong)member.ReferenceID);
             return 0;
         }
 
