@@ -27,7 +27,7 @@ pub enum Member {
 }
 
 impl Component {
-    pub fn get_member(&self, name: &str) -> DergResult<Member> {
+    pub fn member_by_name(&self, name: &str) -> DergResult<Member> {
         let name = CString::new(name).unwrap();
         let mut type_info: i32 = 0;
         let mut field_ref_id = RefId::<Unknown>::default();

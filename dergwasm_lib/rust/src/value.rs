@@ -6,7 +6,7 @@ use crate::{derg_result, DergResult, RefId};
 #[link(wasm_import_module = "env")]
 extern "C" {
     fn value__get_int(refId: RefId<Value<i32>>, val: &mut i32) -> i32;
-    fn value_set_int(refId: RefId<Value<i32>>, val: &i32) -> i32;
+    fn value__set_int(refId: RefId<Value<i32>>, val: &i32) -> i32;
 }
 
 #[repr(C)]
@@ -34,8 +34,7 @@ impl Value<i32> {
         Ok(val)
     }
 
-    pub fn set(&self, val: i32) -> DergResult {
-        derg_result(unsafe { value_set_int(self.0, &val.into()) })
+    pub fn set(&mut self, val: i32) -> DergResult {
+        derg_result(unsafe { value__set_int(self.0, &val.into()) })
     }
 }
-

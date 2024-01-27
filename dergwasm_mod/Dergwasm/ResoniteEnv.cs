@@ -254,7 +254,7 @@ namespace Derg
                 );
                 machine.RegisterReturningHostFunc<ulong, int, int>(
                     "env",
-                    $"value_set_{name}",
+                    $"value__set_{name}",
                     value__set<T>
                 );
             }
@@ -474,6 +474,10 @@ namespace Derg
                 return -1;
             }
 
+            if (namePtr == 0)
+            {
+                return -1;
+            }
             string fieldName = emscriptenEnv.GetUTF8StringFromMem(namePtr);
             if (fieldName == null)
             {
@@ -482,6 +486,15 @@ namespace Derg
 
             var member = component.GetSyncMember(fieldName);
             if (member == null)
+            {
+                return -1;
+            }
+
+            if (outTypePtr == 0)
+            {
+                return -1;
+            }
+            if (outRefId == 0)
             {
                 return -1;
             }
