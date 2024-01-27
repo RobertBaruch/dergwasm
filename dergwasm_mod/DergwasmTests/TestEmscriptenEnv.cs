@@ -7,7 +7,9 @@ namespace DergwasmTests
         int ptr = 4;
 
         public TestEmscriptenEnv()
-            : base(new TestMachine()) { }
+            : base(new TestMachine()) {
+                machine.Allocator = this;
+             }
 
         public override int Malloc(Frame frame, int size)
         {

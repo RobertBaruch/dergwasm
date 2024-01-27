@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Derg.Wasm;
 using Elements.Core; // For UniLog
 using FrooxEngine;
 using FrooxEngine.ProtoFlux;
@@ -108,7 +109,7 @@ namespace Derg
             Output($"> {msg}\n");
         }
 
-        public static void DebugMemHex(int ptr, int size)
+        public static void DebugMemHex(Ptr ptr, int size)
         {
             Span<byte> mem = machine.HeapSpan(ptr, size);
             string collect = "";

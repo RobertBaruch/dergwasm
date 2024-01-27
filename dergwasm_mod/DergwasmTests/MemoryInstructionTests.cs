@@ -172,7 +172,7 @@ namespace DergwasmTests
             machine.Step(3);
 
             Assert.Empty(machine.Frame.value_stack);
-            Assert.Equal(expected, machine.HeapGet<ulong>(0));
+            Assert.Equal(expected, machine.HeapGet<ulong>(0, 0));
         }
 
         [Theory]
@@ -200,7 +200,7 @@ namespace DergwasmTests
             machine.Step(3);
 
             Assert.Empty(machine.Frame.value_stack);
-            Assert.Equal(expected, machine.HeapGet<ulong>(0));
+            Assert.Equal(expected, machine.HeapGet<ulong>(0, 0));
         }
 
         [Theory]
@@ -276,7 +276,7 @@ namespace DergwasmTests
             machine.Step(3);
 
             Assert.Empty(machine.Frame.value_stack);
-            Assert.Equal(expected, machine.HeapGet<ulong>(0));
+            Assert.Equal(expected, machine.HeapGet<ulong>(0, 0));
             Assert.Equal(expected8, machine.Heap[8]);
         }
 
@@ -305,7 +305,7 @@ namespace DergwasmTests
             machine.Step(3);
 
             Assert.Empty(machine.Frame.value_stack);
-            Assert.Equal(expected, machine.HeapGet<ulong>(0));
+            Assert.Equal(expected, machine.HeapGet<ulong>(0, 0));
             Assert.Equal(expected8, machine.Heap[8]);
         }
 

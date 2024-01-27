@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Derg;
+using Derg.Wasm;
 using Elements.Core;
 using FrooxEngine;
 using Xunit;
@@ -168,7 +169,7 @@ namespace DergwasmTests
             SetRefId(valueField, 100);
             valueField.Value.Value = 1;
             int dataPtr = emscriptenEnv.Malloc(frame, 4);
-            env.machine.HeapSet<int>(dataPtr, SimpleSerialization.SimpleType.Unknown);
+            env.machine.HeapSet(new Ptr<int>(dataPtr), SimpleSerialization.SimpleType.Unknown);
 
             Assert.Equal(0, env.value_field__set_value(frame, 100, dataPtr));
             Assert.Equal(0, valueField.Value.Value);
