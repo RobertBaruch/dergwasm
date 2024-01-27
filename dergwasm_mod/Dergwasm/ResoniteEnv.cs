@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Elements.Core;
 using FrooxEngine;
+using ProtoFlux.Core;
 
 namespace Derg
 {
@@ -245,7 +246,8 @@ namespace Derg
                 string name,
                 Func<Frame, ulong, int, int> valueGet,
                 Func<Frame, ulong, int, int> valueSet
-                ) where T : unmanaged
+            )
+                where T : unmanaged
             {
                 machine.RegisterReturningHostFunc<ulong, int, int>(
                     "env",
@@ -259,7 +261,8 @@ namespace Derg
                 );
             }
 
-            void RegisterBlitValueGetSet<T>(string name) where T : unmanaged
+            void RegisterBlitValueGetSet<T>(string name)
+                where T : unmanaged
             {
                 RegisterValueGetSet<T>(name, value__get<T>, value__set<T>);
             }
@@ -453,6 +456,7 @@ namespace Derg
         public enum ResoniteType : int
         {
             Unknown = 0x0,
+
             // TODO: Renumber this to actually make sense.
             ValueInt = 0x1,
         }
@@ -466,7 +470,13 @@ namespace Derg
             return ResoniteType.Unknown;
         }
 
-        public int component__get_member(Frame frame, ulong componentRefId, int namePtr, int outTypePtr, int outRefId)
+        public int component__get_member(
+            Frame frame,
+            ulong componentRefId,
+            int namePtr,
+            int outTypePtr,
+            int outRefId
+        )
         {
             Component component = FromRefID<Component>(componentRefId);
             if (component == null)
@@ -504,8 +514,13 @@ namespace Derg
             return 0;
         }
 
-        public int value__get<T>(Frame frame, ulong refId, int outPtr) where T : unmanaged
+        public int value__get<T>(Frame frame, ulong refId, int outPtr)
+            where T : unmanaged
         {
+            if (outPtr == 0)
+            {
+                return -1;
+            }
             var value = FromRefID<IValue<T>>(refId);
             if (value == null)
             {
@@ -515,8 +530,13 @@ namespace Derg
             return 0;
         }
 
-        public int value__set<T>(Frame frame, ulong refId, int inPtr) where T : unmanaged
+        public int value__set<T>(Frame frame, ulong refId, int inPtr)
+            where T : unmanaged
         {
+            if (inPtr == 0)
+            {
+                return -1;
+            }
             var value = FromRefID<IValue<T>>(refId);
             if (value == null)
             {
