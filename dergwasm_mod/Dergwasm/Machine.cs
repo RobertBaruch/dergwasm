@@ -292,7 +292,6 @@ namespace Derg
         }
 
         public void RegisterVoidHostFunc<T1>(string moduleName, string name, Action<Frame, T1> func)
-            where T1 : unmanaged
         {
             RegisterHostFunc(
                 moduleName,
@@ -307,8 +306,6 @@ namespace Derg
             string name,
             Action<Frame, T1, T2> func
         )
-            where T1 : unmanaged
-            where T2 : unmanaged
         {
             RegisterHostFunc(
                 moduleName,
@@ -326,9 +323,6 @@ namespace Derg
             string name,
             Action<Frame, T1, T2, T3> func
         )
-            where T1 : unmanaged
-            where T2 : unmanaged
-            where T3 : unmanaged
         {
             RegisterHostFunc(
                 moduleName,
@@ -351,10 +345,6 @@ namespace Derg
             string name,
             Action<Frame, T1, T2, T3, T4> func
         )
-            where T1 : unmanaged
-            where T2 : unmanaged
-            where T3 : unmanaged
-            where T4 : unmanaged
         {
             RegisterHostFunc(
                 moduleName,
@@ -378,11 +368,6 @@ namespace Derg
             string name,
             Action<Frame, T1, T2, T3, T4, T5> func
         )
-            where T1 : unmanaged
-            where T2 : unmanaged
-            where T3 : unmanaged
-            where T4 : unmanaged
-            where T5 : unmanaged
         {
             RegisterHostFunc(
                 moduleName,
@@ -422,8 +407,6 @@ namespace Derg
             string name,
             Func<Frame, T1, R> func
         )
-            where T1 : unmanaged
-            where R : unmanaged
         {
             RegisterHostFunc(
                 moduleName,
@@ -441,9 +424,6 @@ namespace Derg
             string name,
             Func<Frame, T1, T2, R> func
         )
-            where T1 : unmanaged
-            where T2 : unmanaged
-            where R : unmanaged
         {
             RegisterHostFunc(
                 moduleName,
@@ -461,10 +441,6 @@ namespace Derg
             string name,
             Func<Frame, T1, T2, T3, R> func
         )
-            where T1 : unmanaged
-            where T2 : unmanaged
-            where T3 : unmanaged
-            where R : unmanaged
         {
             RegisterHostFunc(
                 moduleName,
@@ -487,11 +463,6 @@ namespace Derg
             string name,
             Func<Frame, T1, T2, T3, T4, R> func
         )
-            where T1 : unmanaged
-            where T2 : unmanaged
-            where T3 : unmanaged
-            where T4 : unmanaged
-            where R : unmanaged
         {
             RegisterHostFunc(
                 moduleName,
@@ -515,12 +486,6 @@ namespace Derg
             string name,
             Func<Frame, T1, T2, T3, T4, T5, R> func
         )
-            where T1 : unmanaged
-            where T2 : unmanaged
-            where T3 : unmanaged
-            where T4 : unmanaged
-            where T5 : unmanaged
-            where R : unmanaged
         {
             RegisterHostFunc(
                 moduleName,

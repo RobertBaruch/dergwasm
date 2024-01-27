@@ -95,11 +95,9 @@ namespace Derg
 
         public Value Pop() => value_stack.Pop();
 
-        // This is highly expensive because it does boxing and unboxing. It takes about
-        // 4.5x the time to get a value this way. If you already know the type of the
-        // value you're popping, then extract it yourself.
-        public T Pop<T>()
-            where T : unmanaged => Pop().As<T>();
+        public T Pop<T>() => Pop().As<T>();
+
+        public void Push<T>(in T value) => value_stack.Push(Value.From(value));
 
         public void Push(Value val) => value_stack.Push(val);
 
@@ -116,45 +114,6 @@ namespace Derg
         public void Push(float val) => Push(new Value { f32 = val });
 
         public void Push(double val) => Push(new Value { f64 = val });
-
-        // This is about 1.7x the time of a direct push. If you already know the type of the
-        // value you're pushing, then create the value directly and push it.
-        public void Push<R>(R ret)
-        {
-            switch (ret)
-            {
-                case int r:
-                    Push(new Value { s32 = r });
-                    break;
-
-                case uint r:
-                    Push(new Value { u32 = r });
-                    break;
-
-                case long r:
-                    Push(new Value { s64 = r });
-                    break;
-
-                case ulong r:
-                    Push(new Value { u64 = r });
-                    break;
-
-                case float r:
-                    Push(new Value { f32 = r });
-                    break;
-
-                case double r:
-                    Push(new Value { f64 = r });
-                    break;
-
-                case bool r:
-                    Push(r);
-                    break;
-
-                default:
-                    throw new Trap($"Invalid push type {ret.GetType()}");
-            }
-        }
 
         public int StackLevel() => value_stack.Count;
 
