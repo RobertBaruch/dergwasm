@@ -112,7 +112,7 @@ namespace Derg
 
         public static void DebugMemHex(Ptr ptr, int size)
         {
-            Span<byte> mem = machine.HeapSpan(new Wasm.Pointer(ptr), size);
+            Span<byte> mem = machine.HeapSpan(ptr, size);
             string collect = "";
             for (int i = 0; i < mem.Length; ++i)
             {
