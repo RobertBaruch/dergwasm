@@ -406,50 +406,6 @@ namespace Derg
         public void mp_js_init_repl(Frame frame) =>
             machine.CallExportedFunc("mp_js_init_repl", frame);
 
-        //
-        // C++ exception handling functions.
-        //
-
-        public void __cxa_free_exception(Frame frame, int excPtr) =>
-            machine.CallExportedFunc("__cxa_free_exception", frame, excPtr);
-
-        public void __cxa_increment_exception_refcount(Frame frame, int excPtr) =>
-            machine.CallExportedFunc("__cxa_increment_exception_refcount", frame, excPtr);
-
-        public void __cxa_decrement_exception_refcount(Frame frame, int excPtr) =>
-            machine.CallExportedFunc("__cxa_decrement_exception_refcount", frame, excPtr);
-
-        public void __get_exception_message(
-            Frame frame,
-            int excPtr,
-            int typePtrPtr,
-            int msgPtrPtr
-        ) =>
-            machine.CallExportedFunc(
-                "__get_exception_message",
-                frame,
-                excPtr,
-                typePtrPtr,
-                msgPtrPtr
-            );
-
-        public int __cxa_can_catch(
-            Frame frame,
-            int caughtType,
-            int thrownType,
-            int adjusted_ptrPtr
-        ) =>
-            machine.CallExportedFunc<int, int, int, int>(
-                "__cxa_can_catch",
-                frame,
-                caughtType,
-                thrownType,
-                adjusted_ptrPtr
-            );
-
-        public int __cxa_is_pointer_type(Frame frame, int type) =>
-            machine.CallExportedFunc<int, int>("__cxa_is_pointer_type", frame, type);
-
         // This was present in hello_world.c. It returns a long, but the actual return value
         // is just the low 32 bits. The upper 32 bits get stored in $global1 (although we don't
         // yet support exported globals).
@@ -811,74 +767,6 @@ namespace Derg
             {
                 outputWriter(System.Text.Encoding.UTF8.GetString(data));
             }
-        }
-    }
-
-    // Ported from the Emscripted JavaScript output. Untested.
-    public class EmscriptenExceptionInfo
-    {
-        EmscriptenEnv env;
-        int excPtr;
-        int ptr;
-
-        public EmscriptenExceptionInfo(EmscriptenEnv env, int excPtr)
-        {
-            this.env = env;
-            this.excPtr = excPtr;
-            this.ptr = excPtr - 24;
-        }
-
-        // Initializes native structure fields. Should be called once after allocated.
-        public void Init(int type, int destructor)
-        {
-            AdjustedPtr = 0;
-            Type = type;
-            Destructor = destructor;
-        }
-
-        // Get pointer which is expected to be received by catch clause in C++ code. It may be adjusted
-        // when the pointer is casted to some of the exception object base classes (e.g. when virtual
-        // inheritance is used). When a pointer is thrown this method should return the thrown pointer
-        // itself.
-        public int GetExceptionPtr(Frame frame)
-        {
-            // Work around a fastcomp bug, this code is still included for some reason in a build without
-            // exceptions support.
-            if (env.__cxa_is_pointer_type(frame, Type) != 0)
-            {
-                return env.machine.HeapGet<int>(ptr);
-            }
-            return (AdjustedPtr != 0) ? AdjustedPtr : excPtr;
-        }
-
-        public int Type
-        {
-            get => env.machine.HeapGet<int>(ptr + 4);
-            set => env.machine.HeapSet(ptr + 4, value);
-        }
-
-        public int Destructor
-        {
-            get => env.machine.HeapGet<int>(ptr + 8);
-            set => env.machine.HeapSet(ptr + 8, value);
-        }
-
-        public bool Caught
-        {
-            get => env.machine.HeapGet<byte>(ptr + 12) != 0;
-            set => env.machine.HeapSet(ptr + 12, (byte)(value ? 1 : 0));
-        }
-
-        public bool Rethrown
-        {
-            get => env.machine.HeapGet<byte>(ptr + 13) != 0;
-            set => env.machine.HeapSet(ptr + 13, (byte)(value ? 1 : 0));
-        }
-
-        public int AdjustedPtr
-        {
-            get => env.machine.HeapGet<int>(ptr + 16);
-            set => env.machine.HeapSet(ptr + 16, value);
         }
     }
 }
