@@ -99,7 +99,7 @@ namespace Derg
         // 4.5x the time to get a value this way. If you already know the type of the
         // value you're popping, then extract it yourself.
         public T Pop<T>()
-            where T : unmanaged => ValueGetter.As<T>(Pop()); // Pop().As<T>();
+            where T : unmanaged => Pop().As<T>();
 
         public void Push(Value val) => value_stack.Push(val);
 

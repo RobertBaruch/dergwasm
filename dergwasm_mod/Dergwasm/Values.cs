@@ -49,7 +49,7 @@ namespace Derg
 
     public static class ValueGetter
     {
-        static Dictionary<Type, Delegate> valueGetters = new Dictionary<Type, Delegate>
+        public static Dictionary<Type, Delegate> valueGetters = new Dictionary<Type, Delegate>
         {
             { typeof(int), new Func<Value, int>(v => v.s32) },
             { typeof(uint), new Func<Value, uint>(v => v.u32) },
@@ -59,11 +59,6 @@ namespace Derg
             { typeof(double), new Func<Value, double>(v => v.f64) },
             { typeof(bool), new Func<Value, bool>(v => v.Bool) },
         };
-
-        public static T As<T>(Value value)
-        {
-            return ((Func<Value, T>)valueGetters[typeof(T)])(value);
-        }
     }
 
     // A value. It is fixed to 128 bits long, which can store
@@ -98,37 +93,16 @@ namespace Derg
         public ulong value_hi;
 
         // This is highly expensive because it does boxing and unboxing. It takes about
-        // 4.5x the time to get a value this way. If you already know the type of the
+        // 2.8x the time to get a value this way. If you already know the type of the
         // value you're popping, then extract it yourself.
         public T As<T>()
             where T : unmanaged
         {
-            switch (Type.GetTypeCode(typeof(T)))
+            if (!ValueGetter.valueGetters.TryGetValue(typeof(T), out Delegate getter))
             {
-                case TypeCode.Int32:
-                    return (T)Convert.ChangeType(s32, typeof(T));
-
-                case TypeCode.UInt32:
-                    return (T)Convert.ChangeType(u32, typeof(T));
-
-                case TypeCode.Int64:
-                    return (T)Convert.ChangeType(s64, typeof(T));
-
-                case TypeCode.UInt64:
-                    return (T)Convert.ChangeType(u64, typeof(T));
-
-                case TypeCode.Single:
-                    return (T)Convert.ChangeType(f32, typeof(T));
-
-                case TypeCode.Double:
-                    return (T)Convert.ChangeType(f64, typeof(T));
-
-                case TypeCode.Boolean:
-                    return (T)Convert.ChangeType(Bool, typeof(T));
-
-                default:
-                    throw new Trap($"Invalid Value.As type {Type.GetTypeCode(typeof(T))}");
+                throw new Trap($"Invalid Value.As type {Type.GetTypeCode(typeof(T))}");
             }
+            return ((Func<Value, T>)getter)(this);
         }
 
         public static ValueType ValueType<T>()
