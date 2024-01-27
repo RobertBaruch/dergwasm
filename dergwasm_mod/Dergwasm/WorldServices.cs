@@ -30,5 +30,15 @@ namespace Derg
 
         public override Task<T> StartTask<T>(Func<Task<T>> task, IUpdatable updatable = null) =>
             world.Coroutines.StartTask<T>(task, updatable);
+
+        public override async void ToBackground()
+        {
+            await new ToBackground();
+        }
+
+        public override async void ToWorld()
+        {
+            await new ToWorld();
+        }
     }
 }

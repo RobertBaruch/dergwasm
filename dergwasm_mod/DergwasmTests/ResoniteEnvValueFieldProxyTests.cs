@@ -8,7 +8,7 @@ namespace DergwasmTests
 {
     public class ResoniteEnvValueFieldProxyTests : TestMachine
     {
-        TestWorldServices worldServices;
+        FakeWorldServices worldServices;
         ResoniteEnv env;
         TestEmscriptenEnv emscriptenEnv;
         Frame frame;
@@ -16,7 +16,7 @@ namespace DergwasmTests
         public ResoniteEnvValueFieldProxyTests()
         {
             ResonitePatches.Apply();
-            worldServices = new TestWorldServices();
+            worldServices = new FakeWorldServices();
             emscriptenEnv = new TestEmscriptenEnv();
             env = new ResoniteEnv(this, worldServices, emscriptenEnv);
             frame = emscriptenEnv.EmptyFrame(null);

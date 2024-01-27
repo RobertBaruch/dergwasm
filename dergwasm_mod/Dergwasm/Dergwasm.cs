@@ -91,6 +91,7 @@ namespace Derg
         public static ISlot dergwasmSlot = null;
         public static ISlot consoleSlot = null;
         public static ISlot fsSlot = null; // The equivalent of the root directory in a filesystem.
+        public static bool initialized = false;
 
         public static void Output(string msg)
         {
@@ -137,6 +138,7 @@ namespace Derg
             DergwasmMachine.dergwasmSlot = null;
             consoleSlot = null;
             fsSlot = null;
+            initialized = false;
 
             ISlot dergwasmSlot = worldServices
                 .GetRootSlot()
@@ -172,19 +174,12 @@ namespace Derg
                 Msg(
                     $"Couldn't find byte display slot with tag _dergwasm_byte_display in world {worldServices.GetName()}"
                 );
-                return;
             }
-
-            StaticBinary binary = wasmBinarySlot.GetComponent<StaticBinary>();
-            if (binary == null)
-            {
-                Msg(
-                    $"Couldn't access WASM StaticBinary component in world {worldServices.GetName()}"
-                );
-                return;
-            }
-
-            BinaryAssetLoader loader = new BinaryAssetLoader(worldServices, binary, byteDisplay);
+            BinaryAssetLoader loader = new BinaryAssetLoader(
+                worldServices,
+                wasmBinarySlot,
+                byteDisplay
+            );
 
             Task<string> task = worldServices.StartTask(loader.Load);
             if (task == null)
@@ -251,10 +246,12 @@ namespace Derg
                 // Initialize the primitive serialization buffer. This relies on
                 // having a working malloc in WASM.
                 SimpleSerialization.Initialize(resoniteEnv);
+                initialized = true;
             }
             catch (Exception e)
             {
                 Msg($"Exception: {e}");
+                throw e;
             }
         }
 
