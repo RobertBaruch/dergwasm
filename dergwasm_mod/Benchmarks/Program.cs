@@ -6,6 +6,7 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 using Derg;
+using Derg.Wasm;
 using Elements.Core;
 using FrooxEngine;
 
@@ -676,19 +677,27 @@ namespace DergwasmTests
         {
             emscriptenEnv.ResetMalloc();
             int sum = 0;
-            int namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
-            int outTypePtr = namePtr + 100;
-            int outRefIdPtr = outTypePtr + sizeof(int);
-            int outPtr = outRefIdPtr + sizeof(ulong);
+            Buff<byte> namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
+            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Ptr.Addr + 100);
+            Ptr<ulong> outRefIdPtr = new Ptr<ulong>(outTypePtr.Addr + sizeof(int));
+            Ptr<int> outPtr = new Ptr<int>(outRefIdPtr.Addr + sizeof(ulong));
             ulong refId = (ulong)testComponent.ReferenceID;
 
             for (int i = 0; i < N; i++)
             {
-                if (env.component__get_member(frame, refId, namePtr, outTypePtr, outRefIdPtr) != 0)
+                if (
+                    env.component__get_member(
+                        frame,
+                        refId,
+                        namePtr.Ptr.Addr,
+                        outTypePtr.Addr,
+                        outRefIdPtr.Addr
+                    ) != 0
+                )
                 {
                     throw new Exception("component__get_member failed");
                 }
-                if (env.value__get<int>(frame, HeapGet<ulong>(outRefIdPtr), outPtr) != 0)
+                if (env.value__get<int>(frame, HeapGet(outRefIdPtr), outPtr.Addr) != 0)
                 {
                     throw new Exception("value__get failed");
                 }
@@ -702,16 +711,16 @@ namespace DergwasmTests
         {
             emscriptenEnv.ResetMalloc();
             int sum = 0;
-            int outPtr = 4;
+            Ptr<int> outPtr = new Ptr<int>(4);
             ulong refId = (ulong)testComponent.IntField.ReferenceID;
 
             for (int i = 0; i < N; i++)
             {
-                if (env.value__get<int>(frame, refId, outPtr) != 0)
+                if (env.value__get<int>(frame, refId, outPtr.Addr) != 0)
                 {
                     throw new Exception("value__get failed");
                 }
-                sum += HeapGet<int>(outPtr);
+                sum += HeapGet(outPtr);
             }
             return sum;
         }
