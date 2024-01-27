@@ -15,7 +15,7 @@ namespace Derg
     public class ResoniteEnv
     {
         public Machine machine;
-        IWorldServices worldServices;
+        public IWorldServices worldServices;
         public EmscriptenEnv emscriptenEnv;
 
         public ResoniteEnv(

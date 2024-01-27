@@ -24,19 +24,7 @@ namespace DergwasmTests
             frame = emscriptenEnv.EmptyFrame(null);
 
             testComponent = new TestComponent(worldServices);
-            Initialize(testComponent);
-        }
-
-        void Initialize(Component component)
-        {
-            component
-                .GetType()
-                .GetMethod("InitializeSyncMembers", BindingFlags.NonPublic | BindingFlags.Instance)
-                .Invoke(component, new object[] { });
-            component
-                .GetType()
-                .GetMethod("OnAwake", BindingFlags.NonPublic | BindingFlags.Instance)
-                .Invoke(component, new object[] { });
+            testComponent.Initialize();
         }
 
         [Fact]
