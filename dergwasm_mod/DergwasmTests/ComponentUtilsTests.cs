@@ -7,50 +7,50 @@ using Xunit;
 
 namespace DergwasmTests
 {
-    public class TestComponent : Component
-    {
-        public Sync<int> IntField;
-        public SyncRef<TestComponent> ComponentRefField;
-        public SyncRef<IField<int>> IntFieldRefField;
-        public SyncType TypeField;
-
-        public int IntProperty
-        {
-            get { return IntField.Value; }
-            set { IntField.Value = value; }
-        }
-
-        void SetRefId(object obj, ulong i)
-        {
-            // This nonsense is required because Component's ReferenceID has a private setter
-            // in a base class.
-            PropertyInfo propertyInfo = obj.GetType().GetProperty("ReferenceID");
-            var setterMethod = propertyInfo.GetSetMethod(true);
-            if (setterMethod == null)
-                setterMethod = propertyInfo
-                    .DeclaringType
-                    .GetProperty("ReferenceID")
-                    .GetSetMethod(true);
-            setterMethod.Invoke(obj, new object[] { new RefID(i) });
-        }
-
-        public TestComponent()
-        {
-            IntField = new Sync<int>();
-            ComponentRefField = new SyncRef<TestComponent>();
-            IntFieldRefField = new SyncRef<IField<int>>();
-            TypeField = new SyncType();
-
-            SetRefId(this, 100);
-            SetRefId(IntField, 101);
-            SetRefId(ComponentRefField, 102);
-            SetRefId(IntFieldRefField, 103);
-            SetRefId(TypeField, 104);
-        }
-    }
-
     public class ComponentUtilsTests
     {
+        public class TestComponent : Component
+        {
+            public Sync<int> IntField;
+            public SyncRef<TestComponent> ComponentRefField;
+            public SyncRef<IField<int>> IntFieldRefField;
+            public SyncType TypeField;
+
+            public int IntProperty
+            {
+                get { return IntField.Value; }
+                set { IntField.Value = value; }
+            }
+
+            void SetRefId(object obj, ulong i)
+            {
+                // This nonsense is required because Component's ReferenceID has a private setter
+                // in a base class.
+                PropertyInfo propertyInfo = obj.GetType().GetProperty("ReferenceID");
+                var setterMethod = propertyInfo.GetSetMethod(true);
+                if (setterMethod == null)
+                    setterMethod = propertyInfo
+                        .DeclaringType
+                        .GetProperty("ReferenceID")
+                        .GetSetMethod(true);
+                setterMethod.Invoke(obj, new object[] { new RefID(i) });
+            }
+
+            public TestComponent()
+            {
+                IntField = new Sync<int>();
+                ComponentRefField = new SyncRef<TestComponent>();
+                IntFieldRefField = new SyncRef<IField<int>>();
+                TypeField = new SyncType();
+
+                SetRefId(this, 100);
+                SetRefId(IntField, 101);
+                SetRefId(ComponentRefField, 102);
+                SetRefId(IntFieldRefField, 103);
+                SetRefId(TypeField, 104);
+            }
+        }
+
         public ComponentUtilsTests()
         {
             ResonitePatches.Apply();
