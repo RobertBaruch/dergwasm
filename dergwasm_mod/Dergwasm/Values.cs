@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -46,6 +47,20 @@ namespace Derg
         RETURNING_BLOCK = 2,
     }
 
+    public static class ValueGetter
+    {
+        public static Dictionary<Type, Delegate> valueGetters = new Dictionary<Type, Delegate>
+        {
+            { typeof(int), new Func<Value, int>(v => v.s32) },
+            { typeof(uint), new Func<Value, uint>(v => v.u32) },
+            { typeof(long), new Func<Value, long>(v => v.s64) },
+            { typeof(ulong), new Func<Value, ulong>(v => v.u64) },
+            { typeof(float), new Func<Value, float>(v => v.f32) },
+            { typeof(double), new Func<Value, double>(v => v.f64) },
+            { typeof(bool), new Func<Value, bool>(v => v.Bool) },
+        };
+    }
+
     // A value. It is fixed to 128 bits long, which can store
     // a numeric value (any of I32, I64, F32, F64, V128), or a non-numeric value
     // (a reference or a block operand). Since WASM modules are supposed to be validated,
@@ -78,37 +93,16 @@ namespace Derg
         public ulong value_hi;
 
         // This is highly expensive because it does boxing and unboxing. It takes about
-        // 4.5x the time to get a value this way. If you already know the type of the
+        // 2.8x the time to get a value this way. If you already know the type of the
         // value you're popping, then extract it yourself.
         public T As<T>()
             where T : unmanaged
         {
-            switch (Type.GetTypeCode(typeof(T)))
+            if (!ValueGetter.valueGetters.TryGetValue(typeof(T), out Delegate getter))
             {
-                case TypeCode.Int32:
-                    return (T)Convert.ChangeType(s32, typeof(T));
-
-                case TypeCode.UInt32:
-                    return (T)Convert.ChangeType(u32, typeof(T));
-
-                case TypeCode.Int64:
-                    return (T)Convert.ChangeType(s64, typeof(T));
-
-                case TypeCode.UInt64:
-                    return (T)Convert.ChangeType(u64, typeof(T));
-
-                case TypeCode.Single:
-                    return (T)Convert.ChangeType(f32, typeof(T));
-
-                case TypeCode.Double:
-                    return (T)Convert.ChangeType(f64, typeof(T));
-
-                case TypeCode.Boolean:
-                    return (T)Convert.ChangeType(Bool, typeof(T));
-
-                default:
-                    throw new Trap($"Invalid Value.As type {Type.GetTypeCode(typeof(T))}");
+                throw new Trap($"Invalid Value.As type {Type.GetTypeCode(typeof(T))}");
             }
+            return ((Func<Value, T>)getter)(this);
         }
 
         public static ValueType ValueType<T>()

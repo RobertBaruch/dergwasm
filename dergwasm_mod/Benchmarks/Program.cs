@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -188,15 +188,12 @@ namespace DergwasmTests
     //
     // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
     //
-    // | Method             | N   | Mean     | Error     | StdDev    | Ratio |
-    // |------------------- |---- |---------:|----------:|----------:|------:|
-    // | PushPopInt         | 100 | 1.286 us | 0.0255 us | 0.0238 us |  1.00 |
-    // |                    |     |          |           |           |       |
-    // | PushPopGenericInt  | 100 | 5.886 us | 0.1075 us | 0.0953 us |  1.00 |
-    // |                    |     |          |           |           |       |
-    // | PushOverloadPopInt | 100 | 1.244 us | 0.0140 us | 0.0131 us |  1.00 |
-    // |                    |     |          |           |           |       |
-    // | PushGenericPopInt  | 100 | 2.126 us | 0.0421 us | 0.0468 us |  1.00 |
+    // | Method             | N   | Mean     | Error     | StdDev    | Ratio | RatioSD |
+    // |------------------- |---- |---------:|----------:|----------:|------:|--------:|
+    // | BaselinePushPopInt | 100 | 1.308 us | 0.0262 us | 0.0331 us |  1.00 |    0.00 |
+    // | PopAsInt           | 100 | 3.670 us | 0.0710 us | 0.0629 us |  2.77 |    0.07 |
+    // | PushOverloadInt    | 100 | 1.229 us | 0.0063 us | 0.0053 us |  0.93 |    0.02 |
+    // | PushGenericInt     | 100 | 2.082 us | 0.0379 us | 0.0355 us |  1.58 |    0.06 |
     [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
     public class PushPop : TestMachine
     {
@@ -221,8 +218,8 @@ namespace DergwasmTests
         // | Method     | Mean     | Error    | StdDev   | Median   | Ratio |
         // |----------- |---------:|---------:|---------:|---------:|------:|
         // | PushPopInt | 22.30 ns | 0.414 ns | 0.991 ns | 21.96 ns |  1.00 |
-        [Benchmark]
-        public int PushPopInt()
+        [Benchmark(Baseline = true)]
+        public int BaselinePushPopInt()
         {
             int x = 0;
             for (int i = 0; i < N; i++)
@@ -234,7 +231,7 @@ namespace DergwasmTests
         }
 
         [Benchmark]
-        public int PushPopGenericInt()
+        public int PopAsInt()
         {
             int x = 0;
             for (int i = 0; i < N; i++)
@@ -246,7 +243,7 @@ namespace DergwasmTests
         }
 
         [Benchmark]
-        public int PushOverloadPopInt()
+        public int PushOverloadInt()
         {
             int x = 0;
             for (int i = 0; i < N; i++)
@@ -258,7 +255,7 @@ namespace DergwasmTests
         }
 
         [Benchmark]
-        public int PushGenericPopInt()
+        public int PushGenericInt()
         {
             int x = 0;
             for (int i = 0; i < N; i++)
