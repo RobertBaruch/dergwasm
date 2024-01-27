@@ -4,9 +4,6 @@ using System.IO;
 using System.Text;
 using Derg.Wasm;
 using FrooxEngine;
-using Derg.Mem;
-using Derg.Modules;
-using Derg.Wasm;
 
 namespace Derg
 {
@@ -24,7 +21,6 @@ namespace Derg
         public Func<Stream, int> sync;
     }
 
-    [Mod("wasi_snapshot_preview1")]
     public class EmscriptenWasi
     {
         public const ulong MAX_ARRAY_LENGTH = 0x7FFFFFC7;
@@ -384,7 +380,6 @@ namespace Derg
             throw new ExitTrap(exit_code);
         }
 
-        [ModFn("environ_get")]
         int EnvironGet(Frame frame, int environPtrPtr, int environBufPtr)
         {
             //throw new Trap(
@@ -393,7 +388,6 @@ namespace Derg
             return 0;
         }
 
-        [ModFn("environ_sizes_get")]
         int EnvironSizesGet(Frame frame, int argcPtr, int argvBufSizePtr)
         {
             //throw new Trap(
@@ -435,25 +429,17 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        [ModFn("fd_write")]
         int FdWrite(Frame frame, int fd, int iov, int iovcnt, int nwrittenPtr)
         {
             if (iov == 0)
                 return -Errno.EFAULT;
-            if (fd != 1)
-            {
-                return -Errno.EBADF;
-            }
-
-            Memory mem = machine.GetMemoryFromIndex(0);
-
-            MemoryStream iovStream = new MemoryStream(mem.Data);
-            iovStream.Position = iov;
-            BinaryReader iovReader = new BinaryReader(iovStream);
 
             uint nwritten = 0;
-
+            using (MemoryStream iovStream = new MemoryStream(machine.Heap))
             {
+                iovStream.Position = iov;
+                BinaryReader iovReader = new BinaryReader(iovStream);
+
                 for (int i = 0; i < iovcnt; i++)
                 {
                     int ptr = iovReader.ReadInt32();
@@ -487,8 +473,7 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        [ModFn("fd_seek")]
-        int FdSeek(Frame frame, int fd, long offset, uint whence, Pointer<uint> newOffsetPtr)
+        int FdSeek(Frame frame, int fd, long offset, uint whence, int newOffsetPtr)
         {
             int errno;
             ulong pos = LSeek(fd, offset, whence, out errno);
@@ -514,7 +499,6 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        [ModFn("fd_read")]
         int FdRead(Frame frame, int fd, int iov, int iovcnt, int nreadPtr)
         {
             if (iov == 0)
@@ -554,8 +538,7 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        [ModFn("fd_close")]
-        int FdClose(Frame frame, int fd) => fd_close(fd);
+        int FdClose(Frame frame, int fd) => Close(fd);
 
         // Syncs the file to "disk".
         //
@@ -565,7 +548,5 @@ namespace Derg
         // Returns:
         //    0 on success, or -ERRNO on failure.
         int FdSync(Frame frame, int fd) => Sync(fd);
-        [ModFn("fd_sync")]
-        int FdSync(Frame frame, int fd) => 0;
     }
 }

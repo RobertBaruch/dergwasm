@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
-using Derg.Wasm;
 using System.Threading.Tasks;
 using Derg.Wasm;
 using FrooxEngine;
-using System.Runtime.InteropServices;
 
 namespace Derg
 {
@@ -13,9 +14,7 @@ namespace Derg
     public class LongjmpException : Exception
     {
         public LongjmpException()
-            : base()
-        {
-        }
+            : base() { }
     }
 
     public static class Errno
@@ -57,17 +56,12 @@ namespace Derg
 
         // Allocates `size` bytes in WASM memory and returns the pointer to it.
         // Virtual for testing.
-        public virtual Pointer Malloc(Frame frame, int size)
+        public virtual int Malloc(Frame frame, int size)
         {
             if (frame == null)
                 frame = EmptyFrame();
 
-            return new Pointer(malloc(frame, size));
-        }
-
-        public void Free(Frame frame, Pointer buffer)
-        {
-            free(frame, buffer.Ptr);
+            return malloc(frame, size);
         }
 
         public void Free(Frame frame, int ptr)

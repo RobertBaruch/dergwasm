@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Derg.Modules;
 using Derg.Wasm;
 
 namespace Derg
