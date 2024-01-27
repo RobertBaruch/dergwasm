@@ -12,6 +12,9 @@ namespace DergwasmTests
         public Sync<int> IntField;
         public Sync<float> FloatField;
         public Sync<double> DoubleField;
+        public SyncRef<TestComponent> ComponentRefField;
+        public SyncRef<IField<int>> IntFieldRefField;
+        public SyncType TypeField;
 
         public TestComponent(FakeWorldServices worldServices)
         {
@@ -34,6 +37,12 @@ namespace DergwasmTests
                     return FloatField;
                 case 5:
                     return DoubleField;
+                case 6:
+                    return ComponentRefField;
+                case 7:
+                    return IntFieldRefField;
+                case 8:
+                    return TypeField;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -47,6 +56,9 @@ namespace DergwasmTests
             "IntField",
             "FloatField",
             "DoubleField",
+            "ComponentRefField",
+            "IntFieldRefField",
+            "TypeField",
         };
 
         protected override void InitializeSyncMembers()
@@ -55,11 +67,17 @@ namespace DergwasmTests
             IntField = new Sync<int>();
             FloatField = new Sync<float>();
             DoubleField = new Sync<double>();
+            ComponentRefField = new SyncRef<TestComponent>();
+            IntFieldRefField = new SyncRef<IField<int>>();
+            TypeField = new SyncType();
 
             SetRefId(this);
             SetRefId(IntField);
             SetRefId(FloatField);
             SetRefId(DoubleField);
+            SetRefId(ComponentRefField);
+            SetRefId(IntFieldRefField);
+            SetRefId(TypeField);
         }
 
         protected override void OnAwake()
