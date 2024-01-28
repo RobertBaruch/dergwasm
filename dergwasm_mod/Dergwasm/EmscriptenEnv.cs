@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Derg.Modules;
 using Derg.Wasm;
@@ -61,7 +62,14 @@ namespace Derg
             return malloc(frame, size);
         }
 
-        public void Free(Frame frame, int ptr)
+        public Buff<T> Malloc<T>(Frame frame, int num_elems)
+            where T : unmanaged
+        {
+            int sz = num_elems * Unsafe.SizeOf<T>();
+            return new Buff<T>(Malloc(frame, sz), num_elems);
+        }
+
+        public virtual void Free(Frame frame, int ptr)
         {
             if (frame == null)
                 frame = EmptyFrame();

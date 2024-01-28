@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Derg.Modules;
 using Derg.Wasm;
@@ -217,7 +217,25 @@ namespace Derg
             return worldServices.GetObjectOrNull(slot)?.ChildrenCount ?? 0;
         }
 
-        [ModFn("slot__get_child")]
+        // Gets a list of the children of the given slot, returning a pointer to a buffer
+        // of reference IDs. The caller is responsible for freeing
+        // the memory allocated for the list.
+        public Buff<WasmRefID> slot__get_children(Frame frame, WasmRefID<ISlot> slot)
+        {
+            ISlot s = worldServices.GetObjectOrNull(slot);
+            if (s == null)
+                return default;
+            Buff<WasmRefID> buffer = emscriptenEnv.Malloc<WasmRefID>(frame, s.ChildrenCount);
+            Ptr<WasmRefID> ptr = buffer.Ptr;
+            foreach (ISlot child in s.Children)
+            {
+                WasmRefID<ISlot> refID = child.GetWasmRef();
+                machine.HeapSet(ptr, refID);
+                ptr++;
+            }
+            return buffer;
+        }
+
         public WasmRefID<ISlot> slot__get_child(Frame frame, WasmRefID<ISlot> slot, int index)
         {
             var foundSlot = worldServices.GetObjectOrNull(slot);

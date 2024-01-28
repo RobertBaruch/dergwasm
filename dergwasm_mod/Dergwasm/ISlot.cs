@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using FrooxEngine;
 
 namespace Derg
@@ -17,6 +18,8 @@ namespace Derg
         User ActiveUser { get; }
 
         int ChildrenCount { get; }
+
+        IEnumerable<ISlot> Children { get; }
 
         ISlot this[int childIndex] { get; }
 
