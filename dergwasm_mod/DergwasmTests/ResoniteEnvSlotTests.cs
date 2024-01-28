@@ -1,4 +1,4 @@
-﻿using Derg;
+using Derg;
 using Derg.Wasm;
 using Elements.Core;
 using Xunit;
