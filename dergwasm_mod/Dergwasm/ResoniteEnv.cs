@@ -207,12 +207,12 @@ namespace Derg
                 "slot__get_object_root",
                 slot__get_object_root
             );
-            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, int>(
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, Ptr<byte>>(
                 "env",
                 "slot__get_name",
                 slot__get_name
             );
-            machine.RegisterVoidHostFunc<WasmRefID<ISlot>, int>(
+            machine.RegisterVoidHostFunc<WasmRefID<ISlot>, Ptr<byte>>(
                 "env",
                 "slot__set_name",
                 slot__set_name
@@ -312,13 +312,13 @@ namespace Derg
                     ?.GetWasmRef() ?? default;
         }
 
-        public int slot__get_name(Frame frame, WasmRefID<ISlot> slot)
+        public Ptr<byte> slot__get_name(Frame frame, WasmRefID<ISlot> slot)
         {
             string name = worldServices.GetObjectOrNull(slot)?.Name ?? "";
-            return emscriptenEnv.AllocateUTF8StringInMem(frame, name).Ptr.Addr;
+            return emscriptenEnv.AllocateUTF8StringInMem(frame, name).ToPointer();
         }
 
-        public void slot__set_name(Frame frame, WasmRefID<ISlot> slot, int ptr)
+        public void slot__set_name(Frame frame, WasmRefID<ISlot> slot, Ptr<byte> ptr)
         {
             ISlot islot = worldServices.GetObjectOrNull(slot);
             if (islot == null)

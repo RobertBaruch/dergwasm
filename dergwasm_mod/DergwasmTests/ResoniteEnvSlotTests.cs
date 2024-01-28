@@ -59,7 +59,10 @@ namespace DergwasmTests
         [Fact]
         public void GetNameTest()
         {
-            int dataPtr = env.slot__get_name(frame, new WasmRefID<ISlot>(testSlot.ReferenceID));
+            Ptr<byte> dataPtr = env.slot__get_name(
+                frame,
+                new WasmRefID<ISlot>(testSlot.ReferenceID)
+            );
             Assert.Equal(testSlot.Name, emscriptenEnv.GetUTF8StringFromMem(dataPtr));
         }
 
@@ -67,7 +70,7 @@ namespace DergwasmTests
         public void SetNameTest()
         {
             Buff<byte> buff = emscriptenEnv.AllocateUTF8StringInMem(frame, "new name");
-            env.slot__set_name(frame, new WasmRefID<ISlot>(testSlot.ReferenceID), buff.Ptr.Addr);
+            env.slot__set_name(frame, new WasmRefID<ISlot>(testSlot.ReferenceID), buff.Ptr);
             Assert.Equal("new name", testSlot.Name);
         }
     }

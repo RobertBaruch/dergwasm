@@ -72,22 +72,22 @@ namespace Derg
             free(frame, ptr);
         }
 
-        // Allocates a UTF-8 encoded string in WASM memory in length-data format
+        // Allocates a UTF-8 encoded string on the heap in length-data format
         // and returns the pointer to it. You can pass null as the frame if you're
         // calling this from outside a WASM function. Otherwise pass the frame you're in.
-        public PrefixBuff<byte> AllocateUTF8StringInMemLenData(Frame frame, string s, bool nullTerminated = false)
+        public PrefixBuff<byte> AllocateUTF8StringInMemLenData(
+            Frame frame,
+            string s,
+            bool nullTerminated = false
+        )
         {
             int stringLen = Encoding.UTF8.GetByteCount(s) + (nullTerminated ? 1 : 0);
             PrefixBuff<byte> stringPtr = machine.HeapAllocPrefix<byte>(frame, stringLen);
-            WriteUTF8StringToMem(
-                stringPtr.BufferStart,
-                s,
-                nullTerminated
-            );
+            WriteUTF8StringToMem(stringPtr.BufferStart, s, nullTerminated);
             return stringPtr;
         }
 
-        // Allocates a UTF-8 encoded string in WASM memory and returns the pointer to it.
+        // Allocates a UTF-8 encoded string on the heap and returns the pointer to it.
         // You can pass null as the frame if you're calling this from outside a WASM function.
         // Otherwise pass the frame you're in.
         public Buff<byte> AllocateUTF8StringInMem(Frame frame, string s, bool nullTerminated = true)
@@ -98,6 +98,7 @@ namespace Derg
             return stringPtr;
         }
 
+        // Gets the NUL-terminated UTF8-encoded string at the given pointer in the heap.
         public string GetUTF8StringFromMem(int ptr)
         {
             int endPtr = ptr;
@@ -108,12 +109,29 @@ namespace Derg
             return Encoding.UTF8.GetString(machine.Heap, ptr, endPtr - ptr);
         }
 
+        // Gets the NUL-terminated UTF8-encoded string at the given pointer in the heap.
+        public string GetUTF8StringFromMem(Ptr<byte> ptr)
+        {
+            return GetUTF8StringFromMem(ptr.Addr);
+        }
+
+        // Gets the UTF8-encoded string of the given byte length at the given pointer
+        // in the heap. Because the length is given, the string does not have to be
+        // NUL-terminated.
         public string GetUTF8StringFromMem(int ptr, uint len)
         {
             return Encoding.UTF8.GetString(machine.Heap, ptr, (int)len);
         }
 
-        // Writes a UTF-8 encoded string to the heap. Returns the number of bytes written.
+        // Gets the UTF8-encoded string in the given buffer in the heap. Because the
+        // length is given by the buffer, the string does not have to be NUL-terminated.
+        public string GetUTF8StringFromMem(Buff<byte> buffer)
+        {
+            return Encoding.UTF8.GetString(machine.Heap, buffer.Ptr.Addr, buffer.Length);
+        }
+
+        // Writes a NUL-terminated UTF8-encoded string to the heap. Returns the number
+        // of bytes written.
         public int WriteUTF8StringToMem(Ptr<byte> ptr, string s, bool nullTerminated = false)
         {
             byte[] stringData = Encoding.UTF8.GetBytes(s);
