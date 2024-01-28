@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Derg.Wasm
@@ -27,6 +28,8 @@ namespace Derg.Wasm
 
         public Buff<T> Reinterpret<T>(int length)
             where T : unmanaged => new Buff<T>(Addr, length);
+
+        public static Ptr operator ++(Ptr p) => new Ptr(p.Addr + 1);
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -50,5 +53,7 @@ namespace Derg.Wasm
             where TNew : unmanaged => new Ptr<TNew>(Addr);
 
         public static implicit operator Ptr(Ptr<T> p) => new Ptr(p.Addr);
+
+        public static Ptr<T> operator ++(Ptr<T> p) => new Ptr<T>(p.Addr + Unsafe.SizeOf<T>());
     }
 }
