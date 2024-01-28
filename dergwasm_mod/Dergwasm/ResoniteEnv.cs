@@ -224,14 +224,21 @@ namespace Derg
         public ResoniteError slot__get_children(
             Frame frame,
             WasmRefID<ISlot> slot,
-            Ptr<Buff<WasmRefID>> buffPtr
+            Ptr<Buff<WasmRefID<ISlot>>> buffPtr
         )
         {
+            if (buffPtr.IsNull)
+                return ResoniteError.NullArgument;
+
             ISlot s = worldServices.GetObjectOrNull(slot);
             if (s == null)
                 return ResoniteError.InvalidRefId;
-            Buff<WasmRefID> buffer = emscriptenEnv.Malloc<WasmRefID>(frame, s.ChildrenCount);
-            Ptr<WasmRefID> ptr = buffer.Ptr;
+
+            Buff<WasmRefID<ISlot>> buffer = emscriptenEnv.Malloc<WasmRefID<ISlot>>(
+                frame,
+                s.ChildrenCount
+            );
+            Ptr<WasmRefID<ISlot>> ptr = buffer.Ptr;
             foreach (ISlot child in s.Children)
             {
                 WasmRefID<ISlot> refID = child.GetWasmRef();
@@ -239,6 +246,7 @@ namespace Derg
                 ptr++;
             }
             machine.HeapSet(buffPtr, buffer);
+
             return ResoniteError.Success;
         }
 

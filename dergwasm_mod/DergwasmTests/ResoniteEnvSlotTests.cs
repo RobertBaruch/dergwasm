@@ -74,12 +74,20 @@ namespace DergwasmTests
         [Fact]
         public void GetChildrenTest()
         {
-            Buff<WasmRefID> children = env.slot__get_children(
+            Buff<Buff<WasmRefID<ISlot>>> buff = emscriptenEnv.Malloc<Buff<WasmRefID<ISlot>>>(
                 frame,
-                new WasmRefID<ISlot>(rootSlot)
+                1
             );
+            ResoniteError err = env.slot__get_children(
+                frame,
+                new WasmRefID<ISlot>(rootSlot),
+                buff.Ptr
+            );
+
+            Assert.Equal(ResoniteError.Success, err);
+            Buff<WasmRefID<ISlot>> children = HeapGet(buff.Ptr);
             Assert.Equal(1, children.Length);
-            Ptr<WasmRefID> ptr = children.ToPointer();
+            Ptr<WasmRefID<ISlot>> ptr = children.Ptr;
             WasmRefID childRefID = HeapGet(ptr);
             Assert.Equal(testSlot.ReferenceID, childRefID);
         }
@@ -87,11 +95,47 @@ namespace DergwasmTests
         [Fact]
         public void GetChildrenWithNoChildrenTest()
         {
-            Buff<WasmRefID> children = env.slot__get_children(
+            Buff<Buff<WasmRefID<ISlot>>> buff = emscriptenEnv.Malloc<Buff<WasmRefID<ISlot>>>(
                 frame,
-                new WasmRefID<ISlot>(testSlot)
+                1
             );
+            ResoniteError err = env.slot__get_children(
+                frame,
+                new WasmRefID<ISlot>(testSlot),
+                buff.Ptr
+            );
+
+            Assert.Equal(ResoniteError.Success, err);
+            Buff<WasmRefID<ISlot>> children = HeapGet(buff.Ptr);
             Assert.Equal(0, children.Length);
+        }
+
+        [Fact]
+        public void GetChildrenFailsOnNoBuffer()
+        {
+            ResoniteError err = env.slot__get_children(
+                frame,
+                new WasmRefID<ISlot>(testSlot),
+                new Ptr<Buff<WasmRefID<ISlot>>>(0)
+            );
+
+            Assert.Equal(ResoniteError.NullArgument, err);
+        }
+
+        [Fact]
+        public void GetChildrenFailsOnBadRefID()
+        {
+            Buff<Buff<WasmRefID<ISlot>>> buff = emscriptenEnv.Malloc<Buff<WasmRefID<ISlot>>>(
+                frame,
+                1
+            );
+            ResoniteError err = env.slot__get_children(
+                frame,
+                new WasmRefID<ISlot>(0xFFFFFFFFFFFFFFFFUL),
+                buff.Ptr
+            );
+
+            Assert.Equal(ResoniteError.InvalidRefId, err);
         }
     }
 }

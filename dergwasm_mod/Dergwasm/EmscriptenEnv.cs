@@ -63,7 +63,7 @@ namespace Derg
         }
 
         public Buff<T> Malloc<T>(Frame frame, int num_elems)
-            where T : unmanaged
+            where T : struct
         {
             int sz = num_elems * Unsafe.SizeOf<T>();
             return new Buff<T>(Malloc(frame, sz), num_elems);
