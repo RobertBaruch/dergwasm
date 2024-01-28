@@ -157,7 +157,6 @@ namespace Derg
     }
 
     public class ReturningVoidHostProxy<R> : HostProxy
-        where R : unmanaged
     {
         Func<Frame, R> func;
 

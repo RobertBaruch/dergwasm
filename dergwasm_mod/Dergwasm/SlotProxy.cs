@@ -14,9 +14,14 @@ namespace Derg
     {
         Slot slot;
 
+        // Use this to construct SlotProxy instances. It will return null if
+        // the underlying slot is null.
+        public static SlotProxy SlotProxyFromSlot(Slot slot) =>
+            slot == null ? null : new SlotProxy { slot = slot };
+
         public ISlot Parent
         {
-            get => new SlotProxy(slot.Parent);
+            get => SlotProxyFromSlot(slot.Parent);
             set => slot.Parent = ((SlotProxy)value).slot;
         }
 
@@ -26,7 +31,7 @@ namespace Derg
             {
                 IWorldElement parent = Parent;
                 if (parent.GetType() == typeof(Slot))
-                    return new SlotProxy((Slot)parent);
+                    return SlotProxyFromSlot((Slot)parent);
                 return parent;
             }
         }
@@ -45,6 +50,10 @@ namespace Derg
             set => slot.Tag = value;
         }
 
+        public UserRoot ActiveUserRoot => slot.ActiveUserRoot;
+
+        public User ActiveUser => slot.ActiveUser;
+
         public World World => slot.World;
 
         public bool IsLocalElement => slot.IsLocalElement;
@@ -53,27 +62,39 @@ namespace Derg
 
         public bool IsRemoved => slot.IsRemoved;
 
-        public SlotProxy(Slot slot)
-        {
-            this.slot = slot;
-        }
-
         public ISlot FindChild(Predicate<ISlot> filter, int maxDepth = -1)
         {
-            Predicate<Slot> slotFilter = (s) => filter(new SlotProxy(s));
-            return new SlotProxy(slot.FindChild(slotFilter, maxDepth));
+            Predicate<Slot> slotFilter = (s) => filter(SlotProxyFromSlot(s));
+            return SlotProxyFromSlot(slot.FindChild(slotFilter, maxDepth));
         }
 
-        public ISlot FindChild(string name) => new SlotProxy(slot.FindChild(name));
+        public ISlot FindChild(
+            string name,
+            bool matchSubstring,
+            bool ignoreCase,
+            int maxDepth = -1
+        ) => SlotProxyFromSlot(slot.FindChild(name, matchSubstring, ignoreCase, maxDepth));
+
+        public int ChildrenCount => slot.ChildrenCount;
+
+        public ISlot this[int childIndex] => SlotProxyFromSlot(slot[childIndex]);
+
+        public ISlot FindChild(string name) => SlotProxyFromSlot(slot.FindChild(name));
 
         public T GetComponent<T>(Predicate<T> filter = null, bool excludeDisabled = false)
             where T : class => slot.GetComponent(filter, excludeDisabled);
 
+        public Component GetComponent(Type type, bool exactTypeOnly = false) =>
+            slot.GetComponent(type, exactTypeOnly);
+
         public ISlot AddSlot(string name = "Slot", bool persistent = true) =>
-            new SlotProxy(slot.AddSlot(name, persistent));
+            SlotProxyFromSlot(slot.AddSlot(name, persistent));
 
         public T AttachComponent<T>(bool runOnAttachBehavior = true, Action<T> beforeAttach = null)
             where T : Component, new() => slot.AttachComponent(runOnAttachBehavior, beforeAttach);
+
+        public ISlot GetObjectRoot(bool explicitOnly = false) =>
+            SlotProxyFromSlot(slot.GetObjectRoot(explicitOnly));
 
         public void Destroy() => slot.Destroy();
 
