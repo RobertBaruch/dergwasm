@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
@@ -10,59 +9,6 @@ using FrooxEngine;
 
 namespace DergwasmTests
 {
-    // BenchmarkDotNet v0.13.10, Windows 11 (10.0.22621.2428/22H2/2022Update/SunValley2)
-    // 11th Gen Intel Core i7-11700K 3.60GHz, 1 CPU, 16 logical and 8 physical cores
-    //  [Host]               : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
-    //  .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
-    //
-    // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
-    //
-    // | Method     | Mean      | Error     | StdDev    | Ratio |
-    // |----------- |----------:|----------:|----------:|------:|
-    // | GenericAdd | 2.1387 ns | 0.0603 ns | 0.0471 ns |  1.00 |
-    // |            |           |           |           |       |
-    // | ActualAdd  | 0.0306 ns | 0.0081 ns | 0.0076 ns |  1.00 |
-    public static class Add<T>
-    {
-        public static readonly Func<T, T, T> Do;
-
-        static Add()
-        {
-            var par1 = Expression.Parameter(typeof(T));
-            var par2 = Expression.Parameter(typeof(T));
-
-            var add = Expression.Add(par1, par2);
-
-            Do = Expression.Lambda<Func<T, T, T>>(add, par1, par2).Compile();
-        }
-    }
-
-    [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
-    public class GenericAddBenchmark : TestMachine
-    {
-        private readonly long c1;
-        private readonly long c2;
-
-        public GenericAddBenchmark()
-        {
-            Random r = new Random();
-            c1 = r.Next();
-            c2 = r.Next();
-        }
-
-        [Benchmark]
-        public long GenericAdd()
-        {
-            return Add<long>.Do(c1, c2);
-        }
-
-        [Benchmark]
-        public long ActualAdd()
-        {
-            return c1 + c2;
-        }
-    }
-
     // BenchmarkDotNet v0.13.10, Windows 11 (10.0.22621.2861/22H2/2022Update/SunValley2)
     // 11th Gen Intel Core i7-11700K 3.60GHz, 1 CPU, 16 logical and 8 physical cores
     //   [Host]               : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
@@ -70,33 +16,16 @@ namespace DergwasmTests
     //
     // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
     //
-    // | Method         | Mean     | Error    | StdDev   | Ratio |
-    // |--------------- |---------:|---------:|---------:|------:|
-    // | I32Add         | 77.63 ns | 1.314 ns | 2.158 ns |  1.00 |
-    // |                |          |          |          |       |
-    // | I32AddOverhead | 36.79 ns | 0.372 ns | 0.330 ns |  1.00 |
-
-    // With Value + list:
-    //
-    // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3693/22H2/2022Update)
-    // Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
-    //   [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
-    //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
-    //
-    // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
-    //
-    // | Method         | Mean     | Error    | StdDev   | Ratio |
-    // |--------------- |---------:|---------:|---------:|------:|
-    // | I32Add         | 73.85 ns | 1.497 ns | 1.998 ns |  1.00 |
-    // |                |          |          |          |       |
-    // | I32AddOverhead | 38.75 ns | 0.382 ns | 0.338 ns |  1.00 |
+    // | Method         | Mean     | Error    | StdDev   | Ratio | RatioSD |
+    // |--------------- |---------:|---------:|---------:|------:|--------:|
+    // | I32AddOverhead | 42.62 ns | 0.853 ns | 1.079 ns |  1.00 |    0.00 |
+    // | I32Add         | 69.42 ns | 1.406 ns | 2.904 ns |  1.64 |    0.09 |
     [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
     public class I32AddBenchmark : TestMachine
     {
         Frame frame;
 
-        [GlobalSetup]
-        public void Setup()
+        public I32AddBenchmark()
         {
             frame = CreateFrame();
             ModuleFunc func = new ModuleFunc("test", "$-1", frame.GetFuncTypeForIndex(0));
@@ -111,6 +40,23 @@ namespace DergwasmTests
             frame.Func = func;
         }
 
+        [Benchmark(Baseline = true)]
+        public Value I32AddOverhead()
+        {
+            frame.PC = 0;
+            frame.Push(new Value { u32 = 0x0F });
+            frame.Push(new Value { u32 = 0xFFFFFFFF });
+
+            // Enumulate I32.ADD's effect on the stack without actually adding.
+            frame.Pop();
+            frame.Pop();
+            frame.Push(new Value { u32 = 0x0F });
+
+            return frame.Pop();
+        }
+
+        // This will measure the effect of a step with an add instruction. It shouldn't be
+        // that much more above the overhead than a NOP instruction.
         [Benchmark]
         public Value I32Add()
         {
@@ -120,20 +66,20 @@ namespace DergwasmTests
             frame.Step(this);
             return frame.Pop();
         }
-
-        [Benchmark]
-        public Value I32AddOverhead()
-        {
-            frame.PC = 0;
-            frame.Push(new Value { u32 = 0x0F });
-            frame.Push(new Value { u32 = 0xFFFFFFFF });
-            frame.Pop();
-            frame.Pop();
-            frame.Push(new Value { u32 = 0x0F });
-            return frame.Pop();
-        }
     }
 
+    // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3930/22H2/2022Update)
+    // Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
+    //   [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+    //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
+    //
+    // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
+    //
+    // | Method | N     | Mean      | Error     | StdDev    | Ratio |
+    // |------- |------ |----------:|----------:|----------:|------:|
+    // | Nop    | 1000  |  34.55 us |  0.685 us |  1.629 us |  1.00 |
+    // |        |       |           |           |           |       |
+    // | Nop    | 10000 | 329.40 us | 11.099 us | 32.024 us |  1.00 |
     [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
     public class NopBenchmark : TestMachine
     {

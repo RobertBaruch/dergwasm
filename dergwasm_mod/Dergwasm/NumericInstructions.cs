@@ -78,9 +78,6 @@ namespace Derg
             uint c2 = frame.Pop().u32;
             uint c1 = frame.Pop().u32;
             frame.Push(c1 + c2);
-            //uint c2 = frame.value2_stack.Pop().u32;
-            //uint c1 = frame.value2_stack.Pop().u32;
-            //frame.value2_stack.Push(new Value2 { u32 = c1 + c2 });
         }
 
         public static void I64Add(Instruction instruction, Machine machine, Frame frame)
