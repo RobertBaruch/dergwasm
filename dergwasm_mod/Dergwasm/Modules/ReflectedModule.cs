@@ -42,14 +42,14 @@ namespace Derg.Modules
             ReflectedFuncs = new List<Func<T, HostFunc>>();
             foreach (var method in typeof(T).GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance))
             {
-                if (!method.IsPublic)
-                {
-                    throw new InvalidOperationException($"{method} in {typeof(T)} is not public, but was declared as a module function. Please make it public.");
-                }
                 var modFnAttr = method.GetCustomAttribute<ModFnAttribute>();
                 if (modFnAttr == null)
                 {
                     continue;
+                }
+                if (!method.IsPublic)
+                {
+                    throw new InvalidOperationException($"{method} in {typeof(T)} is not public, but was declared as a module function. Please make it public.");
                 }
 
                 ReflectedFuncs.Add(ReflectCallSite(modFnAttr, method, defaultModule));
