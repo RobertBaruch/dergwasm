@@ -209,19 +209,21 @@ namespace Derg
                 // machine.Debug = true;
 
                 // Register all the environments.
-                emscriptenEnv = new EmscriptenEnv(machine);
-                emscriptenEnv.RegisterHostFuncs();
+                emscriptenEnv = new EmscriptenEnv(machine)
+                {
+                    outputWriter = Output
+                };
                 machine.Allocator = emscriptenEnv;
-                emscriptenEnv.outputWriter = Output;
+                machine.RegisterReflectedModule(emscriptenEnv);
 
                 emscriptenWasi = new EmscriptenWasi(machine, emscriptenEnv);
-                emscriptenWasi.RegisterHostFuncs();
+                machine.RegisterReflectedModule(emscriptenWasi);
 
                 resoniteEnv = new ResoniteEnv(machine, worldServices, emscriptenEnv);
-                resoniteEnv.RegisterHostFuncs();
+                machine.RegisterReflectedModule(resoniteEnv);
 
                 filesystemEnv = new FilesystemEnv(machine, fsSlot, emscriptenEnv, emscriptenWasi);
-                filesystemEnv.RegisterHostFuncs();
+                machine.RegisterReflectedModule(filesystemEnv);
 
                 // Read and parse the WASM file.
                 Module module;
@@ -253,7 +255,7 @@ namespace Derg
             catch (Exception e)
             {
                 Msg($"Exception: {e}");
-                throw e;
+                throw;
             }
         }
 

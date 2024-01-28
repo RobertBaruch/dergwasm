@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using Derg.Modules;
 using FrooxEngine;
 
 namespace Derg
@@ -21,6 +22,7 @@ namespace Derg
     // Except for the root slot, the name of the file or directory is the name of its slot.
     //
     // The code acts so that the parent of the root slot is the root slot itself.
+    [Mod("env")]
     public class FilesystemEnv
     {
         public Machine machine;
@@ -40,73 +42,6 @@ namespace Derg
             this.fsRoot = fsRootSlot;
             this.env = emscriptenEnv;
             this.wasi = wasi;
-        }
-
-        // Functions callable from WASM.
-        public void RegisterHostFuncs()
-        {
-            machine.RegisterReturningHostFunc<int, int>("env", "__syscall_chdir", __syscall_chdir);
-            machine.RegisterReturningHostFunc<int, int>("env", "__syscall_rmdir", __syscall_rmdir);
-            machine.RegisterReturningHostFunc<int, int, int>(
-                "env",
-                "__syscall_getcwd",
-                __syscall_getcwd
-            );
-            machine.RegisterReturningHostFunc<int, int, int, int>(
-                "env",
-                "__syscall_mkdirat",
-                __syscall_mkdirat
-            );
-            machine.RegisterReturningHostFunc<int, int, int, int, int>(
-                "env",
-                "__syscall_openat",
-                __syscall_openat
-            );
-            machine.RegisterReturningHostFunc<int, int, int, int, int>(
-                "env",
-                "__syscall_renameat",
-                __syscall_renameat
-            );
-            machine.RegisterReturningHostFunc<int, int, int, int>(
-                "env",
-                "__syscall_unlinkat",
-                __syscall_unlinkat
-            );
-            machine.RegisterReturningHostFunc<int, int, int, int, int>(
-                "env",
-                "__syscall_newfstatat",
-                __syscall_newfstatat
-            );
-            machine.RegisterReturningHostFunc<int, int, int, int>(
-                "env",
-                "__syscall_poll",
-                __syscall_poll
-            );
-            machine.RegisterReturningHostFunc<int, int, int, int>(
-                "env",
-                "__syscall_getdents64",
-                __syscall_getdents64
-            );
-            machine.RegisterReturningHostFunc<int, int, int>(
-                "env",
-                "__syscall_fstat64",
-                __syscall_fstat64
-            );
-            machine.RegisterReturningHostFunc<int, int, int>(
-                "env",
-                "__syscall_stat64",
-                __syscall_stat64
-            );
-            machine.RegisterReturningHostFunc<int, int, int>(
-                "env",
-                "__syscall_lstat64",
-                __syscall_lstat64
-            );
-            machine.RegisterReturningHostFunc<int, int, int, int>(
-                "env",
-                "__syscall_statfs64",
-                __syscall_statfs64
-            );
         }
 
         // From emscripten/system/lib/libc/musl/include/fcntl.h
@@ -421,6 +356,7 @@ namespace Derg
         // syscalls, from emscripten/src/library_syscall.js
 
         // Changes the current working directory of the WASM machine.
+        [ModFn("__syscall_chdir")]
         public int __syscall_chdir(Frame frame, int pathPtr)
         {
             string path = env.GetUTF8StringFromMem(pathPtr);
@@ -432,6 +368,7 @@ namespace Derg
             return chdir_absolute(cwd + "/" + path);
         }
 
+        [ModFn("__syscall_rmdir")]
         public int __syscall_rmdir(Frame frame, int pathPtr)
         {
             string path = env.GetUTF8StringFromMem(pathPtr);
@@ -458,6 +395,7 @@ namespace Derg
 
         // Gets the current working directory of the WASM machine, putting it into the
         // given buffer, which is of the given size.
+        [ModFn("__syscall_getcwd")]
         public int __syscall_getcwd(Frame frame, int buf, int size)
         {
             DergwasmMachine.Msg($"__syscall_getcwd: cwd={cwd}");
@@ -471,6 +409,7 @@ namespace Derg
             return 0;
         }
 
+        [ModFn("__syscall_mkdirat")]
         public int __syscall_mkdirat(Frame frame, int dirfd, int pathPtr, int mode)
         {
             string path = env.GetUTF8StringFromMem(pathPtr);
@@ -486,6 +425,7 @@ namespace Derg
         // We also currently don't allow opening directories.
         //
         // Returns the opened file descriptor on success, or -ERRNO on failure.
+        [ModFn("__syscall_openat")]
         public int __syscall_openat(Frame frame, int dirfd, int pathPtr, int flags, int mode)
         {
             string path = env.GetUTF8StringFromMem(pathPtr);
@@ -520,6 +460,7 @@ namespace Derg
             return fd;
         }
 
+        [ModFn("__syscall_renameat")]
         public int __syscall_renameat(
             Frame frame,
             int olddirfd,
@@ -528,9 +469,11 @@ namespace Derg
             int newpathPtr
         ) => throw new NotImplementedException();
 
+        [ModFn("__syscall_unlinkat")]
         public int __syscall_unlinkat(Frame frame, int dirfd, int pathPtr, int flags) =>
             throw new NotImplementedException();
 
+        [ModFn("__syscall_newfstatat")]
         public int __syscall_newfstatat(Frame frame, int dirfd, int pathPtr, int buf, int flags)
         {
             string path = env.GetUTF8StringFromMem(pathPtr);
@@ -556,18 +499,22 @@ namespace Derg
             throw new NotImplementedException();
         }
 
+        [ModFn("__syscall_poll")]
         public int __syscall_poll(Frame frame, int fdsPtr, int nfds, int timeout) =>
             throw new NotImplementedException();
 
         // Reads directory entries from the given directory file descriptor. The dirp buffer contains
         // `count` bytes. You can call this function multiple times to read all the entries.
+        [ModFn("__syscall_getdents64")]
         public int __syscall_getdents64(Frame frame, int fd, int dirp, int count) =>
             throw new NotImplementedException();
 
+        [ModFn("__syscall_fstat64")]
         public int __syscall_fstat64(Frame frame, int fd, int buf) =>
             throw new NotImplementedException();
 
         // Stats the given file. The buffer must be large enough to hold a Stat struct.
+        [ModFn("__syscall_stat64")]
         public int __syscall_stat64(Frame frame, int pathPtr, int buf)
         {
             string path = env.GetUTF8StringFromMem(pathPtr);
@@ -616,6 +563,7 @@ namespace Derg
             return 0;
         }
 
+        [ModFn("__syscall_lstat64")]
         public int __syscall_lstat64(Frame frame, int pathPtr, int buf)
         {
             string path = env.GetUTF8StringFromMem(pathPtr);
@@ -623,6 +571,7 @@ namespace Derg
             throw new NotImplementedException();
         }
 
+        [ModFn("__syscall_statfs64")]
         public int __syscall_statfs64(Frame frame, int pathPtr, int size, int buf)
         {
             string path = env.GetUTF8StringFromMem(pathPtr);

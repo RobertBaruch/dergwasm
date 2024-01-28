@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Derg.Modules;
 using Derg.Wasm;
 using FrooxEngine;
 
@@ -21,6 +22,7 @@ namespace Derg
         public Func<Stream, int> sync;
     }
 
+    [Mod("wasi_snapshot_preview1")]
     public class EmscriptenWasi
     {
         public const ulong MAX_ARRAY_LENGTH = 0x7FFFFFC7;
@@ -37,47 +39,6 @@ namespace Derg
         {
             this.machine = machine;
             this.emscriptenEnv = emscriptenEnv;
-        }
-
-        public void RegisterHostFuncs()
-        {
-            machine.RegisterReturningHostFunc<int, int, int>(
-                "wasi_snapshot_preview1",
-                "environ_get",
-                EnvironGet
-            );
-            machine.RegisterReturningHostFunc<int, int, int>(
-                "wasi_snapshot_preview1",
-                "environ_sizes_get",
-                EnvironSizesGet
-            );
-
-            machine.RegisterVoidHostFunc<int>("wasi_snapshot_preview1", "proc_exit", ProcExit);
-            machine.RegisterReturningHostFunc<int, int, int, int, int>(
-                "wasi_snapshot_preview1",
-                "fd_write",
-                FdWrite
-            );
-            machine.RegisterReturningHostFunc<int, long, uint, int, int>(
-                "wasi_snapshot_preview1",
-                "fd_seek",
-                FdSeek
-            );
-            machine.RegisterReturningHostFunc<int, int, int, int, int>(
-                "wasi_snapshot_preview1",
-                "fd_read",
-                FdRead
-            );
-            machine.RegisterReturningHostFunc<int, int>(
-                "wasi_snapshot_preview1",
-                "fd_close",
-                FdClose
-            );
-            machine.RegisterReturningHostFunc<int, int>(
-                "wasi_snapshot_preview1",
-                "fd_sync",
-                FdSync
-            );
         }
 
         int getAvailableFd()
@@ -373,14 +334,16 @@ namespace Derg
         //
         // Raises:
         //   ExitTrap: Always raises this exception.
-        void ProcExit(Frame frame, int exit_code)
+        [ModFn("proc_exit")]
+        public void ProcExit(Frame frame, int exit_code)
         {
             foreach (int fd in streams.Keys)
                 Close(fd);
             throw new ExitTrap(exit_code);
         }
 
-        int EnvironGet(Frame frame, int environPtrPtr, int environBufPtr)
+        [ModFn("environ_get")]
+        public int EnvironGet(Frame frame, int environPtrPtr, int environBufPtr)
         {
             //throw new Trap(
             //    $"Unimplemented call to EnvironGet(0x{environPtrPtr:X8}, 0x{environBufPtr:X8})"
@@ -388,7 +351,8 @@ namespace Derg
             return 0;
         }
 
-        int EnvironSizesGet(Frame frame, int argcPtr, int argvBufSizePtr)
+        [ModFn("environ_sizes_get")]
+        public int EnvironSizesGet(Frame frame, int argcPtr, int argvBufSizePtr)
         {
             //throw new Trap(
             //    $"Unimplemented call to EnvironSizesGet(0x{argcPtr:X8}, 0x{argvBufSizePtr:X8})"
@@ -429,7 +393,8 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdWrite(Frame frame, int fd, int iov, int iovcnt, int nwrittenPtr)
+        [ModFn("fd_write")]
+        public int FdWrite(Frame frame, int fd, int iov, int iovcnt, int nwrittenPtr)
         {
             if (iov == 0)
                 return -Errno.EFAULT;
@@ -473,7 +438,8 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdSeek(Frame frame, int fd, long offset, uint whence, int newOffsetPtr)
+        [ModFn("fd_seek")]
+        public int FdSeek(Frame frame, int fd, long offset, uint whence, int newOffsetPtr)
         {
             int errno;
             ulong pos = LSeek(fd, offset, whence, out errno);
@@ -499,7 +465,8 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdRead(Frame frame, int fd, int iov, int iovcnt, int nreadPtr)
+        [ModFn("fd_read")]
+        public int FdRead(Frame frame, int fd, int iov, int iovcnt, int nreadPtr)
         {
             if (iov == 0)
                 return -Errno.EFAULT;
@@ -538,7 +505,8 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdClose(Frame frame, int fd) => Close(fd);
+        [ModFn("fd_close")]
+        public int FdClose(Frame frame, int fd) => Close(fd);
 
         // Syncs the file to "disk".
         //
@@ -547,6 +515,7 @@ namespace Derg
         //
         // Returns:
         //    0 on success, or -ERRNO on failure.
-        int FdSync(Frame frame, int fd) => Sync(fd);
+        [ModFn("fd_sync")]
+        public int FdSync(Frame frame, int fd) => Sync(fd);
     }
 }

@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Derg.Modules;
 using Derg.Wasm;
 using Elements.Core;
 using FrooxEngine;
@@ -18,6 +19,7 @@ namespace Derg
     //
     // In the API, we don't use anything other than ints, longs, floats, and doubles.
     // Pointers to memory are uints.
+    [Mod("env")]
     public class ResoniteEnv
     {
         public Machine machine;
@@ -35,26 +37,10 @@ namespace Derg
             this.emscriptenEnv = emscriptenEnv;
         }
 
-        public IWorldElement FromRefID(uint slot_id_lo, uint slot_id_hi)
-        {
-            return FromRefID(((ulong)slot_id_hi << 32) | slot_id_lo);
-        }
-
-        public T FromRefID<T>(uint slot_id_lo, uint slot_id_hi)
-            where T : class, IWorldElement
-        {
-            return FromRefID(slot_id_lo, slot_id_hi) as T;
-        }
-
         public T FromRefID<T>(RefID slot_id)
             where T : class, IWorldElement
         {
             return worldServices.GetObjectOrNull(slot_id) as T;
-        }
-
-        public IWorldElement FromRefID(RefID slot_id)
-        {
-            return worldServices.GetObjectOrNull(slot_id);
         }
 
         List<Value> ExtractArgs(Slot argsSlot, List<Ptr> allocations)
@@ -169,139 +155,34 @@ namespace Derg
         }
 
         //
-        // Host function registration.
-        //
-
-        // This only needs to be called once, when the WASM Machine is initialized and loaded.
-        public void RegisterHostFuncs()
-        {
-            machine.RegisterReturningHostFunc<
-                WasmRefID<Component>,
-                Ptr<byte>,
-                Ptr<int>,
-                Ptr<ulong>,
-                int
-            >("env", "component__get_member", component__get_member);
-            machine.RegisterReturningHostFunc<WasmRefID<Component>, Ptr<byte>>(
-                "env",
-                "component__get_type_name",
-                component__get_type_name
-            );
-
-            machine.RegisterReturningHostFunc("env", "slot__root_slot", slot__root_slot);
-            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, WasmRefID<ISlot>>(
-                "env",
-                "slot__get_parent",
-                slot__get_parent
-            );
-            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, WasmRefID<User>>(
-                "env",
-                "slot__get_active_user",
-                slot__get_active_user
-            );
-            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, WasmRefID<UserRoot>>(
-                "env",
-                "slot__get_active_user_root",
-                slot__get_active_user_root
-            );
-            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, int, WasmRefID<ISlot>>(
-                "env",
-                "slot__get_object_root",
-                slot__get_object_root
-            );
-            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, Ptr<byte>>(
-                "env",
-                "slot__get_name",
-                slot__get_name
-            );
-            machine.RegisterVoidHostFunc<WasmRefID<ISlot>, Ptr<byte>>(
-                "env",
-                "slot__set_name",
-                slot__set_name
-            );
-            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, int>(
-                "env",
-                "slot__get_num_children",
-                slot__get_num_children
-            );
-            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, int, WasmRefID<ISlot>>(
-                "env",
-                "slot__get_child",
-                slot__get_child
-            );
-            machine.RegisterReturningHostFunc<
-                WasmRefID<ISlot>,
-                Ptr<byte>,
-                int,
-                int,
-                int,
-                WasmRefID<ISlot>
-            >("env", "slot__find_child_by_name", slot__find_child_by_name);
-            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, Ptr<byte>, int, WasmRefID<ISlot>>(
-                "env",
-                "slot__find_child_by_tag",
-                slot__find_child_by_tag
-            );
-            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, Ptr<byte>, WasmRefID<Component>>(
-                "env",
-                "slot__get_component",
-                slot__get_component
-            );
-
-            void RegisterValueGetSet<T>(
-                string name,
-                Func<Frame, WasmRefID<IValue<T>>, Ptr<T>, ResoniteError> valueGet,
-                Func<Frame, WasmRefID<IValue<T>>, Ptr<T>, ResoniteError> valueSet
-            )
-                where T : unmanaged
-            {
-                machine.RegisterReturningHostFunc<WasmRefID<IValue<T>>, Ptr<T>, ResoniteError>(
-                    "env",
-                    $"value__get_{name}",
-                    value__get<T>
-                );
-                machine.RegisterReturningHostFunc<WasmRefID<IValue<T>>, Ptr<T>, ResoniteError>(
-                    "env",
-                    $"value__set_{name}",
-                    value__set<T>
-                );
-            }
-
-            void RegisterBlitValueGetSet<T>(string name)
-                where T : unmanaged
-            {
-                RegisterValueGetSet<T>(name, value__get<T>, value__set<T>);
-            }
-
-            RegisterBlitValueGetSet<int>("int");
-            RegisterBlitValueGetSet<float>("float");
-            RegisterBlitValueGetSet<double>("double");
-        }
-
-        //
         // The host functions. They are always called from WASM, so they already have a frame.
         //
 
+        [ModFn("slot__root_slot")]
         public WasmRefID<ISlot> slot__root_slot(Frame frame)
         {
             return new WasmRefID<ISlot>(worldServices.GetRootSlot());
         }
 
+        [ModFn("slot__get_parent")]
         public WasmRefID<ISlot> slot__get_parent(Frame frame, WasmRefID<ISlot> slot)
         {
             return worldServices.GetObjectOrNull(slot)?.Parent?.GetWasmRef() ?? default;
         }
 
+        [ModFn("slot__get_active_user")]
         public WasmRefID<User> slot__get_active_user(Frame frame, WasmRefID<ISlot> slot)
         {
             return worldServices.GetObjectOrNull(slot)?.ActiveUser?.GetWasmRef() ?? default;
         }
 
+        [ModFn("slot__get_active_user_root")]
         public WasmRefID<UserRoot> slot__get_active_user_root(Frame frame, WasmRefID<ISlot> slot)
         {
             return worldServices.GetObjectOrNull(slot)?.ActiveUserRoot?.GetWasmRef() ?? default;
         }
 
+        [ModFn("slot__get_object_root")]
         public WasmRefID<ISlot> slot__get_object_root(
             Frame frame,
             WasmRefID<ISlot> slot,
@@ -314,12 +195,14 @@ namespace Derg
                     ?.GetWasmRef() ?? default;
         }
 
+        [ModFn("slot__get_name")]
         public Ptr<byte> slot__get_name(Frame frame, WasmRefID<ISlot> slot)
         {
             string name = worldServices.GetObjectOrNull(slot)?.Name ?? "";
             return emscriptenEnv.AllocateUTF8StringInMem(frame, name).ToPointer();
         }
 
+        [ModFn("slot__set_name")]
         public void slot__set_name(Frame frame, WasmRefID<ISlot> slot, Ptr<byte> ptr)
         {
             ISlot islot = worldServices.GetObjectOrNull(slot);
@@ -328,16 +211,19 @@ namespace Derg
             islot.Name = emscriptenEnv.GetUTF8StringFromMem(ptr);
         }
 
+        [ModFn("slot__get_num_children")]
         public int slot__get_num_children(Frame frame, WasmRefID<ISlot> slot)
         {
             return worldServices.GetObjectOrNull(slot)?.ChildrenCount ?? 0;
         }
 
+        [ModFn("slot__get_child")]
         public WasmRefID<ISlot> slot__get_child(Frame frame, WasmRefID<ISlot> slot, int index)
         {
             return worldServices.GetObjectOrNull(slot)?[index]?.GetWasmRef() ?? default;
         }
 
+        [ModFn("slot__find_child_by_name")]
         public WasmRefID<ISlot> slot__find_child_by_name(
             Frame frame,
             WasmRefID<ISlot> slot,
@@ -354,6 +240,7 @@ namespace Derg
                     ?.GetWasmRef() ?? default;
         }
 
+        [ModFn("slot__find_child_by_tag")]
         public WasmRefID<ISlot> slot__find_child_by_tag(
             Frame frame,
             WasmRefID<ISlot> slot,
@@ -368,6 +255,7 @@ namespace Derg
                     ?.GetWasmRef() ?? default;
         }
 
+        [ModFn("slot__get_component")]
         public WasmRefID<Component> slot__get_component(
             Frame frame,
             WasmRefID<ISlot> slot,
@@ -381,6 +269,7 @@ namespace Derg
             return worldServices.GetObjectOrNull(slot)?.GetComponent(type)?.GetWasmRef() ?? default;
         }
 
+        [ModFn("component__get_type_name")]
         public Ptr<byte> component__get_type_name(Frame frame, WasmRefID<Component> component_id)
         {
             string typeName =
@@ -405,6 +294,7 @@ namespace Derg
             return ResoniteType.Unknown;
         }
 
+        [ModFn("component__get_member")]
         public int component__get_member(
             Frame frame,
             WasmRefID<Component> componentRefId,
@@ -441,6 +331,9 @@ namespace Derg
             return 0;
         }
 
+        [ModFn("value__get_int", typeof(int))]
+        [ModFn("value__get_float", typeof(float))]
+        [ModFn("value__get_double", typeof(double))]
         public ResoniteError value__get<T>(Frame frame, WasmRefID<IValue<T>> refId, Ptr<T> outPtr)
             where T : unmanaged
         {
@@ -457,6 +350,9 @@ namespace Derg
             return ResoniteError.Success;
         }
 
+        [ModFn("value__set_int", typeof(int))]
+        [ModFn("value__set_float", typeof(float))]
+        [ModFn("value__set_double", typeof(double))]
         public ResoniteError value__set<T>(Frame frame, WasmRefID<IValue<T>> refId, Ptr<T> inPtr)
             where T : unmanaged
         {
