@@ -360,7 +360,7 @@ namespace Derg
 
         public override string ToString()
         {
-            return $"({string.Join(", ", args)}) -> ({string.Join(", ", returns)})";
+            return $"({string.Join(", ", args ?? Array.Empty<ValueType>())}) -> ({string.Join(", ", returns ?? Array.Empty<ValueType>())})";
         }
     }
 
