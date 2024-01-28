@@ -24,17 +24,16 @@ namespace Derg.Wasm
         public Ptr Offset(int offset) => new Ptr(Addr + offset);
 
         public Ptr<T> Reinterpret<T>()
-            where T : unmanaged => new Ptr<T>(Addr);
+            where T : struct => new Ptr<T>(Addr);
 
         public Buff<T> Reinterpret<T>(int length)
-            where T : unmanaged => new Buff<T>(Addr, length);
+            where T : struct => new Buff<T>(Addr, length);
 
         public static Ptr operator ++(Ptr p) => new Ptr(p.Addr + 1);
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Ptr<T>
-        where T : unmanaged
+    public readonly struct Ptr<T> where T : struct
     {
         public readonly int Addr;
 
@@ -50,7 +49,7 @@ namespace Derg.Wasm
         public Buff<T> ToBuffer(int length = 1) => new Buff<T>(Addr, length);
 
         public Ptr<TNew> Reinterpret<TNew>()
-            where TNew : unmanaged => new Ptr<TNew>(Addr);
+            where TNew : struct => new Ptr<TNew>(Addr);
 
         public static implicit operator Ptr(Ptr<T> p) => new Ptr(p.Addr);
 
