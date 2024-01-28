@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Derg;
+using Derg.Wasm;
 using Elements.Core;
 using FrooxEngine;
 using SkyFrost.Base;
@@ -13,12 +14,11 @@ namespace DergwasmTests
         Dictionary<RefID, IWorldElement> objects = new Dictionary<RefID, IWorldElement>();
         Dictionary<Uri, string> assetFiles = new Dictionary<Uri, string>();
         FakeSlot root;
-        ulong nextRefID = 2;
+        ulong nextRefID = 1;
 
         public FakeWorldServices()
         {
-            root = new FakeSlot(this, "Root", new RefID(1));
-            AddRefID(root, root.ReferenceID);
+            root = new FakeSlot(this, "Root");
         }
 
         public ulong GetNextRefID() => nextRefID++;
@@ -50,6 +50,8 @@ namespace DergwasmTests
 
         public override IWorldElement GetObjectOrNull(RefID refID) =>
             objects.TryGetValue(refID, out IWorldElement obj) ? obj : null;
+
+        public override T GetObjectOrNull<T>(WasmRefID<T> wasmRefID) => GetObjectOrNull(wasmRefID);
 
         public override ISlot GetRootSlot() => root;
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Derg.Wasm;
 using Elements.Core;
 using FrooxEngine;
 using SkyFrost.Base;
@@ -17,6 +18,9 @@ namespace Derg
 
         // Gets the IWorldElement for the refID, or null if it doesn't exist.
         public abstract IWorldElement GetObjectOrNull(RefID refID);
+
+        public abstract T GetObjectOrNull<T>(WasmRefID<T> wasmRefID)
+            where T : class, IWorldElement;
 
         // Gets an asset from the assetURL, puts it in a file, and returns the filename.
         public abstract ValueTask<string> GatherAssetFile(

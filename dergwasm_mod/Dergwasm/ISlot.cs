@@ -1,5 +1,4 @@
 ﻿using System;
-using Elements.Core;
 using FrooxEngine;
 
 namespace Derg
@@ -8,6 +7,8 @@ namespace Derg
     public interface ISlot : IWorldElement
     {
         new ISlot Parent { get; set; }
+
+        new string Name { get; set; }
 
         string Tag { get; set; }
 
