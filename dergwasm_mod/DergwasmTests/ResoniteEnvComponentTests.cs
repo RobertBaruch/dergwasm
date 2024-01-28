@@ -1,5 +1,6 @@
 ﻿using Derg;
 using Derg.Wasm;
+using FrooxEngine;
 using Xunit;
 
 namespace DergwasmTests
@@ -29,39 +30,39 @@ namespace DergwasmTests
         public void GetMemberTest()
         {
             Buff<byte> namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
-            int outTypePtr = namePtr.Ptr.Addr + 100;
-            int outRefIdPtr = outTypePtr + sizeof(int);
+            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Ptr.Addr + 100);
+            Ptr<ulong> outRefIdPtr = new Ptr<ulong>(outTypePtr.Addr + sizeof(int));
 
             Assert.Equal(
                 0,
                 env.component__get_member(
                     frame,
-                    (ulong)testComponent.ReferenceID,
-                    namePtr.Ptr.Addr,
+                    new WasmRefID<Component>(testComponent),
+                    namePtr.Ptr,
                     outTypePtr,
                     outRefIdPtr
                 )
             );
             Assert.Equal(
                 ResoniteEnv.ResoniteType.ValueInt,
-                (ResoniteEnv.ResoniteType)HeapGet(new Ptr<int>(outTypePtr))
+                (ResoniteEnv.ResoniteType)HeapGet(outTypePtr)
             );
-            Assert.Equal(testComponent.IntField.ReferenceID, HeapGet(new Ptr<ulong>(outRefIdPtr)));
+            Assert.Equal(testComponent.IntField.ReferenceID, HeapGet(outRefIdPtr));
         }
 
         [Fact]
         public void GetMemberFailsOnNonexistentRefID()
         {
-            int namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField").Ptr.Addr;
-            int outTypePtr = namePtr + 100;
-            int outRefIdPtr = outTypePtr + sizeof(int);
+            Buff<byte> namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
+            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Ptr.Addr + 100);
+            Ptr<ulong> outRefIdPtr = new Ptr<ulong>(outTypePtr.Addr + sizeof(int));
 
             Assert.Equal(
                 -1,
                 env.component__get_member(
                     frame,
-                    0xFFFFFFFFFFFFFFFFUL,
-                    namePtr,
+                    new WasmRefID<Component>(0xFFFFFFFFFFFFFFFFUL),
+                    namePtr.Ptr,
                     outTypePtr,
                     outRefIdPtr
                 )
@@ -71,16 +72,16 @@ namespace DergwasmTests
         [Fact]
         public void GetMemberFailsOnNoncomponentRefID()
         {
-            int namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField").Ptr.Addr;
-            int outTypePtr = namePtr + 100;
-            int outRefIdPtr = outTypePtr + sizeof(int);
+            Buff<byte> namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
+            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Ptr.Addr + 100);
+            Ptr<ulong> outRefIdPtr = new Ptr<ulong>(outTypePtr.Addr + sizeof(int));
 
             Assert.Equal(
                 -1,
                 env.component__get_member(
                     frame,
-                    (ulong)testComponent.IntField.ReferenceID,
-                    namePtr,
+                    new WasmRefID<Component>(testComponent.IntField.ReferenceID),
+                    namePtr.Ptr,
                     outTypePtr,
                     outRefIdPtr
                 )
@@ -90,16 +91,16 @@ namespace DergwasmTests
         [Fact]
         public void GetMemberFailsOnNullNamePtr()
         {
-            int namePtr = 0;
-            int outTypePtr = namePtr + 100;
-            int outRefIdPtr = outTypePtr + sizeof(int);
+            Buff<byte> namePtr = new Buff<byte>(0, 0);
+            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Ptr.Addr + 100);
+            Ptr<ulong> outRefIdPtr = new Ptr<ulong>(outTypePtr.Addr + sizeof(int));
 
             Assert.Equal(
                 -1,
                 env.component__get_member(
                     frame,
-                    (ulong)testComponent.ReferenceID,
-                    namePtr,
+                    new WasmRefID<Component>(testComponent),
+                    namePtr.Ptr,
                     outTypePtr,
                     outRefIdPtr
                 )
@@ -109,16 +110,16 @@ namespace DergwasmTests
         [Fact]
         public void GetMemberFailsOnNullTypePtr()
         {
-            int namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField").Ptr.Addr;
-            int outTypePtr = 0;
-            int outRefIdPtr = outTypePtr + sizeof(int);
+            Buff<byte> namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
+            Ptr<int> outTypePtr = new Ptr<int>(0);
+            Ptr<ulong> outRefIdPtr = new Ptr<ulong>(outTypePtr.Addr + sizeof(int));
 
             Assert.Equal(
                 -1,
                 env.component__get_member(
                     frame,
-                    (ulong)testComponent.ReferenceID,
-                    namePtr,
+                    new WasmRefID<Component>(testComponent),
+                    namePtr.Ptr,
                     outTypePtr,
                     outRefIdPtr
                 )
@@ -128,16 +129,16 @@ namespace DergwasmTests
         [Fact]
         public void GetMemberFailsOnNullRefIdPtr()
         {
-            int namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField").Ptr.Addr;
-            int outTypePtr = namePtr + 100;
-            int outRefIdPtr = 0;
+            Buff<byte> namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
+            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Ptr.Addr + 100);
+            Ptr<ulong> outRefIdPtr = new Ptr<ulong>(0);
 
             Assert.Equal(
                 -1,
                 env.component__get_member(
                     frame,
-                    (ulong)testComponent.ReferenceID,
-                    namePtr,
+                    new WasmRefID<Component>(testComponent),
+                    namePtr.Ptr,
                     outTypePtr,
                     outRefIdPtr
                 )
@@ -147,16 +148,16 @@ namespace DergwasmTests
         [Fact]
         public void GetMemberFailsOnNonexistentField()
         {
-            int namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "CatFace").Ptr.Addr;
-            int outTypePtr = namePtr + 100;
-            int outRefIdPtr = outTypePtr + sizeof(int);
+            Buff<byte> namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "CatFace");
+            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Ptr.Addr + 100);
+            Ptr<ulong> outRefIdPtr = new Ptr<ulong>(outTypePtr.Addr + sizeof(int));
 
             Assert.Equal(
                 -1,
                 env.component__get_member(
                     frame,
-                    (ulong)testComponent.IntField.ReferenceID,
-                    namePtr,
+                    new WasmRefID<Component>(testComponent.IntField.ReferenceID),
+                    namePtr.Ptr,
                     outTypePtr,
                     outRefIdPtr
                 )

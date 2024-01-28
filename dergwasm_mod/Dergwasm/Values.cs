@@ -1,18 +1,13 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using Derg.Wasm;
 using Elements.Core;
 using FrooxEngine;
 using LEB128;
-using Microsoft.Win32;
 using MonoMod.Utils;
-using ProtoFlux.Core;
 
 namespace Derg
 {
@@ -58,8 +53,10 @@ namespace Derg
 
     public static class ValueAccessor
     {
-        private static readonly ConcurrentDictionary<Type, Delegate> valueGetters = new ConcurrentDictionary<Type, Delegate>();
-        private static readonly ConcurrentDictionary<Type, Delegate> valueSetters = new ConcurrentDictionary<Type, Delegate>();
+        private static readonly ConcurrentDictionary<Type, Delegate> valueGetters =
+            new ConcurrentDictionary<Type, Delegate>();
+        private static readonly ConcurrentDictionary<Type, Delegate> valueSetters =
+            new ConcurrentDictionary<Type, Delegate>();
 
         static ValueAccessor()
         {
@@ -105,12 +102,14 @@ namespace Derg
             throw new NotImplementedException();
         }
 
-        private static Func<Value, Ptr<T>> PtrGetter<T>() where T : unmanaged
+        private static Func<Value, Ptr<T>> PtrGetter<T>()
+            where T : unmanaged
         {
             return v => new Ptr<T>(v.s32);
         }
 
-        private static Func<Value, WasmRefID<T>> WRefIdGetter<T>() where T : class, IWorldElement
+        private static Func<Value, WasmRefID<T>> WRefIdGetter<T>()
+            where T : class, IWorldElement
         {
             return v => new WasmRefID<T>(v.u64);
         }
@@ -135,12 +134,14 @@ namespace Derg
             throw new NotImplementedException();
         }
 
-        private static Func<Ptr<T>, Value> PtrSetter<T>() where T : unmanaged
+        private static Func<Ptr<T>, Value> PtrSetter<T>()
+            where T : unmanaged
         {
             return v => new Value { s32 = v.Addr };
         }
 
-        private static Func<WasmRefID<T>, Value> WRefIdSetter<T>() where T : class, IWorldElement
+        private static Func<WasmRefID<T>, Value> WRefIdSetter<T>()
+            where T : class, IWorldElement
         {
             return v => new Value { u64 = v.Id };
         }
@@ -166,6 +167,7 @@ namespace Derg
         private static readonly Func<T, Value> _setter = ValueAccessor.SetConverter<T>();
 
         public static T Get(in Value val) => _getter(val);
+
         public static Value Set(in T val) => _setter(val);
     }
 
@@ -213,7 +215,7 @@ namespace Derg
             return ValueAccessor<T>.Set(value);
         }
 
-        public unsafe static ValueType ValueType<T>()
+        public static unsafe ValueType ValueType<T>()
         {
             if (typeof(T) == typeof(float))
             {

@@ -1,10 +1,11 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Derg.Wasm
 {
     /// <summary>
     /// A utility type to use in blit marshalling where C# < 7.3 does not allow unmanaged generic types as bitable types.
-    /// In most cases the hard type version of this should be used, except when passed into <see cref="BlitMarshaller{Pointer}"/>, where it will be auto downcast. 
+    /// In most cases the hard type version of this should be used, except when passed into <see cref="BlitMarshaller{Pointer}"/>, where it will be auto downcast.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct Ptr
@@ -22,13 +23,18 @@ namespace Derg.Wasm
 
         public Ptr Offset(int offset) => new Ptr(Addr + offset);
 
-        public Ptr<T> Reinterpret<T>() where T : unmanaged => new Ptr<T>(Addr);
+        public Ptr<T> Reinterpret<T>()
+            where T : unmanaged => new Ptr<T>(Addr);
 
-        public Buff<T> Reinterpret<T>(int length) where T : unmanaged => new Buff<T>(Addr, length);
+        public Buff<T> Reinterpret<T>(int length)
+            where T : unmanaged => new Buff<T>(Addr, length);
+
+        public static Ptr operator ++(Ptr p) => new Ptr(p.Addr + 1);
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Ptr<T> where T : unmanaged
+    public readonly struct Ptr<T>
+        where T : unmanaged
     {
         public readonly int Addr;
 
@@ -43,8 +49,11 @@ namespace Derg.Wasm
 
         public Buff<T> ToBuffer(int length = 1) => new Buff<T>(Addr, length);
 
-        public Ptr<TNew> Reinterpret<TNew>() where TNew : unmanaged => new Ptr<TNew>(Addr);
+        public Ptr<TNew> Reinterpret<TNew>()
+            where TNew : unmanaged => new Ptr<TNew>(Addr);
 
         public static implicit operator Ptr(Ptr<T> p) => new Ptr(p.Addr);
+
+        public static Ptr<T> operator ++(Ptr<T> p) => new Ptr<T>(p.Addr + Unsafe.SizeOf<T>());
     }
 }

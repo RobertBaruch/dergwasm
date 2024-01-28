@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Derg.Modules;
 using Derg.Wasm;
@@ -198,7 +198,7 @@ namespace Derg
         [ModFn("slot__root_slot")]
         public WasmRefID<ISlot> slot__root_slot(Frame frame)
         {
-            return new WasmRefID<ISlot>(worldServices.GetRootSlot().ReferenceID);
+            return new WasmRefID<ISlot>(worldServices.GetRootSlot());
         }
 
         [ModFn("slot__get_parent")]
@@ -233,14 +233,14 @@ namespace Derg
         }
 
         [ModFn("slot__get_name")]
-        public int slot__get_name(Frame frame, WasmRefID<ISlot> slot)
+        public Ptr<byte> slot__get_name(Frame frame, WasmRefID<ISlot> slot)
         {
             string name = worldServices.GetObjectOrNull(slot)?.Name ?? "";
-            return emscriptenEnv.AllocateUTF8StringInMem(frame, name).Ptr.Addr;
+            return emscriptenEnv.AllocateUTF8StringInMem(frame, name).ToPointer();
         }
 
         [ModFn("slot__set_name")]
-        public void slot__set_name(Frame frame, WasmRefID<ISlot> slot, int ptr)
+        public void slot__set_name(Frame frame, WasmRefID<ISlot> slot, Ptr<byte> ptr)
         {
             ISlot islot = worldServices.GetObjectOrNull(slot);
             if (islot == null)
@@ -264,7 +264,7 @@ namespace Derg
         public WasmRefID<ISlot> slot__find_child_by_name(
             Frame frame,
             WasmRefID<ISlot> slot,
-            int namePtr,
+            Ptr<byte> namePtr,
             int match_substring,
             int ignore_case,
             int max_depth
@@ -281,7 +281,7 @@ namespace Derg
         public WasmRefID<ISlot> slot__find_child_by_tag(
             Frame frame,
             WasmRefID<ISlot> slot,
-            int tagPtr,
+            Ptr<byte> tagPtr,
             int max_depth
         )
         {
@@ -296,7 +296,7 @@ namespace Derg
         public WasmRefID<Component> slot__get_component(
             Frame frame,
             WasmRefID<ISlot> slot,
-            int typeNamePtr
+            Ptr<byte> typeNamePtr
         )
         {
             string typeName = emscriptenEnv.GetUTF8StringFromMem(typeNamePtr);
@@ -307,11 +307,11 @@ namespace Derg
         }
 
         [ModFn("component__get_type_name")]
-        public int component__get_type_name(Frame frame, ulong component_id)
+        public Ptr<byte> component__get_type_name(Frame frame, WasmRefID<Component> component_id)
         {
-            Component c = FromRefID<Component>(component_id);
-            string typeName = c?.GetType().GetNiceName() ?? "";
-            return emscriptenEnv.AllocateUTF8StringInMem(frame, typeName).Ptr.Addr;
+            string typeName =
+                worldServices.GetObjectOrNull(component_id)?.GetType().GetNiceName() ?? "";
+            return emscriptenEnv.AllocateUTF8StringInMem(frame, typeName).Ptr;
         }
 
         public enum ResoniteType : int
@@ -334,14 +334,19 @@ namespace Derg
         [ModFn("component__get_member")]
         public int component__get_member(
             Frame frame,
-            ulong componentRefId,
-            int namePtr,
-            int outTypePtr,
-            int outRefIdPtr
+            WasmRefID<Component> componentRefId,
+            Ptr<byte> namePtr,
+            Ptr<int> outTypePtr,
+            Ptr<ulong> outRefIdPtr
         )
         {
-            Component component = FromRefID<Component>(componentRefId);
-            if (component == null || namePtr == 0 || outTypePtr == 0 || outRefIdPtr == 0)
+            Component component = worldServices.GetObjectOrNull(componentRefId);
+            if (
+                component == null
+                || namePtr.Addr == 0
+                || outTypePtr.Addr == 0
+                || outRefIdPtr.Addr == 0
+            )
             {
                 return -1;
             }
@@ -358,8 +363,8 @@ namespace Derg
                 return -1;
             }
 
-            machine.HeapSet(new Ptr<int>(outTypePtr), (int)GetResoniteType(member.GetType()));
-            machine.HeapSet(new Ptr<ulong>(outRefIdPtr), (ulong)member.ReferenceID);
+            machine.HeapSet(outTypePtr, (int)GetResoniteType(member.GetType()));
+            machine.HeapSet(outRefIdPtr, (ulong)member.ReferenceID);
             return 0;
         }
 

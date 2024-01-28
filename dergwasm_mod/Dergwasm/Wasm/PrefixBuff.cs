@@ -1,4 +1,3 @@
-using System;
 using System.Runtime.InteropServices;
 
 namespace Derg.Wasm
@@ -12,18 +11,20 @@ namespace Derg.Wasm
 
         public Ptr BufferStart => Ptr.Offset(4);
 
-
         public PrefixBuff(Ptr ptr)
         {
             Ptr = ptr;
         }
 
         public Buff ToBuff(Machine machine) => new Buff(BufferStart, machine.HeapGet(Length));
-        public PrefixBuff<T> Reinterpret<T>() where T : unmanaged => new PrefixBuff<T>(this);
+
+        public PrefixBuff<T> Reinterpret<T>()
+            where T : unmanaged => new PrefixBuff<T>(this);
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct PrefixBuff<T> where T : unmanaged
+    public readonly struct PrefixBuff<T>
+        where T : unmanaged
     {
         public readonly PrefixBuff Buff;
 

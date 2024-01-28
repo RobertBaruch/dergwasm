@@ -7,9 +7,10 @@ namespace DergwasmTests
         int ptr = 4;
 
         public TestEmscriptenEnv()
-            : base(new TestMachine()) {
-                machine.Allocator = this;
-             }
+            : base(new TestMachine())
+        {
+            machine.Allocator = this;
+        }
 
         public void ResetMalloc()
         {
