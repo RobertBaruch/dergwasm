@@ -220,11 +220,16 @@ namespace Derg
         // Gets a list of the children of the given slot, returning a pointer to a buffer
         // of reference IDs. The caller is responsible for freeing
         // the memory allocated for the list.
-        public Buff<WasmRefID> slot__get_children(Frame frame, WasmRefID<ISlot> slot)
+        [ModFn("slot__get_children")]
+        public ResoniteError slot__get_children(
+            Frame frame,
+            WasmRefID<ISlot> slot,
+            Ptr<Buff<WasmRefID>> buffPtr
+        )
         {
             ISlot s = worldServices.GetObjectOrNull(slot);
             if (s == null)
-                return default;
+                return ResoniteError.InvalidRefId;
             Buff<WasmRefID> buffer = emscriptenEnv.Malloc<WasmRefID>(frame, s.ChildrenCount);
             Ptr<WasmRefID> ptr = buffer.Ptr;
             foreach (ISlot child in s.Children)
@@ -233,9 +238,11 @@ namespace Derg
                 machine.HeapSet(ptr, refID);
                 ptr++;
             }
-            return buffer;
+            machine.HeapSet(buffPtr, buffer);
+            return ResoniteError.Success;
         }
 
+        [ModFn("slot__get_child")]
         public WasmRefID<ISlot> slot__get_child(Frame frame, WasmRefID<ISlot> slot, int index)
         {
             var foundSlot = worldServices.GetObjectOrNull(slot);
