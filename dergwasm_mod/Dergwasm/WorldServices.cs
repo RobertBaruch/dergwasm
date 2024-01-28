@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Derg.Wasm;
 using Elements.Core;
 using FrooxEngine;
 using SkyFrost.Base;
@@ -19,6 +20,9 @@ namespace Derg
 
         public override IWorldElement GetObjectOrNull(RefID refID) =>
             world.ReferenceController.GetObjectOrNull(refID);
+
+        public override T GetObjectOrNull<T>(WasmRefID<T> wasmRefID) =>
+            world.ReferenceController.GetObjectOrNull(wasmRefID) as T;
 
         public override ISlot GetRootSlot() => new SlotProxy(world.RootSlot);
 

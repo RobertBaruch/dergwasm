@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Derg.Wasm;
 using Elements.Core;
@@ -6,7 +6,8 @@ using FrooxEngine;
 
 namespace Derg
 {
-    public enum ResoniteError : int {
+    public enum ResoniteError : int
+    {
         Success = 0,
         NullArgument = -1,
         InvalidRefId = -2,
@@ -186,7 +187,7 @@ namespace Derg
             );
 
             machine.RegisterReturningHostFunc<ulong>("env", "slot__root_slot", slot__root_slot);
-            machine.RegisterReturningHostFunc<WasmRefID<Slot>, WasmRefID<Slot>>(
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, WasmRefID<ISlot>>(
                 "env",
                 "slot__get_parent",
                 slot__get_parent
@@ -274,9 +275,9 @@ namespace Derg
             return (ulong)slot.ReferenceID;
         }
 
-        public WasmRefID<Slot> slot__get_parent(Frame frame, WasmRefID<Slot> slot)
+        public WasmRefID<ISlot> slot__get_parent(Frame frame, WasmRefID<ISlot> slot)
         {
-            return slot.Get(worldServices)?.Parent.GetWasmRef() ?? default;
+            return worldServices.GetObjectOrNull(slot)?.Parent.GetWasmRef() ?? default;
         }
 
         public ulong slot__get_active_user(Frame frame, ulong slot_id)
@@ -299,14 +300,14 @@ namespace Derg
 
         public int slot__get_name(Frame frame, ulong slot_id)
         {
-            Slot slot = FromRefID<Slot>(slot_id);
+            ISlot slot = FromRefID<ISlot>(slot_id);
             string name = slot?.Name ?? "";
             return emscriptenEnv.AllocateUTF8StringInMem(frame, name).Ptr.Addr;
         }
 
         public void slot__set_name(Frame frame, ulong slot_id, int ptr)
         {
-            Slot slot = FromRefID<Slot>(slot_id);
+            ISlot slot = FromRefID<ISlot>(slot_id);
             if (slot == null)
                 return;
             slot.Name = emscriptenEnv.GetUTF8StringFromMem(ptr);
@@ -425,7 +426,7 @@ namespace Derg
             {
                 return ResoniteError.NullArgument;
             }
-            var value = refId.Get(worldServices);
+            var value = worldServices.GetObjectOrNull(refId);
             if (value == null)
             {
                 return ResoniteError.InvalidRefId;
@@ -441,7 +442,7 @@ namespace Derg
             {
                 return ResoniteError.NullArgument;
             }
-            var value = refId.Get(worldServices);
+            var value = worldServices.GetObjectOrNull(refId);
             if (value == null)
             {
                 return ResoniteError.InvalidRefId;

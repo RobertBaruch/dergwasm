@@ -13,11 +13,12 @@ namespace DergwasmTests
         List<ISlot> children = new List<ISlot>();
         List<Component> components = new List<Component>();
 
-        public FakeSlot(FakeWorldServices worldServices, string name, RefID id, ISlot parent = null)
+        public FakeSlot(FakeWorldServices worldServices, string name, ISlot parent = null)
         {
             this.worldServices = worldServices;
             Name = name;
-            ReferenceID = id;
+            ReferenceID = worldServices.GetNextRefID();
+            worldServices.AddRefID(this, ReferenceID);
             Parent = parent;
         }
 
@@ -42,10 +43,9 @@ namespace DergwasmTests
 
         public ISlot AddSlot(string name = "Slot", bool persistent = true)
         {
-            var slot = new FakeSlot(worldServices, name, worldServices.GetNextRefID(), this);
+            var slot = new FakeSlot(worldServices, name, this);
             children.Add(slot);
             slot.Parent = this;
-            worldServices.AddRefID(slot, slot.ReferenceID);
             return slot;
         }
 
