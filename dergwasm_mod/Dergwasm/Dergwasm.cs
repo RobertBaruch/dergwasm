@@ -211,6 +211,7 @@ namespace Derg
                 // Register all the environments.
                 emscriptenEnv = new EmscriptenEnv(machine);
                 emscriptenEnv.RegisterHostFuncs();
+                machine.Allocator = emscriptenEnv;
                 emscriptenEnv.outputWriter = Output;
 
                 emscriptenWasi = new EmscriptenWasi(machine, emscriptenEnv);
