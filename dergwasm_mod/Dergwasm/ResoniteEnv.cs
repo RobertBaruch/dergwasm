@@ -175,12 +175,14 @@ namespace Derg
         // This only needs to be called once, when the WASM Machine is initialized and loaded.
         public void RegisterHostFuncs()
         {
-            machine.RegisterReturningHostFunc<ulong, int, int, int, int>(
-                "env",
-                "component__get_member",
-                component__get_member
-            );
-            machine.RegisterReturningHostFunc<ulong, int>(
+            machine.RegisterReturningHostFunc<
+                WasmRefID<Component>,
+                Ptr<byte>,
+                Ptr<int>,
+                Ptr<ulong>,
+                int
+            >("env", "component__get_member", component__get_member);
+            machine.RegisterReturningHostFunc<WasmRefID<Component>, Ptr<byte>>(
                 "env",
                 "component__get_type_name",
                 component__get_type_name
@@ -229,18 +231,18 @@ namespace Derg
             );
             machine.RegisterReturningHostFunc<
                 WasmRefID<ISlot>,
-                int,
+                Ptr<byte>,
                 int,
                 int,
                 int,
                 WasmRefID<ISlot>
             >("env", "slot__find_child_by_name", slot__find_child_by_name);
-            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, int, int, WasmRefID<ISlot>>(
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, Ptr<byte>, int, WasmRefID<ISlot>>(
                 "env",
                 "slot__find_child_by_tag",
                 slot__find_child_by_tag
             );
-            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, int, WasmRefID<Component>>(
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, Ptr<byte>, WasmRefID<Component>>(
                 "env",
                 "slot__get_component",
                 slot__get_component
@@ -339,7 +341,7 @@ namespace Derg
         public WasmRefID<ISlot> slot__find_child_by_name(
             Frame frame,
             WasmRefID<ISlot> slot,
-            int namePtr,
+            Ptr<byte> namePtr,
             int match_substring,
             int ignore_case,
             int max_depth
@@ -355,7 +357,7 @@ namespace Derg
         public WasmRefID<ISlot> slot__find_child_by_tag(
             Frame frame,
             WasmRefID<ISlot> slot,
-            int tagPtr,
+            Ptr<byte> tagPtr,
             int max_depth
         )
         {
@@ -369,7 +371,7 @@ namespace Derg
         public WasmRefID<Component> slot__get_component(
             Frame frame,
             WasmRefID<ISlot> slot,
-            int typeNamePtr
+            Ptr<byte> typeNamePtr
         )
         {
             string typeName = emscriptenEnv.GetUTF8StringFromMem(typeNamePtr);
@@ -379,11 +381,11 @@ namespace Derg
             return worldServices.GetObjectOrNull(slot)?.GetComponent(type)?.GetWasmRef() ?? default;
         }
 
-        public int component__get_type_name(Frame frame, ulong component_id)
+        public Ptr<byte> component__get_type_name(Frame frame, WasmRefID<Component> component_id)
         {
-            Component c = FromRefID<Component>(component_id);
-            string typeName = c?.GetType().GetNiceName() ?? "";
-            return emscriptenEnv.AllocateUTF8StringInMem(frame, typeName).Ptr.Addr;
+            string typeName =
+                worldServices.GetObjectOrNull(component_id)?.GetType().GetNiceName() ?? "";
+            return emscriptenEnv.AllocateUTF8StringInMem(frame, typeName).Ptr;
         }
 
         public enum ResoniteType : int
@@ -405,14 +407,19 @@ namespace Derg
 
         public int component__get_member(
             Frame frame,
-            ulong componentRefId,
-            int namePtr,
-            int outTypePtr,
-            int outRefIdPtr
+            WasmRefID<Component> componentRefId,
+            Ptr<byte> namePtr,
+            Ptr<int> outTypePtr,
+            Ptr<ulong> outRefIdPtr
         )
         {
-            Component component = FromRefID<Component>(componentRefId);
-            if (component == null || namePtr == 0 || outTypePtr == 0 || outRefIdPtr == 0)
+            Component component = worldServices.GetObjectOrNull(componentRefId);
+            if (
+                component == null
+                || namePtr.Addr == 0
+                || outTypePtr.Addr == 0
+                || outRefIdPtr.Addr == 0
+            )
             {
                 return -1;
             }
@@ -429,8 +436,8 @@ namespace Derg
                 return -1;
             }
 
-            machine.HeapSet(new Ptr<int>(outTypePtr), (int)GetResoniteType(member.GetType()));
-            machine.HeapSet(new Ptr<ulong>(outRefIdPtr), (ulong)member.ReferenceID);
+            machine.HeapSet(outTypePtr, (int)GetResoniteType(member.GetType()));
+            machine.HeapSet(outRefIdPtr, (ulong)member.ReferenceID);
             return 0;
         }
 

@@ -625,11 +625,11 @@ namespace DergwasmTests
     //
     // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
     //
-    // | Method                          | N   | Mean      | Error     | StdDev    | Ratio |
-    // |-------------------------------- |---- |----------:|----------:|----------:|------:|
-    // | ComponentUtils_GetIntField      | 100 | 55.716 us | 0.7795 us | 0.6509 us |  1.00 |
-    // | ValueGet_GetIntField_UnknownRef | 100 | 29.038 us | 0.4454 us | 0.3948 us |  0.52 |
-    // | ValueGet_GetIntField_KnownRef   | 100 |  7.395 us | 0.1234 us | 0.1267 us |  0.13 |
+    //| Method                          | N   | Mean      | Error     | StdDev    | Ratio | RatioSD |
+    //|-------------------------------- |---- |----------:|----------:|----------:|------:|--------:|
+    //| ComponentUtils_GetIntField      | 100 | 54.957 us | 1.0714 us | 1.3157 us |  1.00 |    0.00 |
+    //| ValueGet_GetIntField_UnknownRef | 100 | 31.752 us | 0.5005 us | 0.7938 us |  0.58 |    0.02 |
+    //| ValueGet_GetIntField_KnownRef   | 100 |  9.017 us | 0.1200 us | 0.1064 us |  0.16 |    0.00 |
     [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
     public class GetIntFieldBenchmark : TestMachine
     {
@@ -678,18 +678,13 @@ namespace DergwasmTests
             Ptr<int> outTypePtr = new Ptr<int>(namePtr.Ptr.Addr + 100);
             Ptr<ulong> outRefIdPtr = new Ptr<ulong>(outTypePtr.Addr + sizeof(int));
             Ptr<int> outPtr = new Ptr<int>(outRefIdPtr.Addr + sizeof(ulong));
-            ulong refId = (ulong)testComponent.ReferenceID;
+            WasmRefID<Component> refId = new WasmRefID<Component>(testComponent);
 
             for (int i = 0; i < N; i++)
             {
                 if (
-                    env.component__get_member(
-                        frame,
-                        refId,
-                        namePtr.Ptr.Addr,
-                        outTypePtr.Addr,
-                        outRefIdPtr.Addr
-                    ) != 0
+                    env.component__get_member(frame, refId, namePtr.Ptr, outTypePtr, outRefIdPtr)
+                    != 0
                 )
                 {
                     throw new Exception("component__get_member failed");
