@@ -305,7 +305,12 @@ namespace Derg
                     case string s:
                         writer.Write(SimpleType.String);
                         writer.Write(
-                            resoniteEnv.emscriptenEnv.AllocateUTF8StringInMemLenData(frame, s).Buff.Ptr.Addr
+                            resoniteEnv
+                                .emscriptenEnv
+                                .AllocateUTF8StringInMemLenData(frame, s)
+                                .Buff
+                                .Ptr
+                                .Addr
                         );
                         break;
 
