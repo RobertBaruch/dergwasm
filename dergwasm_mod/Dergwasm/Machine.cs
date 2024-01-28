@@ -29,19 +29,19 @@ namespace Derg
         public IWasmAllocator Allocator;
 
         public unsafe Ptr<T> HeapAlloc<T>(Frame frame)
-            where T : unmanaged
+            where T : struct
         {
             return Allocator.Malloc(frame, sizeof(T)).Reinterpret<T>();
         }
 
         public unsafe Buff<T> HeapAlloc<T>(Frame frame, int count)
-            where T : unmanaged
+            where T : struct
         {
             return Allocator.Malloc(frame, sizeof(T) * count).Reinterpret<T>().ToBuffer(count);
         }
 
         public unsafe PrefixBuff<T> HeapAllocPrefix<T>(Frame frame, int count)
-            where T : unmanaged
+            where T : struct
         {
             var prefix = new PrefixBuff<T>(
                 Allocator.Malloc(frame, sizeof(int) + sizeof(T) * count)
@@ -55,7 +55,7 @@ namespace Derg
         //
         // Throws a Trap if the offset + address + size of value is out of bounds.
         public unsafe T HeapGet<T>(Ptr<T> addr)
-            where T : unmanaged
+            where T : struct
         {
             Span<byte> mem = HeapSpan(addr);
             fixed (byte* ptr = mem)
@@ -69,7 +69,7 @@ namespace Derg
         //
         // Throws a Trap if the offset + address + size of value is out of bounds.
         public unsafe T HeapGet<T>(int offset, int addr)
-            where T : unmanaged
+            where T : struct
         {
             Span<byte> mem = HeapSpan(offset, addr, sizeof(T));
             fixed (byte* ptr = mem)
@@ -82,7 +82,7 @@ namespace Derg
         //
         // Throws a Trap if the address + value size is out of bounds.
         public unsafe void HeapSet<T>(Ptr<T> addr, T value)
-            where T : unmanaged
+            where T : struct
         {
             Span<byte> mem = HeapSpan(addr, sizeof(T));
             fixed (byte* ptr = mem)
@@ -96,7 +96,7 @@ namespace Derg
         //
         // Throws a Trap if the offset + address + size of value is out of bounds.
         public unsafe void HeapSet<T>(int offset, int addr, T value)
-            where T : unmanaged
+            where T : struct
         {
             Span<byte> mem = HeapSpan(offset, addr, sizeof(T));
             fixed (byte* ptr = mem)
@@ -150,7 +150,7 @@ namespace Derg
         //
         // Throws a Trap if the offset and size are out of bounds.
         public unsafe Span<byte> HeapSpan<T>(Ptr<T> offset)
-            where T : unmanaged => HeapSpan(offset, sizeof(T));
+            where T : struct => HeapSpan(offset, sizeof(T));
 
         // Returns a Span of bytes over the heap, starting from the given offset,
         // with the given size. Note that .NET limits arrays to 2GB, so negative

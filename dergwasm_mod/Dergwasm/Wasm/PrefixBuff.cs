@@ -19,12 +19,12 @@ namespace Derg.Wasm
         public Buff ToBuff(Machine machine) => new Buff(BufferStart, machine.HeapGet(Length));
 
         public PrefixBuff<T> Reinterpret<T>()
-            where T : unmanaged => new PrefixBuff<T>(this);
+            where T : struct => new PrefixBuff<T>(this);
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct PrefixBuff<T>
-        where T : unmanaged
+        where T : struct
     {
         public readonly PrefixBuff Buff;
 

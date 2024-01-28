@@ -34,8 +34,7 @@ namespace Derg.Wasm
 
         public Ptr ToPointer() => Ptr;
 
-        public Buff<T> Reinterpret<T>()
-            where T : unmanaged => new Buff<T>(Ptr.Reinterpret<T>(), Length);
+        public Buff<T> Reinterpret<T>() where T : struct => new Buff<T>(Ptr.Reinterpret<T>(), Length);
     }
 
     /// <summary>
@@ -54,13 +53,14 @@ namespace Derg.Wasm
     /// receiver is responsible for freeing that memory.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Buff<T>
-        where T : unmanaged
+    public readonly struct Buff<T> where T : struct
     {
         public readonly Ptr<T> Ptr;
         public readonly int Length;
 
+#pragma warning disable CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
         public unsafe int ByteLength() => Length * sizeof(T);
+#pragma warning restore CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
 
         public Buff(Ptr<T> ptr, int length)
         {
