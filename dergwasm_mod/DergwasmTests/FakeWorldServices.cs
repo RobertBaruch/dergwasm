@@ -51,7 +51,8 @@ namespace DergwasmTests
         public override IWorldElement GetObjectOrNull(RefID refID) =>
             objects.TryGetValue(refID, out IWorldElement obj) ? obj : null;
 
-        public override T GetObjectOrNull<T>(WasmRefID<T> wasmRefID) => GetObjectOrNull(wasmRefID);
+        public override T GetObjectOrNull<T>(WasmRefID<T> wasmRefID) =>
+            GetObjectOrNull((RefID)wasmRefID) as T;
 
         public override ISlot GetRootSlot() => root;
 

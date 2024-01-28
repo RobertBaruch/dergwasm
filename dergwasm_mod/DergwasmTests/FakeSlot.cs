@@ -30,6 +30,10 @@ namespace DergwasmTests
 
         public string Tag { get; set; }
 
+        public UserRoot ActiveUserRoot { get; set; }
+
+        public User ActiveUser => ActiveUserRoot?.ActiveUser;
+
         public World World => throw new NotImplementedException();
 
         public bool IsLocalElement => throw new NotImplementedException();
@@ -86,9 +90,33 @@ namespace DergwasmTests
             return component;
         }
 
+        public ISlot GetObjectRoot(bool explicitOnly = false)
+        {
+            if (GetComponent<ObjectRoot>() != null)
+                return this;
+            return Parent?.GetObjectRoot(explicitOnly);
+        }
+
         public void ChildChanged(IWorldElement child) { }
 
         public void Destroy() { }
+
+        public int ChildrenCount => children.Count;
+
+        public ISlot this[int childIndex]
+        {
+            get
+            {
+                try
+                {
+                    return children[childIndex];
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
+            }
+        }
 
         public ISlot FindChild(Predicate<ISlot> filter, int maxDepth = -1)
         {
@@ -108,6 +136,41 @@ namespace DergwasmTests
 
         public ISlot FindChild(string name) => FindChild(s => s.Name == name);
 
+        private static bool MatchSlot(ISlot slot, string name, bool matchSubstring, bool ignoreCase)
+        {
+            if (slot.Name == null)
+            {
+                return name == null;
+            }
+
+            if (name == null)
+            {
+                return false;
+            }
+
+            if (slot.Name == "")
+            {
+                return name == "";
+            }
+
+            StringComparison comparisonType = (
+                ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal
+            );
+            if (matchSubstring)
+            {
+                return slot.Name.IndexOf(name, comparisonType) >= 0;
+            }
+
+            return string.Compare(slot.Name, name, comparisonType) == 0;
+        }
+
+        public ISlot FindChild(
+            string name,
+            bool matchSubstring,
+            bool ignoreCase,
+            int maxDepth = -1
+        ) => FindChild(s => MatchSlot(s, name, matchSubstring, ignoreCase), maxDepth);
+
         public T GetComponent<T>(Predicate<T> filter = null, bool excludeDisabled = false)
             where T : class
         {
@@ -120,7 +183,25 @@ namespace DergwasmTests
                 )
                     return t;
             }
-            return default(T);
+            return null;
+        }
+
+        public Component GetComponent(Type type, bool exactTypeOnly = false)
+        {
+            foreach (Component component in components)
+            {
+                if (exactTypeOnly)
+                {
+                    if (component.GetType() == type)
+                        return component;
+                }
+                else
+                {
+                    if (type.IsAssignableFrom(component.GetType()))
+                        return component;
+                }
+            }
+            return null;
         }
 
         public string GetSyncMemberName(ISyncMember member)

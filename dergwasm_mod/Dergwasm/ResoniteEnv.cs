@@ -186,50 +186,61 @@ namespace Derg
                 component__get_type_name
             );
 
-            machine.RegisterReturningHostFunc<ulong>("env", "slot__root_slot", slot__root_slot);
+            machine.RegisterReturningHostFunc("env", "slot__root_slot", slot__root_slot);
             machine.RegisterReturningHostFunc<WasmRefID<ISlot>, WasmRefID<ISlot>>(
                 "env",
                 "slot__get_parent",
                 slot__get_parent
             );
-            machine.RegisterReturningHostFunc<ulong, ulong>(
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, WasmRefID<User>>(
                 "env",
                 "slot__get_active_user",
                 slot__get_active_user
             );
-            machine.RegisterReturningHostFunc<ulong, ulong>(
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, WasmRefID<UserRoot>>(
                 "env",
                 "slot__get_active_user_root",
                 slot__get_active_user_root
             );
-            machine.RegisterReturningHostFunc<ulong, int, ulong>(
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, int, WasmRefID<ISlot>>(
                 "env",
                 "slot__get_object_root",
                 slot__get_object_root
             );
-            machine.RegisterReturningHostFunc<ulong, int>("env", "slot__get_name", slot__get_name);
-            machine.RegisterVoidHostFunc<ulong, int>("env", "slot__set_name", slot__set_name);
-            machine.RegisterReturningHostFunc<ulong, int>(
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, int>(
+                "env",
+                "slot__get_name",
+                slot__get_name
+            );
+            machine.RegisterVoidHostFunc<WasmRefID<ISlot>, int>(
+                "env",
+                "slot__set_name",
+                slot__set_name
+            );
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, int>(
                 "env",
                 "slot__get_num_children",
                 slot__get_num_children
             );
-            machine.RegisterReturningHostFunc<ulong, int, ulong>(
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, int, WasmRefID<ISlot>>(
                 "env",
                 "slot__get_child",
                 slot__get_child
             );
-            machine.RegisterReturningHostFunc<ulong, int, int, int, int, ulong>(
-                "env",
-                "slot__find_child_by_name",
-                slot__find_child_by_name
-            );
-            machine.RegisterReturningHostFunc<ulong, int, int, ulong>(
+            machine.RegisterReturningHostFunc<
+                WasmRefID<ISlot>,
+                int,
+                int,
+                int,
+                int,
+                WasmRefID<ISlot>
+            >("env", "slot__find_child_by_name", slot__find_child_by_name);
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, int, int, WasmRefID<ISlot>>(
                 "env",
                 "slot__find_child_by_tag",
                 slot__find_child_by_tag
             );
-            machine.RegisterReturningHostFunc<ulong, int, ulong>(
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, int, WasmRefID<Component>>(
                 "env",
                 "slot__get_component",
                 slot__get_component
@@ -269,99 +280,103 @@ namespace Derg
         // The host functions. They are always called from WASM, so they already have a frame.
         //
 
-        public ulong slot__root_slot(Frame frame)
+        public WasmRefID<ISlot> slot__root_slot(Frame frame)
         {
-            ISlot slot = worldServices.GetRootSlot();
-            return (ulong)slot.ReferenceID;
+            return new WasmRefID<ISlot>(worldServices.GetRootSlot().ReferenceID);
         }
 
         public WasmRefID<ISlot> slot__get_parent(Frame frame, WasmRefID<ISlot> slot)
         {
-            return worldServices.GetObjectOrNull(slot)?.Parent.GetWasmRef() ?? default;
+            return worldServices.GetObjectOrNull(slot)?.Parent?.GetWasmRef() ?? default;
         }
 
-        public ulong slot__get_active_user(Frame frame, ulong slot_id)
+        public WasmRefID<User> slot__get_active_user(Frame frame, WasmRefID<ISlot> slot)
         {
-            Slot slot = FromRefID<Slot>(slot_id);
-            return ((ulong?)slot?.ActiveUser?.ReferenceID) ?? 0;
+            return worldServices.GetObjectOrNull(slot)?.ActiveUser?.GetWasmRef() ?? default;
         }
 
-        public ulong slot__get_active_user_root(Frame frame, ulong slot_id)
+        public WasmRefID<UserRoot> slot__get_active_user_root(Frame frame, WasmRefID<ISlot> slot)
         {
-            Slot slot = FromRefID<Slot>(slot_id);
-            return ((ulong?)slot?.ActiveUserRoot?.ReferenceID) ?? 0;
+            return worldServices.GetObjectOrNull(slot)?.ActiveUserRoot?.GetWasmRef() ?? default;
         }
 
-        public ulong slot__get_object_root(Frame frame, ulong slot_id, int only_explicit)
+        public WasmRefID<ISlot> slot__get_object_root(
+            Frame frame,
+            WasmRefID<ISlot> slot,
+            int only_explicit
+        )
         {
-            Slot slot = FromRefID<Slot>(slot_id);
-            return ((ulong?)slot?.GetObjectRoot(only_explicit != 0)?.ReferenceID) ?? 0;
+            return worldServices
+                    .GetObjectOrNull(slot)
+                    ?.GetObjectRoot(only_explicit != 0)
+                    ?.GetWasmRef() ?? default;
         }
 
-        public int slot__get_name(Frame frame, ulong slot_id)
+        public int slot__get_name(Frame frame, WasmRefID<ISlot> slot)
         {
-            ISlot slot = FromRefID<ISlot>(slot_id);
-            string name = slot?.Name ?? "";
+            string name = worldServices.GetObjectOrNull(slot)?.Name ?? "";
             return emscriptenEnv.AllocateUTF8StringInMem(frame, name).Ptr.Addr;
         }
 
-        public void slot__set_name(Frame frame, ulong slot_id, int ptr)
+        public void slot__set_name(Frame frame, WasmRefID<ISlot> slot, int ptr)
         {
-            ISlot slot = FromRefID<ISlot>(slot_id);
-            if (slot == null)
+            ISlot islot = worldServices.GetObjectOrNull(slot);
+            if (islot == null)
                 return;
-            slot.Name = emscriptenEnv.GetUTF8StringFromMem(ptr);
+            islot.Name = emscriptenEnv.GetUTF8StringFromMem(ptr);
         }
 
-        public int slot__get_num_children(Frame frame, ulong slot_id)
+        public int slot__get_num_children(Frame frame, WasmRefID<ISlot> slot)
         {
-            Slot slot = FromRefID<Slot>(slot_id);
-            return slot?.ChildrenCount ?? 0;
+            return worldServices.GetObjectOrNull(slot)?.ChildrenCount ?? 0;
         }
 
-        public ulong slot__get_child(Frame frame, ulong slot_id, int index)
+        public WasmRefID<ISlot> slot__get_child(Frame frame, WasmRefID<ISlot> slot, int index)
         {
-            Slot slot = FromRefID<Slot>(slot_id);
-            return ((ulong?)slot?[index]?.ReferenceID) ?? 0;
+            return worldServices.GetObjectOrNull(slot)?[index]?.GetWasmRef() ?? default;
         }
 
-        public ulong slot__find_child_by_name(
+        public WasmRefID<ISlot> slot__find_child_by_name(
             Frame frame,
-            ulong slot_id,
+            WasmRefID<ISlot> slot,
             int namePtr,
             int match_substring,
             int ignore_case,
             int max_depth
         )
         {
-            Slot slot = FromRefID<Slot>(slot_id);
             string name = emscriptenEnv.GetUTF8StringFromMem(namePtr);
-            return (
-                    (ulong?)
-                        slot?.FindChild(
-                            name,
-                            match_substring != 0,
-                            ignore_case != 0,
-                            max_depth
-                        )?.ReferenceID
-                ) ?? 0;
+            return worldServices
+                    .GetObjectOrNull(slot)
+                    ?.FindChild(name, match_substring != 0, ignore_case != 0, max_depth)
+                    ?.GetWasmRef() ?? default;
         }
 
-        public ulong slot__find_child_by_tag(Frame frame, ulong slot_id, int tagPtr, int max_depth)
+        public WasmRefID<ISlot> slot__find_child_by_tag(
+            Frame frame,
+            WasmRefID<ISlot> slot,
+            int tagPtr,
+            int max_depth
+        )
         {
-            Slot slot = FromRefID<Slot>(slot_id);
             string tag = emscriptenEnv.GetUTF8StringFromMem(tagPtr);
-            return ((ulong?)slot?.FindChild(s => s.Tag == tag, max_depth)?.ReferenceID) ?? 0;
+            return worldServices
+                    .GetObjectOrNull(slot)
+                    ?.FindChild(s => s.Tag == tag, max_depth)
+                    ?.GetWasmRef() ?? default;
         }
 
-        public ulong slot__get_component(Frame frame, ulong slot_id, int typeNamePtr)
+        public WasmRefID<Component> slot__get_component(
+            Frame frame,
+            WasmRefID<ISlot> slot,
+            int typeNamePtr
+        )
         {
-            Slot slot = FromRefID<Slot>(slot_id);
             string typeName = emscriptenEnv.GetUTF8StringFromMem(typeNamePtr);
             Type type = Type.GetType(typeName);
             if (type == null)
-                return 0;
-            return ((ulong?)slot?.GetComponent(type)?.ReferenceID) ?? 0;
+                return default;
+            return worldServices.GetObjectOrNull(slot)?.GetComponent(type)?.GetWasmRef() ?? default;
         }
 
         public int component__get_type_name(Frame frame, ulong component_id)

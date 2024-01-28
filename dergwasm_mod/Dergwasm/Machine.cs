@@ -27,19 +27,24 @@ namespace Derg
 
         public IWasmAllocator Allocator;
 
-        public unsafe Ptr<T> HeapAlloc<T>(Frame frame) where T : unmanaged
+        public unsafe Ptr<T> HeapAlloc<T>(Frame frame)
+            where T : unmanaged
         {
             return Allocator.Malloc(frame, sizeof(T)).Reinterpret<T>();
         }
 
-        public unsafe Buff<T> HeapAlloc<T>(Frame frame, int count) where T : unmanaged
+        public unsafe Buff<T> HeapAlloc<T>(Frame frame, int count)
+            where T : unmanaged
         {
             return Allocator.Malloc(frame, sizeof(T) * count).Reinterpret<T>().ToBuffer(count);
         }
 
-        public unsafe PrefixBuff<T> HeapAllocPrefix<T>(Frame frame, int count) where T : unmanaged
+        public unsafe PrefixBuff<T> HeapAllocPrefix<T>(Frame frame, int count)
+            where T : unmanaged
         {
-            var prefix = new PrefixBuff<T>(Allocator.Malloc(frame, sizeof(int) + sizeof(T) * count));
+            var prefix = new PrefixBuff<T>(
+                Allocator.Malloc(frame, sizeof(int) + sizeof(T) * count)
+            );
             HeapSet(prefix.Length, count);
             return prefix;
         }
@@ -143,7 +148,8 @@ namespace Derg
         // sizes are ints because that's the way .NET returns array lengths.
         //
         // Throws a Trap if the offset and size are out of bounds.
-        public unsafe Span<byte> HeapSpan<T>(Ptr<T> offset) where T : unmanaged => HeapSpan(offset, sizeof(T));
+        public unsafe Span<byte> HeapSpan<T>(Ptr<T> offset)
+            where T : unmanaged => HeapSpan(offset, sizeof(T));
 
         // Returns a Span of bytes over the heap, starting from the given offset,
         // with the given size. Note that .NET limits arrays to 2GB, so negative
@@ -392,7 +398,6 @@ namespace Derg
             string name,
             Func<Frame, R> func
         )
-            where R : unmanaged
         {
             RegisterHostFunc(
                 moduleName,

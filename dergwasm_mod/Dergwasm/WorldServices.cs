@@ -24,7 +24,7 @@ namespace Derg
         public override T GetObjectOrNull<T>(WasmRefID<T> wasmRefID) =>
             world.ReferenceController.GetObjectOrNull(wasmRefID) as T;
 
-        public override ISlot GetRootSlot() => new SlotProxy(world.RootSlot);
+        public override ISlot GetRootSlot() => SlotProxy.SlotProxyFromSlot(world.RootSlot);
 
         public override async ValueTask<string> GatherAssetFile(
             Uri assetURL,
