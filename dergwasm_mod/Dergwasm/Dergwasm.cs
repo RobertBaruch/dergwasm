@@ -255,7 +255,7 @@ namespace Derg
             catch (Exception e)
             {
                 Msg($"Exception: {e}");
-                throw e;
+                throw;
             }
         }
 

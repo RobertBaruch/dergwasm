@@ -335,7 +335,7 @@ namespace Derg
         // Raises:
         //   ExitTrap: Always raises this exception.
         [ModFn("proc_exit")]
-        void ProcExit(Frame frame, int exit_code)
+        public void ProcExit(Frame frame, int exit_code)
         {
             foreach (int fd in streams.Keys)
                 Close(fd);
@@ -343,7 +343,7 @@ namespace Derg
         }
 
         [ModFn("environ_get")]
-        int EnvironGet(Frame frame, int environPtrPtr, int environBufPtr)
+        public int EnvironGet(Frame frame, int environPtrPtr, int environBufPtr)
         {
             //throw new Trap(
             //    $"Unimplemented call to EnvironGet(0x{environPtrPtr:X8}, 0x{environBufPtr:X8})"
@@ -352,7 +352,7 @@ namespace Derg
         }
 
         [ModFn("environ_sizes_get")]
-        int EnvironSizesGet(Frame frame, int argcPtr, int argvBufSizePtr)
+        public int EnvironSizesGet(Frame frame, int argcPtr, int argvBufSizePtr)
         {
             //throw new Trap(
             //    $"Unimplemented call to EnvironSizesGet(0x{argcPtr:X8}, 0x{argvBufSizePtr:X8})"
@@ -394,7 +394,7 @@ namespace Derg
         // Returns:
         //    0 on success, or -ERRNO on failure.
         [ModFn("fd_write")]
-        int FdWrite(Frame frame, int fd, int iov, int iovcnt, int nwrittenPtr)
+        public int FdWrite(Frame frame, int fd, int iov, int iovcnt, int nwrittenPtr)
         {
             if (iov == 0)
                 return -Errno.EFAULT;
@@ -439,7 +439,7 @@ namespace Derg
         // Returns:
         //    0 on success, or -ERRNO on failure.
         [ModFn("fd_seek")]
-        int FdSeek(Frame frame, int fd, long offset, uint whence, int newOffsetPtr)
+        public int FdSeek(Frame frame, int fd, long offset, uint whence, int newOffsetPtr)
         {
             int errno;
             ulong pos = LSeek(fd, offset, whence, out errno);
@@ -466,7 +466,7 @@ namespace Derg
         // Returns:
         //    0 on success, or -ERRNO on failure.
         [ModFn("fd_read")]
-        int FdRead(Frame frame, int fd, int iov, int iovcnt, int nreadPtr)
+        public int FdRead(Frame frame, int fd, int iov, int iovcnt, int nreadPtr)
         {
             if (iov == 0)
                 return -Errno.EFAULT;
@@ -506,7 +506,7 @@ namespace Derg
         // Returns:
         //    0 on success, or -ERRNO on failure.
         [ModFn("fd_close")]
-        int FdClose(Frame frame, int fd) => Close(fd);
+        public int FdClose(Frame frame, int fd) => Close(fd);
 
         // Syncs the file to "disk".
         //
@@ -516,6 +516,6 @@ namespace Derg
         // Returns:
         //    0 on success, or -ERRNO on failure.
         [ModFn("fd_sync")]
-        int FdSync(Frame frame, int fd) => Sync(fd);
+        public int FdSync(Frame frame, int fd) => Sync(fd);
     }
 }

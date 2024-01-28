@@ -40,8 +40,12 @@ namespace Derg.Modules
             var defaultModule = modAttr?.DefaultModule ?? "env";
 
             ReflectedFuncs = new List<Func<T, HostFunc>>();
-            foreach (var method in typeof(T).GetMethods())
+            foreach (var method in typeof(T).GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance))
             {
+                if (!method.IsPublic)
+                {
+                    throw new InvalidOperationException($"{method} in {typeof(T)} is not public, but was declared as a module function. Please make it public.");
+                }
                 var modFnAttr = method.GetCustomAttribute<ModFnAttribute>();
                 if (modFnAttr == null)
                 {
@@ -50,6 +54,12 @@ namespace Derg.Modules
 
                 ReflectedFuncs.Add(ReflectCallSite(modFnAttr, method, defaultModule));
             }
+        }
+
+        private static ValueType ValueTypeFor(Type type)
+        {
+            var valueType = (ValueType)typeof(Value).GetMethod(nameof(Value.ValueType)).MakeGenericMethod(type).Invoke(null, null);
+            return valueType;
         }
 
         private static Func<T, HostFunc> ReflectCallSite(ModFnAttribute attr, MethodInfo method, string defaultModule)
@@ -67,6 +77,7 @@ namespace Derg.Modules
             // Parameter Processing
             var argsCount = 0;
             var parameters = new List<Expression>();
+            var parameterValueTypes = new List<ValueType>();
             foreach (var param in method.GetParameters())
             {
                 if (param.ParameterType == typeof(Machine))
@@ -79,22 +90,24 @@ namespace Derg.Modules
                 }
                 else
                 {
-                    var value = Expression.Call(
-                        Expression.ArrayIndex(
-                            Expression.PropertyOrField(frame, nameof(Frame.Locals)),
-                            Expression.Constant(argsCount)),
-                        typeof(Value).GetMethod(nameof(Value.As)).MakeGenericMethod(param.ParameterType));
+                    parameters.Add(
+                        Expression.Call(
+                            Expression.ArrayIndex(
+                                Expression.PropertyOrField(frame, nameof(Frame.Locals)),
+                                Expression.Constant(argsCount)),
+                            typeof(Value).GetMethod(nameof(Value.As)).MakeGenericMethod(param.ParameterType)));
 
-                    parameters.Add(value);
+                    parameterValueTypes.Add(ValueTypeFor(param.ParameterType));
 
                     argsCount++;
                 }
             }
 
             // The actual inner call.
-            var result = Expression.Call(context, method, parameters);
+            var result = Expression.Call(method.IsStatic ? null : context, method, parameters);
 
             var returnsCount = 0;
+            var resultValueTypes = new List<ValueType>();
             if (method.ReturnType != typeof(void))
             {
                 returnsCount++;
@@ -103,15 +116,21 @@ namespace Derg.Modules
                     Expression.Call(frame, typeof(Frame).GetMethods().First(m => m.Name == nameof(Frame.Push) && m.IsGenericMethod).MakeGenericMethod(method.ReturnType),
                         result);
 
+                resultValueTypes.Add(ValueTypeFor(method.ReturnType));
+
                 // TODO: Add the ability to process value tuple based return values.
             }
 
+            // This is the invoked callsite. To improve per-call performance, optimize the expression structure going into this compilation.
             var callImpl = Expression.Lambda<Action<Machine, Frame>>(result, machine, frame);
 
             var funcCtor = Expression.New(typeof(HostFunc).GetConstructors().First(),
                 Expression.Constant(module),
                 Expression.Constant(name),
-                Expression.Constant(new FuncType()),
+                Expression.Constant(new FuncType(
+                    parameterValueTypes.ToArray(),
+                    resultValueTypes.ToArray()
+                    )),
                 Expression.New(typeof(ActionHostProxy).GetConstructors().First(),
                     callImpl,
                     Expression.Constant(argsCount),
