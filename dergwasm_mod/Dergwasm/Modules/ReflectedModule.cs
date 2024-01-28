@@ -17,16 +17,24 @@ namespace Derg.Modules
         }
     }
 
-    [AttributeUsage(AttributeTargets.Method)]
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
     public class ModFnAttribute : Attribute
     {
         public string Name { get; }
         public string Module { get; }
+        public Type[] Generics { get; }
 
-        public ModFnAttribute(string name = null, string module = null)
+        public ModFnAttribute(string name = null, string module = null, params Type[] generics)
         {
             Name = name;
             Module = module;
+            Generics = generics;
+        }
+
+        public ModFnAttribute(string name, params Type[] generics)
+        {
+            Name = name;
+            Generics = generics;
         }
     }
 
@@ -42,8 +50,8 @@ namespace Derg.Modules
             ReflectedFuncs = new List<Func<T, HostFunc>>();
             foreach (var method in typeof(T).GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance))
             {
-                var modFnAttr = method.GetCustomAttribute<ModFnAttribute>();
-                if (modFnAttr == null)
+                var modFnAttr = method.GetCustomAttributes<ModFnAttribute>();
+                if (modFnAttr.Count() == 0)
                 {
                     continue;
                 }
@@ -52,7 +60,16 @@ namespace Derg.Modules
                     throw new InvalidOperationException($"{method} in {typeof(T)} is not public, but was declared as a module function. Please make it public.");
                 }
 
-                ReflectedFuncs.Add(ReflectCallSite(modFnAttr, method, defaultModule));
+                foreach(var attr in modFnAttr) {
+                    MethodInfo boundMethod = method;
+                    if (attr.Generics.Length > 0) {
+                        if (!boundMethod.IsGenericMethod) {
+                            throw new InvalidOperationException($"Reflected module function {method} on {typeof(T)} attribute provided generic arguments, but the method is not generic.");
+                        }
+                        boundMethod = boundMethod.MakeGenericMethod(attr.Generics);
+                    }
+                    ReflectedFuncs.Add(ReflectCallSite(attr, boundMethod, defaultModule));
+                }
             }
         }
 

@@ -155,43 +155,6 @@ namespace Derg
         }
 
         //
-        // Host function registration.
-        //
-
-        // This only needs to be called once, when the WASM Machine is initialized and loaded.
-        public void RegisterHostFuncs()
-        {
-            void RegisterValueGetSet<T>(
-                string name,
-                Func<Frame, WasmRefID<IValue<T>>, Ptr<T>, ResoniteError> valueGet,
-                Func<Frame, WasmRefID<IValue<T>>, Ptr<T>, ResoniteError> valueSet
-            )
-                where T : unmanaged
-            {
-                machine.RegisterReturningHostFunc<WasmRefID<IValue<T>>, Ptr<T>, ResoniteError>(
-                    "env",
-                    $"value__get_{name}",
-                    value__get<T>
-                );
-                machine.RegisterReturningHostFunc<WasmRefID<IValue<T>>, Ptr<T>, ResoniteError>(
-                    "env",
-                    $"value__set_{name}",
-                    value__set<T>
-                );
-            }
-
-            void RegisterBlitValueGetSet<T>(string name)
-                where T : unmanaged
-            {
-                RegisterValueGetSet<T>(name, value__get<T>, value__set<T>);
-            }
-
-            RegisterBlitValueGetSet<int>("int");
-            RegisterBlitValueGetSet<float>("float");
-            RegisterBlitValueGetSet<double>("double");
-        }
-
-        //
         // The host functions. They are always called from WASM, so they already have a frame.
         //
 
@@ -368,6 +331,9 @@ namespace Derg
             return 0;
         }
 
+        [ModFn("value__get_int", typeof(int))]
+        [ModFn("value__get_float", typeof(float))]
+        [ModFn("value__get_double", typeof(double))]
         public ResoniteError value__get<T>(Frame frame, WasmRefID<IValue<T>> refId, Ptr<T> outPtr)
             where T : unmanaged
         {
@@ -384,6 +350,9 @@ namespace Derg
             return ResoniteError.Success;
         }
 
+        [ModFn("value__set_int", typeof(int))]
+        [ModFn("value__set_float", typeof(float))]
+        [ModFn("value__set_double", typeof(double))]
         public ResoniteError value__set<T>(Frame frame, WasmRefID<IValue<T>> refId, Ptr<T> inPtr)
             where T : unmanaged
         {
