@@ -2,12 +2,12 @@ using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Derg.Wasm;
 using Elements.Core;
 using FrooxEngine;
 using LEB128;
-using MonoMod.Utils;
 
 namespace Derg
 {
@@ -88,22 +88,22 @@ namespace Derg
             {
                 if (typeof(T).GetGenericTypeDefinition() == typeof(Ptr<>))
                 {
-                    var genericMethod = typeof(ValueAccessor).GetMethod(nameof(PtrGetter));
+                    var genericMethod = typeof(ValueAccessor).GetMethod(nameof(PtrGetter), BindingFlags.Static | BindingFlags.NonPublic);
                     var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
-                    return method.CreateDelegate<Func<Value, T>>();
+                    return (Func<Value, T>)method.Invoke(null, null);
                 }
                 if (typeof(T).GetGenericTypeDefinition() == typeof(WasmRefID<>))
                 {
-                    var genericMethod = typeof(ValueAccessor).GetMethod(nameof(WRefIdGetter));
+                    var genericMethod = typeof(ValueAccessor).GetMethod(nameof(WRefIdGetter), BindingFlags.Static | BindingFlags.NonPublic);
                     var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
-                    return method.CreateDelegate<Func<Value, T>>();
+                    return (Func<Value, T>)method.Invoke(null, null);
                 }
             }
             throw new NotImplementedException();
         }
 
         private static Func<Value, Ptr<T>> PtrGetter<T>()
-            where T : unmanaged
+            where T : struct
         {
             return v => new Ptr<T>(v.s32);
         }
@@ -120,22 +120,22 @@ namespace Derg
             {
                 if (typeof(T).GetGenericTypeDefinition() == typeof(Ptr<>))
                 {
-                    var genericMethod = typeof(ValueAccessor).GetMethod(nameof(PtrGetter));
+                    var genericMethod = typeof(ValueAccessor).GetMethod(nameof(PtrSetter), BindingFlags.Static | BindingFlags.NonPublic);
                     var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
-                    return method.CreateDelegate<Func<T, Value>>();
+                    return (Func<T, Value>)method.Invoke(null, null);
                 }
                 if (typeof(T).GetGenericTypeDefinition() == typeof(WasmRefID<>))
                 {
-                    var genericMethod = typeof(ValueAccessor).GetMethod(nameof(WRefIdGetter));
+                    var genericMethod = typeof(ValueAccessor).GetMethod(nameof(WRefIdSetter), BindingFlags.Static | BindingFlags.NonPublic);
                     var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
-                    return method.CreateDelegate<Func<T, Value>>();
+                    return (Func<T, Value>)method.Invoke(null, null);
                 }
             }
             throw new NotImplementedException();
         }
 
         private static Func<Ptr<T>, Value> PtrSetter<T>()
-            where T : unmanaged
+            where T : struct
         {
             return v => new Value { s32 = v.Addr };
         }

@@ -1,4 +1,6 @@
 using Derg;
+using Derg.Wasm;
+using Elements.Core;
 using Xunit;
 
 namespace DergwasmTests
@@ -56,6 +58,33 @@ namespace DergwasmTests
             Value v = new Value { f64 = 1.0 };
 
             Assert.Equal(1.0, v.f64);
+            Assert.Equal(0u, v.value_hi);
+        }
+
+        [Fact]
+        public void FromRefPtr()
+        {
+            Value v = Value.From(new Ptr<int>(120));
+
+            Assert.Equal(120, v.s32);
+            Assert.Equal(0u, v.value_hi);
+        }
+
+        [Fact]
+        public void FromRefID()
+        {
+            Value v = Value.From(new RefID(120));
+
+            Assert.Equal(120, v.s32);
+            Assert.Equal(0u, v.value_hi);
+        }
+
+        [Fact]
+        public void FromWasmRefID()
+        {
+            Value v = Value.From(new WasmRefID<ISlot>(120));
+
+            Assert.Equal(120, v.s32);
             Assert.Equal(0u, v.value_hi);
         }
     }
