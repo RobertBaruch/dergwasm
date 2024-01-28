@@ -282,7 +282,7 @@ namespace Derg
 
         public WasmRefID<ISlot> slot__root_slot(Frame frame)
         {
-            return new WasmRefID<ISlot>(worldServices.GetRootSlot().ReferenceID);
+            return new WasmRefID<ISlot>(worldServices.GetRootSlot());
         }
 
         public WasmRefID<ISlot> slot__get_parent(Frame frame, WasmRefID<ISlot> slot)

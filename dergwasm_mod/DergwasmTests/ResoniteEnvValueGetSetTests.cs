@@ -31,7 +31,6 @@ namespace DergwasmTests
         {
             var dataPtr = new Ptr<int>(4);
 
-
             Assert.Equal(
                 ResoniteError.Success,
                 env.value__get(frame, testComponent.IntField.GetWasmRef<IValue<int>>(), dataPtr)
@@ -55,7 +54,14 @@ namespace DergwasmTests
         [Fact]
         public void GetValueFailsOnNonexistentRefID()
         {
-            Assert.Equal(ResoniteError.InvalidRefId, env.value__get(frame, new WasmRefID<IValue<int>>(0xFFFFFFFFFFFFFFFFUL), new Ptr<int>(4)));
+            Assert.Equal(
+                ResoniteError.InvalidRefId,
+                env.value__get(
+                    frame,
+                    new WasmRefID<IValue<int>>(0xFFFFFFFFFFFFFFFFUL),
+                    new Ptr<int>(4)
+                )
+            );
         }
 
         [Fact]
@@ -63,7 +69,11 @@ namespace DergwasmTests
         {
             Assert.Equal(
                 ResoniteError.InvalidRefId,
-                env.value__get(frame, new WasmRefID<IValue<double>>(testComponent.IntField.ReferenceID), new Ptr<double>(4))
+                env.value__get(
+                    frame,
+                    new WasmRefID<IValue<double>>(testComponent.IntField.ReferenceID),
+                    new Ptr<double>(4)
+                )
             );
         }
 
@@ -72,7 +82,11 @@ namespace DergwasmTests
         {
             Assert.Equal(
                 ResoniteError.NullArgument,
-                env.value__get(frame, testComponent.IntField.GetWasmRef<IValue<int>>(), Ptr<int>.Null)
+                env.value__get(
+                    frame,
+                    testComponent.IntField.GetWasmRef<IValue<int>>(),
+                    Ptr<int>.Null
+                )
             );
         }
 
@@ -97,7 +111,11 @@ namespace DergwasmTests
 
             Assert.Equal(
                 ResoniteError.Success,
-                env.value__get(frame, testComponent.DoubleField.GetWasmRef<IValue<double>>(), dataPtr)
+                env.value__get(
+                    frame,
+                    testComponent.DoubleField.GetWasmRef<IValue<double>>(),
+                    dataPtr
+                )
             );
             Assert.Equal(1, HeapGet(dataPtr));
         }
@@ -118,7 +136,10 @@ namespace DergwasmTests
         public void SetValueFailsOnNonexistentRefID()
         {
             var dataPtr = new Ptr<int>(4);
-            Assert.Equal(ResoniteError.InvalidRefId, env.value__set(frame, new WasmRefID<IValue<int>>(0xFFFFFFFFFFFFFFFFUL), dataPtr));
+            Assert.Equal(
+                ResoniteError.InvalidRefId,
+                env.value__set(frame, new WasmRefID<IValue<int>>(0xFFFFFFFFFFFFFFFFUL), dataPtr)
+            );
         }
 
         [Fact]
@@ -127,7 +148,11 @@ namespace DergwasmTests
             var dataPtr = new Ptr<double>(4);
             Assert.Equal(
                 ResoniteError.InvalidRefId,
-                env.value__set(frame, new WasmRefID<IValue<double>>(testComponent.IntField.ReferenceID), dataPtr)
+                env.value__set(
+                    frame,
+                    new WasmRefID<IValue<double>>(testComponent.IntField.ReferenceID),
+                    dataPtr
+                )
             );
         }
 

@@ -15,6 +15,11 @@ namespace Derg.Wasm
             Id = (ulong)id;
         }
 
+        public WasmRefID(T obj)
+        {
+            Id = (ulong)obj.ReferenceID;
+        }
+
         public static implicit operator RefID(WasmRefID<T> p) => new RefID(p.Id);
     }
 
@@ -23,7 +28,7 @@ namespace Derg.Wasm
         public static WasmRefID<T> GetWasmRef<T>(this T val)
             where T : class, IWorldElement
         {
-            return new WasmRefID<T>(val.ReferenceID);
+            return new WasmRefID<T>(val);
         }
     }
 }
