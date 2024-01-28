@@ -155,6 +155,124 @@ namespace Derg
         }
 
         //
+<<<<<<< HEAD
+=======
+        // Host function registration.
+        //
+
+        // This only needs to be called once, when the WASM Machine is initialized and loaded.
+        public void RegisterHostFuncs()
+        {
+            machine.RegisterReturningHostFunc<
+                WasmRefID<Component>,
+                Ptr<byte>,
+                Ptr<int>,
+                Ptr<ulong>,
+                int
+            >("env", "component__get_member", component__get_member);
+            machine.RegisterReturningHostFunc<WasmRefID<Component>, Ptr<byte>>(
+                "env",
+                "component__get_type_name",
+                component__get_type_name
+            );
+
+            machine.RegisterReturningHostFunc("env", "slot__root_slot", slot__root_slot);
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, WasmRefID<ISlot>>(
+                "env",
+                "slot__get_parent",
+                slot__get_parent
+            );
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, WasmRefID<User>>(
+                "env",
+                "slot__get_active_user",
+                slot__get_active_user
+            );
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, WasmRefID<UserRoot>>(
+                "env",
+                "slot__get_active_user_root",
+                slot__get_active_user_root
+            );
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, int, WasmRefID<ISlot>>(
+                "env",
+                "slot__get_object_root",
+                slot__get_object_root
+            );
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, Ptr<byte>>(
+                "env",
+                "slot__get_name",
+                slot__get_name
+            );
+            machine.RegisterVoidHostFunc<WasmRefID<ISlot>, Ptr<byte>>(
+                "env",
+                "slot__set_name",
+                slot__set_name
+            );
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, int>(
+                "env",
+                "slot__get_num_children",
+                slot__get_num_children
+            );
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, Buff<WasmRefID>>(
+                "env",
+                "slot__get_children",
+                slot__get_children
+            );
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, int, WasmRefID<ISlot>>(
+                "env",
+                "slot__get_child",
+                slot__get_child
+            );
+            machine.RegisterReturningHostFunc<
+                WasmRefID<ISlot>,
+                Ptr<byte>,
+                int,
+                int,
+                int,
+                WasmRefID<ISlot>
+            >("env", "slot__find_child_by_name", slot__find_child_by_name);
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, Ptr<byte>, int, WasmRefID<ISlot>>(
+                "env",
+                "slot__find_child_by_tag",
+                slot__find_child_by_tag
+            );
+            machine.RegisterReturningHostFunc<WasmRefID<ISlot>, Ptr<byte>, WasmRefID<Component>>(
+                "env",
+                "slot__get_component",
+                slot__get_component
+            );
+
+            void RegisterValueGetSet<T>(
+                string name,
+                Func<Frame, WasmRefID<IValue<T>>, Ptr<T>, ResoniteError> valueGet,
+                Func<Frame, WasmRefID<IValue<T>>, Ptr<T>, ResoniteError> valueSet
+            )
+                where T : unmanaged
+            {
+                machine.RegisterReturningHostFunc<WasmRefID<IValue<T>>, Ptr<T>, ResoniteError>(
+                    "env",
+                    $"value__get_{name}",
+                    value__get<T>
+                );
+                machine.RegisterReturningHostFunc<WasmRefID<IValue<T>>, Ptr<T>, ResoniteError>(
+                    "env",
+                    $"value__set_{name}",
+                    value__set<T>
+                );
+            }
+
+            void RegisterBlitValueGetSet<T>(string name)
+                where T : unmanaged
+            {
+                RegisterValueGetSet<T>(name, value__get<T>, value__set<T>);
+            }
+
+            RegisterBlitValueGetSet<int>("int");
+            RegisterBlitValueGetSet<float>("float");
+            RegisterBlitValueGetSet<double>("double");
+        }
+
+        //
+>>>>>>> eb9cd73a38c2fd5afe1f993351606c3393fa943a
         // The host functions. They are always called from WASM, so they already have a frame.
         //
 
@@ -220,6 +338,7 @@ namespace Derg
         // Gets a list of the children of the given slot, returning a pointer to a buffer
         // of reference IDs. The caller is responsible for freeing
         // the memory allocated for the list.
+<<<<<<< HEAD
         [ModFn("slot__get_children")]
         public ResoniteError slot__get_children(
             Frame frame,
@@ -239,18 +358,33 @@ namespace Derg
                 s.ChildrenCount
             );
             Ptr<WasmRefID<ISlot>> ptr = buffer.Ptr;
+=======
+        public Buff<WasmRefID> slot__get_children(Frame frame, WasmRefID<ISlot> slot)
+        {
+            ISlot s = worldServices.GetObjectOrNull(slot);
+            if (s == null)
+                return default;
+            Buff<WasmRefID> buffer = emscriptenEnv.Malloc<WasmRefID>(frame, s.ChildrenCount);
+            Ptr<WasmRefID> ptr = buffer.Ptr;
+>>>>>>> eb9cd73a38c2fd5afe1f993351606c3393fa943a
             foreach (ISlot child in s.Children)
             {
                 WasmRefID<ISlot> refID = child.GetWasmRef();
                 machine.HeapSet(ptr, refID);
                 ptr++;
             }
+<<<<<<< HEAD
             machine.HeapSet(buffPtr, buffer);
 
             return ResoniteError.Success;
         }
 
         [ModFn("slot__get_child")]
+=======
+            return buffer;
+        }
+
+>>>>>>> eb9cd73a38c2fd5afe1f993351606c3393fa943a
         public WasmRefID<ISlot> slot__get_child(Frame frame, WasmRefID<ISlot> slot, int index)
         {
             var foundSlot = worldServices.GetObjectOrNull(slot);
