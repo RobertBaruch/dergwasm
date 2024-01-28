@@ -29,7 +29,7 @@ namespace DergwasmTests
             testComponent.Initialize();
 
             rootSlot = worldServices.GetRootSlot() as FakeSlot;
-            testSlot = new FakeSlot(worldServices, "name", rootSlot);
+            testSlot = (FakeSlot)rootSlot.AddSlot("name");
         }
 
         [Fact]
@@ -69,6 +69,29 @@ namespace DergwasmTests
             Buff<byte> buff = emscriptenEnv.AllocateUTF8StringInMem(frame, "new name");
             env.slot__set_name(frame, new WasmRefID<ISlot>(testSlot), buff.Ptr);
             Assert.Equal("new name", testSlot.Name);
+        }
+
+        [Fact]
+        public void GetChildrenTest()
+        {
+            Buff<WasmRefID> children = env.slot__get_children(
+                frame,
+                new WasmRefID<ISlot>(rootSlot)
+            );
+            Assert.Equal(1, children.Length);
+            Ptr<WasmRefID> ptr = children.ToPointer();
+            WasmRefID childRefID = HeapGet(ptr);
+            Assert.Equal(testSlot.ReferenceID, childRefID);
+        }
+
+        [Fact]
+        public void GetChildrenWithNoChildrenTest()
+        {
+            Buff<WasmRefID> children = env.slot__get_children(
+                frame,
+                new WasmRefID<ISlot>(testSlot)
+            );
+            Assert.Equal(0, children.Length);
         }
     }
 }

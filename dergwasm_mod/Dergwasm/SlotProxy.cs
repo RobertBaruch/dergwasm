@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Elements.Core;
 using FrooxEngine;
 
@@ -61,6 +63,8 @@ namespace Derg
         public bool IsPersistent => slot.IsPersistent;
 
         public bool IsRemoved => slot.IsRemoved;
+
+        public IEnumerable<ISlot> Children => slot.Children.Select(s => SlotProxyFromSlot(s));
 
         public ISlot FindChild(Predicate<ISlot> filter, int maxDepth = -1)
         {
