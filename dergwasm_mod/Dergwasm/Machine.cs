@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Derg.Modules;
 using Derg.Wasm;
 
 namespace Derg
@@ -277,6 +278,25 @@ namespace Derg
 
         public byte[] GetDataSegment(int addr) => dataSegments[addr];
 
+        public void RegisterReflectedModule<T>(T obj)
+        {
+            var reflected = new ReflectedModule<T>(obj);
+            RegisterModule(reflected);
+        }
+
+        public void RegisterModule(IHostModule module)
+        {
+            foreach(var arg in module.Functions)
+            {
+                RegisterHostFunc(arg);
+            }
+        }
+
+        public void RegisterHostFunc(HostFunc hostFunc)
+        {
+            hostFuncs.Add($"{hostFunc.ModuleName}.{hostFunc.Name}", hostFunc);
+        }
+
         public void RegisterHostFunc(
             string moduleName,
             string name,
@@ -284,7 +304,7 @@ namespace Derg
             HostProxy proxy
         )
         {
-            hostFuncs.Add($"{moduleName}.{name}", new HostFunc(moduleName, name, signature, proxy));
+            RegisterHostFunc(new HostFunc(moduleName, name, signature, proxy));
         }
 
         public void RegisterVoidHostFunc(string moduleName, string name, Action<Frame> func)

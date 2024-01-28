@@ -32,9 +32,9 @@ namespace Derg.Modules
             var frame = new Frame(null, new FakeModuleInstance(), null);
             frame.Push(5);
             frame.Push(34);
-            method.Proxy.Invoke(machine, frame);
-            Assert.Equal(34, module.Got);
-            Assert.Equal(5, module.Got2);
+            frame.InvokeFunc(machine, method);
+            Assert.Equal(5, module.Got);
+            Assert.Equal(34, module.Got2);
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Derg.Modules;
 using Derg.Wasm;
 using FrooxEngine;
 
@@ -30,6 +31,7 @@ namespace Derg
     }
 
     // Host environment expected by Emscripten.
+    [Mod("env")]
     public class EmscriptenEnv : IWasmAllocator
     {
         public Machine machine;
@@ -464,60 +466,6 @@ namespace Derg
                 a3
             );
 
-        //
-        // Imports to WASM
-        //
-
-        public void RegisterHostFuncs()
-        {
-            machine.RegisterVoidHostFunc<int, int, int>(
-                "env",
-                "emscripten_memcpy_js",
-                emscripten_memcpy_js
-            );
-            machine.RegisterVoidHostFunc<int>("env", "exit", emscripten_exit);
-            machine.RegisterReturningHostFunc<int, int>(
-                "env",
-                "emscripten_resize_heap",
-                emscripten_resize_heap
-            );
-            machine.RegisterVoidHostFunc(
-                "env",
-                "_emscripten_throw_longjmp",
-                _emscripten_throw_longjmp
-            );
-            machine.RegisterVoidHostFunc<int>(
-                "env",
-                "emscripten_scan_registers",
-                emscripten_scan_registers
-            );
-            machine.RegisterReturningHostFunc<int, int>("env", "invoke_i", invoke_i);
-            machine.RegisterReturningHostFunc<int, int, int>("env", "invoke_ii", invoke_ii);
-            machine.RegisterReturningHostFunc<int, int, int, int>("env", "invoke_iii", invoke_iii);
-            machine.RegisterReturningHostFunc<int, int, int, int, int>(
-                "env",
-                "invoke_iiii",
-                invoke_iiii
-            );
-            machine.RegisterReturningHostFunc<int, int, int, int, int, int>(
-                "env",
-                "invoke_iiiii",
-                invoke_iiiii
-            );
-            machine.RegisterVoidHostFunc<int>("env", "invoke_v", invoke_v);
-            machine.RegisterVoidHostFunc<int, int>("env", "invoke_vi", invoke_vi);
-            machine.RegisterVoidHostFunc<int, int, int>("env", "invoke_vii", invoke_vii);
-            machine.RegisterVoidHostFunc<int, int, int, int>("env", "invoke_viii", invoke_viii);
-            machine.RegisterVoidHostFunc<int, int, int, int, int>(
-                "env",
-                "invoke_viiii",
-                invoke_viiii
-            );
-            machine.RegisterVoidHostFunc("env", "mp_js_hook", mp_js_hook);
-            machine.RegisterReturningHostFunc<int>("env", "mp_js_ticks_ms", mp_js_ticks_ms);
-            machine.RegisterVoidHostFunc<int, int>("env", "mp_js_write", mp_js_write);
-        }
-
         public void __assert_fail(
             int conditionStrPtr,
             int filenameStrPtr,
@@ -527,11 +475,13 @@ namespace Derg
 
         public void abort() => throw new NotImplementedException();
 
+        [ModFn("_emscripten_throw_longjmp")]
         public void _emscripten_throw_longjmp(Frame frame)
         {
             throw new LongjmpException();
         }
 
+        [ModFn("emscripten_memcpy_js")]
         public void emscripten_memcpy_js(Frame frame, int dest, int src, int len)
         {
             Console.WriteLine($"emscripten_memcpy_js({dest}, {src}, {len})");
@@ -549,15 +499,18 @@ namespace Derg
             }
         }
 
+        [ModFn("emscripten_scan_registers")]
         public void emscripten_scan_registers(Frame frame, int scanPtr)
         {
             Console.WriteLine($"emscripten_scan_registers({scanPtr})");
             // throw new NotImplementedException();
         }
 
+        [ModFn("emscripten_resize_heap")]
         public int emscripten_resize_heap(Frame frame, int requestedSize) =>
             throw new NotImplementedException();
 
+        [ModFn("exit")]
         public void emscripten_exit(Frame frame, int exit_code) => throw new ExitTrap(exit_code);
 
         // Implementation of exceptions when not supported in WASM.
@@ -578,6 +531,7 @@ namespace Derg
         // Indirect function calls resulting from Emscripten's setjmp/longjmp implementation.
         //
 
+        [ModFn("invoke_v")]
         public void invoke_v(Frame frame, int index)
         {
             int sp = stackSave(frame);
@@ -593,6 +547,7 @@ namespace Derg
             }
         }
 
+        [ModFn("invoke_vi")]
         public void invoke_vi(Frame frame, int index, int a0)
         {
             int sp = stackSave(frame);
@@ -608,6 +563,7 @@ namespace Derg
             }
         }
 
+        [ModFn("invoke_vii")]
         public void invoke_vii(Frame frame, int index, int a0, int a1)
         {
             int sp = stackSave(frame);
@@ -623,6 +579,7 @@ namespace Derg
             }
         }
 
+        [ModFn("invoke_viii")]
         public void invoke_viii(Frame frame, int index, int a0, int a1, int a2)
         {
             int sp = stackSave(frame);
@@ -638,6 +595,7 @@ namespace Derg
             }
         }
 
+        [ModFn("invoke_viiii")]
         public void invoke_viiii(Frame frame, int index, int a0, int a1, int a2, int a3)
         {
             int sp = stackSave(frame);
@@ -653,6 +611,7 @@ namespace Derg
             }
         }
 
+        [ModFn("invoke_i")]
         public int invoke_i(Frame frame, int index)
         {
             int sp = stackSave(frame);
@@ -669,6 +628,7 @@ namespace Derg
             }
         }
 
+        [ModFn("invoke_ii")]
         public int invoke_ii(Frame frame, int index, int a0)
         {
             int sp = stackSave(frame);
@@ -685,6 +645,7 @@ namespace Derg
             }
         }
 
+        [ModFn("invoke_iii")]
         public int invoke_iii(Frame frame, int index, int a0, int a1)
         {
             int sp = stackSave(frame);
@@ -701,6 +662,7 @@ namespace Derg
             }
         }
 
+        [ModFn("invoke_iiii")]
         public int invoke_iiii(Frame frame, int index, int a0, int a1, int a2)
         {
             int sp = stackSave(frame);
@@ -717,6 +679,7 @@ namespace Derg
             }
         }
 
+        [ModFn("invoke_iiiii")]
         public int invoke_iiiii(Frame frame, int index, int a0, int a1, int a2, int a3)
         {
             int sp = stackSave(frame);
@@ -739,15 +702,18 @@ namespace Derg
 
         // Seems to read a char from stdin, writing it to stdout, unless it's a ctrl-C, in which
         // case mp_sched_keyboard_interrupt() is called.
+        [ModFn("mp_js_hook")]
         public void mp_js_hook(Frame frame) { }
 
         // Returns the number of milliseconds since the interpreter started.
+        [ModFn("mp_js_ticks_ms")]
         public int mp_js_ticks_ms(Frame frame)
         {
             return 0;
         }
 
         // Writes a string to the console.
+        [ModFn("mp_js_write")]
         public void mp_js_write(Frame frame, int ptr, int len)
         {
             byte[] data = new byte[len];

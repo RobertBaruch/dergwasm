@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using Derg.Mem;
 
 namespace Derg.Modules
 {
@@ -31,7 +30,7 @@ namespace Derg.Modules
         }
     }
 
-    public class ReflectedModule<T> : IHostModule where T : class
+    public class ReflectedModule<T> : IHostModule
     {
         private static readonly List<Func<T, HostFunc>> ReflectedFuncs;
 
@@ -67,8 +66,6 @@ namespace Derg.Modules
 
             // Parameter Processing
             var argsCount = 0;
-            var variables = new List<ParameterExpression>();
-            var bodies = new List<Expression>();
             var parameters = new List<Expression>();
             foreach (var param in method.GetParameters())
             {
@@ -82,47 +79,34 @@ namespace Derg.Modules
                 }
                 else
                 {
-                    argsCount++;
-
-                    var variable = Expression.Variable(param.ParameterType, param.Name);
-
-                    var marshallerType = MarshalManager.GetMarshallerFor(param) ?? throw new InvalidOperationException($"No marshaller for {param.ParameterType}");
                     var value = Expression.Call(
-                        Expression.New(marshallerType), marshallerType.GetMethod(nameof(IMarshaller<int>.FromValue)),
-                        Expression.Call(frame, typeof(Frame).GetMethods().First(m => m.Name == "Pop" && !m.IsGenericMethod)),
-                        machine, frame);
+                        Expression.ArrayIndex(
+                            Expression.PropertyOrField(frame, nameof(Frame.Locals)),
+                            Expression.Constant(argsCount)),
+                        typeof(Value).GetMethod(nameof(Value.As)).MakeGenericMethod(param.ParameterType));
 
-                    bodies.Add(Expression.Assign(variable, value));
-                    variables.Add(variable);
+                    parameters.Add(value);
 
-                    parameters.Add(variable);
+                    argsCount++;
                 }
             }
 
-            var returnsCount = 0;
-            if (method.ReturnType == typeof(void))
-            {
-                // The actual inner call.
-                Expression.Call(context, method, parameters);
-            }
-            else
-            {
-                var callResult = Expression.Variable(method.ReturnType);
-                variables.Add(callResult);
-                // The actual inner call.
-                bodies.Add(Expression.Assign(callResult, Expression.Call(context, method, parameters)));
+            // The actual inner call.
+            var result = Expression.Call(context, method, parameters);
 
+            var returnsCount = 0;
+            if (method.ReturnType != typeof(void))
+            {
                 returnsCount++;
                 // Process return value.
-                var marshallerType = MarshalManager.GetReturnMarshallerFor(method);
-                bodies.Add(
-                    Expression.Call(frame, typeof(Frame).GetMethod("Push", new[] { typeof(Value) }),
-                        Expression.Call(Expression.New(marshallerType), marshallerType.GetMethod(nameof(IMarshaller<int>.ToValue)), callResult, machine, frame)));
+                result =
+                    Expression.Call(frame, typeof(Frame).GetMethods().First(m => m.Name == nameof(Frame.Push) && m.IsGenericMethod).MakeGenericMethod(method.ReturnType),
+                        result);
 
                 // TODO: Add the ability to process value tuple based return values.
             }
 
-            var callImpl = Expression.Lambda<Action<Machine, Frame>>(Expression.Block(variables, bodies), machine, frame);
+            var callImpl = Expression.Lambda<Action<Machine, Frame>>(result, machine, frame);
 
             var funcCtor = Expression.New(typeof(HostFunc).GetConstructors().First(),
                 Expression.Constant(module),
