@@ -106,7 +106,7 @@ namespace Derg
         }
 
         // Invokes a WASM function when you're not already in a WASM function.
-        void InvokeWasmFunction(string funcName, List<Value> args)
+        public void InvokeWasmFunction(string funcName, List<Value> args)
         {
             Func f = machine.GetFunc(DergwasmMachine.moduleInstance.ModuleName, funcName);
             if (f == null)
@@ -220,7 +220,12 @@ namespace Derg
         [ModFn("slot__get_child")]
         public WasmRefID<ISlot> slot__get_child(Frame frame, WasmRefID<ISlot> slot, int index)
         {
-            return worldServices.GetObjectOrNull(slot)?[index]?.GetWasmRef() ?? default;
+            var foundSlot = worldServices.GetObjectOrNull(slot);
+            if (index < foundSlot?.ChildrenCount)
+            {
+                return foundSlot[index].GetWasmRef();
+            }
+            return default;
         }
 
         [ModFn("slot__find_child_by_name")]
