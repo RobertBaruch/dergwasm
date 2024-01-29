@@ -186,13 +186,11 @@ namespace Derg
         public WasmRefID<ISlot> slot__get_object_root(
             Frame frame,
             WasmRefID<ISlot> slot,
-            int only_explicit
+            bool only_explicit
         )
         {
-            return worldServices
-                    .GetObjectOrNull(slot)
-                    ?.GetObjectRoot(only_explicit != 0)
-                    ?.GetWasmRef() ?? default;
+            return worldServices.GetObjectOrNull(slot)?.GetObjectRoot(only_explicit)?.GetWasmRef()
+                ?? default;
         }
 
         [ModFn("slot__get_name")]
@@ -233,15 +231,15 @@ namespace Derg
             Frame frame,
             WasmRefID<ISlot> slot,
             NullTerminatedString namePtr,
-            int match_substring,
-            int ignore_case,
+            bool match_substring,
+            bool ignore_case,
             int max_depth
         )
         {
             string name = emscriptenEnv.GetUTF8StringFromMem(namePtr);
             return worldServices
                     .GetObjectOrNull(slot)
-                    ?.FindChild(name, match_substring != 0, ignore_case != 0, max_depth)
+                    ?.FindChild(name, match_substring, ignore_case, max_depth)
                     ?.GetWasmRef() ?? default;
         }
 
