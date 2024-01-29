@@ -48,7 +48,14 @@ namespace Derg.Modules
             var defaultModule = modAttr?.DefaultModule ?? "env";
 
             ReflectedFuncs = new List<Func<T, HostFunc>>();
-            foreach (var method in typeof(T).GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance))
+            foreach (
+                var method in typeof(T).GetMethods(
+                    BindingFlags.Public
+                        | BindingFlags.NonPublic
+                        | BindingFlags.Static
+                        | BindingFlags.Instance
+                )
+            )
             {
                 var modFnAttr = method.GetCustomAttributes<ModFnAttribute>();
                 if (modFnAttr.Count() == 0)
@@ -57,14 +64,21 @@ namespace Derg.Modules
                 }
                 if (!method.IsPublic)
                 {
-                    throw new InvalidOperationException($"{method} in {typeof(T)} is not public, but was declared as a module function. Please make it public.");
+                    throw new InvalidOperationException(
+                        $"{method} in {typeof(T)} is not public, but was declared as a module function. Please make it public."
+                    );
                 }
 
-                foreach(var attr in modFnAttr) {
+                foreach (var attr in modFnAttr)
+                {
                     MethodInfo boundMethod = method;
-                    if (attr.Generics.Length > 0) {
-                        if (!boundMethod.IsGenericMethod) {
-                            throw new InvalidOperationException($"Reflected module function {method} on {typeof(T)} attribute provided generic arguments, but the method is not generic.");
+                    if (attr.Generics.Length > 0)
+                    {
+                        if (!boundMethod.IsGenericMethod)
+                        {
+                            throw new InvalidOperationException(
+                                $"Reflected module function {method} on {typeof(T)} attribute provided generic arguments, but the method is not generic."
+                            );
                         }
                         boundMethod = boundMethod.MakeGenericMethod(attr.Generics);
                     }
@@ -75,11 +89,19 @@ namespace Derg.Modules
 
         private static ValueType ValueTypeFor(Type type)
         {
-            var valueType = (ValueType)typeof(Value).GetMethod(nameof(Value.ValueType)).MakeGenericMethod(type).Invoke(null, null);
+            var valueType = (ValueType)
+                typeof(Value)
+                    .GetMethod(nameof(Value.ValueType))
+                    .MakeGenericMethod(type)
+                    .Invoke(null, null);
             return valueType;
         }
 
-        private static Func<T, HostFunc> ReflectCallSite(ModFnAttribute attr, MethodInfo method, string defaultModule)
+        private static Func<T, HostFunc> ReflectCallSite(
+            ModFnAttribute attr,
+            MethodInfo method,
+            string defaultModule
+        )
         {
             var name = attr.Name ?? method.Name;
             var module = attr.Module ?? defaultModule;
@@ -111,8 +133,13 @@ namespace Derg.Modules
                         Expression.Call(
                             Expression.ArrayIndex(
                                 Expression.PropertyOrField(frame, nameof(Frame.Locals)),
-                                Expression.Constant(argsCount)),
-                            typeof(Value).GetMethod(nameof(Value.As)).MakeGenericMethod(param.ParameterType)));
+                                Expression.Constant(argsCount)
+                            ),
+                            typeof(Value)
+                                .GetMethod(nameof(Value.As))
+                                .MakeGenericMethod(param.ParameterType)
+                        )
+                    );
 
                     parameterValueTypes.Add(ValueTypeFor(param.ParameterType));
 
@@ -129,9 +156,14 @@ namespace Derg.Modules
             {
                 returnsCount++;
                 // Process return value.
-                result =
-                    Expression.Call(frame, typeof(Frame).GetMethods().First(m => m.Name == nameof(Frame.Push) && m.IsGenericMethod).MakeGenericMethod(method.ReturnType),
-                        result);
+                result = Expression.Call(
+                    frame,
+                    typeof(Frame)
+                        .GetMethods()
+                        .First(m => m.Name == nameof(Frame.Push) && m.IsGenericMethod)
+                        .MakeGenericMethod(method.ReturnType),
+                    result
+                );
 
                 resultValueTypes.Add(ValueTypeFor(method.ReturnType));
 
@@ -141,24 +173,31 @@ namespace Derg.Modules
             // This is the invoked callsite. To improve per-call performance, optimize the expression structure going into this compilation.
             var callImpl = Expression.Lambda<Action<Machine, Frame>>(result, machine, frame);
 
-            var funcCtor = Expression.New(typeof(HostFunc).GetConstructors().First(),
+            var funcCtor = Expression.New(
+                typeof(HostFunc).GetConstructors().First(),
                 Expression.Constant(module),
                 Expression.Constant(name),
-                Expression.Constant(new FuncType(
-                    parameterValueTypes.ToArray(),
-                    resultValueTypes.ToArray()
-                    )),
-                Expression.New(typeof(ActionHostProxy).GetConstructors().First(),
+                Expression.Constant(
+                    new FuncType(parameterValueTypes.ToArray(), resultValueTypes.ToArray())
+                ),
+                Expression.New(
+                    typeof(ActionHostProxy).GetConstructors().First(),
                     callImpl,
                     Expression.Constant(argsCount),
-                    Expression.Constant(returnsCount))
-                );
+                    Expression.Constant(returnsCount)
+                )
+            );
 
             var lambda = Expression.Lambda<Func<T, HostFunc>>(funcCtor, context);
             return lambda.Compile();
         }
 
         public List<HostFunc> Functions { get; }
+
+        public HostFunc this[string name]
+        {
+            get => Functions.First(f => f.Name == name);
+        }
 
         public ReflectedModule(T self)
         {
