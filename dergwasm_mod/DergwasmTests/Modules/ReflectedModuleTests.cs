@@ -12,6 +12,9 @@ namespace Derg.Modules
         public int Got2 { get; private set; }
         public WasmRefID<ISlot> SlotArg { get; private set; }
         public Ptr<byte> BytePtrArg { get; private set; }
+        public bool ReceivedBoolArg { get; private set; }
+
+        public NullTerminatedString StringArg { get; private set; }
 
         [ModFn("fn_1")]
         public void TestFunc(Frame frame, int num, int num2)
@@ -32,6 +35,18 @@ namespace Derg.Modules
             BytePtrArg = ptr;
         }
 
+        [ModFn("string_arg")]
+        public void NullTerminatedStringArg(Frame frame, NullTerminatedString s)
+        {
+            StringArg = s;
+        }
+
+        [ModFn("bool_arg")]
+        public void BoolArg(Frame frame, bool b)
+        {
+            ReceivedBoolArg = b;
+        }
+
         [ModFn("refid_return")]
         public WasmRefID<ISlot> RefIdReturn(Frame frame)
         {
@@ -42,6 +57,18 @@ namespace Derg.Modules
         public Ptr<byte> PtrReturn(Frame frame)
         {
             return new Ptr<byte>(5);
+        }
+
+        [ModFn("string_return")]
+        public NullTerminatedString StringReturn(Frame frame)
+        {
+            return new NullTerminatedString(5);
+        }
+
+        [ModFn("bool_return")]
+        public bool BoolReturn(Frame frame)
+        {
+            return true;
         }
     }
 
@@ -109,7 +136,7 @@ namespace Derg.Modules
         public void RefIdArgPassedCorrectly()
         {
             var method = reflected["refid_arg"];
-            frame.Push(5UL);
+            frame.Push(new WasmRefID<ISlot>(5UL));
             frame.InvokeFunc(machine, method);
             Assert.Equal(5UL, module.SlotArg.Id);
         }
@@ -129,9 +156,49 @@ namespace Derg.Modules
         public void PtrArgPassedCorrectly()
         {
             var method = reflected["ptr_arg"];
-            frame.Push(5);
+            frame.Push(new Ptr<byte>(5));
             frame.InvokeFunc(machine, method);
             Assert.Equal(5, module.BytePtrArg.Addr);
+        }
+
+        [Fact]
+        public void StringArgApiDataIsCorrect()
+        {
+            var apiData = reflected.ApiDataFor("string_arg");
+            Assert.Equal("test", apiData.Module);
+            Assert.Equal("string_arg", apiData.Name);
+            Assert.Equal("NullTerminatedString", Assert.Single(apiData.Parameters).CSType);
+            Assert.Equal(ValueType.I32, Assert.Single(apiData.Parameters).Type);
+            Assert.Empty(apiData.Returns);
+        }
+
+        [Fact]
+        public void StringArgPassedCorrectly()
+        {
+            var method = reflected["string_arg"];
+            frame.Push(new NullTerminatedString(5));
+            frame.InvokeFunc(machine, method);
+            Assert.Equal(5, module.StringArg.Data.Addr);
+        }
+
+        [Fact]
+        public void BoolArgApiDataIsCorrect()
+        {
+            var apiData = reflected.ApiDataFor("bool_arg");
+            Assert.Equal("test", apiData.Module);
+            Assert.Equal("bool_arg", apiData.Name);
+            Assert.Equal("bool", Assert.Single(apiData.Parameters).CSType);
+            Assert.Equal(ValueType.I32, Assert.Single(apiData.Parameters).Type);
+            Assert.Empty(apiData.Returns);
+        }
+
+        [Fact]
+        public void BoolArgPassedCorrectly()
+        {
+            var method = reflected["bool_arg"];
+            frame.Push(true);
+            frame.InvokeFunc(machine, method);
+            Assert.True(module.ReceivedBoolArg);
         }
 
         [Fact]
@@ -170,6 +237,44 @@ namespace Derg.Modules
             var method = reflected["ptr_return"];
             frame.InvokeFunc(machine, method);
             Assert.Equal(5, frame.Pop<Ptr<byte>>().Addr);
+        }
+
+        [Fact]
+        public void StringReturnApiDataIsCorrect()
+        {
+            var apiData = reflected.ApiDataFor("string_return");
+            Assert.Equal("test", apiData.Module);
+            Assert.Equal("string_return", apiData.Name);
+            Assert.Empty(apiData.Parameters);
+            Assert.Equal("NullTerminatedString", Assert.Single(apiData.Returns).CSType);
+            Assert.Equal(ValueType.I32, Assert.Single(apiData.Returns).Type);
+        }
+
+        [Fact]
+        public void StringReturnPassedCorrectly()
+        {
+            var method = reflected["string_return"];
+            frame.InvokeFunc(machine, method);
+            Assert.Equal(5, frame.Pop<NullTerminatedString>().Data.Addr);
+        }
+
+        [Fact]
+        public void BoolReturnApiDataIsCorrect()
+        {
+            var apiData = reflected.ApiDataFor("bool_return");
+            Assert.Equal("test", apiData.Module);
+            Assert.Equal("bool_return", apiData.Name);
+            Assert.Empty(apiData.Parameters);
+            Assert.Equal("bool", Assert.Single(apiData.Returns).CSType);
+            Assert.Equal(ValueType.I32, Assert.Single(apiData.Returns).Type);
+        }
+
+        [Fact]
+        public void BoolReturnPassedCorrectly()
+        {
+            var method = reflected["bool_return"];
+            frame.InvokeFunc(machine, method);
+            Assert.True(frame.Pop<bool>());
         }
     }
 }
