@@ -186,29 +186,27 @@ namespace Derg
         public WasmRefID<ISlot> slot__get_object_root(
             Frame frame,
             WasmRefID<ISlot> slot,
-            int only_explicit
+            bool only_explicit
         )
         {
-            return worldServices
-                    .GetObjectOrNull(slot)
-                    ?.GetObjectRoot(only_explicit != 0)
-                    ?.GetWasmRef() ?? default;
+            return worldServices.GetObjectOrNull(slot)?.GetObjectRoot(only_explicit)?.GetWasmRef()
+                ?? default;
         }
 
         [ModFn("slot__get_name")]
-        public Ptr<byte> slot__get_name(Frame frame, WasmRefID<ISlot> slot)
+        public NullTerminatedString slot__get_name(Frame frame, WasmRefID<ISlot> slot)
         {
             string name = worldServices.GetObjectOrNull(slot)?.Name ?? "";
-            return emscriptenEnv.AllocateUTF8StringInMem(frame, name).ToPointer();
+            return new NullTerminatedString(emscriptenEnv.AllocateUTF8StringInMem(frame, name));
         }
 
         [ModFn("slot__set_name")]
-        public void slot__set_name(Frame frame, WasmRefID<ISlot> slot, Ptr<byte> ptr)
+        public void slot__set_name(Frame frame, WasmRefID<ISlot> slot, NullTerminatedString name)
         {
             ISlot islot = worldServices.GetObjectOrNull(slot);
             if (islot == null)
                 return;
-            islot.Name = emscriptenEnv.GetUTF8StringFromMem(ptr);
+            islot.Name = emscriptenEnv.GetUTF8StringFromMem(name);
         }
 
         [ModFn("slot__get_num_children")]
@@ -232,16 +230,16 @@ namespace Derg
         public WasmRefID<ISlot> slot__find_child_by_name(
             Frame frame,
             WasmRefID<ISlot> slot,
-            Ptr<byte> namePtr,
-            int match_substring,
-            int ignore_case,
+            NullTerminatedString namePtr,
+            bool match_substring,
+            bool ignore_case,
             int max_depth
         )
         {
             string name = emscriptenEnv.GetUTF8StringFromMem(namePtr);
             return worldServices
                     .GetObjectOrNull(slot)
-                    ?.FindChild(name, match_substring != 0, ignore_case != 0, max_depth)
+                    ?.FindChild(name, match_substring, ignore_case, max_depth)
                     ?.GetWasmRef() ?? default;
         }
 
@@ -249,7 +247,7 @@ namespace Derg
         public WasmRefID<ISlot> slot__find_child_by_tag(
             Frame frame,
             WasmRefID<ISlot> slot,
-            Ptr<byte> tagPtr,
+            NullTerminatedString tagPtr,
             int max_depth
         )
         {
@@ -264,7 +262,7 @@ namespace Derg
         public WasmRefID<Component> slot__get_component(
             Frame frame,
             WasmRefID<ISlot> slot,
-            Ptr<byte> typeNamePtr
+            NullTerminatedString typeNamePtr
         )
         {
             string typeName = emscriptenEnv.GetUTF8StringFromMem(typeNamePtr);
@@ -275,11 +273,14 @@ namespace Derg
         }
 
         [ModFn("component__get_type_name")]
-        public Ptr<byte> component__get_type_name(Frame frame, WasmRefID<Component> component_id)
+        public NullTerminatedString component__get_type_name(
+            Frame frame,
+            WasmRefID<Component> component_id
+        )
         {
             string typeName =
                 worldServices.GetObjectOrNull(component_id)?.GetType().GetNiceName() ?? "";
-            return emscriptenEnv.AllocateUTF8StringInMem(frame, typeName).Ptr;
+            return new NullTerminatedString(emscriptenEnv.AllocateUTF8StringInMem(frame, typeName));
         }
 
         public enum ResoniteType : int
@@ -303,7 +304,7 @@ namespace Derg
         public int component__get_member(
             Frame frame,
             WasmRefID<Component> componentRefId,
-            Ptr<byte> namePtr,
+            NullTerminatedString namePtr,
             Ptr<int> outTypePtr,
             Ptr<ulong> outRefIdPtr
         )
@@ -311,7 +312,7 @@ namespace Derg
             Component component = worldServices.GetObjectOrNull(componentRefId);
             if (
                 component == null
-                || namePtr.Addr == 0
+                || namePtr.Data.Addr == 0
                 || outTypePtr.Addr == 0
                 || outRefIdPtr.Addr == 0
             )

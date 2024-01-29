@@ -69,11 +69,12 @@ namespace Derg
             Add(v => v.u64, v => new Value { u64 = v });
             Add(v => v.f32, v => new Value { f32 = v });
             Add(v => v.f64, v => new Value { f64 = v });
-            Add(v => v.Bool, v => new Value { s32 = v ? 1 : 0 });
+            Add(v => v.Bool, v => new Value { u32 = v ? 1u : 0u });
             // Complex Primitives
             Add(v => (ResoniteError)v.s32, v => new Value { s32 = (int)v });
             Add(v => new Ptr(v.s32), v => new Value { s32 = v.Addr });
             Add(v => new RefID(v.u64), v => new Value { u64 = (ulong)v });
+            Add(v => new NullTerminatedString(v.s32), v => new Value { s32 = v.Data.Addr });
         }
 
         private static void Add<T>(Func<Value, T> getter, Func<T, Value> setter)
@@ -84,17 +85,31 @@ namespace Derg
 
         private static Func<Value, T> CreateGetter<T>()
         {
+            if (typeof(T) == typeof(NullTerminatedString))
+            {
+                var method = typeof(ValueAccessor).GetMethod(
+                    nameof(NullTerminatedStringGetter),
+                    BindingFlags.Static | BindingFlags.NonPublic
+                );
+                return (Func<Value, T>)method.Invoke(null, null);
+            }
             if (typeof(T).IsConstructedGenericType)
             {
                 if (typeof(T).GetGenericTypeDefinition() == typeof(Ptr<>))
                 {
-                    var genericMethod = typeof(ValueAccessor).GetMethod(nameof(PtrGetter), BindingFlags.Static | BindingFlags.NonPublic);
+                    var genericMethod = typeof(ValueAccessor).GetMethod(
+                        nameof(PtrGetter),
+                        BindingFlags.Static | BindingFlags.NonPublic
+                    );
                     var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
                     return (Func<Value, T>)method.Invoke(null, null);
                 }
                 if (typeof(T).GetGenericTypeDefinition() == typeof(WasmRefID<>))
                 {
-                    var genericMethod = typeof(ValueAccessor).GetMethod(nameof(WRefIdGetter), BindingFlags.Static | BindingFlags.NonPublic);
+                    var genericMethod = typeof(ValueAccessor).GetMethod(
+                        nameof(WRefIdGetter),
+                        BindingFlags.Static | BindingFlags.NonPublic
+                    );
                     var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
                     return (Func<Value, T>)method.Invoke(null, null);
                 }
@@ -114,19 +129,38 @@ namespace Derg
             return v => new WasmRefID<T>(v.u64);
         }
 
+        private static Func<Value, NullTerminatedString> NullTerminatedStringGetter()
+        {
+            return v => new NullTerminatedString(v.s32);
+        }
+
         private static Func<T, Value> CreateSetter<T>()
         {
+            if (typeof(T) == typeof(NullTerminatedString))
+            {
+                var method = typeof(ValueAccessor).GetMethod(
+                    nameof(NullTerminatedStringSetter),
+                    BindingFlags.Static | BindingFlags.NonPublic
+                );
+                return (Func<T, Value>)method.Invoke(null, null);
+            }
             if (typeof(T).IsConstructedGenericType)
             {
                 if (typeof(T).GetGenericTypeDefinition() == typeof(Ptr<>))
                 {
-                    var genericMethod = typeof(ValueAccessor).GetMethod(nameof(PtrSetter), BindingFlags.Static | BindingFlags.NonPublic);
+                    var genericMethod = typeof(ValueAccessor).GetMethod(
+                        nameof(PtrSetter),
+                        BindingFlags.Static | BindingFlags.NonPublic
+                    );
                     var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
                     return (Func<T, Value>)method.Invoke(null, null);
                 }
                 if (typeof(T).GetGenericTypeDefinition() == typeof(WasmRefID<>))
                 {
-                    var genericMethod = typeof(ValueAccessor).GetMethod(nameof(WRefIdSetter), BindingFlags.Static | BindingFlags.NonPublic);
+                    var genericMethod = typeof(ValueAccessor).GetMethod(
+                        nameof(WRefIdSetter),
+                        BindingFlags.Static | BindingFlags.NonPublic
+                    );
                     var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
                     return (Func<T, Value>)method.Invoke(null, null);
                 }
@@ -144,6 +178,11 @@ namespace Derg
             where T : class, IWorldElement
         {
             return v => new Value { u64 = v.Id };
+        }
+
+        private static Func<NullTerminatedString, Value> NullTerminatedStringSetter()
+        {
+            return v => new Value { s32 = v.Data.Addr };
         }
 
         public static Func<Value, T> GetConverter<T>()
@@ -202,9 +241,9 @@ namespace Derg
         [FieldOffset(8)]
         public ulong value_hi;
 
-        // This is highly expensive because it a dictionary lookup and some casts.
-        // It takes about 2.8x the time to get a value this way. If you already know
-        // the type of the value you're popping, then extract it yourself.
+        // This is slightly more expensive than accessing the correct value directly --
+        // 1.2x the time. If you already know the type of the value you're popping, then
+        // extract it yourself.
         public T As<T>()
         {
             return ValueAccessor<T>.Get(this);

@@ -112,6 +112,10 @@ namespace Derg
             return GetUTF8StringFromMem(ptr.Addr);
         }
 
+        // Gets the NUL-terminated UTF8-encoded string at the given pointer in the heap.
+        public string GetUTF8StringFromMem(NullTerminatedString s) =>
+            GetUTF8StringFromMem(s.Data.Addr);
+
         // Gets the UTF8-encoded string of the given byte length at the given pointer
         // in the heap. Because the length is given, the string does not have to be
         // NUL-terminated.
