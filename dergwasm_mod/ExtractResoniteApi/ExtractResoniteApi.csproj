@@ -1,9 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
+		<OutputType>Exe</OutputType>
 		<TargetFramework>net472</TargetFramework>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.1.3.7</Version>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -20,6 +20,10 @@
 		<ResoniteNmlMods>$(ResonitePath)\rml_mods</ResoniteNmlMods>
 		<ResoniteLibs>$(ResonitePath)\Libraries</ResoniteLibs>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="System.Text.Json" Version="8.0.1" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<Reference Include="0Harmony">
@@ -49,15 +53,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="System.Memory" Version="4.5.5" />
-		<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
-		<PackageReference Include="System.Text.Json" Version="8.0.1" />
-		<PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
-		<PackageReference Include="System.ValueTuple" Version="4.5.0" />
+		<ProjectReference Include="..\Dergwasm\Dergwasm.csproj" />
 	</ItemGroup>
-
-	<Target Name="CopyPluginLibrary" AfterTargets="PostBuildEvent" Condition="Exists($(ResoniteNmlMods))">
-		<Exec Command="copy &quot;$(TargetDir)\$(TargetName).dll&quot; &quot;$(ResoniteNmlMods)\&quot;" />
-	</Target>
 
 </Project>

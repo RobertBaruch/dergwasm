@@ -67,11 +67,42 @@ namespace Derg.Modules
             Assert.Equal("test", method.ModuleName);
             Assert.Equal("fn_1", method.Name);
 
+            var apiData = reflected.ApiData.First();
+            Assert.Equal("test", apiData.Module);
+            Assert.Equal("fn_1", apiData.Name);
+            Assert.Collection(
+                apiData.Parameters,
+                p => Assert.Equal("num", p.Name),
+                p => Assert.Equal("num2", p.Name)
+            );
+            Assert.Collection(
+                apiData.Parameters,
+                p => Assert.Equal(ValueType.I32, p.Type),
+                p => Assert.Equal(ValueType.I32, p.Type)
+            );
+            Assert.Collection(
+                apiData.Parameters,
+                p => Assert.Equal("int", p.CSType),
+                p => Assert.Equal("int", p.CSType)
+            );
+            Assert.Empty(apiData.Returns);
+
             frame.Push(5);
             frame.Push(34);
             frame.InvokeFunc(machine, method);
             Assert.Equal(5, module.Got);
             Assert.Equal(34, module.Got2);
+        }
+
+        [Fact]
+        public void RefIdArgApiDataIsCorrect()
+        {
+            var apiData = reflected.ApiDataFor("refid_arg");
+            Assert.Equal("test", apiData.Module);
+            Assert.Equal("refid_arg", apiData.Name);
+            Assert.Equal("WasmRefID<ISlot>", Assert.Single(apiData.Parameters).CSType);
+            Assert.Equal(ValueType.I64, Assert.Single(apiData.Parameters).Type);
+            Assert.Empty(apiData.Returns);
         }
 
         [Fact]
@@ -84,6 +115,17 @@ namespace Derg.Modules
         }
 
         [Fact]
+        public void PtrArgApiDataIsCorrect()
+        {
+            var apiData = reflected.ApiDataFor("ptr_arg");
+            Assert.Equal("test", apiData.Module);
+            Assert.Equal("ptr_arg", apiData.Name);
+            Assert.Equal("Ptr<byte>", Assert.Single(apiData.Parameters).CSType);
+            Assert.Equal(ValueType.I32, Assert.Single(apiData.Parameters).Type);
+            Assert.Empty(apiData.Returns);
+        }
+
+        [Fact]
         public void PtrArgPassedCorrectly()
         {
             var method = reflected["ptr_arg"];
@@ -93,11 +135,33 @@ namespace Derg.Modules
         }
 
         [Fact]
+        public void RefIdReturnApiDataIsCorrect()
+        {
+            var apiData = reflected.ApiDataFor("refid_return");
+            Assert.Equal("test", apiData.Module);
+            Assert.Equal("refid_return", apiData.Name);
+            Assert.Empty(apiData.Parameters);
+            Assert.Equal("WasmRefID<ISlot>", Assert.Single(apiData.Returns).CSType);
+            Assert.Equal(ValueType.I64, Assert.Single(apiData.Returns).Type);
+        }
+
+        [Fact]
         public void RefIdReturnPassedCorrectly()
         {
             var method = reflected["refid_return"];
             frame.InvokeFunc(machine, method);
             Assert.Equal(5UL, frame.Pop<WasmRefID<ISlot>>().Id);
+        }
+
+        [Fact]
+        public void PtrReturnApiDataIsCorrect()
+        {
+            var apiData = reflected.ApiDataFor("ptr_return");
+            Assert.Equal("test", apiData.Module);
+            Assert.Equal("ptr_return", apiData.Name);
+            Assert.Empty(apiData.Parameters);
+            Assert.Equal("Ptr<byte>", Assert.Single(apiData.Returns).CSType);
+            Assert.Equal(ValueType.I32, Assert.Single(apiData.Returns).Type);
         }
 
         [Fact]
