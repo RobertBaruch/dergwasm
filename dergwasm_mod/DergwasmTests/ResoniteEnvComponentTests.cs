@@ -30,8 +30,10 @@ namespace DergwasmTests
         [Fact]
         public void GetMemberTest()
         {
-            Buff<byte> namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
-            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Ptr.Addr + 100);
+            NullTerminatedString namePtr = new NullTerminatedString(
+                emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField")
+            );
+            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Data.Addr + 100);
             Ptr<ulong> outRefIdPtr = new Ptr<ulong>(outTypePtr.Addr + sizeof(int));
 
             Assert.Equal(
@@ -39,7 +41,7 @@ namespace DergwasmTests
                 env.component__get_member(
                     frame,
                     new WasmRefID<Component>(testComponent),
-                    namePtr.Ptr,
+                    namePtr,
                     outTypePtr,
                     outRefIdPtr
                 )
@@ -54,8 +56,10 @@ namespace DergwasmTests
         [Fact]
         public void GetMemberFailsOnNonexistentRefID()
         {
-            Buff<byte> namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
-            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Ptr.Addr + 100);
+            NullTerminatedString namePtr = new NullTerminatedString(
+                emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField")
+            );
+            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Data.Addr + 100);
             Ptr<ulong> outRefIdPtr = new Ptr<ulong>(outTypePtr.Addr + sizeof(int));
 
             Assert.Equal(
@@ -63,7 +67,7 @@ namespace DergwasmTests
                 env.component__get_member(
                     frame,
                     new WasmRefID<Component>(0xFFFFFFFFFFFFFFFFUL),
-                    namePtr.Ptr,
+                    namePtr,
                     outTypePtr,
                     outRefIdPtr
                 )
@@ -73,8 +77,10 @@ namespace DergwasmTests
         [Fact]
         public void GetMemberFailsOnNoncomponentRefID()
         {
-            Buff<byte> namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
-            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Ptr.Addr + 100);
+            NullTerminatedString namePtr = new NullTerminatedString(
+                emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField")
+            );
+            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Data.Addr + 100);
             Ptr<ulong> outRefIdPtr = new Ptr<ulong>(outTypePtr.Addr + sizeof(int));
 
             Assert.Equal(
@@ -82,7 +88,7 @@ namespace DergwasmTests
                 env.component__get_member(
                     frame,
                     new WasmRefID<Component>(testComponent.IntField.ReferenceID),
-                    namePtr.Ptr,
+                    namePtr,
                     outTypePtr,
                     outRefIdPtr
                 )
@@ -92,8 +98,8 @@ namespace DergwasmTests
         [Fact]
         public void GetMemberFailsOnNullNamePtr()
         {
-            Buff<byte> namePtr = new Buff<byte>(0, 0);
-            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Ptr.Addr + 100);
+            NullTerminatedString namePtr = new NullTerminatedString(0);
+            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Data.Addr + 100);
             Ptr<ulong> outRefIdPtr = new Ptr<ulong>(outTypePtr.Addr + sizeof(int));
 
             Assert.Equal(
@@ -101,7 +107,7 @@ namespace DergwasmTests
                 env.component__get_member(
                     frame,
                     new WasmRefID<Component>(testComponent),
-                    namePtr.Ptr,
+                    namePtr,
                     outTypePtr,
                     outRefIdPtr
                 )
@@ -111,7 +117,9 @@ namespace DergwasmTests
         [Fact]
         public void GetMemberFailsOnNullTypePtr()
         {
-            Buff<byte> namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
+            NullTerminatedString namePtr = new NullTerminatedString(
+                emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField")
+            );
             Ptr<int> outTypePtr = new Ptr<int>(0);
             Ptr<ulong> outRefIdPtr = new Ptr<ulong>(outTypePtr.Addr + sizeof(int));
 
@@ -120,7 +128,7 @@ namespace DergwasmTests
                 env.component__get_member(
                     frame,
                     new WasmRefID<Component>(testComponent),
-                    namePtr.Ptr,
+                    namePtr,
                     outTypePtr,
                     outRefIdPtr
                 )
@@ -130,8 +138,10 @@ namespace DergwasmTests
         [Fact]
         public void GetMemberFailsOnNullRefIdPtr()
         {
-            Buff<byte> namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
-            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Ptr.Addr + 100);
+            NullTerminatedString namePtr = new NullTerminatedString(
+                emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField")
+            );
+            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Data.Addr + 100);
             Ptr<ulong> outRefIdPtr = new Ptr<ulong>(0);
 
             Assert.Equal(
@@ -139,7 +149,7 @@ namespace DergwasmTests
                 env.component__get_member(
                     frame,
                     new WasmRefID<Component>(testComponent),
-                    namePtr.Ptr,
+                    namePtr,
                     outTypePtr,
                     outRefIdPtr
                 )
@@ -149,8 +159,10 @@ namespace DergwasmTests
         [Fact]
         public void GetMemberFailsOnNonexistentField()
         {
-            Buff<byte> namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "CatFace");
-            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Ptr.Addr + 100);
+            NullTerminatedString namePtr = new NullTerminatedString(
+                emscriptenEnv.AllocateUTF8StringInMem(frame, "CatFace")
+            );
+            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Data.Addr + 100);
             Ptr<ulong> outRefIdPtr = new Ptr<ulong>(outTypePtr.Addr + sizeof(int));
 
             Assert.Equal(
@@ -158,7 +170,7 @@ namespace DergwasmTests
                 env.component__get_member(
                     frame,
                     new WasmRefID<Component>(testComponent.IntField.ReferenceID),
-                    namePtr.Ptr,
+                    namePtr,
                     outTypePtr,
                     outRefIdPtr
                 )

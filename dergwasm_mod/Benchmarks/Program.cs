@@ -620,18 +620,17 @@ namespace DergwasmTests
         {
             emscriptenEnv.ResetMalloc();
             int sum = 0;
-            Buff<byte> namePtr = emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField");
-            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Ptr.Addr + 100);
+            NullTerminatedString namePtr = new NullTerminatedString(
+                emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField")
+            );
+            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Data.Addr + 100);
             Ptr<ulong> outRefIdPtr = new Ptr<ulong>(outTypePtr.Addr + sizeof(int));
             Ptr<int> outPtr = new Ptr<int>(outRefIdPtr.Addr + sizeof(ulong));
             WasmRefID<Component> refId = new WasmRefID<Component>(testComponent);
 
             for (int i = 0; i < N; i++)
             {
-                if (
-                    env.component__get_member(frame, refId, namePtr.Ptr, outTypePtr, outRefIdPtr)
-                    != 0
-                )
+                if (env.component__get_member(frame, refId, namePtr, outTypePtr, outRefIdPtr) != 0)
                 {
                     throw new Exception("component__get_member failed");
                 }
