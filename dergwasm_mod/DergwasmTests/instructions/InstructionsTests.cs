@@ -5,7 +5,7 @@ using Derg;
 using LEB128;
 using Xunit;
 
-namespace DergwasmTests
+namespace DergwasmTests.instructions
 {
     internal static class Extensions
     {

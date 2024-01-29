@@ -1,7 +1,8 @@
 ﻿using Derg;
+using DergwasmTests.testing;
 using Xunit;
 
-namespace DergwasmTests
+namespace DergwasmTests.instructions
 {
     public class VariableInstructionTests : InstructionTestFixture
     {

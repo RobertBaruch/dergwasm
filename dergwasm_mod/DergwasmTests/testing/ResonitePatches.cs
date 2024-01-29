@@ -3,7 +3,7 @@ using System.Reflection;
 using FrooxEngine;
 using HarmonyLib;
 
-namespace DergwasmTests
+namespace DergwasmTests.testing
 {
     public class ResonitePatches
     {

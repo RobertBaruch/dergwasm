@@ -2,7 +2,7 @@
 using Derg;
 using Xunit;
 
-namespace DergwasmTests
+namespace DergwasmTests.instructions
 {
     public class NumericInstructionTests : InstructionTestFixture
     {
@@ -442,7 +442,7 @@ namespace DergwasmTests
         [InlineData(InstructionType.F32_ABS, -4f, 4f)]
         [InlineData(InstructionType.F32_NEG, 4f, -4f)]
         [InlineData(InstructionType.F32_SQRT, 4f, 2f)]
-        [InlineData(InstructionType.F32_SQRT, -4f, Single.NaN)]
+        [InlineData(InstructionType.F32_SQRT, -4f, float.NaN)]
         [InlineData(InstructionType.F32_CEIL, 2.2f, 3f)]
         [InlineData(InstructionType.F32_CEIL, -2.2f, -2f)]
         [InlineData(InstructionType.F32_FLOOR, 2.2f, 2f)]
@@ -468,7 +468,7 @@ namespace DergwasmTests
         [InlineData(InstructionType.F64_ABS, -4f, 4f)]
         [InlineData(InstructionType.F64_NEG, 4f, -4f)]
         [InlineData(InstructionType.F64_SQRT, 4f, 2f)]
-        [InlineData(InstructionType.F64_SQRT, -4f, Single.NaN)]
+        [InlineData(InstructionType.F64_SQRT, -4f, float.NaN)]
         [InlineData(InstructionType.F64_CEIL, 2.2f, 3f)]
         [InlineData(InstructionType.F64_CEIL, -2.2f, -2f)]
         [InlineData(InstructionType.F64_FLOOR, 2.2f, 2f)]

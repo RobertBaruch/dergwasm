@@ -2,7 +2,7 @@
 using System.Linq;
 using Derg;
 
-namespace DergwasmTests
+namespace DergwasmTests.testing
 {
     // A Machine for testing. Implements a real frame stack, but all other runtime structures
     // are just dictionaries.
@@ -57,7 +57,7 @@ namespace DergwasmTests
                 "$0",
                 programFrame.GetFuncTypeForIndex(signature_idx)
             );
-            func.Locals = new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 };
+            func.Locals = new ValueType[] { ValueType.I32, ValueType.I32 };
             func.Code = program;
             programFrame.Func = func;
             programFrame.Locals = new Value[func.Signature.args.Length + func.Locals.Length];
@@ -75,7 +75,7 @@ namespace DergwasmTests
                 $"${addr - 10}",
                 programFrame.GetFuncTypeForIndex(addr - 10)
             );
-            func.Locals = new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 };
+            func.Locals = new ValueType[] { ValueType.I32, ValueType.I32 };
             func.Code = program;
             funcs[addr] = func;
         }
@@ -138,7 +138,7 @@ namespace DergwasmTests
         {
             for (int i = 0; i < 500; i++)
             {
-                FuncTypes.Add(funcTypes.ContainsKey(i) ? funcTypes[i] : funcTypes[(i / 100) % 4]);
+                FuncTypes.Add(funcTypes.ContainsKey(i) ? funcTypes[i] : funcTypes[i / 100 % 4]);
             }
 
             for (int i = 0; i < 500; i++)
@@ -161,35 +161,26 @@ namespace DergwasmTests
         // 5: (i32) -> (i32)
         public Dictionary<int, FuncType> funcTypes = new Dictionary<int, FuncType>()
         {
-            { 0, new FuncType(new Derg.ValueType[] { }, new Derg.ValueType[] { }) },
-            {
-                1,
-                new FuncType(new Derg.ValueType[] { Derg.ValueType.I32 }, new Derg.ValueType[] { })
-            },
-            {
-                2,
-                new FuncType(new Derg.ValueType[] { }, new Derg.ValueType[] { Derg.ValueType.I32 })
-            },
+            { 0, new FuncType(new ValueType[] { }, new ValueType[] { }) },
+            { 1, new FuncType(new ValueType[] { ValueType.I32 }, new ValueType[] { }) },
+            { 2, new FuncType(new ValueType[] { }, new ValueType[] { ValueType.I32 }) },
             {
                 3,
                 new FuncType(
-                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
-                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 }
+                    new ValueType[] { ValueType.I32, ValueType.I32 },
+                    new ValueType[] { ValueType.I32, ValueType.I32 }
                 )
             },
             {
                 4,
                 new FuncType(
-                    new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
+                    new ValueType[] { ValueType.I32, ValueType.I32 },
+                    new ValueType[] { ValueType.I32 }
                 )
             },
             {
                 5,
-                new FuncType(
-                    new Derg.ValueType[] { Derg.ValueType.I32 },
-                    new Derg.ValueType[] { Derg.ValueType.I32 }
-                )
+                new FuncType(new ValueType[] { ValueType.I32 }, new ValueType[] { ValueType.I32 })
             },
         };
     }

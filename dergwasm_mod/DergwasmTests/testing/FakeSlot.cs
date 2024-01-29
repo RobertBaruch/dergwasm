@@ -5,7 +5,7 @@ using Derg;
 using Elements.Core;
 using FrooxEngine;
 
-namespace DergwasmTests
+namespace DergwasmTests.testing
 {
     public class FakeSlot : ISlot
     {
@@ -153,9 +153,9 @@ namespace DergwasmTests
                 return name == "";
             }
 
-            StringComparison comparisonType = (
-                ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal
-            );
+            StringComparison comparisonType = ignoreCase
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
             if (matchSubstring)
             {
                 return slot.Name.IndexOf(name, comparisonType) >= 0;

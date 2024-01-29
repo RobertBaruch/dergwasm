@@ -3,7 +3,7 @@ using System.Linq;
 using Derg;
 using Xunit;
 
-namespace DergwasmTests
+namespace DergwasmTests.instructions
 {
     public class MemoryInstructionTests : InstructionTestFixture
     {

@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Derg;
+using DergwasmTests.testing;
 
-namespace DergwasmTests
+namespace DergwasmTests.instructions
 {
     public class InstructionTestFixture
     {
@@ -106,11 +107,7 @@ namespace DergwasmTests
                 new UnflattenedOperand[]
                 {
                     new UnflattenedBlockOperand(
-                        new Value
-                        {
-                            u64 = 0UL,
-                            value_hi = (ulong)BlockType.TYPED_BLOCK | (1UL << 2)
-                        },
+                        new Value { u64 = 0UL, value_hi = (ulong)BlockType.TYPED_BLOCK | 1UL << 2 },
                         new List<UnflattenedInstruction>(instructions),
                         new List<UnflattenedInstruction>()
                     ),
@@ -177,11 +174,7 @@ namespace DergwasmTests
                 new UnflattenedOperand[]
                 {
                     new UnflattenedBlockOperand(
-                        new Value
-                        {
-                            u64 = 0UL,
-                            value_hi = (ulong)BlockType.TYPED_BLOCK | (1UL << 2)
-                        },
+                        new Value { u64 = 0UL, value_hi = (ulong)BlockType.TYPED_BLOCK | 1UL << 2 },
                         new List<UnflattenedInstruction>(instructions),
                         new List<UnflattenedInstruction>()
                     ),

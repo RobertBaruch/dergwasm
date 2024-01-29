@@ -7,7 +7,7 @@ using Elements.Core;
 using FrooxEngine;
 using SkyFrost.Base;
 
-namespace DergwasmTests
+namespace DergwasmTests.testing
 {
     public class FakeWorldServices : IWorldServices
     {

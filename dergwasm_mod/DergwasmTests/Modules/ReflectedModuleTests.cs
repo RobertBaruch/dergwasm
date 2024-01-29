@@ -1,11 +1,12 @@
-using DergwasmTests;
 using System.Linq;
+using DergwasmTests.testing;
 using Xunit;
 
 namespace Derg.Modules
 {
     [Mod("test")]
-    public class TestModule {
+    public class TestModule
+    {
         public int Got { get; private set; }
         public int Got2 { get; private set; }
 

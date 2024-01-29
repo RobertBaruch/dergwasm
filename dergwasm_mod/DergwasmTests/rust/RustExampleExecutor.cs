@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Derg;
+using DergwasmTests.testing;
 using FrooxEngine;
 using Xunit;
 
@@ -8,7 +9,9 @@ namespace DergwasmTests.micropython
 {
     public class RustExampleExecutor
     {
-        [Fact(Skip = "Run `cargo build --example slot_dumper --release` in the rust module before this can run.")]
+        [Fact(
+            Skip = "Run `cargo build --example slot_dumper --release` in the rust module before this can run."
+        )]
         public void RunSlotDumper()
         {
             FakeWorldServices worldServices = new FakeWorldServices();

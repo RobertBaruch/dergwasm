@@ -5,6 +5,8 @@ using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 using Derg;
 using Derg.Wasm;
+using DergwasmTests.instructions;
+using DergwasmTests.testing;
 using FrooxEngine;
 
 namespace DergwasmTests

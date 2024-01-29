@@ -4,7 +4,7 @@ using System.Reflection;
 using Elements.Core;
 using FrooxEngine;
 
-namespace DergwasmTests
+namespace DergwasmTests.testing
 {
     public class TestComponent : Component
     {

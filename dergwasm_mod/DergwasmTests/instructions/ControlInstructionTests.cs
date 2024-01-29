@@ -1,7 +1,7 @@
 ﻿using Derg;
 using Xunit;
 
-namespace DergwasmTests
+namespace DergwasmTests.instructions
 {
     public class ControlInstructionTests : InstructionTestFixture
     {
@@ -699,10 +699,7 @@ namespace DergwasmTests
             //
             // Func 14 (= idx 4): host func
             machine.SetProgram(0, I32Const(10), I32Const(20), Call(4), Nop());
-            machine.SetHostFuncAt(
-                14,
-                new ReturningHostProxy<int, int, int>((Frame f, int a, int b) => a - b)
-            );
+            machine.SetHostFuncAt(14, new ReturningHostProxy<int, int, int>((f, a, b) => a - b));
 
             machine.Step(2);
             machine.Step();

@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using Derg;
 using Derg.Wasm;
+using DergwasmTests.testing;
 using Xunit;
 
 namespace DergwasmTests

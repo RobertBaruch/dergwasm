@@ -1,6 +1,6 @@
 ﻿using Derg;
 
-namespace DergwasmTests
+namespace DergwasmTests.testing
 {
     public class TestEmscriptenEnv : EmscriptenEnv
     {

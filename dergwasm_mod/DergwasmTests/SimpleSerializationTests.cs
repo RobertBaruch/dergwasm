@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Derg;
 using Derg.Wasm;
+using DergwasmTests.testing;
 using Elements.Core;
 using Xunit;
 
