@@ -30,18 +30,19 @@ mp_obj_t resonite__slot__get_active_user_root(mp_obj_t slot) {
 mp_obj_t resonite__slot__get_object_root(mp_obj_t slot, mp_obj_t only_explicit) {
   return mp_obj_new_int_from_ll(slot__get_object_root(
     mp_obj_int_get_uint64_checked(slot), 
-    (int32_t)mp_obj_get_int(only_explicit)));
+    mp_obj_is_true(only_explicit) ? 1 : 0));
 }
 
 mp_obj_t resonite__slot__get_name(mp_obj_t slot) {
-  return mp_obj_new_int_from_ll(slot__get_name(
+  return mp_obj_new_null_terminated_str(slot__get_name(
     mp_obj_int_get_uint64_checked(slot)));
 }
 
-mp_obj_t resonite__slot__set_name(mp_obj_t slot, mp_obj_t ptr) {
+mp_obj_t resonite__slot__set_name(mp_obj_t slot, mp_obj_t name) {
   slot__set_name(
     mp_obj_int_get_uint64_checked(slot), 
-    (int32_t)mp_obj_get_int(ptr));
+    mp_obj_str_get_str(name));
+  return mp_const_none;
 }
 
 mp_obj_t resonite__slot__get_num_children(mp_obj_t slot) {
@@ -58,34 +59,34 @@ mp_obj_t resonite__slot__get_child(mp_obj_t slot, mp_obj_t index) {
 mp_obj_t resonite__slot__find_child_by_name(mp_obj_t slot, mp_obj_t namePtr, mp_obj_t match_substring, mp_obj_t ignore_case, mp_obj_t max_depth) {
   return mp_obj_new_int_from_ll(slot__find_child_by_name(
     mp_obj_int_get_uint64_checked(slot), 
-    (int32_t)mp_obj_get_int(namePtr), 
-    (int32_t)mp_obj_get_int(match_substring), 
-    (int32_t)mp_obj_get_int(ignore_case), 
+    mp_obj_str_get_str(namePtr), 
+    mp_obj_is_true(match_substring) ? 1 : 0, 
+    mp_obj_is_true(ignore_case) ? 1 : 0, 
     (int32_t)mp_obj_get_int(max_depth)));
 }
 
 mp_obj_t resonite__slot__find_child_by_tag(mp_obj_t slot, mp_obj_t tagPtr, mp_obj_t max_depth) {
   return mp_obj_new_int_from_ll(slot__find_child_by_tag(
     mp_obj_int_get_uint64_checked(slot), 
-    (int32_t)mp_obj_get_int(tagPtr), 
+    mp_obj_str_get_str(tagPtr), 
     (int32_t)mp_obj_get_int(max_depth)));
 }
 
 mp_obj_t resonite__slot__get_component(mp_obj_t slot, mp_obj_t typeNamePtr) {
   return mp_obj_new_int_from_ll(slot__get_component(
     mp_obj_int_get_uint64_checked(slot), 
-    (int32_t)mp_obj_get_int(typeNamePtr)));
+    mp_obj_str_get_str(typeNamePtr)));
 }
 
 mp_obj_t resonite__component__get_type_name(mp_obj_t component_id) {
-  return mp_obj_new_int_from_ll(component__get_type_name(
+  return mp_obj_new_null_terminated_str(component__get_type_name(
     mp_obj_int_get_uint64_checked(component_id)));
 }
 
 mp_obj_t resonite__component__get_member(mp_obj_t componentRefId, mp_obj_t namePtr, mp_obj_t outTypePtr, mp_obj_t outRefIdPtr) {
   return mp_obj_new_int_from_ll(component__get_member(
     mp_obj_int_get_uint64_checked(componentRefId), 
-    (int32_t)mp_obj_get_int(namePtr), 
+    mp_obj_str_get_str(namePtr), 
     (int32_t)mp_obj_get_int(outTypePtr), 
     (int32_t)mp_obj_get_int(outRefIdPtr)));
 }

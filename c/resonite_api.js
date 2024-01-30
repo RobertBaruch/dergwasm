@@ -1,7 +1,7 @@
-mergeInto(LibraryManager.library, { component__get_type_name: function () { } });
-
 mergeInto(LibraryManager.library, { slot__root_slot: function () { } });
 mergeInto(LibraryManager.library, { slot__get_parent: function () { } });
+mergeInto(LibraryManager.library, { slot__get_active_user: function () { } });
+mergeInto(LibraryManager.library, { slot__get_active_user_root: function () { } });
 mergeInto(LibraryManager.library, { slot__get_object_root: function () { } });
 mergeInto(LibraryManager.library, { slot__get_name: function () { } });
 mergeInto(LibraryManager.library, { slot__set_name: function () { } });
@@ -9,6 +9,12 @@ mergeInto(LibraryManager.library, { slot__get_num_children: function () { } });
 mergeInto(LibraryManager.library, { slot__get_child: function () { } });
 mergeInto(LibraryManager.library, { slot__find_child_by_name: function () { } });
 mergeInto(LibraryManager.library, { slot__find_child_by_tag: function () { } });
-mergeInto(LibraryManager.library, { slot__get_active_user: function () { } });
-mergeInto(LibraryManager.library, { slot__get_active_user_root: function () { } });
 mergeInto(LibraryManager.library, { slot__get_component: function () { } });
+mergeInto(LibraryManager.library, { component__get_type_name: function () { } });
+mergeInto(LibraryManager.library, { component__get_member: function () { } });
+mergeInto(LibraryManager.library, { value__get_int: function () { } });
+mergeInto(LibraryManager.library, { value__get_float: function () { } });
+mergeInto(LibraryManager.library, { value__get_double: function () { } });
+mergeInto(LibraryManager.library, { value__set_int: function () { } });
+mergeInto(LibraryManager.library, { value__set_float: function () { } });
+mergeInto(LibraryManager.library, { value__set_double: function () { } });

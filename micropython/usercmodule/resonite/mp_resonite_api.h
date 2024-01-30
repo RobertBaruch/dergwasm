@@ -13,7 +13,7 @@ extern mp_obj_t resonite__slot__get_active_user(mp_obj_t slot);
 extern mp_obj_t resonite__slot__get_active_user_root(mp_obj_t slot);
 extern mp_obj_t resonite__slot__get_object_root(mp_obj_t slot, mp_obj_t only_explicit);
 extern mp_obj_t resonite__slot__get_name(mp_obj_t slot);
-extern mp_obj_t resonite__slot__set_name(mp_obj_t slot, mp_obj_t ptr);
+extern mp_obj_t resonite__slot__set_name(mp_obj_t slot, mp_obj_t name);
 extern mp_obj_t resonite__slot__get_num_children(mp_obj_t slot);
 extern mp_obj_t resonite__slot__get_child(mp_obj_t slot, mp_obj_t index);
 extern mp_obj_t resonite__slot__find_child_by_name(mp_obj_t slot, mp_obj_t namePtr, mp_obj_t match_substring, mp_obj_t ignore_case, mp_obj_t max_depth);

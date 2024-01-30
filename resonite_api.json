@@ -77,7 +77,7 @@
       {
         "Name": "only_explicit",
         "Type": 127,
-        "CSType": "int"
+        "CSType": "bool"
       }
     ],
     "Returns": [
@@ -102,7 +102,7 @@
       {
         "Name": null,
         "Type": 127,
-        "CSType": "Ptr\u003Cbyte\u003E"
+        "CSType": "NullTerminatedString"
       }
     ]
   },
@@ -116,9 +116,9 @@
         "CSType": "WasmRefID\u003CISlot\u003E"
       },
       {
-        "Name": "ptr",
+        "Name": "name",
         "Type": 127,
-        "CSType": "Ptr\u003Cbyte\u003E"
+        "CSType": "NullTerminatedString"
       }
     ],
     "Returns": []
@@ -176,17 +176,17 @@
       {
         "Name": "namePtr",
         "Type": 127,
-        "CSType": "Ptr\u003Cbyte\u003E"
+        "CSType": "NullTerminatedString"
       },
       {
         "Name": "match_substring",
         "Type": 127,
-        "CSType": "int"
+        "CSType": "bool"
       },
       {
         "Name": "ignore_case",
         "Type": 127,
-        "CSType": "int"
+        "CSType": "bool"
       },
       {
         "Name": "max_depth",
@@ -214,7 +214,7 @@
       {
         "Name": "tagPtr",
         "Type": 127,
-        "CSType": "Ptr\u003Cbyte\u003E"
+        "CSType": "NullTerminatedString"
       },
       {
         "Name": "max_depth",
@@ -242,7 +242,7 @@
       {
         "Name": "typeNamePtr",
         "Type": 127,
-        "CSType": "Ptr\u003Cbyte\u003E"
+        "CSType": "NullTerminatedString"
       }
     ],
     "Returns": [
@@ -267,7 +267,7 @@
       {
         "Name": null,
         "Type": 127,
-        "CSType": "Ptr\u003Cbyte\u003E"
+        "CSType": "NullTerminatedString"
       }
     ]
   },
@@ -283,7 +283,7 @@
       {
         "Name": "namePtr",
         "Type": 127,
-        "CSType": "Ptr\u003Cbyte\u003E"
+        "CSType": "NullTerminatedString"
       },
       {
         "Name": "outTypePtr",
