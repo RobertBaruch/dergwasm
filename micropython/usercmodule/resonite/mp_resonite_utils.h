@@ -9,5 +9,6 @@
 
 extern int64_t mp_obj_int_get_int64_checked(mp_const_obj_t o);
 extern uint64_t mp_obj_int_get_uint64_checked(mp_const_obj_t o);
+extern mp_obj_t mp_obj_new_null_terminated_str(char *str);
 
 #endif // __RESONITE_RESONITE_UTILS_H__

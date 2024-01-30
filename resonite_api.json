@@ -1,0 +1,445 @@
+[
+  {
+    "Module": "env",
+    "Name": "slot__root_slot",
+    "Parameters": [],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 126,
+        "CSType": "WasmRefID\u003CISlot\u003E"
+      }
+    ]
+  },
+  {
+    "Module": "env",
+    "Name": "slot__get_parent",
+    "Parameters": [
+      {
+        "Name": "slot",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CISlot\u003E"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 126,
+        "CSType": "WasmRefID\u003CISlot\u003E"
+      }
+    ]
+  },
+  {
+    "Module": "env",
+    "Name": "slot__get_active_user",
+    "Parameters": [
+      {
+        "Name": "slot",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CISlot\u003E"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 126,
+        "CSType": "WasmRefID\u003CUser\u003E"
+      }
+    ]
+  },
+  {
+    "Module": "env",
+    "Name": "slot__get_active_user_root",
+    "Parameters": [
+      {
+        "Name": "slot",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CISlot\u003E"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 126,
+        "CSType": "WasmRefID\u003CUserRoot\u003E"
+      }
+    ]
+  },
+  {
+    "Module": "env",
+    "Name": "slot__get_object_root",
+    "Parameters": [
+      {
+        "Name": "slot",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CISlot\u003E"
+      },
+      {
+        "Name": "only_explicit",
+        "Type": 127,
+        "CSType": "bool"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 126,
+        "CSType": "WasmRefID\u003CISlot\u003E"
+      }
+    ]
+  },
+  {
+    "Module": "env",
+    "Name": "slot__get_name",
+    "Parameters": [
+      {
+        "Name": "slot",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CISlot\u003E"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 127,
+        "CSType": "NullTerminatedString"
+      }
+    ]
+  },
+  {
+    "Module": "env",
+    "Name": "slot__set_name",
+    "Parameters": [
+      {
+        "Name": "slot",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CISlot\u003E"
+      },
+      {
+        "Name": "name",
+        "Type": 127,
+        "CSType": "NullTerminatedString"
+      }
+    ],
+    "Returns": []
+  },
+  {
+    "Module": "env",
+    "Name": "slot__get_num_children",
+    "Parameters": [
+      {
+        "Name": "slot",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CISlot\u003E"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 127,
+        "CSType": "int"
+      }
+    ]
+  },
+  {
+    "Module": "env",
+    "Name": "slot__get_child",
+    "Parameters": [
+      {
+        "Name": "slot",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CISlot\u003E"
+      },
+      {
+        "Name": "index",
+        "Type": 127,
+        "CSType": "int"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 126,
+        "CSType": "WasmRefID\u003CISlot\u003E"
+      }
+    ]
+  },
+  {
+    "Module": "env",
+    "Name": "slot__find_child_by_name",
+    "Parameters": [
+      {
+        "Name": "slot",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CISlot\u003E"
+      },
+      {
+        "Name": "namePtr",
+        "Type": 127,
+        "CSType": "NullTerminatedString"
+      },
+      {
+        "Name": "match_substring",
+        "Type": 127,
+        "CSType": "bool"
+      },
+      {
+        "Name": "ignore_case",
+        "Type": 127,
+        "CSType": "bool"
+      },
+      {
+        "Name": "max_depth",
+        "Type": 127,
+        "CSType": "int"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 126,
+        "CSType": "WasmRefID\u003CISlot\u003E"
+      }
+    ]
+  },
+  {
+    "Module": "env",
+    "Name": "slot__find_child_by_tag",
+    "Parameters": [
+      {
+        "Name": "slot",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CISlot\u003E"
+      },
+      {
+        "Name": "tagPtr",
+        "Type": 127,
+        "CSType": "NullTerminatedString"
+      },
+      {
+        "Name": "max_depth",
+        "Type": 127,
+        "CSType": "int"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 126,
+        "CSType": "WasmRefID\u003CISlot\u003E"
+      }
+    ]
+  },
+  {
+    "Module": "env",
+    "Name": "slot__get_component",
+    "Parameters": [
+      {
+        "Name": "slot",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CISlot\u003E"
+      },
+      {
+        "Name": "typeNamePtr",
+        "Type": 127,
+        "CSType": "NullTerminatedString"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 126,
+        "CSType": "WasmRefID\u003CComponent\u003E"
+      }
+    ]
+  },
+  {
+    "Module": "env",
+    "Name": "component__get_type_name",
+    "Parameters": [
+      {
+        "Name": "component_id",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CComponent\u003E"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 127,
+        "CSType": "NullTerminatedString"
+      }
+    ]
+  },
+  {
+    "Module": "env",
+    "Name": "component__get_member",
+    "Parameters": [
+      {
+        "Name": "componentRefId",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CComponent\u003E"
+      },
+      {
+        "Name": "namePtr",
+        "Type": 127,
+        "CSType": "NullTerminatedString"
+      },
+      {
+        "Name": "outTypePtr",
+        "Type": 127,
+        "CSType": "Ptr\u003Cint\u003E"
+      },
+      {
+        "Name": "outRefIdPtr",
+        "Type": 127,
+        "CSType": "Ptr\u003Culong\u003E"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 127,
+        "CSType": "int"
+      }
+    ]
+  },
+  {
+    "Module": "env",
+    "Name": "value__get_int",
+    "Parameters": [
+      {
+        "Name": "refId",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CIValue\u003Cint\u003E\u003E"
+      },
+      {
+        "Name": "outPtr",
+        "Type": 127,
+        "CSType": "Ptr\u003Cint\u003E"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 127,
+        "CSType": "ResoniteError"
+      }
+    ]
+  },
+  {
+    "Module": "env",
+    "Name": "value__get_float",
+    "Parameters": [
+      {
+        "Name": "refId",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CIValue\u003Cfloat\u003E\u003E"
+      },
+      {
+        "Name": "outPtr",
+        "Type": 127,
+        "CSType": "Ptr\u003Cfloat\u003E"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 127,
+        "CSType": "ResoniteError"
+      }
+    ]
+  },
+  {
+    "Module": "env",
+    "Name": "value__get_double",
+    "Parameters": [
+      {
+        "Name": "refId",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CIValue\u003Cdouble\u003E\u003E"
+      },
+      {
+        "Name": "outPtr",
+        "Type": 127,
+        "CSType": "Ptr\u003Cdouble\u003E"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 127,
+        "CSType": "ResoniteError"
+      }
+    ]
+  },
+  {
+    "Module": "env",
+    "Name": "value__set_int",
+    "Parameters": [
+      {
+        "Name": "refId",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CIValue\u003Cint\u003E\u003E"
+      },
+      {
+        "Name": "inPtr",
+        "Type": 127,
+        "CSType": "Ptr\u003Cint\u003E"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 127,
+        "CSType": "ResoniteError"
+      }
+    ]
+  },
+  {
+    "Module": "env",
+    "Name": "value__set_float",
+    "Parameters": [
+      {
+        "Name": "refId",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CIValue\u003Cfloat\u003E\u003E"
+      },
+      {
+        "Name": "inPtr",
+        "Type": 127,
+        "CSType": "Ptr\u003Cfloat\u003E"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 127,
+        "CSType": "ResoniteError"
+      }
+    ]
+  },
+  {
+    "Module": "env",
+    "Name": "value__set_double",
+    "Parameters": [
+      {
+        "Name": "refId",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CIValue\u003Cdouble\u003E\u003E"
+      },
+      {
+        "Name": "inPtr",
+        "Type": 127,
+        "CSType": "Ptr\u003Cdouble\u003E"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 127,
+        "CSType": "ResoniteError"
+      }
+    ]
+  }
+]
