@@ -6,7 +6,4 @@
     "rust-analyzer.linkedProjects": [
         "dergwasm_lib/rust/Cargo.toml"
     ],
-    "files.associations": {
-        "resonite_slot_api.h": "c"
-    },
 }
