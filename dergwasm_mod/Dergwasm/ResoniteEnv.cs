@@ -1,26 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using Derg.Modules;
+using Derg.Resonite;
 using Derg.Wasm;
 using Elements.Core;
 using FrooxEngine;
+using ProtoFlux.Core;
 
 namespace Derg
 {
-    public enum ResoniteError : int
-    {
-        Success = 0,
-        NullArgument = -1,
-        InvalidRefId = -2,
-    }
-
     // Provides the functions in resonite_api.h. A ResoniteEnv, like a Machine, is specific
     // to a World.
     //
     // In the API, we don't use anything other than ints, longs, floats, and doubles.
     // Pointers to memory are uints.
     [Mod("env")]
-    public class ResoniteEnv
+    public class ResoniteEnv : ErrorChecker
     {
         public Machine machine;
         public IWorldServices worldServices;
@@ -259,28 +254,83 @@ namespace Derg
         }
 
         [ModFn("slot__get_component")]
-        public WasmRefID<Component> slot__get_component(
+        public ResoniteError slot__get_component(
             Frame frame,
             WasmRefID<ISlot> slot,
-            NullTerminatedString typeNamePtr
+            NullTerminatedString typeNamePtr,
+            Ptr<WasmRefID<Component>> outComponentIdPtr
         )
         {
-            string typeName = emscriptenEnv.GetUTF8StringFromMem(typeNamePtr);
-            Type type = Type.GetType(typeName);
-            if (type == null)
-                return default;
-            return worldServices.GetObjectOrNull(slot)?.GetComponent(type)?.GetWasmRef() ?? default;
+            try
+            {
+                CheckNullArg("slot__get_component", "componentIdPtr", outComponentIdPtr);
+                CheckValidRef(
+                    "slot__get_component",
+                    "slot",
+                    worldServices,
+                    slot,
+                    out ISlot slotInstance
+                );
+                CheckNullArg(
+                    "slot__get_component",
+                    "typeNamePtr",
+                    emscriptenEnv,
+                    typeNamePtr,
+                    out string typeName
+                );
+                Type type = Type.GetType(typeName);
+                if (type == null)
+                {
+                    throw new ResoniteException(
+                        ResoniteError.FailedPrecondition,
+                        $"No such type: {typeName}"
+                    );
+                }
+                machine.HeapSet(
+                    outComponentIdPtr,
+                    new WasmRefID<Component>(slotInstance.GetComponent(type))
+                );
+                return ResoniteError.Success;
+            }
+            catch (ResoniteException e)
+            {
+                return ReturnError("slot__get_component", e);
+            }
+            catch (Exception e)
+            {
+                return ReturnError("slot__get_component", ResoniteError.FailedPrecondition, e);
+            }
         }
 
         [ModFn("component__get_type_name")]
-        public NullTerminatedString component__get_type_name(
+        public ResoniteError component__get_type_name(
             Frame frame,
-            WasmRefID<Component> component_id
+            WasmRefID<Component> componentRefId,
+            Ptr<NullTerminatedString> outPtr
         )
         {
-            string typeName =
-                worldServices.GetObjectOrNull(component_id)?.GetType().GetNiceName() ?? "";
-            return new NullTerminatedString(emscriptenEnv.AllocateUTF8StringInMem(frame, typeName));
+            try
+            {
+                CheckNullArg("component__get_type_name", "outPtr", outPtr);
+                CheckValidRef(
+                    "component__get_type_name",
+                    "componentRefId",
+                    worldServices,
+                    componentRefId,
+                    out Component component
+                );
+                string typeName = component.GetType().GetNiceName();
+                machine.HeapSet(emscriptenEnv, frame, outPtr, typeName);
+                return ResoniteError.Success;
+            }
+            catch (ResoniteException e)
+            {
+                return ReturnError("slot__get_component", e);
+            }
+            catch (Exception e)
+            {
+                return ReturnError("slot__get_component", ResoniteError.FailedPrecondition, e);
+            }
         }
 
         public enum ResoniteType : int
@@ -301,40 +351,52 @@ namespace Derg
         }
 
         [ModFn("component__get_member")]
-        public int component__get_member(
+        public ResoniteError component__get_member(
             Frame frame,
             WasmRefID<Component> componentRefId,
             NullTerminatedString namePtr,
-            Ptr<int> outTypePtr,
+            Ptr<ResoniteType> outTypePtr,
             Ptr<ulong> outRefIdPtr
         )
         {
-            Component component = worldServices.GetObjectOrNull(componentRefId);
-            if (
-                component == null
-                || namePtr.Data.Addr == 0
-                || outTypePtr.Addr == 0
-                || outRefIdPtr.Addr == 0
-            )
+            try
             {
-                return -1;
-            }
+                CheckNullArg(
+                    "component__get_member",
+                    "namePtr",
+                    emscriptenEnv,
+                    namePtr,
+                    out string fieldName
+                );
+                CheckNullArg("component__get_member", "outTypePtr", outTypePtr);
+                CheckNullArg("component__get_member", "outRefIdPtr", outRefIdPtr);
+                CheckValidRef(
+                    "component__get_member",
+                    "componentRefId",
+                    worldServices,
+                    componentRefId,
+                    out Component component
+                );
 
-            string fieldName = emscriptenEnv.GetUTF8StringFromMem(namePtr);
-            if (fieldName == null)
+                var member = component.GetSyncMember(fieldName);
+                if (member == null)
+                {
+                    throw new ResoniteException(ResoniteError.FailedPrecondition, "No such member");
+                }
+
+                machine.HeapSet(outTypePtr, GetResoniteType(member.GetType()));
+                machine.HeapSet(outRefIdPtr, member);
+
+                return ResoniteError.Success;
+            }
+            catch (ResoniteException e)
             {
-                return -1;
+                return ReturnError("slot__get_component", e);
             }
-
-            var member = component.GetSyncMember(fieldName);
-            if (member == null)
+            catch (Exception e)
             {
-                return -1;
+                return ReturnError("slot__get_component", ResoniteError.FailedPrecondition, e);
             }
-
-            machine.HeapSet(outTypePtr, (int)GetResoniteType(member.GetType()));
-            machine.HeapSet(outRefIdPtr, (ulong)member.ReferenceID);
-            return 0;
         }
 
         [ModFn("value__get_int", typeof(int))]

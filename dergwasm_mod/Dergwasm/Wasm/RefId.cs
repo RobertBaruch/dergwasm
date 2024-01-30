@@ -22,8 +22,10 @@ namespace Derg.Wasm
 
         public WasmRefID(IWorldElement obj)
         {
-            Id = (ulong)obj.ReferenceID;
+            Id = obj == null ? 0UL : (ulong)obj.ReferenceID;
         }
+
+        public bool IsNullRef => Id == 0;
 
         public WasmRefID<T> Reinterpret<T>()
             where T : class, IWorldElement => new WasmRefID<T>(new RefID(Id));
@@ -46,6 +48,8 @@ namespace Derg.Wasm
         {
             Id = (ulong)obj.ReferenceID;
         }
+
+        public bool IsNullRef => Id == 0;
 
         public static implicit operator RefID(WasmRefID<T> p) => new RefID(p.Id);
 

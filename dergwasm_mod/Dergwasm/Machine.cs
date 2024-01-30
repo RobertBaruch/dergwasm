@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using Derg.Modules;
 using Derg.Wasm;
+using Elements.Core;
+using FrooxEngine;
 
 namespace Derg
 {
@@ -104,6 +106,16 @@ namespace Derg
                 *(T*)ptr = value;
             }
         }
+
+        public void HeapSet(Ptr<ulong> ptr, IWorldElement element) =>
+            HeapSet(ptr, (ulong)element.ReferenceID);
+
+        public void HeapSet(
+            EmscriptenEnv env,
+            Frame frame,
+            Ptr<NullTerminatedString> ptr,
+            string str
+        ) => HeapSet(ptr, new NullTerminatedString(env.AllocateUTF8StringInMem(frame, str)));
 
         public string MainModuleName
         {
@@ -286,7 +298,7 @@ namespace Derg
 
         public void RegisterModule(IHostModule module)
         {
-            foreach(var arg in module.Functions)
+            foreach (var arg in module.Functions)
             {
                 RegisterHostFunc(arg);
             }
