@@ -175,6 +175,10 @@ class Main:
                 f.write(");\n")
             f.write(HEADER_POSTAMBLE)
 
+    def generate_impl(self) -> None:
+        with open("resonite_api.json", "r", encoding="UTF8") as f:
+            data = json.load(f)
+
         with open(
             "micropython/usercmodule/resonite/mp_resonite_api.c", "w", encoding="UTF8"
         ) as f:
@@ -206,6 +210,7 @@ class Main:
 
     def main(self) -> int:
         self.generate_header()
+        self.generate_impl()
         return 0
 
 
