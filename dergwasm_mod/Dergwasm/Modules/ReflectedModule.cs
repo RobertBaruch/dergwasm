@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text.Json.Serialization;
 using Elements.Core;
 
 namespace Derg.Modules
@@ -40,36 +39,10 @@ namespace Derg.Modules
         }
     }
 
-    public class Parameter
+    internal class ApiData<T>
     {
-        public string Name { get; set; }
-        public ValueType Type { get; set; }
-        public string CSType { get; set; }
-    }
-
-    public class ApiData<T>
-    {
-        public string Module { get; set; }
-        public string Name { get; set; }
-        public List<Parameter> Parameters { get; }
-        public List<Parameter> Returns { get; }
-
-        [JsonIgnore]
-        public List<ValueType> ParameterValueTypes { get; }
-
-        [JsonIgnore]
-        public List<ValueType> ReturnValueTypes { get; }
-
-        [JsonIgnore]
-        public Func<T, HostFunc> Function;
-
-        public ApiData()
-        {
-            Parameters = new List<Parameter>();
-            Returns = new List<Parameter>();
-            ParameterValueTypes = new List<ValueType>();
-            ReturnValueTypes = new List<ValueType>();
-        }
+        public Api Data { get; set; }
+        public Func<T, HostFunc> Function { get; set; }
     }
 
     public class ReflectedModule<T> : IHostModule
@@ -139,8 +112,11 @@ namespace Derg.Modules
         {
             ApiData<T> apiData = new ApiData<T>
             {
-                Module = attr.Module ?? defaultModule,
-                Name = attr.Name ?? method.Name,
+                Data = new Api
+                {
+                    Module = attr.Module ?? defaultModule,
+                    Name = attr.Name ?? method.Name,
+                }
             };
 
             // This is a parameter for the outer lambda, that is stored in the closure for the func.
@@ -178,6 +154,7 @@ namespace Derg.Modules
                     );
 
                     apiData
+                        .Data
                         .Parameters
                         .Add(
                             new Parameter
@@ -187,7 +164,7 @@ namespace Derg.Modules
                                 CSType = param.ParameterType.GetNiceName()
                             }
                         );
-                    apiData.ParameterValueTypes.Add(ValueTypeFor(param.ParameterType));
+                    apiData.Data.ParameterValueTypes.Add(ValueTypeFor(param.ParameterType));
 
                     argsCount++;
                 }
@@ -211,6 +188,7 @@ namespace Derg.Modules
                 );
 
                 apiData
+                    .Data
                     .Returns
                     .Add(
                         new Parameter
@@ -219,7 +197,7 @@ namespace Derg.Modules
                             CSType = method.ReturnType.GetNiceName()
                         }
                     );
-                apiData.ReturnValueTypes.Add(ValueTypeFor(method.ReturnType));
+                apiData.Data.ReturnValueTypes.Add(ValueTypeFor(method.ReturnType));
 
                 // TODO: Add the ability to process value tuple based return values.
             }
@@ -229,12 +207,12 @@ namespace Derg.Modules
 
             var funcCtor = Expression.New(
                 typeof(HostFunc).GetConstructors().First(),
-                Expression.Constant(apiData.Module),
-                Expression.Constant(apiData.Name),
+                Expression.Constant(apiData.Data.Module),
+                Expression.Constant(apiData.Data.Name),
                 Expression.Constant(
                     new FuncType(
-                        apiData.ParameterValueTypes.ToArray(),
-                        apiData.ReturnValueTypes.ToArray()
+                        apiData.Data.ParameterValueTypes.ToArray(),
+                        apiData.Data.ReturnValueTypes.ToArray()
                     )
                 ),
                 Expression.New(
@@ -251,14 +229,14 @@ namespace Derg.Modules
         }
 
         public List<HostFunc> Functions { get; }
-        public List<ApiData<T>> ApiData = new List<ApiData<T>>();
+        public List<Api> ApiData { get; }
 
         public HostFunc this[string name]
         {
             get => Functions.First(f => f.Name == name);
         }
 
-        public ApiData<T> ApiDataFor(string name)
+        public Api ApiDataFor(string name)
         {
             return ApiData.First(f => f.Name == name);
         }
@@ -266,7 +244,7 @@ namespace Derg.Modules
         public ReflectedModule(T self)
         {
             Functions = ReflectedFuncs.Select(f => f.Function(self)).ToList();
-            ApiData = ReflectedFuncs;
+            ApiData = ReflectedFuncs.Select(f => f.Data).ToList();
         }
     }
 }

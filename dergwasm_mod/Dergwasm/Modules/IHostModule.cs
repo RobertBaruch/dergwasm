@@ -5,5 +5,6 @@ namespace Derg.Modules
     public interface IHostModule
     {
         List<HostFunc> Functions { get; }
+        List<Api> ApiData { get; }
     }
 }
