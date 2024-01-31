@@ -444,7 +444,7 @@ namespace Derg
             Frame frame,
             WasmRefID<Slot> slot,
             Ptr<int> outComponentListLength,
-            Ptr<Ptr<WasmRefID<Component>>> outComponentListData
+            Ptr<WasmArray<WasmRefID<Component>>> outComponentListData
         )
         {
             try
@@ -459,7 +459,10 @@ namespace Derg
                     slotInstance.Components
                 );
                 machine.HeapSet(outComponentListLength, list.buff.Length);
-                machine.HeapSet(outComponentListData, list.buff.Ptr);
+                machine.HeapSet(
+                    outComponentListData,
+                    new WasmArray<WasmRefID<Component>>(list.buff.Ptr)
+                );
             }
             catch (Exception e)
             {
