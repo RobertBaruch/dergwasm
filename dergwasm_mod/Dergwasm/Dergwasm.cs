@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Remoting.Contexts;
 using System.Threading.Tasks;
 using Derg.Wasm;
 using Elements.Core; // For UniLog
@@ -35,7 +36,8 @@ namespace Derg
                 Msg("Postfix called on World.Load");
                 Msg($"... WorldName {__instance.Configuration.WorldName.Value}");
                 Msg($"... SessionID {__instance.Configuration.SessionID.Value}");
-                DergwasmMachine.InitStage0(new WorldServices(__instance));
+                WorldServices worldServices = new WorldServices(__instance);
+                DergwasmMachine.InitStage0(worldServices, new DergwasmSlots(worldServices));
             }
         }
 
@@ -70,7 +72,10 @@ namespace Derg
                     if (tag == "_dergwasm")
                         DergwasmMachine.resoniteEnv.CallWasmFunction(hierarchy);
                     else if (tag == "_dergwasm_init")
-                        DergwasmMachine.InitStage0(new WorldServices(context.World));
+                    {
+                        WorldServices worldServices = new WorldServices(context.World);
+                        DergwasmMachine.InitStage0(worldServices, new DergwasmSlots(worldServices));
+                    }
                 }
                 catch (Exception e)
                 {
@@ -83,26 +88,24 @@ namespace Derg
     public static class DergwasmMachine
     {
         public static IWorldServices worldServices = null;
+        public static IDergwasmSlots dergwasmSlots = null;
         public static Machine machine = null;
         public static ModuleInstance moduleInstance = null;
         public static EmscriptenEnv emscriptenEnv = null;
         public static EmscriptenWasi emscriptenWasi = null;
         public static ResoniteEnv resoniteEnv = null;
         public static FilesystemEnv filesystemEnv = null;
-        public static Slot dergwasmSlot = null;
-        public static Slot consoleSlot = null;
-        public static Slot fsSlot = null; // The equivalent of the root directory in a filesystem.
         public static bool initialized = false;
 
         public static void Output(string msg)
         {
-            if (consoleSlot == null)
+            if (dergwasmSlots?.ConsoleSlot == null)
             {
                 UniLog.Log($"[Dergwasm] Couldn't find console slot to log this message: {msg}");
                 return;
             }
             UniLog.Log($"[Dergwasm] {msg}");
-            consoleSlot.GetComponent<FrooxEngine.UIX.Text>().Content.Value += msg;
+            dergwasmSlots.ConsoleSlot.GetComponent<FrooxEngine.UIX.Text>().Content.Value += msg;
         }
 
         public static void Msg(string msg)
@@ -127,60 +130,25 @@ namespace Derg
                 Msg($"{(mem.Length / 8) * 8:X4}: {collect}");
         }
 
-        public static void InitStage0(IWorldServices worldServices)
+        public static void InitStage0(IWorldServices worldServices, IDergwasmSlots dergwasmSlots)
         {
             DergwasmMachine.worldServices = worldServices;
+            DergwasmMachine.dergwasmSlots = dergwasmSlots;
             machine = null;
             moduleInstance = null;
             emscriptenEnv = null;
             emscriptenWasi = null;
             resoniteEnv = null;
             filesystemEnv = null;
-            DergwasmMachine.dergwasmSlot = null;
-            consoleSlot = null;
-            fsSlot = null;
             initialized = false;
 
-            Slot dergwasmSlot = worldServices
-                .GetRootSlot()
-                .FindChild(s => s.Tag == "_dergwasm", maxDepth: 0);
-            if (dergwasmSlot == null)
+            if (!dergwasmSlots.Ready)
             {
-                Msg(
-                    $"Couldn't find dergwasm slot with tag _dergwasm in world {worldServices.GetName()}"
-                );
-                return;
-            }
-            Slot byteDisplay = dergwasmSlot.FindChild(
-                s => s.Tag == "_dergwasm_byte_display",
-                maxDepth: 0
-            );
-            // We expect a slot with the tag _dergwasm_byte_display to exist, and to have
-            // a StaticBinary component.
-            Slot wasmBinarySlot = dergwasmSlot.FindChild(
-                s => s.Tag == "_dergwasm_wasm_file",
-                maxDepth: 0
-            );
-
-            if (wasmBinarySlot == null)
-            {
-                Msg(
-                    $"Couldn't find WASM binary slot with tag _dergwasm_wasm_file in world {worldServices.GetName()}"
-                );
+                Msg($"[Dergwasm] Slots in world {worldServices.GetName()} are not set up");
                 return;
             }
 
-            if (byteDisplay == null)
-            {
-                Msg(
-                    $"Couldn't find byte display slot with tag _dergwasm_byte_display in world {worldServices.GetName()}"
-                );
-            }
-            BinaryAssetLoader loader = new BinaryAssetLoader(
-                worldServices,
-                wasmBinarySlot,
-                byteDisplay
-            );
+            BinaryAssetLoader loader = new BinaryAssetLoader(worldServices, dergwasmSlots);
 
             Task<string> task = worldServices.StartTask(loader.Load);
             if (task == null)
@@ -194,14 +162,9 @@ namespace Derg
         {
             try
             {
-                dergwasmSlot = worldServices
-                    .GetRootSlot()
-                    .FindChild(s => s.Tag == "_dergwasm", maxDepth: 0);
-                consoleSlot = dergwasmSlot?.FindChild(s => s.Tag == "_dergwasm_console_content");
-                fsSlot = dergwasmSlot?.FindChild(s => s.Tag == "_dergwasm_fs_root");
-
-                if (consoleSlot != null)
-                    consoleSlot.GetComponent<FrooxEngine.UIX.Text>().Content.Value = "";
+                if (dergwasmSlots.ConsoleSlot != null)
+                    dergwasmSlots.ConsoleSlot.GetComponent<FrooxEngine.UIX.Text>().Content.Value =
+                        "";
 
                 Msg($"Dergwasm v{typeof(Dergwasm).Assembly.GetName().Version}");
                 Msg("Init called");
@@ -219,7 +182,12 @@ namespace Derg
                 resoniteEnv = new ResoniteEnv(machine, worldServices, emscriptenEnv);
                 machine.RegisterReflectedModule(resoniteEnv);
 
-                filesystemEnv = new FilesystemEnv(machine, fsSlot, emscriptenEnv, emscriptenWasi);
+                filesystemEnv = new FilesystemEnv(
+                    machine,
+                    dergwasmSlots.FilesystemSlot,
+                    emscriptenEnv,
+                    emscriptenWasi
+                );
                 machine.RegisterReflectedModule(filesystemEnv);
 
                 // Read and parse the WASM file.
