@@ -7,11 +7,11 @@ namespace Derg
 {
     public class BinaryAssetLoader
     {
-        public ISlot BinarySlot;
-        public ISlot ByteDisplay;
+        public Slot BinarySlot;
+        public Slot ByteDisplay;
         public IWorldServices worldServices;
 
-        public BinaryAssetLoader(IWorldServices worldServices, ISlot binarySlot, ISlot byteDisplay)
+        public BinaryAssetLoader(IWorldServices worldServices, Slot binarySlot, Slot byteDisplay)
         {
             BinarySlot = binarySlot;
             ByteDisplay = byteDisplay;

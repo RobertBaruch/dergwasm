@@ -8,6 +8,7 @@ using Derg.Wasm;
 using DergwasmTests.instructions;
 using DergwasmTests.testing;
 using FrooxEngine;
+using static Derg.ResoniteEnv;
 
 namespace DergwasmTests
 {
@@ -623,7 +624,7 @@ namespace DergwasmTests
             NullTerminatedString namePtr = new NullTerminatedString(
                 emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField")
             );
-            Ptr<int> outTypePtr = new Ptr<int>(namePtr.Data.Addr + 100);
+            Ptr<ResoniteType> outTypePtr = new Ptr<ResoniteType>(namePtr.Data.Addr + 100);
             Ptr<ulong> outRefIdPtr = new Ptr<ulong>(outTypePtr.Addr + sizeof(int));
             Ptr<int> outPtr = new Ptr<int>(outRefIdPtr.Addr + sizeof(ulong));
             WasmRefID<Component> refId = new WasmRefID<Component>(testComponent);

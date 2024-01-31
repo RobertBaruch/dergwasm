@@ -89,9 +89,9 @@ namespace Derg
         public static EmscriptenWasi emscriptenWasi = null;
         public static ResoniteEnv resoniteEnv = null;
         public static FilesystemEnv filesystemEnv = null;
-        public static ISlot dergwasmSlot = null;
-        public static ISlot consoleSlot = null;
-        public static ISlot fsSlot = null; // The equivalent of the root directory in a filesystem.
+        public static Slot dergwasmSlot = null;
+        public static Slot consoleSlot = null;
+        public static Slot fsSlot = null; // The equivalent of the root directory in a filesystem.
         public static bool initialized = false;
 
         public static void Output(string msg)
@@ -141,7 +141,7 @@ namespace Derg
             fsSlot = null;
             initialized = false;
 
-            ISlot dergwasmSlot = worldServices
+            Slot dergwasmSlot = worldServices
                 .GetRootSlot()
                 .FindChild(s => s.Tag == "_dergwasm", maxDepth: 0);
             if (dergwasmSlot == null)
@@ -151,13 +151,13 @@ namespace Derg
                 );
                 return;
             }
-            ISlot byteDisplay = dergwasmSlot.FindChild(
+            Slot byteDisplay = dergwasmSlot.FindChild(
                 s => s.Tag == "_dergwasm_byte_display",
                 maxDepth: 0
             );
             // We expect a slot with the tag _dergwasm_byte_display to exist, and to have
             // a StaticBinary component.
-            ISlot wasmBinarySlot = dergwasmSlot.FindChild(
+            Slot wasmBinarySlot = dergwasmSlot.FindChild(
                 s => s.Tag == "_dergwasm_wasm_file",
                 maxDepth: 0
             );
@@ -209,10 +209,7 @@ namespace Derg
                 // machine.Debug = true;
 
                 // Register all the environments.
-                emscriptenEnv = new EmscriptenEnv(machine)
-                {
-                    outputWriter = Output
-                };
+                emscriptenEnv = new EmscriptenEnv(machine) { outputWriter = Output };
                 machine.Allocator = emscriptenEnv;
                 machine.RegisterReflectedModule(emscriptenEnv);
 

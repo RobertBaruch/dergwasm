@@ -13,12 +13,12 @@ namespace DergwasmTests.testing
     {
         Dictionary<RefID, IWorldElement> objects = new Dictionary<RefID, IWorldElement>();
         Dictionary<Uri, string> assetFiles = new Dictionary<Uri, string>();
-        FakeSlot root;
+        Slot root;
         ulong nextRefID = 1;
 
         public FakeWorldServices()
         {
-            root = new FakeSlot(this, "Root");
+            root = null;
         }
 
         public ulong GetNextRefID() => nextRefID++;
@@ -54,7 +54,7 @@ namespace DergwasmTests.testing
         public override T GetObjectOrNull<T>(WasmRefID<T> wasmRefID) =>
             GetObjectOrNull((RefID)wasmRefID) as T;
 
-        public override ISlot GetRootSlot() => root;
+        public override Slot GetRootSlot() => root;
 
         public override Task<T> StartTask<T>(Func<Task<T>> task, IUpdatable updatable = null)
         {

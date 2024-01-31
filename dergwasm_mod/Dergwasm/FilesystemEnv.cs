@@ -26,14 +26,14 @@ namespace Derg
     public class FilesystemEnv
     {
         public Machine machine;
-        public ISlot fsRoot;
+        public Slot fsRoot;
         public EmscriptenEnv env;
         public EmscriptenWasi wasi;
         string cwd = "/";
 
         public FilesystemEnv(
             Machine machine,
-            ISlot fsRootSlot,
+            Slot fsRootSlot,
             EmscriptenEnv emscriptenEnv,
             EmscriptenWasi wasi
         )
@@ -203,7 +203,7 @@ namespace Derg
             return dir + "/" + path;
         }
 
-        bool slot_is_regular_file(ISlot slot)
+        bool slot_is_regular_file(Slot slot)
         {
             return slot.GetComponent<ValueField<string>>() != null;
         }
@@ -221,7 +221,7 @@ namespace Derg
             }
 
             List<string> normalized_elements = new List<string>();
-            ISlot slot = fsRoot;
+            Slot slot = fsRoot;
 
             foreach (string element in path.Split('/'))
             {
@@ -254,7 +254,7 @@ namespace Derg
             return 0;
         }
 
-        int get_slot_for_absolute_path(string path, out ISlot slot, out string normalized_path)
+        int get_slot_for_absolute_path(string path, out Slot slot, out string normalized_path)
         {
             slot = fsRoot;
             normalized_path = "";
@@ -303,11 +303,11 @@ namespace Derg
         }
 
         // Makes a directory or file slot at the given absolute path.
-        int mknod(string path, bool as_file, out ISlot slot)
+        int mknod(string path, bool as_file, out Slot slot)
         {
             slot = null;
 
-            ISlot parentSlot;
+            Slot parentSlot;
             int err = get_slot_for_absolute_path(dirname(path), out parentSlot, out _);
             if (err != 0)
                 return err;
@@ -334,7 +334,7 @@ namespace Derg
         // If the data is not valid UTF-8, returns -EINVAL.
         int sync(Stream stream)
         {
-            ISlot slot;
+            Slot slot;
             int err = get_slot_for_absolute_path(stream.path, out slot, out _);
             if (err != 0)
                 return err;
@@ -372,7 +372,7 @@ namespace Derg
         public int __syscall_rmdir(Frame frame, int pathPtr)
         {
             string path = env.GetUTF8StringFromMem(pathPtr);
-            ISlot slot;
+            Slot slot;
             int err;
             if (path.StartsWith("/"))
             {
@@ -432,7 +432,7 @@ namespace Derg
             path = calculateAt(dirfd, path);
             DergwasmMachine.Msg($"__syscall_openat: path={path}");
 
-            ISlot slot;
+            Slot slot;
             string normalized_path;
             int err = get_slot_for_absolute_path(path, out slot, out normalized_path);
             if (err != 0)
@@ -519,7 +519,7 @@ namespace Derg
         {
             string path = env.GetUTF8StringFromMem(pathPtr);
             DergwasmMachine.Msg($"__syscall_stat64: path={path}");
-            ISlot slot;
+            Slot slot;
             int err = get_slot_for_absolute_path(path, out slot, out _);
             if (err != 0)
                 return err;

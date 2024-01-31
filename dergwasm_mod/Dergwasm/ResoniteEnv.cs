@@ -156,12 +156,12 @@ namespace Derg
         //
 
         [ModFn("slot__root_slot")]
-        public ResoniteError slot__root_slot(Frame frame, Ptr<WasmRefID<ISlot>> outSlot)
+        public ResoniteError slot__root_slot(Frame frame, Ptr<WasmRefID<Slot>> outSlot)
         {
             try
             {
                 CheckNullArg("outSlot", outSlot);
-                machine.HeapSet(outSlot, new WasmRefID<ISlot>(worldServices.GetRootSlot()));
+                machine.HeapSet(outSlot, new WasmRefID<Slot>(worldServices.GetRootSlot()));
             }
             catch (Exception e)
             {
@@ -173,16 +173,16 @@ namespace Derg
         [ModFn("slot__get_parent")]
         public ResoniteError slot__get_parent(
             Frame frame,
-            WasmRefID<ISlot> slot,
-            Ptr<WasmRefID<ISlot>> outParent
+            WasmRefID<Slot> slot,
+            Ptr<WasmRefID<Slot>> outParent
         )
         {
             try
             {
                 CheckNullArg("outParent", outParent);
-                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
 
-                machine.HeapSet(outParent, new WasmRefID<ISlot>(slotInstance.Parent));
+                machine.HeapSet(outParent, new WasmRefID<Slot>(slotInstance.Parent));
             }
             catch (Exception e)
             {
@@ -194,14 +194,14 @@ namespace Derg
         [ModFn("slot__get_active_user")]
         public ResoniteError slot__get_active_user(
             Frame frame,
-            WasmRefID<ISlot> slot,
+            WasmRefID<Slot> slot,
             Ptr<WasmRefID<User>> outUser
         )
         {
             try
             {
                 CheckNullArg("outUser", outUser);
-                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
 
                 machine.HeapSet(outUser, new WasmRefID<User>(slotInstance.ActiveUser));
             }
@@ -215,14 +215,14 @@ namespace Derg
         [ModFn("slot__get_active_user_root")]
         public ResoniteError slot__get_active_user_root(
             Frame frame,
-            WasmRefID<ISlot> slot,
+            WasmRefID<Slot> slot,
             Ptr<WasmRefID<UserRoot>> outUserRoot
         )
         {
             try
             {
                 CheckNullArg("outUserRoot", outUserRoot);
-                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
 
                 machine.HeapSet(outUserRoot, new WasmRefID<UserRoot>(slotInstance.ActiveUserRoot));
             }
@@ -236,19 +236,19 @@ namespace Derg
         [ModFn("slot__get_object_root")]
         public ResoniteError slot__get_object_root(
             Frame frame,
-            WasmRefID<ISlot> slot,
+            WasmRefID<Slot> slot,
             bool only_explicit,
-            Ptr<WasmRefID<ISlot>> outObjectRoot
+            Ptr<WasmRefID<Slot>> outObjectRoot
         )
         {
             try
             {
                 CheckNullArg("outObjectRoot", outObjectRoot);
-                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
 
                 machine.HeapSet(
                     outObjectRoot,
-                    new WasmRefID<ISlot>(slotInstance.GetObjectRoot(only_explicit))
+                    new WasmRefID<Slot>(slotInstance.GetObjectRoot(only_explicit))
                 );
             }
             catch (Exception e)
@@ -261,14 +261,14 @@ namespace Derg
         [ModFn("slot__get_name")]
         public ResoniteError slot__get_name(
             Frame frame,
-            WasmRefID<ISlot> slot,
+            WasmRefID<Slot> slot,
             Ptr<NullTerminatedString> outName
         )
         {
             try
             {
                 CheckNullArg("outName", outName);
-                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
 
                 machine.HeapSet(emscriptenEnv, frame, outName, slotInstance.Name);
             }
@@ -282,13 +282,13 @@ namespace Derg
         [ModFn("slot__set_name")]
         public ResoniteError slot__set_name(
             Frame frame,
-            WasmRefID<ISlot> slot,
+            WasmRefID<Slot> slot,
             NullTerminatedString name
         )
         {
             try
             {
-                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
                 // The name can be null, and that's ok.
                 slotInstance.Name = emscriptenEnv.GetUTF8StringFromMem(name);
             }
@@ -302,14 +302,14 @@ namespace Derg
         [ModFn("slot__get_num_children")]
         public ResoniteError slot__get_num_children(
             Frame frame,
-            WasmRefID<ISlot> slot,
+            WasmRefID<Slot> slot,
             Ptr<int> outNumChildren
         )
         {
             try
             {
                 CheckNullArg("outNumChildren", outNumChildren);
-                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
 
                 machine.HeapSet(outNumChildren, slotInstance.ChildrenCount);
             }
@@ -323,17 +323,17 @@ namespace Derg
         [ModFn("slot__get_child")]
         public ResoniteError slot__get_child(
             Frame frame,
-            WasmRefID<ISlot> slot,
+            WasmRefID<Slot> slot,
             int index,
-            Ptr<WasmRefID<ISlot>> outChild
+            Ptr<WasmRefID<Slot>> outChild
         )
         {
             try
             {
                 CheckNullArg("outChild", outChild);
-                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
 
-                machine.HeapSet(outChild, new WasmRefID<ISlot>(slotInstance[index]));
+                machine.HeapSet(outChild, new WasmRefID<Slot>(slotInstance[index]));
             }
             catch (Exception e)
             {
@@ -347,23 +347,23 @@ namespace Derg
         [ModFn("slot__find_child_by_name")]
         public ResoniteError slot__find_child_by_name(
             Frame frame,
-            WasmRefID<ISlot> slot,
+            WasmRefID<Slot> slot,
             NullTerminatedString name,
             bool match_substring,
             bool ignore_case,
             int max_depth,
-            Ptr<WasmRefID<ISlot>> outChild
+            Ptr<WasmRefID<Slot>> outChild
         )
         {
             try
             {
                 CheckNullArg("name", emscriptenEnv, name, out string searchName);
                 CheckNullArg("outChild", outChild);
-                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
 
                 machine.HeapSet(
                     outChild,
-                    new WasmRefID<ISlot>(
+                    new WasmRefID<Slot>(
                         slotInstance.FindChild(searchName, match_substring, ignore_case, max_depth)
                     )
                 );
@@ -380,21 +380,21 @@ namespace Derg
         [ModFn("slot__find_child_by_tag")]
         public ResoniteError slot__find_child_by_tag(
             Frame frame,
-            WasmRefID<ISlot> slot,
+            WasmRefID<Slot> slot,
             NullTerminatedString tag,
             int max_depth,
-            Ptr<WasmRefID<ISlot>> outChild
+            Ptr<WasmRefID<Slot>> outChild
         )
         {
             try
             {
                 CheckNullArg("tag", emscriptenEnv, tag, out string tagName);
                 CheckNullArg("outChild", outChild);
-                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
 
                 machine.HeapSet(
                     outChild,
-                    new WasmRefID<ISlot>(slotInstance.FindChild(s => s.Tag == tagName, max_depth))
+                    new WasmRefID<Slot>(slotInstance.FindChild(s => s.Tag == tagName, max_depth))
                 );
             }
             catch (Exception e)
@@ -407,7 +407,7 @@ namespace Derg
         [ModFn("slot__get_component")]
         public ResoniteError slot__get_component(
             Frame frame,
-            WasmRefID<ISlot> slot,
+            WasmRefID<Slot> slot,
             NullTerminatedString typeNamePtr,
             Ptr<WasmRefID<Component>> outComponentIdPtr
         )
@@ -415,7 +415,7 @@ namespace Derg
             try
             {
                 CheckNullArg("componentIdPtr", outComponentIdPtr);
-                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
                 CheckNullArg("typeNamePtr", emscriptenEnv, typeNamePtr, out string typeName);
                 Type type = Type.GetType(typeName);
                 if (type == null)
@@ -442,7 +442,7 @@ namespace Derg
         [ModFn("slot__get_components")]
         public ResoniteError slot__get_components(
             Frame frame,
-            WasmRefID<ISlot> slot,
+            WasmRefID<Slot> slot,
             Ptr<int> outComponentListLength,
             Ptr<Ptr<WasmRefID<Component>>> outComponentListData
         )
@@ -451,7 +451,7 @@ namespace Derg
             {
                 CheckNullArg("outComponentListLength", outComponentListLength);
                 CheckNullArg("outComponentListData", outComponentListData);
-                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
 
                 WasmRefIDList<Component> list = WasmRefIDList<Component>.Make(
                     machine,

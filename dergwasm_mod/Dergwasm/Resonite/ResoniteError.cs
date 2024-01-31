@@ -58,23 +58,18 @@ namespace Derg.Resonite
             }
         }
 
-        // Returns a FailedPreconditionError, logging the exception.
+        // Returns an error, logging the exception.
         //
         // You should never pass a null exception in. This method is meant to be used
         // inside a catch block.
-        public ResoniteError ReturnError(
-            Exception e = null,
-            [CallerMemberName] string method = ""
-        ) => ReturnError(ResoniteError.FailedPrecondition, e, method);
-
-        // Returns the error in the given ResoniteException, logging the exception.
-        //
-        // You should never pass a null exception in. This method is meant to be used
-        // inside a catch block.
-        public ResoniteError ReturnError(
-            ResoniteException e = null,
-            [CallerMemberName] string method = ""
-        ) => ReturnError(e.Error, e, method);
+        public ResoniteError ReturnError(Exception e = null, [CallerMemberName] string method = "")
+        {
+            if (e.GetType() == typeof(ResoniteException))
+            {
+                return ReturnError((e as ResoniteException).Error, e, method);
+            }
+            return ReturnError(ResoniteError.FailedPrecondition, e, method);
+        }
 
         // Returns a specific error, logging the exception, or success if the exception
         // was null.
