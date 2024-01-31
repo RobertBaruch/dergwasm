@@ -1,5 +1,6 @@
 ﻿using System;
 using FrooxEngine;
+using static FrooxEngine.ContainerWorker<C>;
 
 namespace Derg
 {
@@ -15,6 +16,8 @@ namespace Derg
         UserRoot ActiveUserRoot { get; }
 
         User ActiveUser { get; }
+
+        ContainerWorker<Component>.ComponentEnumerable Components { get; }
 
         int ChildrenCount { get; }
 

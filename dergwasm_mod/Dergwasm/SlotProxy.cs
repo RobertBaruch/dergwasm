@@ -1,6 +1,7 @@
 ﻿using System;
 using Elements.Core;
 using FrooxEngine;
+using static FrooxEngine.ContainerWorker<C>;
 
 namespace Derg
 {
@@ -53,6 +54,8 @@ namespace Derg
         public UserRoot ActiveUserRoot => slot.ActiveUserRoot;
 
         public User ActiveUser => slot.ActiveUser;
+
+        public ContainerWorker<Component>.ComponentEnumerable Components => slot.Components;
 
         public World World => slot.World;
 

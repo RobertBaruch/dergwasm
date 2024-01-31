@@ -263,21 +263,9 @@ namespace Derg
         {
             try
             {
-                CheckNullArg("slot__get_component", "componentIdPtr", outComponentIdPtr);
-                CheckValidRef(
-                    "slot__get_component",
-                    "slot",
-                    worldServices,
-                    slot,
-                    out ISlot slotInstance
-                );
-                CheckNullArg(
-                    "slot__get_component",
-                    "typeNamePtr",
-                    emscriptenEnv,
-                    typeNamePtr,
-                    out string typeName
-                );
+                CheckNullArg("componentIdPtr", outComponentIdPtr);
+                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+                CheckNullArg("typeNamePtr", emscriptenEnv, typeNamePtr, out string typeName);
                 Type type = Type.GetType(typeName);
                 if (type == null)
                 {
@@ -290,16 +278,43 @@ namespace Derg
                     outComponentIdPtr,
                     new WasmRefID<Component>(slotInstance.GetComponent(type))
                 );
-                return ResoniteError.Success;
-            }
-            catch (ResoniteException e)
-            {
-                return ReturnError("slot__get_component", e);
             }
             catch (Exception e)
             {
-                return ReturnError("slot__get_component", ResoniteError.FailedPrecondition, e);
+                return ReturnError(e);
             }
+            return default;
+        }
+
+        // Gets a list of component ref IDs for the given slot. The caller is responsible for
+        // freeing the data at outComponentListData.
+        [ModFn("slot__get_components")]
+        public ResoniteError slot__get_components(
+            Frame frame,
+            WasmRefID<ISlot> slot,
+            Ptr<int> outComponentListLength,
+            Ptr<Ptr<WasmRefID<Component>>> outComponentListData
+        )
+        {
+            try
+            {
+                CheckNullArg("outComponentListLength", outComponentListLength);
+                CheckNullArg("outComponentListData", outComponentListData);
+                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+
+                WasmRefIDList<Component> list = WasmRefIDList<Component>.Make(
+                    machine,
+                    frame,
+                    slotInstance.Components
+                );
+                machine.HeapSet(outComponentListLength, list.buff.Length);
+                machine.HeapSet(outComponentListData, list.buff.Ptr);
+            }
+            catch (Exception e)
+            {
+                return ReturnError(e);
+            }
+            return default;
         }
 
         [ModFn("component__get_type_name")]
@@ -311,9 +326,8 @@ namespace Derg
         {
             try
             {
-                CheckNullArg("component__get_type_name", "outPtr", outPtr);
+                CheckNullArg("outPtr", outPtr);
                 CheckValidRef(
-                    "component__get_type_name",
                     "componentRefId",
                     worldServices,
                     componentRefId,
@@ -321,16 +335,12 @@ namespace Derg
                 );
                 string typeName = component.GetType().GetNiceName();
                 machine.HeapSet(emscriptenEnv, frame, outPtr, typeName);
-                return ResoniteError.Success;
-            }
-            catch (ResoniteException e)
-            {
-                return ReturnError("slot__get_component", e);
             }
             catch (Exception e)
             {
-                return ReturnError("slot__get_component", ResoniteError.FailedPrecondition, e);
+                return ReturnError(e);
             }
+            return default;
         }
 
         public enum ResoniteType : int
@@ -361,17 +371,10 @@ namespace Derg
         {
             try
             {
-                CheckNullArg(
-                    "component__get_member",
-                    "namePtr",
-                    emscriptenEnv,
-                    namePtr,
-                    out string fieldName
-                );
-                CheckNullArg("component__get_member", "outTypePtr", outTypePtr);
-                CheckNullArg("component__get_member", "outRefIdPtr", outRefIdPtr);
+                CheckNullArg("namePtr", emscriptenEnv, namePtr, out string fieldName);
+                CheckNullArg("outTypePtr", outTypePtr);
+                CheckNullArg("outRefIdPtr", outRefIdPtr);
                 CheckValidRef(
-                    "component__get_member",
                     "componentRefId",
                     worldServices,
                     componentRefId,
@@ -386,17 +389,12 @@ namespace Derg
 
                 machine.HeapSet(outTypePtr, GetResoniteType(member.GetType()));
                 machine.HeapSet(outRefIdPtr, member);
-
-                return ResoniteError.Success;
-            }
-            catch (ResoniteException e)
-            {
-                return ReturnError("slot__get_component", e);
             }
             catch (Exception e)
             {
-                return ReturnError("slot__get_component", ResoniteError.FailedPrecondition, e);
+                return ReturnError(e);
             }
+            return default;
         }
 
         [ModFn("value__get_int", typeof(int))]

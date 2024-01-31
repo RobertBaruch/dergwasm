@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using Derg.Wasm;
 
 namespace Derg.Resonite
@@ -16,35 +17,30 @@ namespace Derg.Resonite
     public class ErrorChecker
     {
         // Checks a Ptr<T> argument for null.
-        public void CheckNullArg<T>(string method, string argname, Ptr<T> ptr)
+        public void CheckNullArg<T>(string argname, Ptr<T> ptr)
             where T : struct
         {
             if (ptr.IsNull)
             {
-                throw new ResoniteException(
-                    ResoniteError.NullArgument,
-                    $"{method}: {argname} is null"
-                );
+                throw new ResoniteException(ResoniteError.NullArgument, $"{argname} is null");
             }
         }
 
         // Checks a NullTerminatedString argument for null, or passes back the string
         // if not null.
         public void CheckNullArg(
-            string method,
             string argname,
             EmscriptenEnv env,
             NullTerminatedString str,
             out string result
         )
         {
-            CheckNullArg(method, argname, str.Data);
+            CheckNullArg(argname, str.Data);
             result = env.GetUTF8StringFromMem(str);
         }
 
         // Checks that a WasmRefID<T> is non-zero and is actually a T.
         public void CheckValidRef<T>(
-            string method,
             string argname,
             IWorldServices worldServices,
             WasmRefID<T> refID,
@@ -66,15 +62,30 @@ namespace Derg.Resonite
         //
         // You should never pass a null exception in. This method is meant to be used
         // inside a catch block.
-        public ResoniteError ReturnError(string method, Exception e) =>
-            ReturnError(method, ResoniteError.FailedPrecondition, e);
+        public ResoniteError ReturnError(
+            Exception e = null,
+            [CallerMemberName] string method = ""
+        ) => ReturnError(ResoniteError.FailedPrecondition, e, method);
+
+        // Returns the error in the given ResoniteException, logging the exception.
+        //
+        // You should never pass a null exception in. This method is meant to be used
+        // inside a catch block.
+        public ResoniteError ReturnError(
+            ResoniteException e = null,
+            [CallerMemberName] string method = ""
+        ) => ReturnError(e.Error, e, method);
 
         // Returns a specific error, logging the exception, or success if the exception
         // was null.
         //
         // You should never pass a null exception in. This method is meant to be used
         // inside a catch block.
-        public ResoniteError ReturnError(string method, ResoniteError err, Exception e)
+        private ResoniteError ReturnError(
+            ResoniteError err,
+            Exception e = null,
+            [CallerMemberName] string method = ""
+        )
         {
             if (e != null)
             {

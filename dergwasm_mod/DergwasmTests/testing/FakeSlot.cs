@@ -32,6 +32,8 @@ namespace DergwasmTests.testing
 
         public UserRoot ActiveUserRoot { get; set; }
 
+        public ContainerWorker<Component>.ComponentEnumerable Components { get; }
+
         public User ActiveUser => ActiveUserRoot?.ActiveUser;
 
         public World World => throw new NotImplementedException();
