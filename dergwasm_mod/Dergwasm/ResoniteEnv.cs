@@ -6,6 +6,8 @@ using Derg.Wasm;
 using Elements.Core;
 using FrooxEngine;
 using ProtoFlux.Core;
+using ProtoFlux.Runtimes.Execution.Nodes.FrooxEngine.Slots;
+using static FrooxEngine.SessionControlDialog;
 
 namespace Derg
 {
@@ -154,103 +156,252 @@ namespace Derg
         //
 
         [ModFn("slot__root_slot")]
-        public WasmRefID<ISlot> slot__root_slot(Frame frame)
+        public ResoniteError slot__root_slot(Frame frame, Ptr<WasmRefID<ISlot>> outSlot)
         {
-            return new WasmRefID<ISlot>(worldServices.GetRootSlot());
-        }
-
-        [ModFn("slot__get_parent")]
-        public WasmRefID<ISlot> slot__get_parent(Frame frame, WasmRefID<ISlot> slot)
-        {
-            return worldServices.GetObjectOrNull(slot)?.Parent?.GetWasmRef() ?? default;
-        }
-
-        [ModFn("slot__get_active_user")]
-        public WasmRefID<User> slot__get_active_user(Frame frame, WasmRefID<ISlot> slot)
-        {
-            return worldServices.GetObjectOrNull(slot)?.ActiveUser?.GetWasmRef() ?? default;
-        }
-
-        [ModFn("slot__get_active_user_root")]
-        public WasmRefID<UserRoot> slot__get_active_user_root(Frame frame, WasmRefID<ISlot> slot)
-        {
-            return worldServices.GetObjectOrNull(slot)?.ActiveUserRoot?.GetWasmRef() ?? default;
-        }
-
-        [ModFn("slot__get_object_root")]
-        public WasmRefID<ISlot> slot__get_object_root(
-            Frame frame,
-            WasmRefID<ISlot> slot,
-            bool only_explicit
-        )
-        {
-            return worldServices.GetObjectOrNull(slot)?.GetObjectRoot(only_explicit)?.GetWasmRef()
-                ?? default;
-        }
-
-        [ModFn("slot__get_name")]
-        public NullTerminatedString slot__get_name(Frame frame, WasmRefID<ISlot> slot)
-        {
-            string name = worldServices.GetObjectOrNull(slot)?.Name ?? "";
-            return new NullTerminatedString(emscriptenEnv.AllocateUTF8StringInMem(frame, name));
-        }
-
-        [ModFn("slot__set_name")]
-        public void slot__set_name(Frame frame, WasmRefID<ISlot> slot, NullTerminatedString name)
-        {
-            ISlot islot = worldServices.GetObjectOrNull(slot);
-            if (islot == null)
-                return;
-            islot.Name = emscriptenEnv.GetUTF8StringFromMem(name);
-        }
-
-        [ModFn("slot__get_num_children")]
-        public int slot__get_num_children(Frame frame, WasmRefID<ISlot> slot)
-        {
-            return worldServices.GetObjectOrNull(slot)?.ChildrenCount ?? 0;
-        }
-
-        [ModFn("slot__get_child")]
-        public WasmRefID<ISlot> slot__get_child(Frame frame, WasmRefID<ISlot> slot, int index)
-        {
-            var foundSlot = worldServices.GetObjectOrNull(slot);
-            if (index < foundSlot?.ChildrenCount)
+            try
             {
-                return foundSlot[index].GetWasmRef();
+                CheckNullArg("outSlot", outSlot);
+                machine.HeapSet(outSlot, new WasmRefID<ISlot>(worldServices.GetRootSlot()));
+            }
+            catch (Exception e)
+            {
+                return ReturnError(e);
             }
             return default;
         }
 
-        [ModFn("slot__find_child_by_name")]
-        public WasmRefID<ISlot> slot__find_child_by_name(
+        [ModFn("slot__get_parent")]
+        public ResoniteError slot__get_parent(
             Frame frame,
             WasmRefID<ISlot> slot,
-            NullTerminatedString namePtr,
-            bool match_substring,
-            bool ignore_case,
-            int max_depth
+            Ptr<WasmRefID<ISlot>> outParent
         )
         {
-            string name = emscriptenEnv.GetUTF8StringFromMem(namePtr);
-            return worldServices
-                    .GetObjectOrNull(slot)
-                    ?.FindChild(name, match_substring, ignore_case, max_depth)
-                    ?.GetWasmRef() ?? default;
+            try
+            {
+                CheckNullArg("outParent", outParent);
+                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+
+                machine.HeapSet(outParent, new WasmRefID<ISlot>(slotInstance.Parent));
+            }
+            catch (Exception e)
+            {
+                return ReturnError(e);
+            }
+            return default;
         }
 
-        [ModFn("slot__find_child_by_tag")]
-        public WasmRefID<ISlot> slot__find_child_by_tag(
+        [ModFn("slot__get_active_user")]
+        public ResoniteError slot__get_active_user(
             Frame frame,
             WasmRefID<ISlot> slot,
-            NullTerminatedString tagPtr,
-            int max_depth
+            Ptr<WasmRefID<User>> outUser
         )
         {
-            string tag = emscriptenEnv.GetUTF8StringFromMem(tagPtr);
-            return worldServices
-                    .GetObjectOrNull(slot)
-                    ?.FindChild(s => s.Tag == tag, max_depth)
-                    ?.GetWasmRef() ?? default;
+            try
+            {
+                CheckNullArg("outUser", outUser);
+                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+
+                machine.HeapSet(outUser, new WasmRefID<User>(slotInstance.ActiveUser));
+            }
+            catch (Exception e)
+            {
+                return ReturnError(e);
+            }
+            return default;
+        }
+
+        [ModFn("slot__get_active_user_root")]
+        public ResoniteError slot__get_active_user_root(
+            Frame frame,
+            WasmRefID<ISlot> slot,
+            Ptr<WasmRefID<UserRoot>> outUserRoot
+        )
+        {
+            try
+            {
+                CheckNullArg("outUserRoot", outUserRoot);
+                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+
+                machine.HeapSet(outUserRoot, new WasmRefID<UserRoot>(slotInstance.ActiveUserRoot));
+            }
+            catch (Exception e)
+            {
+                return ReturnError(e);
+            }
+            return default;
+        }
+
+        [ModFn("slot__get_object_root")]
+        public ResoniteError slot__get_object_root(
+            Frame frame,
+            WasmRefID<ISlot> slot,
+            bool only_explicit,
+            Ptr<WasmRefID<ISlot>> outObjectRoot
+        )
+        {
+            try
+            {
+                CheckNullArg("outObjectRoot", outObjectRoot);
+                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+
+                machine.HeapSet(
+                    outObjectRoot,
+                    new WasmRefID<ISlot>(slotInstance.GetObjectRoot(only_explicit))
+                );
+            }
+            catch (Exception e)
+            {
+                return ReturnError(e);
+            }
+            return default;
+        }
+
+        [ModFn("slot__get_name")]
+        public ResoniteError slot__get_name(
+            Frame frame,
+            WasmRefID<ISlot> slot,
+            Ptr<NullTerminatedString> outName
+        )
+        {
+            try
+            {
+                CheckNullArg("outName", outName);
+                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+
+                machine.HeapSet(emscriptenEnv, frame, outName, slotInstance.Name);
+            }
+            catch (Exception e)
+            {
+                return ReturnError(e);
+            }
+            return default;
+        }
+
+        [ModFn("slot__set_name")]
+        public ResoniteError slot__set_name(
+            Frame frame,
+            WasmRefID<ISlot> slot,
+            NullTerminatedString name
+        )
+        {
+            try
+            {
+                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+                // The name can be null, and that's ok.
+                slotInstance.Name = emscriptenEnv.GetUTF8StringFromMem(name);
+            }
+            catch (Exception e)
+            {
+                return ReturnError(e);
+            }
+            return default;
+        }
+
+        [ModFn("slot__get_num_children")]
+        public ResoniteError slot__get_num_children(
+            Frame frame,
+            WasmRefID<ISlot> slot,
+            Ptr<int> outNumChildren
+        )
+        {
+            try
+            {
+                CheckNullArg("outNumChildren", outNumChildren);
+                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+
+                machine.HeapSet(outNumChildren, slotInstance.ChildrenCount);
+            }
+            catch (Exception e)
+            {
+                return ReturnError(e);
+            }
+            return default;
+        }
+
+        [ModFn("slot__get_child")]
+        public ResoniteError slot__get_child(
+            Frame frame,
+            WasmRefID<ISlot> slot,
+            int index,
+            Ptr<WasmRefID<ISlot>> outChild
+        )
+        {
+            try
+            {
+                CheckNullArg("outChild", outChild);
+                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+
+                machine.HeapSet(outChild, new WasmRefID<ISlot>(slotInstance[index]));
+            }
+            catch (Exception e)
+            {
+                return ReturnError(e);
+            }
+            return default;
+        }
+
+        // Finds a child slot by name. If no match was found, success is returned, but outChild
+        // will be the null reference.
+        [ModFn("slot__find_child_by_name")]
+        public ResoniteError slot__find_child_by_name(
+            Frame frame,
+            WasmRefID<ISlot> slot,
+            NullTerminatedString name,
+            bool match_substring,
+            bool ignore_case,
+            int max_depth,
+            Ptr<WasmRefID<ISlot>> outChild
+        )
+        {
+            try
+            {
+                CheckNullArg("name", emscriptenEnv, name, out string searchName);
+                CheckNullArg("outChild", outChild);
+                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+
+                machine.HeapSet(
+                    outChild,
+                    new WasmRefID<ISlot>(
+                        slotInstance.FindChild(searchName, match_substring, ignore_case, max_depth)
+                    )
+                );
+            }
+            catch (Exception e)
+            {
+                return ReturnError(e);
+            }
+            return default;
+        }
+
+        // Finds a child slot by tag. If no match was found, success is returned, but outChild
+        // will be the null reference.
+        [ModFn("slot__find_child_by_tag")]
+        public ResoniteError slot__find_child_by_tag(
+            Frame frame,
+            WasmRefID<ISlot> slot,
+            NullTerminatedString tag,
+            int max_depth,
+            Ptr<WasmRefID<ISlot>> outChild
+        )
+        {
+            try
+            {
+                CheckNullArg("tag", emscriptenEnv, tag, out string tagName);
+                CheckNullArg("outChild", outChild);
+                CheckValidRef("slot", worldServices, slot, out ISlot slotInstance);
+
+                machine.HeapSet(
+                    outChild,
+                    new WasmRefID<ISlot>(slotInstance.FindChild(s => s.Tag == tagName, max_depth))
+                );
+            }
+            catch (Exception e)
+            {
+                return ReturnError(e);
+            }
+            return default;
         }
 
         [ModFn("slot__get_component")]
@@ -320,7 +471,7 @@ namespace Derg
         [ModFn("component__get_type_name")]
         public ResoniteError component__get_type_name(
             Frame frame,
-            WasmRefID<Component> componentRefId,
+            WasmRefID<Component> component,
             Ptr<NullTerminatedString> outPtr
         )
         {
@@ -328,13 +479,17 @@ namespace Derg
             {
                 CheckNullArg("outPtr", outPtr);
                 CheckValidRef(
-                    "componentRefId",
+                    "component",
                     worldServices,
-                    componentRefId,
-                    out Component component
+                    component,
+                    out Component componentInstance
                 );
-                string typeName = component.GetType().GetNiceName();
-                machine.HeapSet(emscriptenEnv, frame, outPtr, typeName);
+                machine.HeapSet(
+                    emscriptenEnv,
+                    frame,
+                    outPtr,
+                    componentInstance.GetType().GetNiceName()
+                );
             }
             catch (Exception e)
             {
@@ -403,17 +558,18 @@ namespace Derg
         public ResoniteError value__get<T>(Frame frame, WasmRefID<IValue<T>> refId, Ptr<T> outPtr)
             where T : unmanaged
         {
-            if (outPtr.IsNull)
+            try
             {
-                return ResoniteError.NullArgument;
+                CheckNullArg("outPtr", outPtr);
+                CheckValidRef("refId", worldServices, refId, out IValue<T> value);
+
+                machine.HeapSet(outPtr, value.Value);
             }
-            var value = worldServices.GetObjectOrNull(refId);
-            if (value == null)
+            catch (Exception e)
             {
-                return ResoniteError.InvalidRefId;
+                return ReturnError(e);
             }
-            machine.HeapSet(outPtr, value.Value);
-            return ResoniteError.Success;
+            return default;
         }
 
         [ModFn("value__set_int", typeof(int))]
@@ -422,17 +578,18 @@ namespace Derg
         public ResoniteError value__set<T>(Frame frame, WasmRefID<IValue<T>> refId, Ptr<T> inPtr)
             where T : unmanaged
         {
-            if (inPtr.IsNull)
+            try
             {
-                return ResoniteError.NullArgument;
+                CheckNullArg("inPtr", inPtr);
+                CheckValidRef("refId", worldServices, refId, out IValue<T> value);
+
+                value.Value = machine.HeapGet(inPtr);
             }
-            var value = worldServices.GetObjectOrNull(refId);
-            if (value == null)
+            catch (Exception e)
             {
-                return ResoniteError.InvalidRefId;
+                return ReturnError(e);
             }
-            value.Value = machine.HeapGet(inPtr);
-            return ResoniteError.Success;
+            return default;
         }
     }
 }
