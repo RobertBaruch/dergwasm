@@ -2,12 +2,18 @@
   {
     "Module": "env",
     "Name": "slot__root_slot",
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "outSlot",
+        "Type": 127,
+        "CSType": "Ptr\u003CWasmRefID\u003CSlot\u003E\u003E"
+      }
+    ],
     "Returns": [
       {
         "Name": null,
-        "Type": 126,
-        "CSType": "WasmRefID\u003CISlot\u003E"
+        "Type": 127,
+        "CSType": "ResoniteError"
       }
     ]
   },
@@ -18,14 +24,19 @@
       {
         "Name": "slot",
         "Type": 126,
-        "CSType": "WasmRefID\u003CISlot\u003E"
+        "CSType": "WasmRefID\u003CSlot\u003E"
+      },
+      {
+        "Name": "outParent",
+        "Type": 127,
+        "CSType": "Ptr\u003CWasmRefID\u003CSlot\u003E\u003E"
       }
     ],
     "Returns": [
       {
         "Name": null,
-        "Type": 126,
-        "CSType": "WasmRefID\u003CISlot\u003E"
+        "Type": 127,
+        "CSType": "ResoniteError"
       }
     ]
   },
@@ -36,14 +47,19 @@
       {
         "Name": "slot",
         "Type": 126,
-        "CSType": "WasmRefID\u003CISlot\u003E"
+        "CSType": "WasmRefID\u003CSlot\u003E"
+      },
+      {
+        "Name": "outUser",
+        "Type": 127,
+        "CSType": "Ptr\u003CWasmRefID\u003CUser\u003E\u003E"
       }
     ],
     "Returns": [
       {
         "Name": null,
-        "Type": 126,
-        "CSType": "WasmRefID\u003CUser\u003E"
+        "Type": 127,
+        "CSType": "ResoniteError"
       }
     ]
   },
@@ -54,14 +70,19 @@
       {
         "Name": "slot",
         "Type": 126,
-        "CSType": "WasmRefID\u003CISlot\u003E"
+        "CSType": "WasmRefID\u003CSlot\u003E"
+      },
+      {
+        "Name": "outUserRoot",
+        "Type": 127,
+        "CSType": "Ptr\u003CWasmRefID\u003CUserRoot\u003E\u003E"
       }
     ],
     "Returns": [
       {
         "Name": null,
-        "Type": 126,
-        "CSType": "WasmRefID\u003CUserRoot\u003E"
+        "Type": 127,
+        "CSType": "ResoniteError"
       }
     ]
   },
@@ -72,19 +93,24 @@
       {
         "Name": "slot",
         "Type": 126,
-        "CSType": "WasmRefID\u003CISlot\u003E"
+        "CSType": "WasmRefID\u003CSlot\u003E"
       },
       {
         "Name": "only_explicit",
         "Type": 127,
         "CSType": "bool"
+      },
+      {
+        "Name": "outObjectRoot",
+        "Type": 127,
+        "CSType": "Ptr\u003CWasmRefID\u003CSlot\u003E\u003E"
       }
     ],
     "Returns": [
       {
         "Name": null,
-        "Type": 126,
-        "CSType": "WasmRefID\u003CISlot\u003E"
+        "Type": 127,
+        "CSType": "ResoniteError"
       }
     ]
   },
@@ -95,14 +121,19 @@
       {
         "Name": "slot",
         "Type": 126,
-        "CSType": "WasmRefID\u003CISlot\u003E"
+        "CSType": "WasmRefID\u003CSlot\u003E"
+      },
+      {
+        "Name": "outName",
+        "Type": 127,
+        "CSType": "Ptr\u003CNullTerminatedString\u003E"
       }
     ],
     "Returns": [
       {
         "Name": null,
         "Type": 127,
-        "CSType": "NullTerminatedString"
+        "CSType": "ResoniteError"
       }
     ]
   },
@@ -113,7 +144,7 @@
       {
         "Name": "slot",
         "Type": 126,
-        "CSType": "WasmRefID\u003CISlot\u003E"
+        "CSType": "WasmRefID\u003CSlot\u003E"
       },
       {
         "Name": "name",
@@ -121,7 +152,13 @@
         "CSType": "NullTerminatedString"
       }
     ],
-    "Returns": []
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 127,
+        "CSType": "ResoniteError"
+      }
+    ]
   },
   {
     "Module": "env",
@@ -130,14 +167,19 @@
       {
         "Name": "slot",
         "Type": 126,
-        "CSType": "WasmRefID\u003CISlot\u003E"
+        "CSType": "WasmRefID\u003CSlot\u003E"
+      },
+      {
+        "Name": "outNumChildren",
+        "Type": 127,
+        "CSType": "Ptr\u003Cint\u003E"
       }
     ],
     "Returns": [
       {
         "Name": null,
         "Type": 127,
-        "CSType": "int"
+        "CSType": "ResoniteError"
       }
     ]
   },
@@ -148,19 +190,24 @@
       {
         "Name": "slot",
         "Type": 126,
-        "CSType": "WasmRefID\u003CISlot\u003E"
+        "CSType": "WasmRefID\u003CSlot\u003E"
       },
       {
         "Name": "index",
         "Type": 127,
         "CSType": "int"
+      },
+      {
+        "Name": "outChild",
+        "Type": 127,
+        "CSType": "Ptr\u003CWasmRefID\u003CSlot\u003E\u003E"
       }
     ],
     "Returns": [
       {
         "Name": null,
-        "Type": 126,
-        "CSType": "WasmRefID\u003CISlot\u003E"
+        "Type": 127,
+        "CSType": "ResoniteError"
       }
     ]
   },
@@ -171,10 +218,10 @@
       {
         "Name": "slot",
         "Type": 126,
-        "CSType": "WasmRefID\u003CISlot\u003E"
+        "CSType": "WasmRefID\u003CSlot\u003E"
       },
       {
-        "Name": "namePtr",
+        "Name": "name",
         "Type": 127,
         "CSType": "NullTerminatedString"
       },
@@ -192,13 +239,18 @@
         "Name": "max_depth",
         "Type": 127,
         "CSType": "int"
+      },
+      {
+        "Name": "outChild",
+        "Type": 127,
+        "CSType": "Ptr\u003CWasmRefID\u003CSlot\u003E\u003E"
       }
     ],
     "Returns": [
       {
         "Name": null,
-        "Type": 126,
-        "CSType": "WasmRefID\u003CISlot\u003E"
+        "Type": 127,
+        "CSType": "ResoniteError"
       }
     ]
   },
@@ -209,10 +261,10 @@
       {
         "Name": "slot",
         "Type": 126,
-        "CSType": "WasmRefID\u003CISlot\u003E"
+        "CSType": "WasmRefID\u003CSlot\u003E"
       },
       {
-        "Name": "tagPtr",
+        "Name": "tag",
         "Type": 127,
         "CSType": "NullTerminatedString"
       },
@@ -220,13 +272,18 @@
         "Name": "max_depth",
         "Type": 127,
         "CSType": "int"
+      },
+      {
+        "Name": "outChild",
+        "Type": 127,
+        "CSType": "Ptr\u003CWasmRefID\u003CSlot\u003E\u003E"
       }
     ],
     "Returns": [
       {
         "Name": null,
-        "Type": 126,
-        "CSType": "WasmRefID\u003CISlot\u003E"
+        "Type": 127,
+        "CSType": "ResoniteError"
       }
     ]
   },
@@ -237,19 +294,52 @@
       {
         "Name": "slot",
         "Type": 126,
-        "CSType": "WasmRefID\u003CISlot\u003E"
+        "CSType": "WasmRefID\u003CSlot\u003E"
       },
       {
         "Name": "typeNamePtr",
         "Type": 127,
         "CSType": "NullTerminatedString"
+      },
+      {
+        "Name": "outComponentIdPtr",
+        "Type": 127,
+        "CSType": "Ptr\u003CWasmRefID\u003CComponent\u003E\u003E"
       }
     ],
     "Returns": [
       {
         "Name": null,
+        "Type": 127,
+        "CSType": "ResoniteError"
+      }
+    ]
+  },
+  {
+    "Module": "env",
+    "Name": "slot__get_components",
+    "Parameters": [
+      {
+        "Name": "slot",
         "Type": 126,
-        "CSType": "WasmRefID\u003CComponent\u003E"
+        "CSType": "WasmRefID\u003CSlot\u003E"
+      },
+      {
+        "Name": "outComponentListLength",
+        "Type": 127,
+        "CSType": "Ptr\u003Cint\u003E"
+      },
+      {
+        "Name": "outComponentListData",
+        "Type": 127,
+        "CSType": "Ptr\u003CWasmArray\u003CWasmRefID\u003CComponent\u003E\u003E\u003E"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 127,
+        "CSType": "ResoniteError"
       }
     ]
   },
@@ -258,16 +348,21 @@
     "Name": "component__get_type_name",
     "Parameters": [
       {
-        "Name": "component_id",
+        "Name": "component",
         "Type": 126,
         "CSType": "WasmRefID\u003CComponent\u003E"
+      },
+      {
+        "Name": "outPtr",
+        "Type": 127,
+        "CSType": "Ptr\u003CNullTerminatedString\u003E"
       }
     ],
     "Returns": [
       {
         "Name": null,
         "Type": 127,
-        "CSType": "NullTerminatedString"
+        "CSType": "ResoniteError"
       }
     ]
   },
@@ -288,7 +383,7 @@
       {
         "Name": "outTypePtr",
         "Type": 127,
-        "CSType": "Ptr\u003Cint\u003E"
+        "CSType": "Ptr\u003CResoniteType\u003E"
       },
       {
         "Name": "outRefIdPtr",
@@ -300,7 +395,7 @@
       {
         "Name": null,
         "Type": 127,
-        "CSType": "int"
+        "CSType": "ResoniteError"
       }
     ]
   },

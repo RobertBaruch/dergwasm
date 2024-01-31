@@ -6,6 +6,8 @@
 
 // This file contains types used in the WASM API for Resonite.
 
+typedef int32_t resonite_error_t;
+typedef int32_t resonite_type_t;
 typedef uint64_t resonite_refid_t
 typedef uint64_t resonite_slot_refid_t;
 typedef uint64_t resonite_user_refid_t;

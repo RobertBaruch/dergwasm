@@ -10,6 +10,7 @@ mergeInto(LibraryManager.library, { slot__get_child: function () { } });
 mergeInto(LibraryManager.library, { slot__find_child_by_name: function () { } });
 mergeInto(LibraryManager.library, { slot__find_child_by_tag: function () { } });
 mergeInto(LibraryManager.library, { slot__get_component: function () { } });
+mergeInto(LibraryManager.library, { slot__get_components: function () { } });
 mergeInto(LibraryManager.library, { component__get_type_name: function () { } });
 mergeInto(LibraryManager.library, { component__get_member: function () { } });
 mergeInto(LibraryManager.library, { value__get_int: function () { } });
