@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Derg.Modules
@@ -11,7 +10,7 @@ namespace Derg.Modules
         public string CSType { get; set; }
     }
 
-    public class Api
+    public class ApiFunc
     {
         public string Module { get; set; }
         public string Name { get; set; }
@@ -24,7 +23,7 @@ namespace Derg.Modules
         [JsonIgnore]
         public List<ValueType> ReturnValueTypes { get; }
 
-        public Api()
+        public ApiFunc()
         {
             Parameters = new List<Parameter>();
             Returns = new List<Parameter>();
