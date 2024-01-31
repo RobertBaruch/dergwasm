@@ -153,8 +153,8 @@ namespace Derg
             if (machine.Debug)
                 Console.WriteLine($"Invoking host func {f.ModuleName}.{f.Name}");
 
-            int arity = f.Proxy.Arity();
-            int args = f.Proxy.NumArgs();
+            int arity = f.Signature.returns.Length;
+            int args = f.Signature.args.Length;
 
             Frame next_frame = new HostFrame(f, Module, this);
 
@@ -261,14 +261,14 @@ namespace Derg
         {
             if (func != null)
             {
-                this.Locals = new Value[func.Proxy.NumArgs()];
+                this.Locals = new Value[func.Signature.args.Length];
             }
             this.HostFunc = func;
         }
 
         public override int Arity
         {
-            get => HostFunc.Proxy.Arity();
+            get => HostFunc.Signature.returns.Length;
         }
     }
 }
