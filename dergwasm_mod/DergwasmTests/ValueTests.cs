@@ -1,6 +1,7 @@
 using Derg;
 using Derg.Wasm;
 using Elements.Core;
+using FrooxEngine;
 using Xunit;
 
 namespace DergwasmTests
@@ -82,7 +83,7 @@ namespace DergwasmTests
         [Fact]
         public void FromWasmRefID()
         {
-            Value v = Value.From(new WasmRefID<ISlot>(120));
+            Value v = Value.From(new WasmRefID<Slot>(120));
 
             Assert.Equal(120, v.s32);
             Assert.Equal(0u, v.value_hi);

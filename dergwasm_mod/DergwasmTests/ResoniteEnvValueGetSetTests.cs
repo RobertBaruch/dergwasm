@@ -1,4 +1,5 @@
 ﻿using Derg;
+using Derg.Resonite;
 using Derg.Wasm;
 using DergwasmTests.testing;
 using FrooxEngine;

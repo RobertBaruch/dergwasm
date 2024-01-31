@@ -95,9 +95,12 @@ namespace Derg
             return stringPtr;
         }
 
-        // Gets the NUL-terminated UTF8-encoded string at the given pointer in the heap.
+        // Gets the NUL-terminated UTF8-encoded string at the given pointer in the heap,
+        // or null if the ptr is null.
         public string GetUTF8StringFromMem(int ptr)
         {
+            if (ptr == 0)
+                return null;
             int endPtr = ptr;
             while (machine.Heap[endPtr] != 0)
             {

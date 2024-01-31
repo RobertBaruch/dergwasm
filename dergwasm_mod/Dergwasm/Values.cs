@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Derg.Resonite;
 using Derg.Wasm;
 using Elements.Core;
 using FrooxEngine;

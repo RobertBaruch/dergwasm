@@ -14,7 +14,7 @@ namespace Derg
         public abstract string GetName();
 
         // Gets the world root slot.
-        public abstract ISlot GetRootSlot();
+        public abstract Slot GetRootSlot();
 
         // Gets the IWorldElement for the refID, or null if it doesn't exist.
         public abstract IWorldElement GetObjectOrNull(RefID refID);

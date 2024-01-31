@@ -1,6 +1,7 @@
 using System.Linq;
 using Derg.Wasm;
 using DergwasmTests.testing;
+using FrooxEngine;
 using Xunit;
 
 namespace Derg.Modules
@@ -10,7 +11,7 @@ namespace Derg.Modules
     {
         public int Got { get; private set; }
         public int Got2 { get; private set; }
-        public WasmRefID<ISlot> SlotArg { get; private set; }
+        public WasmRefID<Slot> SlotArg { get; private set; }
         public Ptr<byte> BytePtrArg { get; private set; }
         public bool ReceivedBoolArg { get; private set; }
 
@@ -24,7 +25,7 @@ namespace Derg.Modules
         }
 
         [ModFn("refid_arg")]
-        public void RefIdArg(Frame frame, WasmRefID<ISlot> slot)
+        public void RefIdArg(Frame frame, WasmRefID<Slot> slot)
         {
             SlotArg = slot;
         }
@@ -48,9 +49,9 @@ namespace Derg.Modules
         }
 
         [ModFn("refid_return")]
-        public WasmRefID<ISlot> RefIdReturn(Frame frame)
+        public WasmRefID<Slot> RefIdReturn(Frame frame)
         {
-            return new WasmRefID<ISlot>(5UL);
+            return new WasmRefID<Slot>(5UL);
         }
 
         [ModFn("ptr_return")]
@@ -127,7 +128,7 @@ namespace Derg.Modules
             var apiData = reflected.ApiDataFor("refid_arg");
             Assert.Equal("test", apiData.Module);
             Assert.Equal("refid_arg", apiData.Name);
-            Assert.Equal("WasmRefID<ISlot>", Assert.Single(apiData.Parameters).CSType);
+            Assert.Equal("WasmRefID<Slot>", Assert.Single(apiData.Parameters).CSType);
             Assert.Equal(ValueType.I64, Assert.Single(apiData.Parameters).Type);
             Assert.Empty(apiData.Returns);
         }
@@ -136,7 +137,7 @@ namespace Derg.Modules
         public void RefIdArgPassedCorrectly()
         {
             var method = reflected["refid_arg"];
-            frame.Push(new WasmRefID<ISlot>(5UL));
+            frame.Push(new WasmRefID<Slot>(5UL));
             frame.InvokeFunc(machine, method);
             Assert.Equal(5UL, module.SlotArg.Id);
         }
@@ -208,7 +209,7 @@ namespace Derg.Modules
             Assert.Equal("test", apiData.Module);
             Assert.Equal("refid_return", apiData.Name);
             Assert.Empty(apiData.Parameters);
-            Assert.Equal("WasmRefID<ISlot>", Assert.Single(apiData.Returns).CSType);
+            Assert.Equal("WasmRefID<Slot>", Assert.Single(apiData.Returns).CSType);
             Assert.Equal(ValueType.I64, Assert.Single(apiData.Returns).Type);
         }
 
@@ -217,7 +218,7 @@ namespace Derg.Modules
         {
             var method = reflected["refid_return"];
             frame.InvokeFunc(machine, method);
-            Assert.Equal(5UL, frame.Pop<WasmRefID<ISlot>>().Id);
+            Assert.Equal(5UL, frame.Pop<WasmRefID<Slot>>().Id);
         }
 
         [Fact]
