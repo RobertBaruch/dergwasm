@@ -30,6 +30,7 @@ namespace Derg
 
         public IWasmAllocator Allocator;
 
+#pragma warning disable CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
         public unsafe Ptr<T> HeapAlloc<T>(Frame frame)
             where T : struct
         {
@@ -109,6 +110,7 @@ namespace Derg
 
         public void HeapSet(Ptr<ulong> ptr, IWorldElement element) =>
             HeapSet(ptr, (ulong)element.ReferenceID);
+#pragma warning restore CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
 
         public void HeapSet(
             EmscriptenEnv env,
@@ -162,7 +164,9 @@ namespace Derg
         //
         // Throws a Trap if the offset and size are out of bounds.
         public unsafe Span<byte> HeapSpan<T>(Ptr<T> offset)
+#pragma warning disable CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
             where T : struct => HeapSpan(offset, sizeof(T));
+#pragma warning restore CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
 
         // Returns a Span of bytes over the heap, starting from the given offset,
         // with the given size. Note that .NET limits arrays to 2GB, so negative
