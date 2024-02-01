@@ -1,5 +1,6 @@
 ﻿using Elements.Core;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -7,20 +8,75 @@ using System.Reflection;
 
 namespace Derg.Modules
 {
-    public class ApiData<T>
-    {
-        public ApiFunc Data { get; set; }
-        public Func<T, HostFunc> FuncFactory { get; set; }
-    }
-
-    public class ApiData
-    {
-        public ApiFunc Data { get; set; }
-        public Func<HostFunc> FuncFactory { get; set; }
-    }
-
     public static class ModuleReflector
     {
+        private static readonly ConcurrentDictionary<Type, Func<object, (ApiFunc, HostFunc)[]>> _reflectedFuncs = new ConcurrentDictionary<Type, Func<object, (ApiFunc, HostFunc)[]>>();
+
+        public static (ApiFunc, HostFunc)[] ReflectHostFuncs<T>(T ctx) {
+            return ReflectHostFuncs((object)ctx);
+        }
+
+        public static (ApiFunc, HostFunc)[] ReflectHostFuncs(object ctx) {
+            return _reflectedFuncs.GetOrAdd(ctx.GetType(), ReflectHostFuncsInternal)(ctx);
+        }
+
+        private static Func<object, (ApiFunc, HostFunc)[]> ReflectHostFuncsInternal(Type t)
+        {
+            var modAttr = t.GetCustomAttribute<ModAttribute>();
+            var defaultModule = modAttr?.DefaultModule ?? "env";
+
+            var rawContext = Expression.Parameter(typeof(object), "ctx");
+            var context = Expression.Variable(t, "context");
+
+            var tuples = new List<Expression>();
+            foreach (
+                var method in t.GetMethods(
+                    BindingFlags.Public
+                        | BindingFlags.NonPublic
+                        | BindingFlags.Static
+                        | BindingFlags.Instance
+                )
+            )
+            {
+                var modFnAttr = method.GetCustomAttributes<ModFnAttribute>();
+                if (modFnAttr.Count() == 0)
+                {
+                    continue;
+                }
+                if (!method.IsPublic)
+                {
+                    throw new InvalidOperationException(
+                        $"{method} in {t} is not public, but was declared as a module function. Please make it public."
+                    );
+                }
+
+                foreach (var attr in modFnAttr)
+                {
+                    MethodInfo boundMethod = method;
+                    if (attr.Generics.Length > 0)
+                    {
+                        if (!boundMethod.IsGenericMethod)
+                        {
+                            throw new InvalidOperationException(
+                                $"Reflected module function {method} on {t} attribute provided generic arguments, but the method is not generic."
+                            );
+                        }
+                        boundMethod = boundMethod.MakeGenericMethod(attr.Generics);
+                    }
+                    tuples.Add(ReflectHostFunc(attr.Name ?? boundMethod.Name, attr.Module ?? defaultModule, boundMethod, context));
+                }
+            }
+
+            var body = Expression.Block(new[] { context },
+                Expression.Assign(context, Expression.Convert(rawContext, t)),
+                Expression.NewArrayInit(typeof((ApiFunc, HostFunc)), tuples.ToArray())
+            );
+
+            var lambda = Expression.Lambda<Func<object, (ApiFunc, HostFunc)[]>>(body, rawContext);
+
+            return lambda.Compile();
+        }
+
         private static ValueType ValueTypeFor(Type type)
         {
             var valueType = (ValueType)
@@ -31,37 +87,27 @@ namespace Derg.Modules
             return valueType;
         }
 
-        /// <summary>
-        /// Creates an API adapter for the host function to wasm using reflection.
-        /// </summary>
-        /// <typeparam name="T">The context object used to generate implementations of the wrapper.</typeparam>
-        /// <param name="name">The wasm exposed function name.</param>
-        /// <param name="module">The wasm exposed module.</param>
-        /// <param name="method">The method to stub, this must either be an instance method of <typeparamref name="T"/> or static.</param>
-        /// <returns>An API data object with a generator that returns func stubs.</returns>
-        public static ApiData<T> ReflectHostFunc<T>(
+        private static Expression /*(ApiFunc, HostFunc)*/ ReflectHostFunc(
             string name,
             string module,
-            MethodInfo method
+            MethodInfo method,
+            ParameterExpression context
         )
         {
-            ApiData<T> apiData = new ApiData<T>
+            ApiFunc apiData = new ApiFunc
             {
-                Data = new ApiFunc
-                {
-                    Module = module,
-                    Name = name,
-                }
+                Module = module,
+                Name = name,
             };
 
-            // This is a parameter for the outer lambda, that is stored in the closure for the func.
-            var context = Expression.Parameter(typeof(T), "context");
+            var funcCtor = GenerateHostFuncCtor(context, method, apiData);
 
-            var funcCtor = GenerateHostFuncCtor(context, method, apiData.Data);
+            var tupleCtor = Expression.New(typeof(ValueTuple<ApiFunc, HostFunc>).GetConstructor(new[] { typeof(ApiFunc), typeof(HostFunc) }),
+                Expression.Constant(apiData),
+                funcCtor
+                );
 
-            var lambda = Expression.Lambda<Func<T, HostFunc>>(funcCtor, context);
-            apiData.FuncFactory = lambda.Compile();
-            return apiData;
+            return tupleCtor;
         }
 
         /// <summary>
@@ -73,25 +119,22 @@ namespace Derg.Modules
         /// <param name="module">The wasm exposed module.</param>
         /// <param name="function">The method to wrap, all instances of the method have the same context object.</param>
         /// <returns>An API data object with a generator that returns func stubs.</returns>
-        public static ApiData ReflectHostFunc(string name, string module, Delegate function)
+        public static (ApiFunc, HostFunc) ReflectHostFunc(string name, string module, Delegate function)
         {
-            ApiData apiData = new ApiData
+            var apiData = new ApiFunc
             {
-                Data = new ApiFunc
-                {
-                    Module = module,
-                    Name = name,
-                }
+                Module = module,
+                Name = name,
             };
 
             // This is a parameter for the outer lambda, that is stored in the closure for the func.
             var context = Expression.Constant(function.Target);
 
-            var funcCtor = GenerateHostFuncCtor(context, function.Method, apiData.Data);
+            var funcCtor = GenerateHostFuncCtor(context, function.Method, apiData);
 
             var lambda = Expression.Lambda<Func<HostFunc>>(funcCtor);
-            apiData.FuncFactory = lambda.Compile();
-            return apiData;
+            var func = lambda.Compile()();
+            return (apiData, func);
         }
 
         private static Expression GenerateHostFuncCtor(Expression context, MethodInfo method, ApiFunc funcData)

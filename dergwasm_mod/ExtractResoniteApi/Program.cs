@@ -8,12 +8,10 @@ namespace DergwasmExtractResoniteApi
     public class Program
     {
         ResoniteEnv resoniteEnv;
-        ReflectedModule<ResoniteEnv> reflected;
 
         Program()
         {
             resoniteEnv = new ResoniteEnv(null, null, null);
-            reflected = new ReflectedModule<ResoniteEnv>(resoniteEnv);
         }
 
         void Run()
@@ -22,7 +20,7 @@ namespace DergwasmExtractResoniteApi
 
             File.WriteAllText(
                 "../../../../../resonite_api.json",
-                JsonSerializer.Serialize(reflected.ApiData, options)
+                JsonSerializer.Serialize(resoniteEnv.ApiData, options)
             );
         }
 

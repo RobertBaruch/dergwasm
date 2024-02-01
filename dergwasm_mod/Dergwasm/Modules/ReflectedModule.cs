@@ -38,72 +38,25 @@ namespace Derg.Modules
         }
     }
 
-    public class ReflectedModule<T> : IHostModule
+    public class ReflectedModule : IHostModule
     {
-        private static readonly List<ApiData<T>> ReflectedFuncs;
-
-        static ReflectedModule()
-        {
-            var modAttr = typeof(T).GetCustomAttribute<ModAttribute>();
-            var defaultModule = modAttr?.DefaultModule ?? "env";
-
-            ReflectedFuncs = new List<ApiData<T>>();
-            foreach (
-                var method in typeof(T).GetMethods(
-                    BindingFlags.Public
-                        | BindingFlags.NonPublic
-                        | BindingFlags.Static
-                        | BindingFlags.Instance
-                )
-            )
-            {
-                var modFnAttr = method.GetCustomAttributes<ModFnAttribute>();
-                if (modFnAttr.Count() == 0)
-                {
-                    continue;
-                }
-                if (!method.IsPublic)
-                {
-                    throw new InvalidOperationException(
-                        $"{method} in {typeof(T)} is not public, but was declared as a module function. Please make it public."
-                    );
-                }
-
-                foreach (var attr in modFnAttr)
-                {
-                    MethodInfo boundMethod = method;
-                    if (attr.Generics.Length > 0)
-                    {
-                        if (!boundMethod.IsGenericMethod)
-                        {
-                            throw new InvalidOperationException(
-                                $"Reflected module function {method} on {typeof(T)} attribute provided generic arguments, but the method is not generic."
-                            );
-                        }
-                        boundMethod = boundMethod.MakeGenericMethod(attr.Generics);
-                    }
-                    ReflectedFuncs.Add(ModuleReflector.ReflectHostFunc<T>(attr.Name ?? boundMethod.Name, attr.Module ?? defaultModule, boundMethod));
-                }
-            }
-        }
-
         public List<HostFunc> Functions { get; }
+
         public List<ApiFunc> ApiData { get; }
 
-        public HostFunc this[string name]
+        public ReflectedModule()
         {
-            get => Functions.First(f => f.Name == name);
+            var reflected = GetReflectedFuncs();
+            ApiData = reflected.Select(r => r.Item1).ToList();
+            Functions = reflected.Select(r => r.Item2).ToList();
         }
 
-        public ApiFunc ApiDataFor(string name)
+        /// <summary>
+        /// Override this method to provide functions directly, the default implementation gathers functions via reflection.
+        /// </summary>
+        protected virtual (ApiFunc, HostFunc)[] GetReflectedFuncs()
         {
-            return ApiData.First(f => f.Name == name);
-        }
-
-        public ReflectedModule(T self)
-        {
-            Functions = ReflectedFuncs.Select(f => f.FuncFactory(self)).ToList();
-            ApiData = ReflectedFuncs.Select(f => f.Data).ToList();
+            return ModuleReflector.ReflectHostFuncs(this);
         }
     }
 }

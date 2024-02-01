@@ -23,7 +23,7 @@ namespace Derg
     }
 
     [Mod("wasi_snapshot_preview1")]
-    public class EmscriptenWasi
+    public class EmscriptenWasi : ReflectedModule
     {
         public const ulong MAX_ARRAY_LENGTH = 0x7FFFFFC7;
         public const int FD_STDIN = 0;
