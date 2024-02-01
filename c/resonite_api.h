@@ -38,6 +38,10 @@ extern resonite_error_t slot__get_child(
     resonite_refid_t slot, 
     int32_t index, 
     resonite_refid_t* outChild);
+extern resonite_error_t slot__get_children(
+    resonite_refid_t slot, 
+    int32_t* outChildListLength, 
+    resonite_refid_t** outChildListData);
 extern resonite_error_t slot__find_child_by_name(
     resonite_refid_t slot, 
     char * name, 

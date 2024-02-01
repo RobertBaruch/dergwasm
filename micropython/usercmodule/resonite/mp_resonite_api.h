@@ -17,6 +17,7 @@ extern mp_obj_t resonite__slot__get_name(mp_obj_t slot, mp_obj_t outName);
 extern mp_obj_t resonite__slot__set_name(mp_obj_t slot, mp_obj_t name);
 extern mp_obj_t resonite__slot__get_num_children(mp_obj_t slot, mp_obj_t outNumChildren);
 extern mp_obj_t resonite__slot__get_child(mp_obj_t slot, mp_obj_t index, mp_obj_t outChild);
+extern mp_obj_t resonite__slot__get_children(mp_obj_t slot, mp_obj_t outChildListLength, mp_obj_t outChildListData);
 extern mp_obj_t resonite__slot__find_child_by_name(mp_obj_t slot, mp_obj_t name, mp_obj_t match_substring, mp_obj_t ignore_case, mp_obj_t max_depth, mp_obj_t outChild);
 extern mp_obj_t resonite__slot__find_child_by_tag(mp_obj_t slot, mp_obj_t tag, mp_obj_t max_depth, mp_obj_t outChild);
 extern mp_obj_t resonite__slot__get_component(mp_obj_t slot, mp_obj_t typeName, mp_obj_t outComponent);

@@ -213,6 +213,34 @@
   },
   {
     "Module": "env",
+    "Name": "slot__get_children",
+    "Parameters": [
+      {
+        "Name": "slot",
+        "Type": 126,
+        "CSType": "WasmRefID\u003CSlot\u003E"
+      },
+      {
+        "Name": "outChildListLength",
+        "Type": 127,
+        "CSType": "Output\u003Cint\u003E"
+      },
+      {
+        "Name": "outChildListData",
+        "Type": 127,
+        "CSType": "Output\u003CWasmArray\u003CWasmRefID\u003CSlot\u003E\u003E\u003E"
+      }
+    ],
+    "Returns": [
+      {
+        "Name": null,
+        "Type": 127,
+        "CSType": "ResoniteError"
+      }
+    ]
+  },
+  {
+    "Module": "env",
     "Name": "slot__find_child_by_name",
     "Parameters": [
       {

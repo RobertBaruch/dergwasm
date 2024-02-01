@@ -138,6 +138,24 @@ mp_obj_t resonite__slot__get_child(mp_obj_t slot, mp_obj_t index) {
   return mp_obj_new_tuple(2, _outs);
 }
 
+mp_obj_t resonite__slot__get_children(mp_obj_t slot) {
+  int32_t outChildListLength;
+  resonite_refid_t* outChildListData;
+
+  resonite_error_t _err = slot__get_children(
+    mp_obj_int_get_uint64_checked(slot), 
+    &outChildListLength, 
+    &outChildListData);
+  mp_obj_t _outs[3] = {
+    mp_obj_new_int_from_ll(_err), 
+    mp_obj_new_int_from_ll(outChildListLength), 
+    mp_obj_new_int_from_ll(outChildListData)};
+
+  free(outChildListData);
+
+  return mp_obj_new_tuple(3, _outs);
+}
+
 mp_obj_t resonite__slot__find_child_by_name(mp_obj_t slot, mp_obj_t name, mp_obj_t match_substring, mp_obj_t ignore_case, mp_obj_t max_depth) {
   resonite_refid_t outChild;
 

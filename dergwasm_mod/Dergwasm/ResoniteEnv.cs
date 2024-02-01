@@ -339,6 +339,37 @@ namespace Derg
             return default;
         }
 
+        // Gets a list of child ref IDs for the given slot. The caller is responsible for
+        // freeing the data at outChildListData.
+        [ModFn("slot__get_children")]
+        public ResoniteError slot__get_components(
+            Frame frame,
+            WasmRefID<Slot> slot,
+            Output<int> outChildListLength,
+            Output<WasmArray<WasmRefID<Slot>>> outChildListData
+        )
+        {
+            try
+            {
+                outChildListLength.CheckNullArg("outChildListLength");
+                outChildListData.CheckNullArg("outChildListData");
+                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
+
+                WasmRefIDList<Slot> list = WasmRefIDList<Slot>.Make(
+                    machine,
+                    frame,
+                    slotInstance.Children
+                );
+                machine.HeapSet(outChildListLength, list.buff.Length);
+                machine.HeapSet(outChildListData, new WasmArray<WasmRefID<Slot>>(list.buff.Ptr));
+            }
+            catch (Exception e)
+            {
+                return e.ToError();
+            }
+            return default;
+        }
+
         // Finds a child slot by name. If no match was found, success is returned, but outChild
         // will be the null reference.
         [ModFn("slot__find_child_by_name")]

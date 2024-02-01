@@ -7,6 +7,7 @@ mergeInto(LibraryManager.library, { slot__get_name: function () { } });
 mergeInto(LibraryManager.library, { slot__set_name: function () { } });
 mergeInto(LibraryManager.library, { slot__get_num_children: function () { } });
 mergeInto(LibraryManager.library, { slot__get_child: function () { } });
+mergeInto(LibraryManager.library, { slot__get_children: function () { } });
 mergeInto(LibraryManager.library, { slot__find_child_by_name: function () { } });
 mergeInto(LibraryManager.library, { slot__find_child_by_tag: function () { } });
 mergeInto(LibraryManager.library, { slot__get_component: function () { } });
