@@ -6,7 +6,7 @@
       {
         "Name": "outSlot",
         "Type": 127,
-        "CSType": "Ptr\u003CWasmRefID\u003CSlot\u003E\u003E"
+        "CSType": "Output\u003CWasmRefID\u003CSlot\u003E\u003E"
       }
     ],
     "Returns": [
@@ -29,7 +29,7 @@
       {
         "Name": "outParent",
         "Type": 127,
-        "CSType": "Ptr\u003CWasmRefID\u003CSlot\u003E\u003E"
+        "CSType": "Output\u003CWasmRefID\u003CSlot\u003E\u003E"
       }
     ],
     "Returns": [
@@ -52,7 +52,7 @@
       {
         "Name": "outUser",
         "Type": 127,
-        "CSType": "Ptr\u003CWasmRefID\u003CUser\u003E\u003E"
+        "CSType": "Output\u003CWasmRefID\u003CUser\u003E\u003E"
       }
     ],
     "Returns": [
@@ -75,7 +75,7 @@
       {
         "Name": "outUserRoot",
         "Type": 127,
-        "CSType": "Ptr\u003CWasmRefID\u003CUserRoot\u003E\u003E"
+        "CSType": "Output\u003CWasmRefID\u003CUserRoot\u003E\u003E"
       }
     ],
     "Returns": [
@@ -103,7 +103,7 @@
       {
         "Name": "outObjectRoot",
         "Type": 127,
-        "CSType": "Ptr\u003CWasmRefID\u003CSlot\u003E\u003E"
+        "CSType": "Output\u003CWasmRefID\u003CSlot\u003E\u003E"
       }
     ],
     "Returns": [
@@ -126,7 +126,7 @@
       {
         "Name": "outName",
         "Type": 127,
-        "CSType": "Ptr\u003CNullTerminatedString\u003E"
+        "CSType": "Output\u003CNullTerminatedString\u003E"
       }
     ],
     "Returns": [
@@ -172,7 +172,7 @@
       {
         "Name": "outNumChildren",
         "Type": 127,
-        "CSType": "Ptr\u003Cint\u003E"
+        "CSType": "Output\u003Cint\u003E"
       }
     ],
     "Returns": [
@@ -200,7 +200,7 @@
       {
         "Name": "outChild",
         "Type": 127,
-        "CSType": "Ptr\u003CWasmRefID\u003CSlot\u003E\u003E"
+        "CSType": "Output\u003CWasmRefID\u003CSlot\u003E\u003E"
       }
     ],
     "Returns": [
@@ -243,7 +243,7 @@
       {
         "Name": "outChild",
         "Type": 127,
-        "CSType": "Ptr\u003CWasmRefID\u003CSlot\u003E\u003E"
+        "CSType": "Output\u003CWasmRefID\u003CSlot\u003E\u003E"
       }
     ],
     "Returns": [
@@ -276,7 +276,7 @@
       {
         "Name": "outChild",
         "Type": 127,
-        "CSType": "Ptr\u003CWasmRefID\u003CSlot\u003E\u003E"
+        "CSType": "Output\u003CWasmRefID\u003CSlot\u003E\u003E"
       }
     ],
     "Returns": [
@@ -297,14 +297,14 @@
         "CSType": "WasmRefID\u003CSlot\u003E"
       },
       {
-        "Name": "typeNamePtr",
+        "Name": "typeName",
         "Type": 127,
         "CSType": "NullTerminatedString"
       },
       {
-        "Name": "outComponentIdPtr",
+        "Name": "outComponent",
         "Type": 127,
-        "CSType": "Ptr\u003CWasmRefID\u003CComponent\u003E\u003E"
+        "CSType": "Output\u003CWasmRefID\u003CComponent\u003E\u003E"
       }
     ],
     "Returns": [
@@ -327,12 +327,12 @@
       {
         "Name": "outComponentListLength",
         "Type": 127,
-        "CSType": "Ptr\u003Cint\u003E"
+        "CSType": "Output\u003Cint\u003E"
       },
       {
         "Name": "outComponentListData",
         "Type": 127,
-        "CSType": "Ptr\u003CWasmArray\u003CWasmRefID\u003CComponent\u003E\u003E\u003E"
+        "CSType": "Output\u003CWasmArray\u003CWasmRefID\u003CComponent\u003E\u003E\u003E"
       }
     ],
     "Returns": [
@@ -353,9 +353,9 @@
         "CSType": "WasmRefID\u003CComponent\u003E"
       },
       {
-        "Name": "outPtr",
+        "Name": "outTypeName",
         "Type": 127,
-        "CSType": "Ptr\u003CNullTerminatedString\u003E"
+        "CSType": "Output\u003CNullTerminatedString\u003E"
       }
     ],
     "Returns": [
@@ -371,24 +371,24 @@
     "Name": "component__get_member",
     "Parameters": [
       {
-        "Name": "componentRefId",
+        "Name": "component",
         "Type": 126,
         "CSType": "WasmRefID\u003CComponent\u003E"
       },
       {
-        "Name": "namePtr",
+        "Name": "name",
         "Type": 127,
         "CSType": "NullTerminatedString"
       },
       {
-        "Name": "outTypePtr",
+        "Name": "outType",
         "Type": 127,
-        "CSType": "Ptr\u003CResoniteType\u003E"
+        "CSType": "Output\u003CResoniteType\u003E"
       },
       {
-        "Name": "outRefIdPtr",
+        "Name": "outMember",
         "Type": 127,
-        "CSType": "Ptr\u003Culong\u003E"
+        "CSType": "Output\u003CWasmRefID\u003E"
       }
     ],
     "Returns": [
@@ -411,7 +411,7 @@
       {
         "Name": "outPtr",
         "Type": 127,
-        "CSType": "Ptr\u003Cint\u003E"
+        "CSType": "Output\u003Cint\u003E"
       }
     ],
     "Returns": [
@@ -434,7 +434,7 @@
       {
         "Name": "outPtr",
         "Type": 127,
-        "CSType": "Ptr\u003Cfloat\u003E"
+        "CSType": "Output\u003Cfloat\u003E"
       }
     ],
     "Returns": [
@@ -457,7 +457,7 @@
       {
         "Name": "outPtr",
         "Type": 127,
-        "CSType": "Ptr\u003Cdouble\u003E"
+        "CSType": "Output\u003Cdouble\u003E"
       }
     ],
     "Returns": [

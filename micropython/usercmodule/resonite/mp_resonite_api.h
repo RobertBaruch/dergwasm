@@ -19,10 +19,10 @@ extern mp_obj_t resonite__slot__get_num_children(mp_obj_t slot, mp_obj_t outNumC
 extern mp_obj_t resonite__slot__get_child(mp_obj_t slot, mp_obj_t index, mp_obj_t outChild);
 extern mp_obj_t resonite__slot__find_child_by_name(mp_obj_t slot, mp_obj_t name, mp_obj_t match_substring, mp_obj_t ignore_case, mp_obj_t max_depth, mp_obj_t outChild);
 extern mp_obj_t resonite__slot__find_child_by_tag(mp_obj_t slot, mp_obj_t tag, mp_obj_t max_depth, mp_obj_t outChild);
-extern mp_obj_t resonite__slot__get_component(mp_obj_t slot, mp_obj_t typeNamePtr, mp_obj_t outComponentIdPtr);
+extern mp_obj_t resonite__slot__get_component(mp_obj_t slot, mp_obj_t typeName, mp_obj_t outComponent);
 extern mp_obj_t resonite__slot__get_components(mp_obj_t slot, mp_obj_t outComponentListLength, mp_obj_t outComponentListData);
-extern mp_obj_t resonite__component__get_type_name(mp_obj_t component, mp_obj_t outPtr);
-extern mp_obj_t resonite__component__get_member(mp_obj_t componentRefId, mp_obj_t namePtr, mp_obj_t outTypePtr, mp_obj_t outRefIdPtr);
+extern mp_obj_t resonite__component__get_type_name(mp_obj_t component, mp_obj_t outTypeName);
+extern mp_obj_t resonite__component__get_member(mp_obj_t component, mp_obj_t name, mp_obj_t outType, mp_obj_t outMember);
 extern mp_obj_t resonite__value__get_int(mp_obj_t refId, mp_obj_t outPtr);
 extern mp_obj_t resonite__value__get_float(mp_obj_t refId, mp_obj_t outPtr);
 extern mp_obj_t resonite__value__get_double(mp_obj_t refId, mp_obj_t outPtr);

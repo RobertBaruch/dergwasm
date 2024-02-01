@@ -172,16 +172,16 @@ mp_obj_t resonite__slot__find_child_by_tag(mp_obj_t slot, mp_obj_t tag, mp_obj_t
   return mp_obj_new_tuple(2, _outs);
 }
 
-mp_obj_t resonite__slot__get_component(mp_obj_t slot, mp_obj_t typeNamePtr) {
-  resonite_refid_t outComponentIdPtr;
+mp_obj_t resonite__slot__get_component(mp_obj_t slot, mp_obj_t typeName) {
+  resonite_refid_t outComponent;
 
   resonite_error_t _err = slot__get_component(
     mp_obj_int_get_uint64_checked(slot), 
-    mp_obj_str_get_str(typeNamePtr), 
-    &outComponentIdPtr);
+    mp_obj_str_get_str(typeName), 
+    &outComponent);
   mp_obj_t _outs[2] = {
     mp_obj_new_int_from_ll(_err), 
-    mp_obj_new_int_from_ll(outComponentIdPtr)};
+    mp_obj_new_int_from_ll(outComponent)};
 
 
   return mp_obj_new_tuple(2, _outs);
@@ -206,32 +206,32 @@ mp_obj_t resonite__slot__get_components(mp_obj_t slot) {
 }
 
 mp_obj_t resonite__component__get_type_name(mp_obj_t component) {
-  char * outPtr;
+  char * outTypeName;
 
   resonite_error_t _err = component__get_type_name(
     mp_obj_int_get_uint64_checked(component), 
-    &outPtr);
+    &outTypeName);
   mp_obj_t _outs[2] = {
     mp_obj_new_int_from_ll(_err), 
-    mp_obj_new_null_terminated_str(outPtr)};
+    mp_obj_new_null_terminated_str(outTypeName)};
 
 
   return mp_obj_new_tuple(2, _outs);
 }
 
-mp_obj_t resonite__component__get_member(mp_obj_t componentRefId, mp_obj_t namePtr) {
-  resonite_type_t outTypePtr;
-  uint64_t outRefIdPtr;
+mp_obj_t resonite__component__get_member(mp_obj_t component, mp_obj_t name) {
+  resonite_type_t outType;
+  resonite_refid_t outMember;
 
   resonite_error_t _err = component__get_member(
-    mp_obj_int_get_uint64_checked(componentRefId), 
-    mp_obj_str_get_str(namePtr), 
-    &outTypePtr, 
-    &outRefIdPtr);
+    mp_obj_int_get_uint64_checked(component), 
+    mp_obj_str_get_str(name), 
+    &outType, 
+    &outMember);
   mp_obj_t _outs[3] = {
     mp_obj_new_int_from_ll(_err), 
-    mp_obj_new_int_from_ll(outTypePtr), 
-    mp_obj_new_int_from_ll(outRefIdPtr)};
+    mp_obj_new_int_from_ll(outType), 
+    mp_obj_new_int_from_ll(outMember)};
 
 
   return mp_obj_new_tuple(3, _outs);
