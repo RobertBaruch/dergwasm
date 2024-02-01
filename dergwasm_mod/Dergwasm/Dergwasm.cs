@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.Remoting.Contexts;
 using System.Threading.Tasks;
 using Derg.Wasm;
 using Elements.Core; // For UniLog
@@ -174,13 +173,13 @@ namespace Derg
                 // Register all the environments.
                 emscriptenEnv = new EmscriptenEnv(machine) { outputWriter = Output };
                 machine.Allocator = emscriptenEnv;
-                machine.RegisterReflectedModule(emscriptenEnv);
+                machine.RegisterModule(emscriptenEnv);
 
                 emscriptenWasi = new EmscriptenWasi(machine, emscriptenEnv);
-                machine.RegisterReflectedModule(emscriptenWasi);
+                machine.RegisterModule(emscriptenWasi);
 
                 resoniteEnv = new ResoniteEnv(machine, worldServices, emscriptenEnv);
-                machine.RegisterReflectedModule(resoniteEnv);
+                machine.RegisterModule(resoniteEnv);
 
                 filesystemEnv = new FilesystemEnv(
                     machine,
@@ -188,7 +187,7 @@ namespace Derg
                     emscriptenEnv,
                     emscriptenWasi
                 );
-                machine.RegisterReflectedModule(filesystemEnv);
+                machine.RegisterModule(filesystemEnv);
 
                 // Read and parse the WASM file.
                 Module module;

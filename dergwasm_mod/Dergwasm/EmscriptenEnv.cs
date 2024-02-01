@@ -27,7 +27,7 @@ namespace Derg
 
     // Host environment expected by Emscripten.
     [Mod("env")]
-    public class EmscriptenEnv : IWasmAllocator
+    public class EmscriptenEnv : ReflectedModule, IWasmAllocator
     {
         public Machine machine;
         public Action<string> outputWriter = null;

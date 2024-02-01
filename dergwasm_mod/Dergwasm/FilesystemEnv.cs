@@ -23,7 +23,7 @@ namespace Derg
     //
     // The code acts so that the parent of the root slot is the root slot itself.
     [Mod("env")]
-    public class FilesystemEnv
+    public class FilesystemEnv : ReflectedModule
     {
         public Machine machine;
         public Slot fsRoot;

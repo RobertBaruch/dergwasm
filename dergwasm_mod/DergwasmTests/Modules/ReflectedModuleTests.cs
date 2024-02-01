@@ -7,7 +7,7 @@ using Xunit;
 namespace Derg.Modules
 {
     [Mod("test")]
-    public class TestModule
+    public class TestModule : ReflectedModule
     {
         public int Got { get; private set; }
         public int Got2 { get; private set; }
@@ -76,14 +76,12 @@ namespace Derg.Modules
     public class ValueTests
     {
         TestModule module;
-        ReflectedModule<TestModule> reflected;
         Machine machine;
         Frame frame;
 
         public ValueTests()
         {
             module = new TestModule();
-            reflected = new ReflectedModule<TestModule>(module);
             machine = new Machine();
             frame = new Frame(null, new FakeModuleInstance(), null);
         }
@@ -91,11 +89,11 @@ namespace Derg.Modules
         [Fact]
         public void PopulateFunc()
         {
-            var method = reflected.Functions.First();
+            var method = module.Functions.First();
             Assert.Equal("test", method.ModuleName);
             Assert.Equal("fn_1", method.Name);
 
-            var apiData = reflected.ApiData.First();
+            var apiData = module.ApiData.First();
             Assert.Equal("test", apiData.Module);
             Assert.Equal("fn_1", apiData.Name);
             Assert.Collection(
@@ -125,7 +123,7 @@ namespace Derg.Modules
         [Fact]
         public void RefIdArgApiDataIsCorrect()
         {
-            var apiData = reflected.ApiDataFor("refid_arg");
+            var apiData = module.GetApiFunc("refid_arg");
             Assert.Equal("test", apiData.Module);
             Assert.Equal("refid_arg", apiData.Name);
             Assert.Equal("WasmRefID<Slot>", Assert.Single(apiData.Parameters).CSType);
@@ -136,7 +134,7 @@ namespace Derg.Modules
         [Fact]
         public void RefIdArgPassedCorrectly()
         {
-            var method = reflected["refid_arg"];
+            var method = module.GetHostFunc("refid_arg");
             frame.Push(new WasmRefID<Slot>(5UL));
             frame.InvokeFunc(machine, method);
             Assert.Equal(5UL, module.SlotArg.Id);
@@ -145,7 +143,7 @@ namespace Derg.Modules
         [Fact]
         public void PtrArgApiDataIsCorrect()
         {
-            var apiData = reflected.ApiDataFor("ptr_arg");
+            var apiData = module.GetApiFunc("ptr_arg");
             Assert.Equal("test", apiData.Module);
             Assert.Equal("ptr_arg", apiData.Name);
             Assert.Equal("Ptr<byte>", Assert.Single(apiData.Parameters).CSType);
@@ -156,7 +154,7 @@ namespace Derg.Modules
         [Fact]
         public void PtrArgPassedCorrectly()
         {
-            var method = reflected["ptr_arg"];
+            var method = module.GetHostFunc("ptr_arg");
             frame.Push(new Ptr<byte>(5));
             frame.InvokeFunc(machine, method);
             Assert.Equal(5, module.BytePtrArg.Addr);
@@ -165,7 +163,7 @@ namespace Derg.Modules
         [Fact]
         public void StringArgApiDataIsCorrect()
         {
-            var apiData = reflected.ApiDataFor("string_arg");
+            var apiData = module.GetApiFunc("string_arg");
             Assert.Equal("test", apiData.Module);
             Assert.Equal("string_arg", apiData.Name);
             Assert.Equal("NullTerminatedString", Assert.Single(apiData.Parameters).CSType);
@@ -176,7 +174,7 @@ namespace Derg.Modules
         [Fact]
         public void StringArgPassedCorrectly()
         {
-            var method = reflected["string_arg"];
+            var method = module.GetHostFunc("string_arg");
             frame.Push(new NullTerminatedString(5));
             frame.InvokeFunc(machine, method);
             Assert.Equal(5, module.StringArg.Data.Addr);
@@ -185,7 +183,7 @@ namespace Derg.Modules
         [Fact]
         public void BoolArgApiDataIsCorrect()
         {
-            var apiData = reflected.ApiDataFor("bool_arg");
+            var apiData = module.GetApiFunc("bool_arg");
             Assert.Equal("test", apiData.Module);
             Assert.Equal("bool_arg", apiData.Name);
             Assert.Equal("bool", Assert.Single(apiData.Parameters).CSType);
@@ -196,7 +194,7 @@ namespace Derg.Modules
         [Fact]
         public void BoolArgPassedCorrectly()
         {
-            var method = reflected["bool_arg"];
+            var method = module.GetHostFunc("bool_arg");
             frame.Push(true);
             frame.InvokeFunc(machine, method);
             Assert.True(module.ReceivedBoolArg);
@@ -205,7 +203,7 @@ namespace Derg.Modules
         [Fact]
         public void RefIdReturnApiDataIsCorrect()
         {
-            var apiData = reflected.ApiDataFor("refid_return");
+            var apiData = module.GetApiFunc("refid_return");
             Assert.Equal("test", apiData.Module);
             Assert.Equal("refid_return", apiData.Name);
             Assert.Empty(apiData.Parameters);
@@ -216,7 +214,7 @@ namespace Derg.Modules
         [Fact]
         public void RefIdReturnPassedCorrectly()
         {
-            var method = reflected["refid_return"];
+            var method = module.GetHostFunc("refid_return");
             frame.InvokeFunc(machine, method);
             Assert.Equal(5UL, frame.Pop<WasmRefID<Slot>>().Id);
         }
@@ -224,7 +222,7 @@ namespace Derg.Modules
         [Fact]
         public void PtrReturnApiDataIsCorrect()
         {
-            var apiData = reflected.ApiDataFor("ptr_return");
+            var apiData = module.GetApiFunc("ptr_return");
             Assert.Equal("test", apiData.Module);
             Assert.Equal("ptr_return", apiData.Name);
             Assert.Empty(apiData.Parameters);
@@ -235,7 +233,7 @@ namespace Derg.Modules
         [Fact]
         public void PtrReturnPassedCorrectly()
         {
-            var method = reflected["ptr_return"];
+            var method = module.GetHostFunc("ptr_return");
             frame.InvokeFunc(machine, method);
             Assert.Equal(5, frame.Pop<Ptr<byte>>().Addr);
         }
@@ -243,7 +241,7 @@ namespace Derg.Modules
         [Fact]
         public void StringReturnApiDataIsCorrect()
         {
-            var apiData = reflected.ApiDataFor("string_return");
+            var apiData = module.GetApiFunc("string_return");
             Assert.Equal("test", apiData.Module);
             Assert.Equal("string_return", apiData.Name);
             Assert.Empty(apiData.Parameters);
@@ -254,7 +252,7 @@ namespace Derg.Modules
         [Fact]
         public void StringReturnPassedCorrectly()
         {
-            var method = reflected["string_return"];
+            var method = module.GetHostFunc("string_return");
             frame.InvokeFunc(machine, method);
             Assert.Equal(5, frame.Pop<NullTerminatedString>().Data.Addr);
         }
@@ -262,7 +260,7 @@ namespace Derg.Modules
         [Fact]
         public void BoolReturnApiDataIsCorrect()
         {
-            var apiData = reflected.ApiDataFor("bool_return");
+            var apiData = module.GetApiFunc("bool_return");
             Assert.Equal("test", apiData.Module);
             Assert.Equal("bool_return", apiData.Name);
             Assert.Empty(apiData.Parameters);
@@ -273,7 +271,7 @@ namespace Derg.Modules
         [Fact]
         public void BoolReturnPassedCorrectly()
         {
-            var method = reflected["bool_return"];
+            var method = module.GetHostFunc("bool_return");
             frame.InvokeFunc(machine, method);
             Assert.True(frame.Pop<bool>());
         }

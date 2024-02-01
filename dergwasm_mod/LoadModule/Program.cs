@@ -19,16 +19,16 @@ namespace DergwasmLoadModule
             machine = new Machine();
             // machine.Debug = true;
             emscriptenEnv = new EmscriptenEnv(machine);
-            machine.RegisterReflectedModule(emscriptenEnv);
+            machine.RegisterModule(emscriptenEnv);
 
             emscriptenWasi = new EmscriptenWasi(machine, emscriptenEnv);
-            machine.RegisterReflectedModule(emscriptenWasi);
+            machine.RegisterModule(emscriptenWasi);
 
             resoniteEnv = new ResoniteEnv(machine, null, emscriptenEnv);
-            machine.RegisterReflectedModule(resoniteEnv);
+            machine.RegisterModule(resoniteEnv);
 
             filesystemEnv = new FilesystemEnv(machine, null, emscriptenEnv, emscriptenWasi);
-            machine.RegisterReflectedModule(filesystemEnv);
+            machine.RegisterModule(filesystemEnv);
 
             Module module;
 

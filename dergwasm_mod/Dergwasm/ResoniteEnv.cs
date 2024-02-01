@@ -14,7 +14,7 @@ namespace Derg
     // In the API, we don't use anything other than ints, longs, floats, and doubles.
     // Pointers to memory are uints.
     [Mod("env")]
-    public class ResoniteEnv : ErrorChecker
+    public class ResoniteEnv : ReflectedModule
     {
         public Machine machine;
         public IWorldServices worldServices;
@@ -157,12 +157,12 @@ namespace Derg
         {
             try
             {
-                CheckNullArg("outSlot", outSlot);
+                outSlot.CheckNullArg("outSlot");
                 machine.HeapSet(outSlot, new WasmRefID<Slot>(worldServices.GetRootSlot()));
             }
             catch (Exception e)
             {
-                return ReturnError(e);
+                return e.ToError();
             }
             return default;
         }
@@ -176,14 +176,14 @@ namespace Derg
         {
             try
             {
-                CheckNullArg("outParent", outParent);
-                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
+                outParent.CheckNullArg("outParent");
+                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
 
                 machine.HeapSet(outParent, new WasmRefID<Slot>(slotInstance.Parent));
             }
             catch (Exception e)
             {
-                return ReturnError(e);
+                return e.ToError();
             }
             return default;
         }
@@ -197,14 +197,14 @@ namespace Derg
         {
             try
             {
-                CheckNullArg("outUser", outUser);
-                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
+                outUser.CheckNullArg("outUser");
+                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
 
                 machine.HeapSet(outUser, new WasmRefID<User>(slotInstance.ActiveUser));
             }
             catch (Exception e)
             {
-                return ReturnError(e);
+                return e.ToError();
             }
             return default;
         }
@@ -218,14 +218,14 @@ namespace Derg
         {
             try
             {
-                CheckNullArg("outUserRoot", outUserRoot);
-                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
+                outUserRoot.CheckNullArg("outUserRoot");
+                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
 
                 machine.HeapSet(outUserRoot, new WasmRefID<UserRoot>(slotInstance.ActiveUserRoot));
             }
             catch (Exception e)
             {
-                return ReturnError(e);
+                return e.ToError();
             }
             return default;
         }
@@ -240,8 +240,8 @@ namespace Derg
         {
             try
             {
-                CheckNullArg("outObjectRoot", outObjectRoot);
-                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
+                outObjectRoot.CheckNullArg("outObjectRoot");
+                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
 
                 machine.HeapSet(
                     outObjectRoot,
@@ -250,7 +250,7 @@ namespace Derg
             }
             catch (Exception e)
             {
-                return ReturnError(e);
+                return e.ToError();
             }
             return default;
         }
@@ -264,14 +264,14 @@ namespace Derg
         {
             try
             {
-                CheckNullArg("outName", outName);
-                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
+                outName.CheckNullArg("outName");
+                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
 
                 machine.HeapSet(emscriptenEnv, frame, outName, slotInstance.Name);
             }
             catch (Exception e)
             {
-                return ReturnError(e);
+                return e.ToError();
             }
             return default;
         }
@@ -285,13 +285,13 @@ namespace Derg
         {
             try
             {
-                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
+                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
                 // The name can be null, and that's ok.
                 slotInstance.Name = emscriptenEnv.GetUTF8StringFromMem(name);
             }
             catch (Exception e)
             {
-                return ReturnError(e);
+                return e.ToError();
             }
             return default;
         }
@@ -305,14 +305,14 @@ namespace Derg
         {
             try
             {
-                CheckNullArg("outNumChildren", outNumChildren);
-                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
+                outNumChildren.CheckNullArg("outNumChildren");
+                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
 
                 machine.HeapSet(outNumChildren, slotInstance.ChildrenCount);
             }
             catch (Exception e)
             {
-                return ReturnError(e);
+                return e.ToError();
             }
             return default;
         }
@@ -327,14 +327,14 @@ namespace Derg
         {
             try
             {
-                CheckNullArg("outChild", outChild);
-                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
+                outChild.CheckNullArg("outChild");
+                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
 
                 machine.HeapSet(outChild, new WasmRefID<Slot>(slotInstance[index]));
             }
             catch (Exception e)
             {
-                return ReturnError(e);
+                return e.ToError();
             }
             return default;
         }
@@ -354,9 +354,9 @@ namespace Derg
         {
             try
             {
-                CheckNullArg("name", emscriptenEnv, name, out string searchName);
-                CheckNullArg("outChild", outChild);
-                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
+                name.CheckNullArg("name", emscriptenEnv, out string searchName);
+                outChild.CheckNullArg("outChild");
+                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
 
                 machine.HeapSet(
                     outChild,
@@ -367,7 +367,7 @@ namespace Derg
             }
             catch (Exception e)
             {
-                return ReturnError(e);
+                return e.ToError();
             }
             return default;
         }
@@ -385,9 +385,9 @@ namespace Derg
         {
             try
             {
-                CheckNullArg("tag", emscriptenEnv, tag, out string tagName);
-                CheckNullArg("outChild", outChild);
-                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
+                tag.CheckNullArg("tag", emscriptenEnv, out string tagName);
+                outChild.CheckNullArg("outChild");
+                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
 
                 machine.HeapSet(
                     outChild,
@@ -396,7 +396,7 @@ namespace Derg
             }
             catch (Exception e)
             {
-                return ReturnError(e);
+                return e.ToError();
             }
             return default;
         }
@@ -411,9 +411,9 @@ namespace Derg
         {
             try
             {
-                CheckNullArg("componentIdPtr", outComponentIdPtr);
-                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
-                CheckNullArg("typeNamePtr", emscriptenEnv, typeNamePtr, out string typeName);
+                outComponentIdPtr.CheckNullArg("componentIdPtr");
+                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
+                typeNamePtr.CheckNullArg("typeNamePtr", emscriptenEnv, out string typeName);
                 Type type = Type.GetType(typeName);
                 if (type == null)
                 {
@@ -429,7 +429,7 @@ namespace Derg
             }
             catch (Exception e)
             {
-                return ReturnError(e);
+                return e.ToError();
             }
             return default;
         }
@@ -446,9 +446,9 @@ namespace Derg
         {
             try
             {
-                CheckNullArg("outComponentListLength", outComponentListLength);
-                CheckNullArg("outComponentListData", outComponentListData);
-                CheckValidRef("slot", worldServices, slot, out Slot slotInstance);
+                outComponentListLength.CheckNullArg("outComponentListLength");
+                outComponentListData.CheckNullArg("outComponentListData");
+                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
 
                 WasmRefIDList<Component> list = WasmRefIDList<Component>.Make(
                     machine,
@@ -463,7 +463,7 @@ namespace Derg
             }
             catch (Exception e)
             {
-                return ReturnError(e);
+                return e.ToError();
             }
             return default;
         }
@@ -477,11 +477,10 @@ namespace Derg
         {
             try
             {
-                CheckNullArg("outPtr", outPtr);
-                CheckValidRef(
+                outPtr.CheckNullArg("outPtr");
+                component.CheckValidRef(
                     "component",
                     worldServices,
-                    component,
                     out Component componentInstance
                 );
                 machine.HeapSet(
@@ -493,7 +492,7 @@ namespace Derg
             }
             catch (Exception e)
             {
-                return ReturnError(e);
+                return e.ToError();
             }
             return default;
         }
@@ -526,13 +525,12 @@ namespace Derg
         {
             try
             {
-                CheckNullArg("namePtr", emscriptenEnv, namePtr, out string fieldName);
-                CheckNullArg("outTypePtr", outTypePtr);
-                CheckNullArg("outRefIdPtr", outRefIdPtr);
-                CheckValidRef(
+                namePtr.CheckNullArg("namePtr", emscriptenEnv, out string fieldName);
+                outTypePtr.CheckNullArg("outTypePtr");
+                outRefIdPtr.CheckNullArg("outRefIdPtr");
+                componentRefId.CheckValidRef(
                     "componentRefId",
                     worldServices,
-                    componentRefId,
                     out Component component
                 );
 
@@ -547,7 +545,7 @@ namespace Derg
             }
             catch (Exception e)
             {
-                return ReturnError(e);
+                return e.ToError();
             }
             return default;
         }
@@ -560,14 +558,14 @@ namespace Derg
         {
             try
             {
-                CheckNullArg("outPtr", outPtr);
-                CheckValidRef("refId", worldServices, refId, out IValue<T> value);
+                outPtr.CheckNullArg("outPtr");
+                refId.CheckValidRef("refId", worldServices, out IValue<T> value);
 
                 machine.HeapSet(outPtr, value.Value);
             }
             catch (Exception e)
             {
-                return ReturnError(e);
+                return e.ToError();
             }
             return default;
         }
@@ -580,14 +578,14 @@ namespace Derg
         {
             try
             {
-                CheckNullArg("inPtr", inPtr);
-                CheckValidRef("refId", worldServices, refId, out IValue<T> value);
+                inPtr.CheckNullArg("inPtr");
+                refId.CheckValidRef("refId", worldServices, out IValue<T> value);
 
                 value.Value = machine.HeapGet(inPtr);
             }
             catch (Exception e)
             {
-                return ReturnError(e);
+                return e.ToError();
             }
             return default;
         }

@@ -294,12 +294,6 @@ namespace Derg
 
         public byte[] GetDataSegment(int addr) => dataSegments[addr];
 
-        public void RegisterReflectedModule<T>(T obj)
-        {
-            var reflected = new ReflectedModule<T>(obj);
-            RegisterModule(reflected);
-        }
-
         public void RegisterModule(IHostModule module)
         {
             foreach (var arg in module.Functions)

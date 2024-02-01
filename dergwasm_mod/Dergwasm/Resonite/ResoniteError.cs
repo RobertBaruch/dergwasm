@@ -13,11 +13,10 @@ namespace Derg.Resonite
         FailedPrecondition = -3,
     }
 
-    // A mixin class for error checking.
-    public class ErrorChecker
+    public static class CheckerExtensions
     {
         // Checks a Ptr<T> argument for null.
-        public void CheckNullArg<T>(string argname, Ptr<T> ptr)
+        public static void CheckNullArg<T>(this Ptr<T> ptr, string argname)
             where T : struct
         {
             if (ptr.IsNull)
@@ -28,22 +27,21 @@ namespace Derg.Resonite
 
         // Checks a NullTerminatedString argument for null, or passes back the string
         // if not null.
-        public void CheckNullArg(
+        public static void CheckNullArg(this NullTerminatedString str,
             string argname,
             EmscriptenEnv env,
-            NullTerminatedString str,
             out string result
         )
         {
-            CheckNullArg(argname, str.Data);
+            str.Data.CheckNullArg(argname);
             result = env.GetUTF8StringFromMem(str);
         }
 
         // Checks that a WasmRefID<T> is non-zero and is actually a T.
-        public void CheckValidRef<T>(
+        public static void CheckValidRef<T>(
+            this WasmRefID<T> refID,
             string argname,
             IWorldServices worldServices,
-            WasmRefID<T> refID,
             out T instance
         )
             where T : class, FrooxEngine.IWorldElement
@@ -62,13 +60,13 @@ namespace Derg.Resonite
         //
         // You should never pass a null exception in. This method is meant to be used
         // inside a catch block.
-        public ResoniteError ReturnError(Exception e = null, [CallerMemberName] string method = "")
+        public static ResoniteError ToError(this Exception e, [CallerMemberName] string method = "")
         {
-            if (e.GetType() == typeof(ResoniteException))
+            if (e is ResoniteException ex)
             {
-                return ReturnError((e as ResoniteException).Error, e, method);
+                return ex.Error.LogError(e, method);
             }
-            return ReturnError(ResoniteError.FailedPrecondition, e, method);
+            return ResoniteError.FailedPrecondition.LogError(e, method);
         }
 
         // Returns a specific error, logging the exception, or success if the exception
@@ -76,8 +74,8 @@ namespace Derg.Resonite
         //
         // You should never pass a null exception in. This method is meant to be used
         // inside a catch block.
-        private ResoniteError ReturnError(
-            ResoniteError err,
+        private static ResoniteError LogError(
+            this ResoniteError err,
             Exception e = null,
             [CallerMemberName] string method = ""
         )

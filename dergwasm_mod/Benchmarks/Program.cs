@@ -240,10 +240,10 @@ namespace DergwasmTests
             //
             // Func 14 (= idx 4): host func
             machine.SetProgram(0, I32Const(10), I32Const(20), Call(4), Nop());
-            var hostFunc = ModuleReflector.ReflectHostFunc("test", "env", new Func<int, int, int>((a, b) => a - b));
+            var (_, hostFunc) = ModuleReflector.ReflectHostFunc("test", "env", new Func<int, int, int>((a, b) => a - b));
             machine.SetHostFuncAt(
                 14,
-                hostFunc.FuncFactory().Proxy
+                hostFunc.Proxy
             );
         }
 
