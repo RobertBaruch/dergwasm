@@ -240,11 +240,12 @@ namespace DergwasmTests
             //
             // Func 14 (= idx 4): host func
             machine.SetProgram(0, I32Const(10), I32Const(20), Call(4), Nop());
-            var (_, hostFunc) = ModuleReflector.ReflectHostFunc("test", "env", new Func<int, int, int>((a, b) => a - b));
-            machine.SetHostFuncAt(
-                14,
-                hostFunc.Proxy
+            var (_, hostFunc) = ModuleReflector.ReflectHostFunc(
+                "test",
+                "env",
+                new Func<int, int, int>((a, b) => a - b)
             );
+            machine.SetHostFuncAt(14, hostFunc.Proxy);
         }
 
         [Benchmark]
@@ -627,8 +628,8 @@ namespace DergwasmTests
                 emscriptenEnv.AllocateUTF8StringInMem(frame, "IntField")
             );
             Ptr<ResoniteType> outTypePtr = new Ptr<ResoniteType>(namePtr.Data.Addr + 100);
-            Ptr<ulong> outRefIdPtr = new Ptr<ulong>(outTypePtr.Addr + sizeof(int));
-            Ptr<int> outPtr = new Ptr<int>(outRefIdPtr.Addr + sizeof(ulong));
+            Output<WasmRefID> outRefIdPtr = new Output<WasmRefID>(outTypePtr.Addr + sizeof(int));
+            Ptr<int> outPtr = new Ptr<int>(outRefIdPtr.Ptr.Addr + sizeof(ulong));
             WasmRefID<Component> refId = new WasmRefID<Component>(testComponent);
 
             for (int i = 0; i < N; i++)

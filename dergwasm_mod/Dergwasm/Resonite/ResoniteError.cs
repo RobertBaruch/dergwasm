@@ -25,12 +25,13 @@ namespace Derg.Resonite
             }
         }
 
-        public void CheckNullArg<T>(string argname, Output<T> output)
-            where T : struct => CheckNullArg(argname, output.Ptr);
+        public static void CheckNullArg<T>(this Output<T> output, string argname)
+            where T : struct => output.Ptr.CheckNullArg(argname);
 
         // Checks a NullTerminatedString argument for null, or passes back the string
         // if not null.
-        public static void CheckNullArg(this NullTerminatedString str,
+        public static void CheckNullArg(
+            this NullTerminatedString str,
             string argname,
             EmscriptenEnv env,
             out string result

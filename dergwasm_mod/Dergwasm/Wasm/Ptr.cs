@@ -72,6 +72,11 @@ namespace Derg.Wasm
             Ptr = ptr;
         }
 
+        public Output(int addr)
+        {
+            Ptr = new Ptr<T>(addr);
+        }
+
         public static implicit operator Output<T>(Ptr<T> p) => new Output<T>(p);
     }
 }
