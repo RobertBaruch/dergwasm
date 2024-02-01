@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using static HarmonyLib.Code;
 
 namespace Derg.Wasm
 {
@@ -33,7 +34,8 @@ namespace Derg.Wasm
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Ptr<T> where T : struct
+    public readonly struct Ptr<T>
+        where T : struct
     {
         public readonly int Addr;
 
@@ -54,5 +56,22 @@ namespace Derg.Wasm
         public static implicit operator Ptr(Ptr<T> p) => new Ptr(p.Addr);
 
         public static Ptr<T> operator ++(Ptr<T> p) => new Ptr<T>(p.Addr + Unsafe.SizeOf<T>());
+    }
+
+    // A pointer that is explicitly an output parameter.
+    [StructLayout(LayoutKind.Sequential)]
+    public readonly struct Output<T>
+        where T : struct
+    {
+        public readonly Ptr<T> Ptr;
+
+        public bool IsNull => Ptr.Addr == 0;
+
+        public Output(Ptr<T> ptr)
+        {
+            Ptr = ptr;
+        }
+
+        public static implicit operator Output<T>(Ptr<T> p) => new Output<T>(p);
     }
 }

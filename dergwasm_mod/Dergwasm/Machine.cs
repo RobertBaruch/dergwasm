@@ -110,6 +110,10 @@ namespace Derg
 
         public void HeapSet(Ptr<ulong> ptr, IWorldElement element) =>
             HeapSet(ptr, (ulong)element.ReferenceID);
+
+        public void HeapSet<T>(Ptr<ulong> ptr, Output<T> element)
+            where T : IWorldElement => HeapSet(ptr.Ptr, (ulong)element.ReferenceID);
+
 #pragma warning restore CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
 
         public void HeapSet(
