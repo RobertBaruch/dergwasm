@@ -62,6 +62,9 @@ class GenericType:
         self.base_type = base_type
         self.type_params = type_params if type_params is not None else []
 
+    def is_output(self) -> bool:
+        return self.base_type == "Output"
+
     @staticmethod
     def parse_generic_type(s: str) -> "GenericType":
         # Helper function to split the string by commas, considering nested generics
@@ -145,6 +148,8 @@ class Main:
         if cc_type_str == "WasmRefID":
             return "resonite_refid_t"
         if cc_type_str == "Ptr":
+            return Main.wasm_to_c(cc_type.type_params[0]) + "*"
+        if cc_type_str == "Output":
             return Main.wasm_to_c(cc_type.type_params[0]) + "*"
         if cc_type_str == "WasmArray":
             return Main.wasm_to_c(cc_type.type_params[0]) + "*"
@@ -231,7 +236,7 @@ class Main:
                 in_params = [
                     f'mp_obj_t {p["Name"]}'
                     for p in params
-                    if not p["Name"].startswith("out")
+                    if not p["GenericType"].is_output()
                 ]
                 f.write(
                     f'mp_obj_t resonite__{item["Name"]}({", ".join(in_params)}) {{\n'
@@ -239,7 +244,7 @@ class Main:
 
                 # outs are always Ptrs.
                 for p in params:
-                    if not p["Name"].startswith("out"):
+                    if not p["GenericType"].is_output():
                         continue
                     c_type = self.wasm_to_c(p["GenericType"])
                     c_type = c_type[:-1]  # Remove the trailing '*'
@@ -252,7 +257,7 @@ class Main:
                     converted = self.py_to_wasm(
                         p["ValueType"], p["GenericType"], p["Name"]
                     )
-                    if p["Name"].startswith("out"):
+                    if p["GenericType"].is_output():
                         converted = f"&{p['Name']}"
                     call_params.append(f"\n    {converted}")
                 f.write(f'{", ".join(call_params)});\n')
@@ -266,7 +271,7 @@ class Main:
                 out_params.append(f"\n    {converted}")
 
                 for p in params:
-                    if not p["Name"].startswith("out"):
+                    if not p["GenericType"].is_output():
                         continue
                     value_type = ValueType(p["Type"])
                     # This is, by definition, a Ptr to something.
@@ -282,7 +287,7 @@ class Main:
 
                 # Now we free anything we need to free.
                 for p in params:
-                    if not p["Name"].startswith("out"):
+                    if not p["GenericType"].is_output():
                         continue
                     generic_type = p["GenericType"].type_params[0]
                     if generic_type.base_type not in CC_TYPES_TO_FREE:

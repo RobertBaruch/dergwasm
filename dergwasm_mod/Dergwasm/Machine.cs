@@ -67,6 +67,9 @@ namespace Derg
             }
         }
 
+        public unsafe T HeapGet<T>(Output<T> ptr)
+            where T : struct => HeapGet(ptr.Ptr);
+
         // Gets a value from the heap at the given offset plus the given address ("address"
         // in the sense of "address within the memory starting at the offset").
         //
@@ -94,6 +97,9 @@ namespace Derg
             }
         }
 
+        public void HeapSet<T>(Output<T> ptr, T value)
+            where T : struct => HeapSet(ptr.Ptr, value);
+
         // Gets a value on the heap at the given offset plus the given address ("address"
         // in the sense of "address within the memory starting at the offset").
         //
@@ -110,6 +116,7 @@ namespace Derg
 
         public void HeapSet(Ptr<ulong> ptr, IWorldElement element) =>
             HeapSet(ptr, (ulong)element.ReferenceID);
+
 #pragma warning restore CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
 
         public void HeapSet(
@@ -118,6 +125,13 @@ namespace Derg
             Ptr<NullTerminatedString> ptr,
             string str
         ) => HeapSet(ptr, new NullTerminatedString(env.AllocateUTF8StringInMem(frame, str)));
+
+        public void HeapSet(
+            EmscriptenEnv env,
+            Frame frame,
+            Output<NullTerminatedString> ptr,
+            string str
+        ) => HeapSet(ptr.Ptr, new NullTerminatedString(env.AllocateUTF8StringInMem(frame, str)));
 
         public string MainModuleName
         {

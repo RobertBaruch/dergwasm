@@ -75,9 +75,9 @@ EMSCRIPTEN_KEEPALIVE resonite_error_t _slot__find_child_by_tag(
 }
 EMSCRIPTEN_KEEPALIVE resonite_error_t _slot__get_component(
     resonite_refid_t slot, 
-    char * typeNamePtr, 
-    resonite_refid_t* outComponentIdPtr) {
-    return slot__get_component(slot, typeNamePtr, outComponentIdPtr);
+    char * typeName, 
+    resonite_refid_t* outComponent) {
+    return slot__get_component(slot, typeName, outComponent);
 }
 EMSCRIPTEN_KEEPALIVE resonite_error_t _slot__get_components(
     resonite_refid_t slot, 
@@ -87,15 +87,15 @@ EMSCRIPTEN_KEEPALIVE resonite_error_t _slot__get_components(
 }
 EMSCRIPTEN_KEEPALIVE resonite_error_t _component__get_type_name(
     resonite_refid_t component, 
-    char ** outPtr) {
-    return component__get_type_name(component, outPtr);
+    char ** outTypeName) {
+    return component__get_type_name(component, outTypeName);
 }
 EMSCRIPTEN_KEEPALIVE resonite_error_t _component__get_member(
-    resonite_refid_t componentRefId, 
-    char * namePtr, 
-    resonite_type_t* outTypePtr, 
-    uint64_t* outRefIdPtr) {
-    return component__get_member(componentRefId, namePtr, outTypePtr, outRefIdPtr);
+    resonite_refid_t component, 
+    char * name, 
+    resonite_type_t* outType, 
+    resonite_refid_t* outMember) {
+    return component__get_member(component, name, outType, outMember);
 }
 EMSCRIPTEN_KEEPALIVE resonite_error_t _value__get_int(
     resonite_refid_t refId, 

@@ -52,20 +52,20 @@ extern resonite_error_t slot__find_child_by_tag(
     resonite_refid_t* outChild);
 extern resonite_error_t slot__get_component(
     resonite_refid_t slot, 
-    char * typeNamePtr, 
-    resonite_refid_t* outComponentIdPtr);
+    char * typeName, 
+    resonite_refid_t* outComponent);
 extern resonite_error_t slot__get_components(
     resonite_refid_t slot, 
     int32_t* outComponentListLength, 
     resonite_refid_t** outComponentListData);
 extern resonite_error_t component__get_type_name(
     resonite_refid_t component, 
-    char ** outPtr);
+    char ** outTypeName);
 extern resonite_error_t component__get_member(
-    resonite_refid_t componentRefId, 
-    char * namePtr, 
-    resonite_type_t* outTypePtr, 
-    uint64_t* outRefIdPtr);
+    resonite_refid_t component, 
+    char * name, 
+    resonite_type_t* outType, 
+    resonite_refid_t* outMember);
 extern resonite_error_t value__get_int(
     resonite_refid_t refId, 
     int32_t* outPtr);

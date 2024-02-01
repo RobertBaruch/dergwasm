@@ -153,7 +153,7 @@ namespace Derg
         //
 
         [ModFn("slot__root_slot")]
-        public ResoniteError slot__root_slot(Frame frame, Ptr<WasmRefID<Slot>> outSlot)
+        public ResoniteError slot__root_slot(Frame frame, Output<WasmRefID<Slot>> outSlot)
         {
             try
             {
@@ -171,7 +171,7 @@ namespace Derg
         public ResoniteError slot__get_parent(
             Frame frame,
             WasmRefID<Slot> slot,
-            Ptr<WasmRefID<Slot>> outParent
+            Output<WasmRefID<Slot>> outParent
         )
         {
             try
@@ -192,7 +192,7 @@ namespace Derg
         public ResoniteError slot__get_active_user(
             Frame frame,
             WasmRefID<Slot> slot,
-            Ptr<WasmRefID<User>> outUser
+            Output<WasmRefID<User>> outUser
         )
         {
             try
@@ -213,7 +213,7 @@ namespace Derg
         public ResoniteError slot__get_active_user_root(
             Frame frame,
             WasmRefID<Slot> slot,
-            Ptr<WasmRefID<UserRoot>> outUserRoot
+            Output<WasmRefID<UserRoot>> outUserRoot
         )
         {
             try
@@ -235,7 +235,7 @@ namespace Derg
             Frame frame,
             WasmRefID<Slot> slot,
             bool only_explicit,
-            Ptr<WasmRefID<Slot>> outObjectRoot
+            Output<WasmRefID<Slot>> outObjectRoot
         )
         {
             try
@@ -259,7 +259,7 @@ namespace Derg
         public ResoniteError slot__get_name(
             Frame frame,
             WasmRefID<Slot> slot,
-            Ptr<NullTerminatedString> outName
+            Output<NullTerminatedString> outName
         )
         {
             try
@@ -300,7 +300,7 @@ namespace Derg
         public ResoniteError slot__get_num_children(
             Frame frame,
             WasmRefID<Slot> slot,
-            Ptr<int> outNumChildren
+            Output<int> outNumChildren
         )
         {
             try
@@ -322,7 +322,7 @@ namespace Derg
             Frame frame,
             WasmRefID<Slot> slot,
             int index,
-            Ptr<WasmRefID<Slot>> outChild
+            Output<WasmRefID<Slot>> outChild
         )
         {
             try
@@ -349,7 +349,7 @@ namespace Derg
             bool match_substring,
             bool ignore_case,
             int max_depth,
-            Ptr<WasmRefID<Slot>> outChild
+            Output<WasmRefID<Slot>> outChild
         )
         {
             try
@@ -380,7 +380,7 @@ namespace Derg
             WasmRefID<Slot> slot,
             NullTerminatedString tag,
             int max_depth,
-            Ptr<WasmRefID<Slot>> outChild
+            Output<WasmRefID<Slot>> outChild
         )
         {
             try
@@ -405,25 +405,25 @@ namespace Derg
         public ResoniteError slot__get_component(
             Frame frame,
             WasmRefID<Slot> slot,
-            NullTerminatedString typeNamePtr,
-            Ptr<WasmRefID<Component>> outComponentIdPtr
+            NullTerminatedString typeName,
+            Output<WasmRefID<Component>> outComponent
         )
         {
             try
             {
-                outComponentIdPtr.CheckNullArg("componentIdPtr");
+                outComponent.CheckNullArg("outComponent");
                 slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
-                typeNamePtr.CheckNullArg("typeNamePtr", emscriptenEnv, out string typeName);
-                Type type = Type.GetType(typeName);
+                typeName.CheckNullArg("typeName", emscriptenEnv, out string typeNameStr);
+                Type type = Type.GetType(typeNameStr);
                 if (type == null)
                 {
                     throw new ResoniteException(
                         ResoniteError.FailedPrecondition,
-                        $"No such type: {typeName}"
+                        $"No such type: {typeNameStr}"
                     );
                 }
                 machine.HeapSet(
-                    outComponentIdPtr,
+                    outComponent,
                     new WasmRefID<Component>(slotInstance.GetComponent(type))
                 );
             }
@@ -440,8 +440,8 @@ namespace Derg
         public ResoniteError slot__get_components(
             Frame frame,
             WasmRefID<Slot> slot,
-            Ptr<int> outComponentListLength,
-            Ptr<WasmArray<WasmRefID<Component>>> outComponentListData
+            Output<int> outComponentListLength,
+            Output<WasmArray<WasmRefID<Component>>> outComponentListData
         )
         {
             try
@@ -472,12 +472,12 @@ namespace Derg
         public ResoniteError component__get_type_name(
             Frame frame,
             WasmRefID<Component> component,
-            Ptr<NullTerminatedString> outPtr
+            Output<NullTerminatedString> outTypeName
         )
         {
             try
             {
-                outPtr.CheckNullArg("outPtr");
+                outTypeName.CheckNullArg("outTypeName");
                 component.CheckValidRef(
                     "component",
                     worldServices,
@@ -486,7 +486,7 @@ namespace Derg
                 machine.HeapSet(
                     emscriptenEnv,
                     frame,
-                    outPtr,
+                    outTypeName,
                     componentInstance.GetType().GetNiceName()
                 );
             }
@@ -517,31 +517,31 @@ namespace Derg
         [ModFn("component__get_member")]
         public ResoniteError component__get_member(
             Frame frame,
-            WasmRefID<Component> componentRefId,
-            NullTerminatedString namePtr,
-            Ptr<ResoniteType> outTypePtr,
-            Ptr<ulong> outRefIdPtr
+            WasmRefID<Component> component,
+            NullTerminatedString name,
+            Output<ResoniteType> outType,
+            Output<WasmRefID> outMember
         )
         {
             try
             {
-                namePtr.CheckNullArg("namePtr", emscriptenEnv, out string fieldName);
-                outTypePtr.CheckNullArg("outTypePtr");
-                outRefIdPtr.CheckNullArg("outRefIdPtr");
-                componentRefId.CheckValidRef(
-                    "componentRefId",
+                name.CheckNullArg("name", emscriptenEnv, out string fieldName);
+                outType.CheckNullArg("outType");
+                outMember.CheckNullArg("outMember");
+                component.CheckValidRef(
+                    "component",
                     worldServices,
-                    out Component component
+                    out Component componentInstance
                 );
 
-                var member = component.GetSyncMember(fieldName);
+                var member = componentInstance.GetSyncMember(fieldName);
                 if (member == null)
                 {
                     throw new ResoniteException(ResoniteError.FailedPrecondition, "No such member");
                 }
 
-                machine.HeapSet(outTypePtr, GetResoniteType(member.GetType()));
-                machine.HeapSet(outRefIdPtr, member);
+                machine.HeapSet(outType, GetResoniteType(member.GetType()));
+                machine.HeapSet(outMember, new WasmRefID(member));
             }
             catch (Exception e)
             {
@@ -553,7 +553,11 @@ namespace Derg
         [ModFn("value__get_int", typeof(int))]
         [ModFn("value__get_float", typeof(float))]
         [ModFn("value__get_double", typeof(double))]
-        public ResoniteError value__get<T>(Frame frame, WasmRefID<IValue<T>> refId, Ptr<T> outPtr)
+        public ResoniteError value__get<T>(
+            Frame frame,
+            WasmRefID<IValue<T>> refId,
+            Output<T> outPtr
+        )
             where T : unmanaged
         {
             try

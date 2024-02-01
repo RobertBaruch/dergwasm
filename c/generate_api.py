@@ -113,6 +113,8 @@ class Main:
             return "resonite_refid_t"
         if cc_type_str == "Ptr":
             return Main.wasm_to_c(cc_type.type_params[0]) + "*"
+        if cc_type_str == "Output":
+            return Main.wasm_to_c(cc_type.type_params[0]) + "*"
         if cc_type_str == "WasmArray":
             return Main.wasm_to_c(cc_type.type_params[0]) + "*"
         if cc_type_str == "NullTerminatedString":
