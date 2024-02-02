@@ -553,7 +553,7 @@
       },
       {
         "Name": "value",
-        "Type": 125,
+        "Type": 124,
         "CSType": "double"
       }
     ],
