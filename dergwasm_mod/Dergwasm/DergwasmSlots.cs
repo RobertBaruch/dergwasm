@@ -17,13 +17,16 @@ namespace Derg
 
         public DergwasmSlots(IWorldServices worldServices)
         {
+            WasmBinarySlot = null;
+            ConsoleSlot = null;
+            FilesystemSlot = null;
             DergwasmRoot = worldServices
                 .GetRootSlot()
                 .FindChild(s => s.Tag == "_dergwasm", maxDepth: 0);
             if (DergwasmRoot == null)
             {
-                DergwasmMachine.Msg(
-                    $"Couldn't find dergwasm slot with tag _dergwasm in world {worldServices.GetName()}"
+                UniLog.Log(
+                    $"[Dergwasm] Couldn't find dergwasm slot with tag _dergwasm in world {worldServices.GetName()}"
                 );
                 return;
             }
@@ -44,8 +47,8 @@ namespace Derg
         {
             if (!Ready)
             {
-                DergwasmMachine.Msg(
-                    $"World {worldServices.GetName()} slots are not set up to gather WASM binary"
+                UniLog.Log(
+                    $"[Dergwasm] World {worldServices.GetName()} slots are not set up to gather WASM binary"
                 );
                 return null;
             }
@@ -53,8 +56,8 @@ namespace Derg
             StaticBinary binary = WasmBinarySlot.GetComponent<StaticBinary>();
             if (binary == null)
             {
-                DergwasmMachine.Msg(
-                    $"Couldn't access WASM StaticBinary component in world {worldServices.GetName()}"
+                UniLog.Log(
+                    $"[Dergwasm] Couldn't access WASM StaticBinary component in world {worldServices.GetName()}"
                 );
                 return null;
             }
