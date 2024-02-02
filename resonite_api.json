@@ -506,9 +506,9 @@
         "CSType": "WasmRefID\u003CIValue\u003Cint\u003E\u003E"
       },
       {
-        "Name": "inPtr",
+        "Name": "value",
         "Type": 127,
-        "CSType": "Ptr\u003Cint\u003E"
+        "CSType": "int"
       }
     ],
     "Returns": [
@@ -529,9 +529,9 @@
         "CSType": "WasmRefID\u003CIValue\u003Cfloat\u003E\u003E"
       },
       {
-        "Name": "inPtr",
-        "Type": 127,
-        "CSType": "Ptr\u003Cfloat\u003E"
+        "Name": "value",
+        "Type": 125,
+        "CSType": "float"
       }
     ],
     "Returns": [
@@ -552,9 +552,9 @@
         "CSType": "WasmRefID\u003CIValue\u003Cdouble\u003E\u003E"
       },
       {
-        "Name": "inPtr",
-        "Type": 127,
-        "CSType": "Ptr\u003Cdouble\u003E"
+        "Name": "value",
+        "Type": 125,
+        "CSType": "double"
       }
     ],
     "Returns": [
