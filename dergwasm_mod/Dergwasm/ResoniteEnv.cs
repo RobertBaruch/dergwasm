@@ -594,9 +594,9 @@ namespace Derg
             try
             {
                 outPtr.CheckNullArg("outPtr");
-                refId.CheckValidRef("refId", worldServices, out IValue<T> value);
+                refId.CheckValidRef("refId", worldServices, out IValue<T> field);
 
-                machine.HeapSet(outPtr, value.Value);
+                machine.HeapSet(outPtr, field.Value);
             }
             catch (Exception e)
             {
@@ -608,15 +608,14 @@ namespace Derg
         [ModFn("value__set_int", typeof(int))]
         [ModFn("value__set_float", typeof(float))]
         [ModFn("value__set_double", typeof(double))]
-        public ResoniteError value__set<T>(Frame frame, WasmRefID<IValue<T>> refId, Ptr<T> inPtr)
+        public ResoniteError value__set<T>(Frame frame, WasmRefID<IValue<T>> refId, T value)
             where T : unmanaged
         {
             try
             {
-                inPtr.CheckNullArg("inPtr");
-                refId.CheckValidRef("refId", worldServices, out IValue<T> value);
+                refId.CheckValidRef("refId", worldServices, out IValue<T> field);
 
-                value.Value = machine.HeapGet(inPtr);
+                field.Value = value;
             }
             catch (Exception e)
             {
