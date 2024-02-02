@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Derg.Modules;
 using Derg.Runtime;
+using Dergwasm.Runtime;
 using FrooxEngine;
 
 namespace Derg

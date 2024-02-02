@@ -6,6 +6,7 @@ using Derg.Modules;
 using Derg.Wasm;
 using Derg.Runtime;
 using FrooxEngine;
+using Dergwasm.Runtime;
 
 namespace Derg
 {

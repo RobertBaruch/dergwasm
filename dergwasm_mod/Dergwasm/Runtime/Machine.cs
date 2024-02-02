@@ -5,8 +5,9 @@ using Derg.Wasm;
 using Derg.Runtime;
 using Elements.Core;
 using FrooxEngine;
+using Derg;
 
-namespace Derg
+namespace Dergwasm.Runtime
 {
     public class Machine
     {

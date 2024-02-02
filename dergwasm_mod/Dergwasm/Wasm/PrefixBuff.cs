@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Dergwasm.Runtime;
 
 namespace Derg.Wasm
 {

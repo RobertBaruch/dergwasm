@@ -1,5 +1,6 @@
 ﻿using System;
 using Derg.Runtime;
+using Dergwasm.Runtime;
 
 namespace Derg.Instructions
 {

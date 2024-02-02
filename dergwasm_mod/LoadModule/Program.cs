@@ -4,6 +4,7 @@ using System.IO;
 using Derg;
 using Derg.Instructions;
 using Derg.Runtime;
+using Dergwasm.Runtime;
 
 namespace DergwasmLoadModule
 {

@@ -10,6 +10,7 @@ using FrooxEngine;
 using FrooxEngine.ProtoFlux;
 using HarmonyLib;
 using ResoniteModLoader;
+using Dergwasm.Runtime;
 
 namespace Derg
 {

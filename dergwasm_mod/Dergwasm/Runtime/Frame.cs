@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Derg.Instructions;
+using Dergwasm.Runtime;
 
 namespace Derg.Runtime
 {

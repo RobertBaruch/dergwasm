@@ -12,6 +12,7 @@ using DergwasmTests.instructions;
 using DergwasmTests.testing;
 using FrooxEngine;
 using static Derg.ResoniteEnv;
+using Dergwasm.Runtime;
 
 namespace DergwasmTests
 {

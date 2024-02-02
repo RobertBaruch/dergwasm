@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Derg.Instructions;
+using Dergwasm.Runtime;
 
 namespace Derg.Runtime
 {
