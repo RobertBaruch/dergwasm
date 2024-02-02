@@ -125,11 +125,9 @@ namespace DergwasmTests
         [Fact]
         public void SetValueTest()
         {
-            var dataPtr = new Ptr<int>(4);
-            HeapSet(dataPtr, 12);
             Assert.Equal(
                 ResoniteError.Success,
-                env.value__set(frame, testComponent.IntField.GetWasmRef<IValue<int>>(), dataPtr)
+                env.value__set(frame, testComponent.IntField.GetWasmRef<IValue<int>>(), 12)
             );
             Assert.Equal(12, testComponent.IntField.Value);
         }
@@ -137,33 +135,22 @@ namespace DergwasmTests
         [Fact]
         public void SetValueFailsOnNonexistentRefID()
         {
-            var dataPtr = new Ptr<int>(4);
             Assert.Equal(
                 ResoniteError.InvalidRefId,
-                env.value__set(frame, new WasmRefID<IValue<int>>(0xFFFFFFFFFFFFFFFFUL), dataPtr)
+                env.value__set(frame, new WasmRefID<IValue<int>>(0xFFFFFFFFFFFFFFFFUL), 12)
             );
         }
 
         [Fact]
         public void SetValueFailsOnWrongType()
         {
-            var dataPtr = new Ptr<double>(4);
             Assert.Equal(
                 ResoniteError.InvalidRefId,
                 env.value__set(
                     frame,
                     new WasmRefID<IValue<double>>(testComponent.IntField.ReferenceID),
-                    dataPtr
+                    12.0
                 )
-            );
-        }
-
-        [Fact]
-        public void SetValueFailsOnNullDataPtr()
-        {
-            Assert.Equal(
-                ResoniteError.NullArgument,
-                env.value__set(frame, testComponent.IntField.GetWasmRef<IValue<int>>(), default)
             );
         }
     }
