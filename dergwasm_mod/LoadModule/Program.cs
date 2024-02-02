@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using Derg;
+using Derg.Instructions;
+using Derg.Runtime;
 
 namespace DergwasmLoadModule
 {

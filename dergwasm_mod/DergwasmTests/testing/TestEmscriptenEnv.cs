@@ -1,4 +1,5 @@
 ﻿using Derg;
+using Derg.Runtime;
 
 namespace DergwasmTests.testing
 {

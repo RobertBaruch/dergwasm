@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using Derg.Runtime;
 
 namespace Derg.Modules
 {

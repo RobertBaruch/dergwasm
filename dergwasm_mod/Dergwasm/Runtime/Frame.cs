@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Derg.Instructions;
 
-namespace Derg
+namespace Derg.Runtime
 {
     // Represents the state of the machine, in the context of executing a function.
     //
@@ -41,13 +42,13 @@ namespace Derg
         {
             if (func != null)
             {
-                this.Locals = new Value[func.Signature.args.Length + func.Locals.Length];
+                Locals = new Value[func.Signature.args.Length + func.Locals.Length];
             }
-            this.Module = module;
-            this.PC = 0;
-            this.label_stack = new Stack<Label>();
-            this.value_stack = new Stack<Value>();
-            this.Func = func;
+            Module = module;
+            PC = 0;
+            label_stack = new Stack<Label>();
+            value_stack = new Stack<Value>();
+            Func = func;
             this.prev_frame = prev_frame;
         }
 
@@ -261,9 +262,9 @@ namespace Derg
         {
             if (func != null)
             {
-                this.Locals = new Value[func.Signature.args.Length];
+                Locals = new Value[func.Signature.args.Length];
             }
-            this.HostFunc = func;
+            HostFunc = func;
         }
 
         public override int Arity

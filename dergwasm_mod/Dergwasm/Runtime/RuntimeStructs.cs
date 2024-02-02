@@ -1,26 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using LEB128;
+using Derg.Instructions;
 
-namespace Derg
+namespace Derg.Runtime
 {
     // Minimum and optional maximum limits for resizable storage.
     public struct Limits
     {
         public uint Minimum;
-        public Nullable<uint> Maximum;
+        public uint? Maximum;
 
         public Limits(uint minimum)
         {
             Minimum = minimum;
-            Maximum = new Nullable<uint>();
+            Maximum = new uint?();
         }
 
         public Limits(uint minimum, uint maximum)
         {
             Minimum = minimum;
-            Maximum = new Nullable<uint>(maximum);
+            Maximum = new uint?(maximum);
         }
 
         public static Limits Read(BinaryReader stream)
@@ -116,7 +115,7 @@ namespace Derg
         public HostFunc(string moduleName, string name, FuncType signature, HostProxy proxy)
             : base(moduleName, name, signature)
         {
-            this.Proxy = proxy;
+            Proxy = proxy;
         }
     }
 

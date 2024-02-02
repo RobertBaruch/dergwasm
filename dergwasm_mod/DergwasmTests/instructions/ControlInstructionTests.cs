@@ -1,5 +1,6 @@
-﻿using Derg;
-using Derg.Modules;
+﻿using Derg.Modules;
+using Derg.Instructions;
+using Derg.Runtime;
 using Xunit;
 
 namespace DergwasmTests.instructions
@@ -700,7 +701,11 @@ namespace DergwasmTests.instructions
             //
             // Func 14 (= idx 4): host func
             machine.SetProgram(0, I32Const(10), I32Const(20), Call(4), Nop());
-            var (_, hostFunc) = ModuleReflector.ReflectHostFunc("test", "env", new System.Func<int, int, int>((a, b) => a - b));
+            var (_, hostFunc) = ModuleReflector.ReflectHostFunc(
+                "test",
+                "env",
+                new System.Func<int, int, int>((a, b) => a - b)
+            );
             machine.SetHostFuncAt(14, hostFunc.Proxy);
 
             machine.Step(2);

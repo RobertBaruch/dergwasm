@@ -6,11 +6,11 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using Derg.Resonite;
 using Derg.Wasm;
+using Derg.Instructions;
 using Elements.Core;
 using FrooxEngine;
-using LEB128;
 
-namespace Derg
+namespace Derg.Runtime
 {
     // Encodings for value types.
     public enum ValueType : byte
@@ -259,20 +259,20 @@ namespace Derg
         {
             if (typeof(T) == typeof(float))
             {
-                return Derg.ValueType.F32;
+                return Runtime.ValueType.F32;
             }
             else if (typeof(T) == typeof(double))
             {
-                return Derg.ValueType.F64;
+                return Runtime.ValueType.F64;
             }
 #pragma warning disable CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
             else if (sizeof(T) <= 4)
             {
-                return Derg.ValueType.I32;
+                return Runtime.ValueType.I32;
             }
             else if (sizeof(T) == 8)
             {
-                return Derg.ValueType.I64;
+                return Runtime.ValueType.I64;
             }
 #pragma warning restore CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
             throw new Exception($"Unknown type {typeof(T)}");
@@ -291,10 +291,10 @@ namespace Derg
         public BlockType GetBlockType() => (BlockType)(value_hi & 0b11);
 
         // Only valid if the value is a block operand with a TYPED_BLOCK signature.
-        public int GetReturningBlockTypeIndex() => (int)((value_hi >> 2) & 0xFFFFFFFF);
+        public int GetReturningBlockTypeIndex() => (int)(value_hi >> 2 & 0xFFFFFFFF);
 
         // Only valid if the value is a block operand with a RETURNING_BLOCK signature.
-        public ValueType GetReturningBlockValueType() => (ValueType)((value_hi >> 2) & 0xFF);
+        public ValueType GetReturningBlockValueType() => (ValueType)(value_hi >> 2 & 0xFF);
 
         // Only valid if the value is a reference type.
         public ReferenceValueType GetRefType() => (ReferenceValueType)value_hi;

@@ -1,4 +1,5 @@
-﻿using Elements.Core;
+﻿using Derg.Runtime;
+using Elements.Core;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -10,13 +11,18 @@ namespace Derg.Modules
 {
     public static class ModuleReflector
     {
-        private static readonly ConcurrentDictionary<Type, Func<object, (ApiFunc, HostFunc)[]>> _reflectedFuncs = new ConcurrentDictionary<Type, Func<object, (ApiFunc, HostFunc)[]>>();
+        private static readonly ConcurrentDictionary<
+            Type,
+            Func<object, (ApiFunc, HostFunc)[]>
+        > _reflectedFuncs = new ConcurrentDictionary<Type, Func<object, (ApiFunc, HostFunc)[]>>();
 
-        public static (ApiFunc, HostFunc)[] ReflectHostFuncs<T>(T ctx) {
+        public static (ApiFunc, HostFunc)[] ReflectHostFuncs<T>(T ctx)
+        {
             return ReflectHostFuncs((object)ctx);
         }
 
-        public static (ApiFunc, HostFunc)[] ReflectHostFuncs(object ctx) {
+        public static (ApiFunc, HostFunc)[] ReflectHostFuncs(object ctx)
+        {
             return _reflectedFuncs.GetOrAdd(ctx.GetType(), ReflectHostFuncsInternal)(ctx);
         }
 
@@ -63,11 +69,19 @@ namespace Derg.Modules
                         }
                         boundMethod = boundMethod.MakeGenericMethod(attr.Generics);
                     }
-                    tuples.Add(ReflectHostFunc(attr.Name ?? boundMethod.Name, attr.Module ?? defaultModule, boundMethod, context));
+                    tuples.Add(
+                        ReflectHostFunc(
+                            attr.Name ?? boundMethod.Name,
+                            attr.Module ?? defaultModule,
+                            boundMethod,
+                            context
+                        )
+                    );
                 }
             }
 
-            var body = Expression.Block(new[] { context },
+            var body = Expression.Block(
+                new[] { context },
                 Expression.Assign(context, Expression.Convert(rawContext, t)),
                 Expression.NewArrayInit(typeof((ApiFunc, HostFunc)), tuples.ToArray())
             );
@@ -77,9 +91,9 @@ namespace Derg.Modules
             return lambda.Compile();
         }
 
-        private static ValueType ValueTypeFor(Type type)
+        private static Runtime.ValueType ValueTypeFor(Type type)
         {
-            var valueType = (ValueType)
+            var valueType = (Runtime.ValueType)
                 typeof(Value)
                     .GetMethod(nameof(Value.ValueType))
                     .MakeGenericMethod(type)
@@ -87,45 +101,40 @@ namespace Derg.Modules
             return valueType;
         }
 
-        private static Expression /*(ApiFunc, HostFunc)*/ ReflectHostFunc(
-            string name,
-            string module,
-            MethodInfo method,
-            ParameterExpression context
-        )
+        private static Expression /*(ApiFunc, HostFunc)*/
+        ReflectHostFunc(string name, string module, MethodInfo method, ParameterExpression context)
         {
-            ApiFunc apiData = new ApiFunc
-            {
-                Module = module,
-                Name = name,
-            };
+            ApiFunc apiData = new ApiFunc { Module = module, Name = name, };
 
             var funcCtor = GenerateHostFuncCtor(context, method, apiData);
 
-            var tupleCtor = Expression.New(typeof(ValueTuple<ApiFunc, HostFunc>).GetConstructor(new[] { typeof(ApiFunc), typeof(HostFunc) }),
+            var tupleCtor = Expression.New(
+                typeof(ValueTuple<ApiFunc, HostFunc>).GetConstructor(
+                    new[] { typeof(ApiFunc), typeof(HostFunc) }
+                ),
                 Expression.Constant(apiData),
                 funcCtor
-                );
+            );
 
             return tupleCtor;
         }
 
         /// <summary>
         /// Creates an API adapter for the host function to wasm using reflection.
-        /// 
+        ///
         /// State is shared between all instances, if the delegate is not static.
         /// </summary>
         /// <param name="name">The wasm exposed function name.</param>
         /// <param name="module">The wasm exposed module.</param>
         /// <param name="function">The method to wrap, all instances of the method have the same context object.</param>
         /// <returns>An API data object with a generator that returns func stubs.</returns>
-        public static (ApiFunc, HostFunc) ReflectHostFunc(string name, string module, Delegate function)
+        public static (ApiFunc, HostFunc) ReflectHostFunc(
+            string name,
+            string module,
+            Delegate function
+        )
         {
-            var apiData = new ApiFunc
-            {
-                Module = module,
-                Name = name,
-            };
+            var apiData = new ApiFunc { Module = module, Name = name, };
 
             // This is a parameter for the outer lambda, that is stored in the closure for the func.
             var context = Expression.Constant(function.Target);
@@ -137,7 +146,11 @@ namespace Derg.Modules
             return (apiData, func);
         }
 
-        private static Expression GenerateHostFuncCtor(Expression context, MethodInfo method, ApiFunc funcData)
+        private static Expression GenerateHostFuncCtor(
+            Expression context,
+            MethodInfo method,
+            ApiFunc funcData
+        )
         {
             // These are passed at every host func invocation.
             var machine = Expression.Parameter(typeof(Machine), "machine");
@@ -170,16 +183,14 @@ namespace Derg.Modules
                         )
                     );
 
-                    funcData
-                        .Parameters
-                        .Add(
-                            new Parameter
-                            {
-                                Name = param.Name,
-                                Type = ValueTypeFor(param.ParameterType),
-                                CSType = param.ParameterType.GetNiceName()
-                            }
-                        );
+                    funcData.Parameters.Add(
+                        new Parameter
+                        {
+                            Name = param.Name,
+                            Type = ValueTypeFor(param.ParameterType),
+                            CSType = param.ParameterType.GetNiceName()
+                        }
+                    );
                     funcData.ParameterValueTypes.Add(ValueTypeFor(param.ParameterType));
 
                     argsCount++;
@@ -203,15 +214,13 @@ namespace Derg.Modules
                     result
                 );
 
-                funcData
-                    .Returns
-                    .Add(
-                        new Parameter
-                        {
-                            Type = ValueTypeFor(method.ReturnType),
-                            CSType = method.ReturnType.GetNiceName()
-                        }
-                    );
+                funcData.Returns.Add(
+                    new Parameter
+                    {
+                        Type = ValueTypeFor(method.ReturnType),
+                        CSType = method.ReturnType.GetNiceName()
+                    }
+                );
                 funcData.ReturnValueTypes.Add(ValueTypeFor(method.ReturnType));
 
                 // TODO: Add the ability to process value tuple based return values.
@@ -225,7 +234,7 @@ namespace Derg.Modules
                 Expression.Constant(funcData.Module),
                 Expression.Constant(funcData.Name),
                 Expression.Constant(
-            new FuncType(
+                    new FuncType(
                         funcData.ParameterValueTypes.ToArray(),
                         funcData.ReturnValueTypes.ToArray()
                     )

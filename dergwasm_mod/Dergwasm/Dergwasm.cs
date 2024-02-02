@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Derg.Wasm;
+using Derg.Instructions;
+using Derg.Runtime;
 using Elements.Core; // For UniLog
 using FrooxEngine;
 using FrooxEngine.ProtoFlux;

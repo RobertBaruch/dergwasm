@@ -1,5 +1,6 @@
 using System.Linq;
 using Derg.Wasm;
+using Derg.Runtime;
 using DergwasmTests.testing;
 using FrooxEngine;
 using Xunit;

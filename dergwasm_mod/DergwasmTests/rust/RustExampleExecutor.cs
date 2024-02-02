@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Derg;
+using Derg.Runtime;
 using DergwasmTests.testing;
 using Xunit;
 

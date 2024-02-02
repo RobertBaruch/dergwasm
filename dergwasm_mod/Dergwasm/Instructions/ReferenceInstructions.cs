@@ -1,4 +1,6 @@
-﻿namespace Derg
+﻿using Derg.Runtime;
+
+namespace Derg.Instructions
 {
     public static class ReferenceInstructions
     {

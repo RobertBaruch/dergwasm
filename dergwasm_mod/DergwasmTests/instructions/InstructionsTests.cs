@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Derg;
-using LEB128;
+using Derg.Instructions;
+using Derg.Runtime;
 using Xunit;
 
 namespace DergwasmTests.instructions
@@ -357,7 +357,7 @@ namespace DergwasmTests.instructions
             MemoryStream stream = new MemoryStream();
 
             stream.WriteOpcode(InstructionType.BLOCK);
-            stream.WriteLEB128Signed((int)Derg.ValueType.F32 - 0x80); // returning block, returns F32.
+            stream.WriteLEB128Signed((int)Derg.Runtime.ValueType.F32 - 0x80); // returning block, returns F32.
             stream.WriteOpcode(InstructionType.NOP);
             stream.WriteOpcode(InstructionType.END);
             stream.Position = 0;
@@ -371,7 +371,7 @@ namespace DergwasmTests.instructions
             );
             Assert.Collection(
                 insn.Operands,
-                e => Assert.Equal(Derg.ValueType.F32, e.value.GetReturningBlockValueType())
+                e => Assert.Equal(Derg.Runtime.ValueType.F32, e.value.GetReturningBlockValueType())
             );
             Assert.Collection(insn.Operands, e => Assert.IsType<UnflattenedBlockOperand>(e));
             Assert.Collection(

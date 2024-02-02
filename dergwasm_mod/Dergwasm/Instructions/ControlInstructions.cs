@@ -1,6 +1,7 @@
 ﻿using System;
+using Derg.Runtime;
 
-namespace Derg
+namespace Derg.Instructions
 {
     public static class ControlInstructions
     {

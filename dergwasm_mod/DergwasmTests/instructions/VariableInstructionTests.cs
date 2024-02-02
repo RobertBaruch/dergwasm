@@ -1,4 +1,5 @@
-﻿using Derg;
+﻿using Derg.Runtime;
+using Derg.Instructions;
 using DergwasmTests.testing;
 using Xunit;
 

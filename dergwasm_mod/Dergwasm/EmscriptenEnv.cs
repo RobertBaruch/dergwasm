@@ -2,6 +2,7 @@
 using System.Text;
 using Derg.Modules;
 using Derg.Wasm;
+using Derg.Runtime;
 
 namespace Derg
 {

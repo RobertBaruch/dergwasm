@@ -6,6 +6,8 @@ using BenchmarkDotNet.Running;
 using Derg;
 using Derg.Modules;
 using Derg.Wasm;
+using Derg.Instructions;
+using Derg.Runtime;
 using DergwasmTests.instructions;
 using DergwasmTests.testing;
 using FrooxEngine;
@@ -33,7 +35,11 @@ namespace DergwasmTests
         {
             frame = CreateFrame();
             ModuleFunc func = new ModuleFunc("test", "$-1", frame.GetFuncTypeForIndex(0));
-            func.Locals = new Derg.ValueType[] { Derg.ValueType.I32, Derg.ValueType.I32 };
+            func.Locals = new Derg.Runtime.ValueType[]
+            {
+                Derg.Runtime.ValueType.I32,
+                Derg.Runtime.ValueType.I32
+            };
             List<UnflattenedInstruction> instructions = new List<UnflattenedInstruction>
             {
                 Insn(InstructionType.I32_ADD),
@@ -97,7 +103,7 @@ namespace DergwasmTests
         {
             frame = CreateFrame();
             ModuleFunc func = new ModuleFunc("test", "$-1", frame.GetFuncTypeForIndex(0));
-            func.Locals = new Derg.ValueType[] { };
+            func.Locals = new Derg.Runtime.ValueType[] { };
 
             List<UnflattenedInstruction> instructions = new List<UnflattenedInstruction>();
             for (int i = 0; i < N; i++)

@@ -1,6 +1,7 @@
 ﻿using System;
+using Derg.Runtime;
 
-namespace Derg
+namespace Derg.Instructions
 {
     public static class MemoryInstructions
     {
@@ -213,7 +214,7 @@ namespace Derg
             Memory mem = machine.GetMemoryFromIndex(0);
             try
             {
-                machine.Heap.AsSpan<byte>((int)d, (int)n).Fill(val);
+                machine.Heap.AsSpan((int)d, (int)n).Fill(val);
             }
             catch (Exception)
             {

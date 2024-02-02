@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using LEB128;
+using Derg.Instructions;
 
-namespace Derg
+namespace Derg.Runtime
 {
     // The file representation of a module.
     public class Module
@@ -241,8 +241,8 @@ namespace Derg
             // the imports go before the first index of any definition contained in the module itself.
             for (int i = 0; i < numImports; i++)
             {
-                string module_name = Section.ReadString(stream);
-                string name = Section.ReadString(stream);
+                string module_name = ReadString(stream);
+                string name = ReadString(stream);
                 byte tag = stream.ReadByte();
                 switch (tag)
                 {
@@ -291,9 +291,9 @@ namespace Derg
             for (int i = 0; i < numFuncs; i++)
             {
                 int funcTypeIdx = (int)stream.ReadLEB128Unsigned();
-                module
-                    .Funcs
-                    .Add(new ModuleFunc(module.ModuleName, $"${i}", module.FuncTypes[funcTypeIdx]));
+                module.Funcs.Add(
+                    new ModuleFunc(module.ModuleName, $"${i}", module.FuncTypes[funcTypeIdx])
+                );
             }
         }
 

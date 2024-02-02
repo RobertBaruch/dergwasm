@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Derg;
+using Derg.Instructions;
+using Derg.Runtime;
 using DergwasmTests.testing;
 
 namespace DergwasmTests.instructions

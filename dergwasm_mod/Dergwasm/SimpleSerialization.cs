@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Derg.Runtime;
 using Elements.Core;
 using FrooxEngine;
 
@@ -305,12 +306,9 @@ namespace Derg
                     case string s:
                         writer.Write(SimpleType.String);
                         writer.Write(
-                            resoniteEnv
-                                .emscriptenEnv
+                            resoniteEnv.emscriptenEnv
                                 .AllocateUTF8StringInMemLenData(frame, s)
-                                .Buff
-                                .Ptr
-                                .Addr
+                                .Buff.Ptr.Addr
                         );
                         break;
 
@@ -338,9 +336,10 @@ namespace Derg
                     case List<RefID> refIDList:
 
                         {
-                            int dataPtr = resoniteEnv
-                                .emscriptenEnv
-                                .Malloc(frame, sizeof(int) + refIDList.Count * 8);
+                            int dataPtr = resoniteEnv.emscriptenEnv.Malloc(
+                                frame,
+                                sizeof(int) + refIDList.Count * 8
+                            );
                             writer.Write(SimpleType.RefIDList);
                             writer.Write(dataPtr);
                             writer.Flush(); // Unnecessary, but comforting.

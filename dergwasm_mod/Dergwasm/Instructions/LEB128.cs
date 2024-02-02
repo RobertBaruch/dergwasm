@@ -4,7 +4,7 @@
 using System;
 using System.IO;
 
-namespace LEB128
+namespace Derg.Instructions
 {
     /// <summary>
     /// Single-file utility to read and write integers in the LEB128 (7-bit little endian base-128) format.
@@ -13,12 +13,16 @@ namespace LEB128
     public static class LEB128
     {
         private const long SIGN_EXTEND_MASK = -1L;
-        private const int INT64_BITSIZE = (sizeof(long) * 8);
+        private const int INT64_BITSIZE = sizeof(long) * 8;
 
-        public static void WriteLEB128Signed(this Stream stream, long value) =>
-            WriteLEB128Signed(stream, value, out _);
+        public static void WriteLEB128Signed(this System.IO.Stream stream, long value) =>
+            stream.WriteLEB128Signed(value, out _);
 
-        public static void WriteLEB128Signed(this Stream stream, long value, out int bytes)
+        public static void WriteLEB128Signed(
+            this System.IO.Stream stream,
+            long value,
+            out int bytes
+        )
         {
             bytes = 0;
             bool more = true;
@@ -29,7 +33,7 @@ namespace LEB128
                 value >>= 7;
 
                 bool signBitSet = (chunk & 0x40) != 0; // sign bit is the msb of a 7-bit byte, so 0x40
-                more = !((value == 0 && !signBitSet) || (value == -1 && signBitSet));
+                more = !(value == 0 && !signBitSet || value == -1 && signBitSet);
                 if (more)
                 {
                     chunk |= 0x80;
@@ -41,12 +45,16 @@ namespace LEB128
         }
 
         public static void WriteLEB128Unsigned(this BinaryWriter writer, ulong value) =>
-            WriteLEB128Unsigned(writer.BaseStream, value, out _);
+            writer.BaseStream.WriteLEB128Unsigned(value, out _);
 
-        public static void WriteLEB128Unsigned(this Stream stream, ulong value) =>
-            WriteLEB128Unsigned(stream, value, out _);
+        public static void WriteLEB128Unsigned(this System.IO.Stream stream, ulong value) =>
+            stream.WriteLEB128Unsigned(value, out _);
 
-        public static void WriteLEB128Unsigned(this Stream stream, ulong value, out int bytes)
+        public static void WriteLEB128Unsigned(
+            this System.IO.Stream stream,
+            ulong value,
+            out int bytes
+        )
         {
             bytes = 0;
             bool more = true;
@@ -67,12 +75,13 @@ namespace LEB128
             }
         }
 
-        public static long ReadLEB128Signed(this Stream stream) => ReadLEB128Signed(stream, out _);
+        public static long ReadLEB128Signed(this System.IO.Stream stream) =>
+            stream.ReadLEB128Signed(out _);
 
         public static long ReadLEB128Signed(this BinaryReader stream) =>
-            ReadLEB128Signed(stream.BaseStream, out _);
+            stream.BaseStream.ReadLEB128Signed(out _);
 
-        public static long ReadLEB128Signed(this Stream stream, out int bytes)
+        public static long ReadLEB128Signed(this System.IO.Stream stream, out int bytes)
         {
             bytes = 0;
 
@@ -110,15 +119,15 @@ namespace LEB128
         }
 
         public static long ReadLEB128Signed(this BinaryReader stream, out int bytes) =>
-            ReadLEB128Signed(stream.BaseStream, out bytes);
+            stream.BaseStream.ReadLEB128Signed(out bytes);
 
-        public static ulong ReadLEB128Unsigned(this Stream stream) =>
-            ReadLEB128Unsigned(stream, out _);
+        public static ulong ReadLEB128Unsigned(this System.IO.Stream stream) =>
+            stream.ReadLEB128Unsigned(out _);
 
         public static ulong ReadLEB128Unsigned(this BinaryReader stream) =>
-            ReadLEB128Unsigned(stream.BaseStream, out _);
+            stream.BaseStream.ReadLEB128Unsigned(out _);
 
-        public static ulong ReadLEB128Unsigned(this Stream stream, out int bytes)
+        public static ulong ReadLEB128Unsigned(this System.IO.Stream stream, out int bytes)
         {
             bytes = 0;
 
@@ -147,6 +156,6 @@ namespace LEB128
         }
 
         public static ulong ReadLEB128Unsigned(this BinaryReader stream, out int bytes) =>
-            ReadLEB128Unsigned(stream.BaseStream, out bytes);
+            stream.BaseStream.ReadLEB128Unsigned(out bytes);
     }
 }

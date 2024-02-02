@@ -1,4 +1,4 @@
-﻿using Derg;
+﻿using Derg.Instructions;
 using Xunit;
 
 namespace DergwasmTests.instructions

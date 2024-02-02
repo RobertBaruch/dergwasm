@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using Derg.Modules;
+using Derg.Runtime;
 using FrooxEngine;
 
 namespace Derg
@@ -342,9 +343,9 @@ namespace Derg
                 return 0;
             try
             {
-                slot.GetComponent<ValueField<string>>().Value.Value = Encoding
-                    .UTF8
-                    .GetString(stream.content);
+                slot.GetComponent<ValueField<string>>().Value.Value = Encoding.UTF8.GetString(
+                    stream.content
+                );
             }
             catch (Exception)
             {

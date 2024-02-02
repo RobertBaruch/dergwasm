@@ -1,4 +1,4 @@
-﻿namespace Derg
+﻿namespace Derg.Runtime
 {
     // Extensions to Machine which make it easier to call WASM functions.
     //

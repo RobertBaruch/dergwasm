@@ -1,6 +1,7 @@
 ﻿using System;
+using Derg.Runtime;
 
-namespace Derg
+namespace Derg.Instructions
 {
     public static class NumericInstructions
     {
@@ -13,7 +14,7 @@ namespace Derg
             // There are O(log N) algorithms for this, but it's not worth it -- I don't think
             // a lot of software is really going to use this instruction.
             int count = 0;
-            ulong mask = 1UL << (numbits - 1);
+            ulong mask = 1UL << numbits - 1;
             while (mask != 0 && (value & mask) == 0)
             {
                 count++;
@@ -316,7 +317,7 @@ namespace Derg
             uint c2 = frame.Pop().u32;
             uint c1 = frame.Pop().u32;
             c2 &= 31;
-            frame.Push((c1 << (int)c2) | (c1 >> (int)(32 - c2)));
+            frame.Push(c1 << (int)c2 | c1 >> (int)(32 - c2));
         }
 
         public static void I64Rotl(Instruction instruction, Machine machine, Frame frame)
@@ -324,7 +325,7 @@ namespace Derg
             ulong c2 = frame.Pop().u64;
             ulong c1 = frame.Pop().u64;
             c2 &= 63;
-            frame.Push((c1 << (int)c2) | (c1 >> (int)(64 - c2)));
+            frame.Push(c1 << (int)c2 | c1 >> (int)(64 - c2));
         }
 
         public static void I32Rotr(Instruction instruction, Machine machine, Frame frame)
@@ -332,7 +333,7 @@ namespace Derg
             uint c2 = frame.Pop().u32;
             uint c1 = frame.Pop().u32;
             c2 &= 31;
-            frame.Push((c1 >> (int)c2) | (c1 << (int)(32 - c2)));
+            frame.Push(c1 >> (int)c2 | c1 << (int)(32 - c2));
         }
 
         public static void I64Rotr(Instruction instruction, Machine machine, Frame frame)
@@ -340,7 +341,7 @@ namespace Derg
             ulong c2 = frame.Pop().u64;
             ulong c1 = frame.Pop().u64;
             c2 &= 63;
-            frame.Push((c1 >> (int)c2) | (c1 << (int)(64 - c2)));
+            frame.Push(c1 >> (int)c2 | c1 << (int)(64 - c2));
         }
 
         public static void I32Eqz(Instruction instruction, Machine machine, Frame frame) =>

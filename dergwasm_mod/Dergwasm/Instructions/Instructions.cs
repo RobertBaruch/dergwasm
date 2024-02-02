@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using LEB128;
+using Derg.Runtime;
 
-namespace Derg
+namespace Derg.Instructions
 {
     public enum InstructionType : int
     {
@@ -515,7 +515,7 @@ namespace Derg
                     throw new InvalidOperationException(
                         $"Unknown extended opcode {opcode:02X} + {ext_opcode:02X}"
                     );
-                opcode = (opcode << 8) | ext_opcode;
+                opcode = opcode << 8 | ext_opcode;
             }
 
             InstructionType type = (InstructionType)opcode;
@@ -529,7 +529,7 @@ namespace Derg
                 case InstructionOperandType.BYTE:
                     operands = new UnflattenedOperand[]
                     {
-                        new UnflattenedOperand(new Value { u32 = (uint)stream.ReadByte() })
+                        new UnflattenedOperand(new Value { u32 = stream.ReadByte() })
                     };
                     break;
 
@@ -589,9 +589,7 @@ namespace Derg
                 case InstructionOperandType.VALTYPE_VECTOR:
                     operands = new UnflattenedOperand[(uint)stream.ReadLEB128Unsigned()];
                     for (int i = 0; i < operands.Length; i++)
-                        operands[i] = new UnflattenedOperand(
-                            new Value { u32 = (uint)stream.ReadByte() }
-                        );
+                        operands[i] = new UnflattenedOperand(new Value { u32 = stream.ReadByte() });
                     break;
 
                 case InstructionOperandType.I32:

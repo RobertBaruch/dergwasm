@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Derg
+namespace Derg.Runtime
 {
     public class Trap : Exception
     {

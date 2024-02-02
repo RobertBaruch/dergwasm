@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Text;
-using Derg;
-using LEB128;
+using Derg.Instructions;
+using Derg.Runtime;
 using Xunit;
 
 namespace DergwasmTests

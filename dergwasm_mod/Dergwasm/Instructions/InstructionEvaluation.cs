@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Derg.Runtime;
 
-namespace Derg
+namespace Derg.Instructions
 {
     public static class InstructionEvaluation
     {
@@ -18,10 +19,7 @@ namespace Derg
             if (machine.Debug)
             {
                 ModuleFunc func = frame.Func;
-                string operands = string.Join(
-                    ", ",
-                    (from op in instruction.Operands select $"{op}")
-                );
+                string operands = string.Join(", ", from op in instruction.Operands select $"{op}");
                 Console.WriteLine(
                     $"{func.ModuleName}.{func.Name} [{frame.PC}] {instruction.Type} {operands}"
                 );
