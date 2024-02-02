@@ -263,7 +263,7 @@ namespace Derg
             }
             else if (typeof(T) == typeof(double))
             {
-                return Derg.ValueType.F32;
+                return Derg.ValueType.F64;
             }
 #pragma warning disable CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
             else if (sizeof(T) <= 4)
