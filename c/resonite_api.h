@@ -30,7 +30,7 @@ extern resonite_error_t slot__get_name(
     char ** outName);
 extern resonite_error_t slot__set_name(
     resonite_refid_t slot, 
-    char * name);
+    const char * name);
 extern resonite_error_t slot__get_num_children(
     resonite_refid_t slot, 
     int32_t* outNumChildren);
@@ -44,19 +44,19 @@ extern resonite_error_t slot__get_children(
     resonite_refid_t** outChildListData);
 extern resonite_error_t slot__find_child_by_name(
     resonite_refid_t slot, 
-    char * name, 
+    const char * name, 
     bool match_substring, 
     bool ignore_case, 
     int32_t max_depth, 
     resonite_refid_t* outChild);
 extern resonite_error_t slot__find_child_by_tag(
     resonite_refid_t slot, 
-    char * tag, 
+    const char * tag, 
     int32_t max_depth, 
     resonite_refid_t* outChild);
 extern resonite_error_t slot__get_component(
     resonite_refid_t slot, 
-    char * typeName, 
+    const char * typeName, 
     resonite_refid_t* outComponent);
 extern resonite_error_t slot__get_components(
     resonite_refid_t slot, 
@@ -67,7 +67,7 @@ extern resonite_error_t component__get_type_name(
     char ** outTypeName);
 extern resonite_error_t component__get_member(
     resonite_refid_t component, 
-    char * name, 
+    const char * name, 
     resonite_type_t* outType, 
     resonite_refid_t* outMember);
 extern resonite_error_t value__get_int(
@@ -81,12 +81,12 @@ extern resonite_error_t value__get_double(
     double* outPtr);
 extern resonite_error_t value__set_int(
     resonite_refid_t refId, 
-    int32_t* inPtr);
+    int32_t value);
 extern resonite_error_t value__set_float(
     resonite_refid_t refId, 
-    float* inPtr);
+    float value);
 extern resonite_error_t value__set_double(
     resonite_refid_t refId, 
-    double* inPtr);
+    double value);
 
 #endif // __DERGWASM_C_RESONITE_API_H__

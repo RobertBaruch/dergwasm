@@ -120,16 +120,16 @@ EMSCRIPTEN_KEEPALIVE resonite_error_t _value__get_double(
 }
 EMSCRIPTEN_KEEPALIVE resonite_error_t _value__set_int(
     resonite_refid_t refId, 
-    int32_t* inPtr) {
-    return value__set_int(refId, inPtr);
+    int32_t value) {
+    return value__set_int(refId, value);
 }
 EMSCRIPTEN_KEEPALIVE resonite_error_t _value__set_float(
     resonite_refid_t refId, 
-    float* inPtr) {
-    return value__set_float(refId, inPtr);
+    float value) {
+    return value__set_float(refId, value);
 }
 EMSCRIPTEN_KEEPALIVE resonite_error_t _value__set_double(
     resonite_refid_t refId, 
-    double* inPtr) {
-    return value__set_double(refId, inPtr);
+    double value) {
+    return value__set_double(refId, value);
 }

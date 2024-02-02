@@ -37,6 +37,30 @@ IMPL_PREAMBLE = """
 
 """
 
+MODULE_PREAMBLE = """
+#include "py/obj.h"
+#include "py/runtime.h"
+
+#include "mp_resonite_api.h"
+
+#define MODULE_NAME MP_QSTR_resonitenative
+#define DEF_FUN(args, name) STATIC MP_DEFINE_CONST_FUN_OBJ_ ## args(resonite__ ## name ## _obj, resonite__ ## name)
+#define DEF_FUNN(args, name) STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(resonite__ ## name ## _obj, args, args, resonite__ ## name)
+#define DEF_ENTRY(name) { MP_ROM_QSTR(MP_QSTR_ ## name), MP_ROM_PTR(&resonite__ ## name ## _obj) }
+
+"""
+
+MODULE_POSTAMBLE = """
+STATIC MP_DEFINE_CONST_DICT(resonitenative_module_globals, resonitenative_module_globals_table);
+
+const mp_obj_module_t resonitenative_user_cmodule = {
+    .base = { &mp_type_module },
+    .globals = (mp_obj_dict_t*)&resonitenative_module_globals,
+};
+
+MP_REGISTER_MODULE(MODULE_NAME, resonitenative_user_cmodule);
+"""
+
 
 def output_dir() -> pathlib.Path:
     """Gets the path to the directory where the generated files should be placed."""
@@ -67,7 +91,8 @@ class GenericType:
 
     @staticmethod
     def parse_generic_type(s: str) -> "GenericType":
-        # Helper function to split the string by commas, considering nested generics
+        """Helper function to split the string by commas, considering nested generics."""
+
         def split_type_params(s: str) -> list[str]:
             params: list[str] = []
             bracket_level = 0
@@ -162,7 +187,7 @@ class Main:
         raise ValueError(f"Unknown type: {cc_type_str}")
 
     @staticmethod
-    def py_to_wasm(value_type: ValueType, cc_type: GenericType, val: str) -> str:
+    def py_to_wasm(cc_type: GenericType, val: str) -> str:
         """Converts a Python value to a Dergwasm value, for arguments."""
         cc_type_str = str(cc_type)
         if cc_type_str == "int":
@@ -185,15 +210,24 @@ class Main:
             return f"(int32_t)mp_obj_get_int({val})"
         if cc_type_str == "NullTerminatedString":
             return f"mp_obj_str_get_str({val})"
-        return f"{PY_TO_WASM[value_type]}({val})"
+        raise ValueError(f"Unknown type: {cc_type_str}")
 
     @staticmethod
-    def wasm_to_py(value_type: ValueType, cc_type: GenericType, val: str) -> str:
+    def wasm_to_py(cc_type: GenericType, val: str) -> str:
         """Converts a Dergwasm value to a Python value, for return values."""
         cc_type_str = str(cc_type)
-        if cc_type_str in ["int", "uint", "long", "ulong"]:
+        if cc_type_str in [
+            "int",
+            "uint",
+            "long",
+            "ulong",
+            "ResoniteError",
+            "ResoniteType",
+        ]:
             return f"mp_obj_new_int_from_ll({val})"
-        if cc_type_str in ["float", "double"]:
+        if cc_type_str == "float":
+            return f"mp_obj_new_float((double){val})"
+        if cc_type_str == "double":
             return f"mp_obj_new_float({val})"
         if cc_type_str == "bool":
             return f"mp_obj_new_bool({val})"
@@ -203,23 +237,10 @@ class Main:
             return f"mp_obj_new_int_from_ll({val})"
         if cc_type_str == "NullTerminatedString":
             return f"mp_obj_new_null_terminated_str({val})"
-        return f"{WASM_TO_PY[value_type]}({val})"
+        raise ValueError(f"Unknown type: {cc_type_str}")
 
-    def generate_header(self) -> None:
-        with open("resonite_api.json", "r", encoding="UTF8") as f:
-            data = json.load(f)
-
-        generated_filename = output_dir() / "mp_resonite_api.h"
-        with open(generated_filename, "w", encoding="UTF8") as f:
-            f.write(HEADER_PREAMBLE)
-            for item in data:
-                f.write(f'extern mp_obj_t resonite__{item["Name"]}(')
-                params = [f'mp_obj_t {param["Name"]}' for param in item["Parameters"]]
-                f.write(", ".join(params))
-                f.write(");\n")
-            f.write(HEADER_POSTAMBLE)
-
-    def generate_impl(self) -> None:
+    def get_api_data(self) -> list[dict]:
+        """Gets the API data from resonite_api.json."""
         with open("resonite_api.json", "r", encoding="UTF8") as f:
             data = json.load(f)
 
@@ -228,60 +249,118 @@ class Main:
                 p["GenericType"] = GenericType.parse_generic_type(p["CSType"])
                 p["ValueType"] = ValueType(p["Type"])
 
+        return data
+
+    def generate_header(self) -> None:
+        """Generates the mp_resonite_api.h file."""
+
+        data = self.get_api_data()
+
+        generated_filename = output_dir() / "mp_resonite_api.h"
+        with open(generated_filename, "w", encoding="UTF8") as f:
+            f.write(HEADER_PREAMBLE)
+            for item in data:
+                params = [
+                    f'mp_obj_t {param["Name"]}'
+                    for param in item["Parameters"]
+                    if not param["GenericType"].is_output()
+                ]
+
+                f.write(f'extern mp_obj_t resonite__{item["Name"]}(')
+                if len(params) < 4:
+                    f.write(", ".join(params))
+                else:
+                    f.write("size_t n_args, const mp_obj_t *args")
+                f.write(");\n")
+            f.write(HEADER_POSTAMBLE)
+
+    def generate_impl(self) -> None:
+        """Generates the mp_resonite_api.c file."""
+
+        data = self.get_api_data()
+
         generated_filename = output_dir() / "mp_resonite_api.c"
         with open(generated_filename, "w", encoding="UTF8") as f:
             f.write(IMPL_PREAMBLE)
             for item in data:
                 params = item["Parameters"]
-                in_params = [
-                    f'mp_obj_t {p["Name"]}'
-                    for p in params
-                    if not p["GenericType"].is_output()
-                ]
-                f.write(
-                    f'mp_obj_t resonite__{item["Name"]}({", ".join(in_params)}) {{\n'
-                )
+                in_params = [p for p in params if not p["GenericType"].is_output()]
+                out_params = [p for p in params if p["GenericType"].is_output()]
 
-                # outs are always Ptrs.
-                for p in params:
-                    if not p["GenericType"].is_output():
-                        continue
+                arglist = [f'mp_obj_t {p["Name"]}' for p in in_params]
+
+                f.write(f'mp_obj_t resonite__{item["Name"]}(')
+                if len(in_params) < 4:
+                    f.write(", ".join(arglist))
+                else:
+                    f.write("size_t n_args, const mp_obj_t *args")
+                f.write(") {\n")
+
+                # Outputs get local vars.
+                for p in out_params:
                     c_type = self.wasm_to_c(p["GenericType"])
                     c_type = c_type[:-1]  # Remove the trailing '*'
                     f.write(f"  {c_type} {p['Name']};\n")
                 f.write("\n")
                 f.write(f'  resonite_error_t _err = {item["Name"]}(')
 
-                call_params: list[str] = []
+                # Write the arguments to the native call.
+                call_args: list[str] = []
+                in_param_num = -1
                 for p in params:
-                    converted = self.py_to_wasm(
-                        p["ValueType"], p["GenericType"], p["Name"]
+                    if not p["GenericType"].is_output():
+                        in_param_num += 1
+                    argname = (
+                        p["Name"] if len(in_params) < 4 else f"args[{in_param_num}]"
                     )
                     if p["GenericType"].is_output():
                         converted = f"&{p['Name']}"
-                    call_params.append(f"\n    {converted}")
-                f.write(f'{", ".join(call_params)});\n')
+                    else:
+                        converted = self.py_to_wasm(p["GenericType"], argname)
+                    call_args.append(f"\n    {converted}")
+                f.write(f'{", ".join(call_args)});\n')
+
+                # Any lists that were returned need to be converted to Python lists.
+                # By convention, the output prior to a list is its length.
+                for i, p in enumerate(out_params):
+                    generic_type = p["GenericType"].type_params[0]
+                    if generic_type.base_type != "WasmArray":
+                        continue
+                    # Get the type this is an array of.
+                    generic_type = generic_type.type_params[0]
+                    c_type = self.wasm_to_c(generic_type)
+                    converted = self.wasm_to_py(generic_type, f"{p['Name']}[i]")
+                    # Get the length of the array.
+                    len_name = out_params[i - 1]["Name"]
+
+                    f.write(
+                        f'  mp_obj_t _list_{p["Name"]} = mp_obj_new_list(0, NULL);\n'
+                    )
+                    f.write(f"  for (size_t i = 0; i < {len_name}; i++) {{\n")
+                    f.write(f'    mp_obj_list_append(_list_{p["Name"]},\n')
+                    f.write(f"      {converted});\n")
+                    f.write("  }\n")
 
                 # The return value is always a tuple. The first element is
                 # always the ResoniteError, and the remaining elements are
                 # the out parameters.
-                out_params: list[str] = []
+                out_elements: list[str] = []
                 generic_type = GenericType.parse_generic_type("ResoniteError")
-                converted = self.wasm_to_py(ValueType.I32, generic_type, "_err")
-                out_params.append(f"\n    {converted}")
+                converted = self.wasm_to_py(generic_type, "_err")
+                out_elements.append(f"\n    {converted}")
 
-                for p in params:
-                    if not p["GenericType"].is_output():
-                        continue
-                    value_type = ValueType(p["Type"])
-                    # This is, by definition, a Ptr to something.
+                for p in out_params:
+                    # This is, by definition, an Output<T>, so get T.
                     generic_type = p["GenericType"].type_params[0]
-                    converted = self.wasm_to_py(value_type, generic_type, p["Name"])
-                    out_params.append(f"\n    {converted}")
-                out_count = len(out_params)
+                    if generic_type.base_type == "WasmArray":
+                        converted = f"_list_{p['Name']}"
+                    else:
+                        converted = self.wasm_to_py(generic_type, p["Name"])
+                    out_elements.append(f"\n    {converted}")
+                out_count = len(out_elements)
 
                 f.write(f"  mp_obj_t _outs[{out_count}] = {{")
-                f.write(", ".join(out_params))
+                f.write(", ".join(out_elements))
                 f.write("};\n")
                 f.write("\n")
 
@@ -298,7 +377,49 @@ class Main:
                 f.write(f"  return mp_obj_new_tuple({out_count}, _outs);\n")
                 f.write("}\n\n")
 
+            f.flush()
+
+    def generate_module(self) -> None:
+        """Generates the mp_resonite.c file."""
+
+        data = self.get_api_data()
+
+        generated_filename = output_dir() / "mp_resonite.c"
+        with open(generated_filename, "w", encoding="UTF8") as f:
+            f.write(MODULE_PREAMBLE)
+
+            for item in data:
+                params = item["Parameters"]
+                num_in_params = len(
+                    [
+                        f'mp_obj_t {p["Name"]}'
+                        for p in params
+                        if not p["GenericType"].is_output()
+                    ]
+                )
+                if num_in_params < 4:
+                    f.write("DEF_FUN")
+                else:
+                    f.write("DEF_FUNN")
+                f.write(f"({num_in_params}, {item['Name']});\n")
+
+            f.write(
+                "STATIC const mp_rom_map_elem_t resonitenative_module_globals_table[] = {\n"
+            )
+            f.write(
+                "    { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MODULE_NAME) },\n"
+            )
+
+            for item in data:
+                f.write(f"    DEF_ENTRY({item['Name']}),\n")
+
+            f.write("};\n")
+
+            f.write(MODULE_POSTAMBLE)
+
     def main(self) -> int:
+        """Generates all the shim files for the Python API."""
         self.generate_header()
         self.generate_impl()
+        self.generate_module()
         return 0

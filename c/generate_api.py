@@ -52,7 +52,7 @@ class GenericType:
 
     @staticmethod
     def parse_generic_type(s: str) -> "GenericType":
-        # Helper function to split the string by commas, considering nested generics
+        """Helper function to split the string by commas, considering nested generics."""
         def split_type_params(s: str) -> list[str]:
             params: list[str] = []
             bracket_level = 0
@@ -125,9 +125,20 @@ class Main:
             return "resonite_type_t"
         raise ValueError(f"Unknown type: {cc_type_str}")
 
-    def generate_header(self) -> None:
+    def get_api_data(self) -> list[dict]:
+        """Gets the API data from resonite_api.json."""
         with open("resonite_api.json", "r", encoding="UTF8") as f:
             data = json.load(f)
+
+        for item in data:
+            for p in item["Parameters"]:
+                p["GenericType"] = GenericType.parse_generic_type(p["CSType"])
+
+        return data
+
+    def generate_header(self) -> None:
+        """Generates the resonite_api.h file."""
+        data = self.get_api_data()
 
         generated_filename = output_dir() / "resonite_api.h"
         with open(generated_filename, "w", encoding="UTF8") as f:
@@ -142,19 +153,21 @@ class Main:
                     converted = self.wasm_to_c(ret_generic_type)
                     f.write(f'extern {converted} {item["Name"]}(')
 
-                call_params: list[str] = []
-                for param in item["Parameters"]:
-                    generic_type = GenericType.parse_generic_type(param["CSType"])
+                call_args: list[str] = []
+                for p in item["Parameters"]:
+                    generic_type = p["GenericType"]
                     converted = self.wasm_to_c(generic_type)
-                    call_params.append(f"\n    {converted} {param['Name']}")
-                f.write(", ".join(call_params))
+                    if generic_type.base_type == "NullTerminatedString":
+                        converted = f"const {converted}"
+                    call_args.append(f"\n    {converted} {p['Name']}")
+                f.write(", ".join(call_args))
                 f.write(");\n")
             f.write(HEADER_POSTAMBLE)
             f.flush()
 
     def generate_impl(self) -> None:
-        with open("resonite_api.json", "r", encoding="UTF8") as f:
-            data = json.load(f)
+        """Generates the resonite_api.c file."""
+        data = self.get_api_data()
 
         generated_filename = output_dir() / "resonite_api.c"
         with open(generated_filename, "w", encoding="UTF8") as f:
@@ -169,12 +182,12 @@ class Main:
                     converted = self.wasm_to_c(ret_generic_type)
                     f.write(f'EMSCRIPTEN_KEEPALIVE {converted} _{item["Name"]}(')
 
-                call_params: list[str] = []
-                for param in item["Parameters"]:
-                    generic_type = GenericType.parse_generic_type(param["CSType"])
+                call_args: list[str] = []
+                for p in item["Parameters"]:
+                    generic_type = p["GenericType"]
                     converted = self.wasm_to_c(generic_type)
-                    call_params.append(f"\n    {converted} {param['Name']}")
-                f.write(", ".join(call_params))
+                    call_args.append(f"\n    {converted} {p['Name']}")
+                f.write(", ".join(call_args))
                 f.write(") {\n")
 
                 f.write("    ")
@@ -187,8 +200,8 @@ class Main:
             f.flush()
 
     def generate_js(self) -> None:
-        with open("resonite_api.json", "r", encoding="UTF8") as f:
-            data = json.load(f)
+        """Generates the resonite_api.js file."""
+        data = self.get_api_data()
 
         generated_filename = output_dir() / "resonite_api.js"
         with open(generated_filename, "w", encoding="UTF8") as f:
@@ -199,6 +212,7 @@ class Main:
             f.flush()
 
     def main(self) -> int:
+        """Generates all the files for the C API."""
         self.generate_header()
         self.generate_impl()
         self.generate_js()
