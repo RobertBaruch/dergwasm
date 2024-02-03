@@ -10,17 +10,12 @@ class Component:
         if typename:
             self.typename = typename
         else:
-            self.typename = resonitenative.resonite_Component_get_type_name(reference_id)
+            self.typename = resonitenative.component__get_type_name(reference_id)
 
     def __str__(self):
         return f"Component<ID={self.reference_id:X}>({self.typename})"
 
     @classmethod
     def make_new(cls, reference_id: int) -> "Component":
-        typename = resonitenative.resonite_Component_get_type_name(reference_id)
-        if typename.startswith("ValueField"):
-            return ValueField(reference_id, typename)
+        typename = resonitenative.component__get_type_name(reference_id)
         return Component(reference_id, typename)
-
-
-from resonite.valuefield import ValueField

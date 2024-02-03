@@ -9,3 +9,9 @@ class UserRoot:
 
     def __str__(self):
         return f"UserRoot<ID={self.reference_id:X}>"
+
+    @staticmethod
+    def make_new(reference_id: int) -> "UserRoot" | None:
+        if reference_id == 0:
+            return None
+        return UserRoot(reference_id)
