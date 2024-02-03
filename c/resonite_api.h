@@ -40,8 +40,8 @@ extern __attribute__((import_module("resonite"))) resonite_error_t slot__get_chi
     resonite_refid_t* outChild);
 extern __attribute__((import_module("resonite"))) resonite_error_t slot__get_children(
     resonite_refid_t slot, 
-    int32_t* outChildListLength, 
-    resonite_refid_t** outChildListData);
+    resonite_refid_t** outChildListData, 
+    int32_t* outChildListLength);
 extern __attribute__((import_module("resonite"))) resonite_error_t slot__find_child_by_name(
     resonite_refid_t slot, 
     const char * name, 
@@ -60,8 +60,8 @@ extern __attribute__((import_module("resonite"))) resonite_error_t slot__get_com
     resonite_refid_t* outComponent);
 extern __attribute__((import_module("resonite"))) resonite_error_t slot__get_components(
     resonite_refid_t slot, 
-    int32_t* outComponentListLength, 
-    resonite_refid_t** outComponentListData);
+    resonite_refid_t** outComponentListData, 
+    int32_t* outComponentListLength);
 extern __attribute__((import_module("resonite"))) resonite_error_t component__get_type_name(
     resonite_refid_t component, 
     char ** outTypeName);

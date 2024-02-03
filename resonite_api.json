@@ -1,6 +1,6 @@
 [
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "slot__root_slot",
     "Parameters": [
       {
@@ -18,7 +18,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "slot__get_parent",
     "Parameters": [
       {
@@ -41,7 +41,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "slot__get_active_user",
     "Parameters": [
       {
@@ -64,7 +64,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "slot__get_active_user_root",
     "Parameters": [
       {
@@ -87,7 +87,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "slot__get_object_root",
     "Parameters": [
       {
@@ -115,7 +115,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "slot__get_name",
     "Parameters": [
       {
@@ -138,7 +138,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "slot__set_name",
     "Parameters": [
       {
@@ -161,7 +161,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "slot__get_num_children",
     "Parameters": [
       {
@@ -184,7 +184,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "slot__get_child",
     "Parameters": [
       {
@@ -212,7 +212,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "slot__get_children",
     "Parameters": [
       {
@@ -221,14 +221,14 @@
         "CSType": "WasmRefID\u003CSlot\u003E"
       },
       {
-        "Name": "outChildListLength",
-        "Type": 127,
-        "CSType": "Output\u003Cint\u003E"
-      },
-      {
         "Name": "outChildListData",
         "Type": 127,
         "CSType": "Output\u003CWasmArray\u003CWasmRefID\u003CSlot\u003E\u003E\u003E"
+      },
+      {
+        "Name": "outChildListLength",
+        "Type": 127,
+        "CSType": "Output\u003Cint\u003E"
       }
     ],
     "Returns": [
@@ -240,7 +240,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "slot__find_child_by_name",
     "Parameters": [
       {
@@ -283,7 +283,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "slot__find_child_by_tag",
     "Parameters": [
       {
@@ -316,7 +316,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "slot__get_component",
     "Parameters": [
       {
@@ -344,7 +344,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "slot__get_components",
     "Parameters": [
       {
@@ -353,14 +353,14 @@
         "CSType": "WasmRefID\u003CSlot\u003E"
       },
       {
-        "Name": "outComponentListLength",
-        "Type": 127,
-        "CSType": "Output\u003Cint\u003E"
-      },
-      {
         "Name": "outComponentListData",
         "Type": 127,
         "CSType": "Output\u003CWasmArray\u003CWasmRefID\u003CComponent\u003E\u003E\u003E"
+      },
+      {
+        "Name": "outComponentListLength",
+        "Type": 127,
+        "CSType": "Output\u003Cint\u003E"
       }
     ],
     "Returns": [
@@ -372,7 +372,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "component__get_type_name",
     "Parameters": [
       {
@@ -395,7 +395,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "component__get_member",
     "Parameters": [
       {
@@ -428,7 +428,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "value__get_int",
     "Parameters": [
       {
@@ -451,7 +451,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "value__get_float",
     "Parameters": [
       {
@@ -474,7 +474,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "value__get_double",
     "Parameters": [
       {
@@ -497,7 +497,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "value__set_int",
     "Parameters": [
       {
@@ -520,7 +520,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "value__set_float",
     "Parameters": [
       {
@@ -543,7 +543,7 @@
     ]
   },
   {
-    "Module": "env",
+    "Module": "resonite",
     "Name": "value__set_double",
     "Parameters": [
       {

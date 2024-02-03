@@ -347,8 +347,8 @@ namespace Derg
         public ResoniteError slot__get_components(
             Frame frame,
             WasmRefID<Slot> slot,
-            Output<int> outChildListLength,
-            Output<WasmArray<WasmRefID<Slot>>> outChildListData
+            Output<WasmArray<WasmRefID<Slot>>> outChildListData,
+            Output<int> outChildListLength
         )
         {
             try
@@ -473,8 +473,8 @@ namespace Derg
         public ResoniteError slot__get_components(
             Frame frame,
             WasmRefID<Slot> slot,
-            Output<int> outComponentListLength,
-            Output<WasmArray<WasmRefID<Component>>> outComponentListData
+            Output<WasmArray<WasmRefID<Component>>> outComponentListData,
+            Output<int> outComponentListLength
         )
         {
             try

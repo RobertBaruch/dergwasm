@@ -321,17 +321,20 @@ class Main:
                 f.write(f'{", ".join(call_args)});\n')
 
                 # Any lists that were returned need to be converted to Python lists.
-                # By convention, the output prior to a list is its length.
-                for i, p in enumerate(out_params):
+                # By convention, the output after a list is its length.
+                ps = iter(out_params)
+                for p in ps:
                     generic_type = p["GenericType"].type_params[0]
                     if generic_type.base_type != "WasmArray":
                         continue
+
                     # Get the type this is an array of.
                     generic_type = generic_type.type_params[0]
                     c_type = self.wasm_to_c(generic_type)
                     converted = self.wasm_to_py(generic_type, f"{p['Name']}[i]")
+
                     # Get the length of the array.
-                    len_name = out_params[i - 1]["Name"]
+                    len_name = next(ps)["Name"]
 
                     f.write(
                         f'  mp_obj_t _list_{p["Name"]} = mp_obj_new_list(0, NULL);\n'
