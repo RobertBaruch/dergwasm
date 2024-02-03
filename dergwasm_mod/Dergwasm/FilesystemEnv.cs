@@ -31,6 +31,7 @@ namespace Derg
         public Slot fsRoot;
         public EmscriptenEnv env;
         public EmscriptenWasi wasi;
+        public bool Debug = false;
         string cwd = "/";
 
         public FilesystemEnv(
@@ -197,7 +198,8 @@ namespace Derg
                 return dir;
             }
 
-            DergwasmMachine.Msg($"calculateAt: dir={dir}, path={path}");
+            if (Debug)
+                DergwasmMachine.Msg($"calculateAt: dir={dir}, path={path}");
             if (dir == "/")
             {
                 return dir + path;
@@ -242,14 +244,16 @@ namespace Derg
                 slot = slot.FindChild(element);
                 if (slot == null)
                 {
-                    DergwasmMachine.Msg($"chdir_absolute: no such file or directory: {path}");
+                    if (Debug)
+                        DergwasmMachine.Msg($"chdir_absolute: no such file or directory: {path}");
                     return -Errno.ENOENT;
                 }
                 normalized_elements.Add(element);
             }
             if (slot_is_regular_file(slot))
             {
-                DergwasmMachine.Msg($"chdir_absolute: not a directory: {path}");
+                if (Debug)
+                    DergwasmMachine.Msg($"chdir_absolute: not a directory: {path}");
                 return -Errno.ENOTDIR;
             }
             cwd = path;
@@ -279,9 +283,10 @@ namespace Derg
                 slot = slot.FindChild(element);
                 if (slot == null)
                 {
-                    DergwasmMachine.Msg(
-                        $"get_slot_for_absolute_path: no such file or directory: {path}"
-                    );
+                    if (Debug)
+                        DergwasmMachine.Msg(
+                            $"get_slot_for_absolute_path: no such file or directory: {path}"
+                        );
                     return -Errno.ENOENT;
                 }
                 normalized_elements.Add(element);
@@ -317,7 +322,8 @@ namespace Derg
             string name = basename(path);
             if (name == "." || name == "..")
             {
-                DergwasmMachine.Msg($"mknode: invalid name: {name}");
+                if (Debug)
+                    DergwasmMachine.Msg($"mknode: invalid name: {name}");
                 return -Errno.EINVAL;
             }
             slot = parentSlot.AddSlot(name);
@@ -362,7 +368,8 @@ namespace Derg
         public int __syscall_chdir(Frame frame, int pathPtr)
         {
             string path = env.GetUTF8StringFromMem(pathPtr);
-            DergwasmMachine.Msg($"__syscall_chdir: path={path}");
+            if (Debug)
+                DergwasmMachine.Msg($"__syscall_chdir: path={path}");
             if (path.StartsWith("/"))
             {
                 return chdir_absolute(path);
@@ -388,7 +395,8 @@ namespace Derg
                 return err;
             if (slot.ReferenceID == fsRoot.ReferenceID)
             {
-                DergwasmMachine.Msg($"__syscall_rmdir: cannot remove root directory");
+                if (Debug)
+                    DergwasmMachine.Msg($"__syscall_rmdir: cannot remove root directory");
                 return -Errno.EACCES;
             }
             slot.Destroy();
@@ -400,7 +408,8 @@ namespace Derg
         [ModFn("__syscall_getcwd")]
         public int __syscall_getcwd(Frame frame, int buf, int size)
         {
-            DergwasmMachine.Msg($"__syscall_getcwd: cwd={cwd}");
+            if (Debug)
+                DergwasmMachine.Msg($"__syscall_getcwd: cwd={cwd}");
             if (size == 0)
                 return -Errno.EINVAL;
             byte[] bytes = Encoding.UTF8.GetBytes(cwd);
@@ -432,7 +441,8 @@ namespace Derg
         {
             string path = env.GetUTF8StringFromMem(pathPtr);
             path = calculateAt(dirfd, path);
-            DergwasmMachine.Msg($"__syscall_openat: path={path}");
+            if (Debug)
+                DergwasmMachine.Msg($"__syscall_openat: path={path}");
 
             Slot slot;
             string normalized_path;
@@ -453,12 +463,16 @@ namespace Derg
                     unsupported_flags += "O_RDWR ";
                 if ((flags & OpenFlags.O_DIRECTORY) != 0)
                     unsupported_flags += "O_DIRECTORY ";
-                DergwasmMachine.Msg($"__syscall_openat: unsupported flags: {unsupported_flags}");
+                if (Debug)
+                    DergwasmMachine.Msg(
+                        $"__syscall_openat: unsupported flags: {unsupported_flags}"
+                    );
                 return -Errno.EINVAL;
             }
 
             int fd = wasi.CreateStream(slot, normalized_path, sync).fd;
-            DergwasmMachine.Msg($"__syscall_openat: fd={fd}");
+            if (Debug)
+                DergwasmMachine.Msg($"__syscall_openat: fd={fd}");
             return fd;
         }
 
@@ -492,12 +506,14 @@ namespace Derg
                 ) != 0
             )
             {
-                DergwasmMachine.Msg($"__syscall_newfstatat: Unsupported flags: 0x{flags:X8}");
+                if (Debug)
+                    DergwasmMachine.Msg($"__syscall_newfstatat: Unsupported flags: 0x{flags:X8}");
                 return -Errno.EINVAL;
             }
-            DergwasmMachine.Msg(
-                $"__syscall_newfstatat: dirfd={dirfd}, path={path}, noFollow={noFollow}, allowEmpty={allowEmpty}"
-            );
+            if (Debug)
+                DergwasmMachine.Msg(
+                    $"__syscall_newfstatat: dirfd={dirfd}, path={path}, noFollow={noFollow}, allowEmpty={allowEmpty}"
+                );
             throw new NotImplementedException();
         }
 
@@ -520,7 +536,8 @@ namespace Derg
         public int __syscall_stat64(Frame frame, int pathPtr, int buf)
         {
             string path = env.GetUTF8StringFromMem(pathPtr);
-            DergwasmMachine.Msg($"__syscall_stat64: path={path}");
+            if (Debug)
+                DergwasmMachine.Msg($"__syscall_stat64: path={path}");
             Slot slot;
             int err = get_slot_for_absolute_path(path, out slot, out _);
             if (err != 0)
@@ -569,7 +586,8 @@ namespace Derg
         public int __syscall_lstat64(Frame frame, int pathPtr, int buf)
         {
             string path = env.GetUTF8StringFromMem(pathPtr);
-            DergwasmMachine.Msg($"__syscall_lstat64: path={path}");
+            if (Debug)
+                DergwasmMachine.Msg($"__syscall_lstat64: path={path}");
             throw new NotImplementedException();
         }
 
@@ -577,7 +595,8 @@ namespace Derg
         public int __syscall_statfs64(Frame frame, int pathPtr, int size, int buf)
         {
             string path = env.GetUTF8StringFromMem(pathPtr);
-            DergwasmMachine.Msg($"__syscall_statfs64: path={path}, size={size}");
+            if (Debug)
+                DergwasmMachine.Msg($"__syscall_statfs64: path={path}, size={size}");
             throw new NotImplementedException();
         }
     }
