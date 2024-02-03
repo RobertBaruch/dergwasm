@@ -15,7 +15,7 @@ namespace Derg
     //
     // In the API, we don't use anything other than ints, longs, floats, and doubles.
     // Pointers to memory are uints.
-    [Mod("env")]
+    [Mod("resonite")]
     public class ResoniteEnv : ReflectedModule
     {
         public Machine machine;

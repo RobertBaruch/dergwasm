@@ -144,14 +144,16 @@ class Main:
         with open(generated_filename, "w", encoding="UTF8") as f:
             f.write(HEADER_PREAMBLE)
             for item in data:
+                f.write('extern __attribute__((import_module("resonite"))) ')
                 if len(item["Returns"]) == 0:
-                    f.write(f'extern void {item["Name"]}(')
+                    f.write('void')
                 else:
                     ret_generic_type = GenericType.parse_generic_type(
                         item["Returns"][0]["CSType"]
                     )
                     converted = self.wasm_to_c(ret_generic_type)
-                    f.write(f'extern {converted} {item["Name"]}(')
+                    f.write(converted)
+                f.write(f' {item["Name"]}(')
 
                 call_args: list[str] = []
                 for p in item["Parameters"]:
