@@ -18,12 +18,14 @@ mp_obj_t resonite__slot__root_slot() {
 
   resonite_error_t _err = slot__root_slot(
     &outSlot);
-  mp_obj_t _outs[2] = {
-    mp_obj_new_int_from_ll(_err), 
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[1] = {
     mp_obj_new_int_from_ll(outSlot)};
 
 
-  return mp_obj_new_tuple(2, _outs);
+  return mp_obj_new_tuple(1, _outs);
 }
 
 mp_obj_t resonite__slot__get_parent(mp_obj_t slot) {
@@ -32,12 +34,14 @@ mp_obj_t resonite__slot__get_parent(mp_obj_t slot) {
   resonite_error_t _err = slot__get_parent(
     mp_obj_int_get_uint64_checked(slot), 
     &outParent);
-  mp_obj_t _outs[2] = {
-    mp_obj_new_int_from_ll(_err), 
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[1] = {
     mp_obj_new_int_from_ll(outParent)};
 
 
-  return mp_obj_new_tuple(2, _outs);
+  return mp_obj_new_tuple(1, _outs);
 }
 
 mp_obj_t resonite__slot__get_active_user(mp_obj_t slot) {
@@ -46,12 +50,14 @@ mp_obj_t resonite__slot__get_active_user(mp_obj_t slot) {
   resonite_error_t _err = slot__get_active_user(
     mp_obj_int_get_uint64_checked(slot), 
     &outUser);
-  mp_obj_t _outs[2] = {
-    mp_obj_new_int_from_ll(_err), 
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[1] = {
     mp_obj_new_int_from_ll(outUser)};
 
 
-  return mp_obj_new_tuple(2, _outs);
+  return mp_obj_new_tuple(1, _outs);
 }
 
 mp_obj_t resonite__slot__get_active_user_root(mp_obj_t slot) {
@@ -60,12 +66,14 @@ mp_obj_t resonite__slot__get_active_user_root(mp_obj_t slot) {
   resonite_error_t _err = slot__get_active_user_root(
     mp_obj_int_get_uint64_checked(slot), 
     &outUserRoot);
-  mp_obj_t _outs[2] = {
-    mp_obj_new_int_from_ll(_err), 
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[1] = {
     mp_obj_new_int_from_ll(outUserRoot)};
 
 
-  return mp_obj_new_tuple(2, _outs);
+  return mp_obj_new_tuple(1, _outs);
 }
 
 mp_obj_t resonite__slot__get_object_root(mp_obj_t slot, mp_obj_t only_explicit) {
@@ -75,12 +83,14 @@ mp_obj_t resonite__slot__get_object_root(mp_obj_t slot, mp_obj_t only_explicit) 
     mp_obj_int_get_uint64_checked(slot), 
     mp_obj_is_true(only_explicit) ? 1 : 0, 
     &outObjectRoot);
-  mp_obj_t _outs[2] = {
-    mp_obj_new_int_from_ll(_err), 
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[1] = {
     mp_obj_new_int_from_ll(outObjectRoot)};
 
 
-  return mp_obj_new_tuple(2, _outs);
+  return mp_obj_new_tuple(1, _outs);
 }
 
 mp_obj_t resonite__slot__get_name(mp_obj_t slot) {
@@ -89,12 +99,14 @@ mp_obj_t resonite__slot__get_name(mp_obj_t slot) {
   resonite_error_t _err = slot__get_name(
     mp_obj_int_get_uint64_checked(slot), 
     &outName);
-  mp_obj_t _outs[2] = {
-    mp_obj_new_int_from_ll(_err), 
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[1] = {
     mp_obj_new_null_terminated_str(outName)};
 
 
-  return mp_obj_new_tuple(2, _outs);
+  return mp_obj_new_tuple(1, _outs);
 }
 
 mp_obj_t resonite__slot__set_name(mp_obj_t slot, mp_obj_t name) {
@@ -102,11 +114,13 @@ mp_obj_t resonite__slot__set_name(mp_obj_t slot, mp_obj_t name) {
   resonite_error_t _err = slot__set_name(
     mp_obj_int_get_uint64_checked(slot), 
     mp_obj_str_get_str(name));
-  mp_obj_t _outs[1] = {
-    mp_obj_new_int_from_ll(_err)};
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[0] = {};
 
 
-  return mp_obj_new_tuple(1, _outs);
+  return mp_obj_new_tuple(0, _outs);
 }
 
 mp_obj_t resonite__slot__get_num_children(mp_obj_t slot) {
@@ -115,12 +129,14 @@ mp_obj_t resonite__slot__get_num_children(mp_obj_t slot) {
   resonite_error_t _err = slot__get_num_children(
     mp_obj_int_get_uint64_checked(slot), 
     &outNumChildren);
-  mp_obj_t _outs[2] = {
-    mp_obj_new_int_from_ll(_err), 
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[1] = {
     mp_obj_new_int_from_ll(outNumChildren)};
 
 
-  return mp_obj_new_tuple(2, _outs);
+  return mp_obj_new_tuple(1, _outs);
 }
 
 mp_obj_t resonite__slot__get_child(mp_obj_t slot, mp_obj_t index) {
@@ -130,12 +146,14 @@ mp_obj_t resonite__slot__get_child(mp_obj_t slot, mp_obj_t index) {
     mp_obj_int_get_uint64_checked(slot), 
     (int32_t)mp_obj_get_int(index), 
     &outChild);
-  mp_obj_t _outs[2] = {
-    mp_obj_new_int_from_ll(_err), 
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[1] = {
     mp_obj_new_int_from_ll(outChild)};
 
 
-  return mp_obj_new_tuple(2, _outs);
+  return mp_obj_new_tuple(1, _outs);
 }
 
 mp_obj_t resonite__slot__get_children(mp_obj_t slot) {
@@ -146,19 +164,21 @@ mp_obj_t resonite__slot__get_children(mp_obj_t slot) {
     mp_obj_int_get_uint64_checked(slot), 
     &outChildListData, 
     &outChildListLength);
+
+  mp_resonite_check_error(_err);
+
   mp_obj_t _list_outChildListData = mp_obj_new_list(0, NULL);
   for (size_t i = 0; i < outChildListLength; i++) {
     mp_obj_list_append(_list_outChildListData,
       mp_obj_new_int_from_ll(outChildListData[i]));
   }
-  mp_obj_t _outs[3] = {
-    mp_obj_new_int_from_ll(_err), 
+  mp_obj_t _outs[2] = {
     _list_outChildListData, 
     mp_obj_new_int_from_ll(outChildListLength)};
 
   free(outChildListData);
 
-  return mp_obj_new_tuple(3, _outs);
+  return mp_obj_new_tuple(2, _outs);
 }
 
 mp_obj_t resonite__slot__find_child_by_name(size_t n_args, const mp_obj_t *args) {
@@ -171,12 +191,14 @@ mp_obj_t resonite__slot__find_child_by_name(size_t n_args, const mp_obj_t *args)
     mp_obj_is_true(args[3]) ? 1 : 0, 
     (int32_t)mp_obj_get_int(args[4]), 
     &outChild);
-  mp_obj_t _outs[2] = {
-    mp_obj_new_int_from_ll(_err), 
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[1] = {
     mp_obj_new_int_from_ll(outChild)};
 
 
-  return mp_obj_new_tuple(2, _outs);
+  return mp_obj_new_tuple(1, _outs);
 }
 
 mp_obj_t resonite__slot__find_child_by_tag(mp_obj_t slot, mp_obj_t tag, mp_obj_t max_depth) {
@@ -187,12 +209,14 @@ mp_obj_t resonite__slot__find_child_by_tag(mp_obj_t slot, mp_obj_t tag, mp_obj_t
     mp_obj_str_get_str(tag), 
     (int32_t)mp_obj_get_int(max_depth), 
     &outChild);
-  mp_obj_t _outs[2] = {
-    mp_obj_new_int_from_ll(_err), 
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[1] = {
     mp_obj_new_int_from_ll(outChild)};
 
 
-  return mp_obj_new_tuple(2, _outs);
+  return mp_obj_new_tuple(1, _outs);
 }
 
 mp_obj_t resonite__slot__get_component(mp_obj_t slot, mp_obj_t typeName) {
@@ -202,12 +226,14 @@ mp_obj_t resonite__slot__get_component(mp_obj_t slot, mp_obj_t typeName) {
     mp_obj_int_get_uint64_checked(slot), 
     mp_obj_str_get_str(typeName), 
     &outComponent);
-  mp_obj_t _outs[2] = {
-    mp_obj_new_int_from_ll(_err), 
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[1] = {
     mp_obj_new_int_from_ll(outComponent)};
 
 
-  return mp_obj_new_tuple(2, _outs);
+  return mp_obj_new_tuple(1, _outs);
 }
 
 mp_obj_t resonite__slot__get_components(mp_obj_t slot) {
@@ -218,19 +244,21 @@ mp_obj_t resonite__slot__get_components(mp_obj_t slot) {
     mp_obj_int_get_uint64_checked(slot), 
     &outComponentListData, 
     &outComponentListLength);
+
+  mp_resonite_check_error(_err);
+
   mp_obj_t _list_outComponentListData = mp_obj_new_list(0, NULL);
   for (size_t i = 0; i < outComponentListLength; i++) {
     mp_obj_list_append(_list_outComponentListData,
       mp_obj_new_int_from_ll(outComponentListData[i]));
   }
-  mp_obj_t _outs[3] = {
-    mp_obj_new_int_from_ll(_err), 
+  mp_obj_t _outs[2] = {
     _list_outComponentListData, 
     mp_obj_new_int_from_ll(outComponentListLength)};
 
   free(outComponentListData);
 
-  return mp_obj_new_tuple(3, _outs);
+  return mp_obj_new_tuple(2, _outs);
 }
 
 mp_obj_t resonite__component__get_type_name(mp_obj_t component) {
@@ -239,12 +267,14 @@ mp_obj_t resonite__component__get_type_name(mp_obj_t component) {
   resonite_error_t _err = component__get_type_name(
     mp_obj_int_get_uint64_checked(component), 
     &outTypeName);
-  mp_obj_t _outs[2] = {
-    mp_obj_new_int_from_ll(_err), 
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[1] = {
     mp_obj_new_null_terminated_str(outTypeName)};
 
 
-  return mp_obj_new_tuple(2, _outs);
+  return mp_obj_new_tuple(1, _outs);
 }
 
 mp_obj_t resonite__component__get_member(mp_obj_t component, mp_obj_t name) {
@@ -256,13 +286,15 @@ mp_obj_t resonite__component__get_member(mp_obj_t component, mp_obj_t name) {
     mp_obj_str_get_str(name), 
     &outType, 
     &outMember);
-  mp_obj_t _outs[3] = {
-    mp_obj_new_int_from_ll(_err), 
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[2] = {
     mp_obj_new_int_from_ll(outType), 
     mp_obj_new_int_from_ll(outMember)};
 
 
-  return mp_obj_new_tuple(3, _outs);
+  return mp_obj_new_tuple(2, _outs);
 }
 
 mp_obj_t resonite__value__get_int(mp_obj_t refId) {
@@ -271,12 +303,14 @@ mp_obj_t resonite__value__get_int(mp_obj_t refId) {
   resonite_error_t _err = value__get_int(
     mp_obj_int_get_uint64_checked(refId), 
     &outPtr);
-  mp_obj_t _outs[2] = {
-    mp_obj_new_int_from_ll(_err), 
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[1] = {
     mp_obj_new_int_from_ll(outPtr)};
 
 
-  return mp_obj_new_tuple(2, _outs);
+  return mp_obj_new_tuple(1, _outs);
 }
 
 mp_obj_t resonite__value__get_float(mp_obj_t refId) {
@@ -285,12 +319,14 @@ mp_obj_t resonite__value__get_float(mp_obj_t refId) {
   resonite_error_t _err = value__get_float(
     mp_obj_int_get_uint64_checked(refId), 
     &outPtr);
-  mp_obj_t _outs[2] = {
-    mp_obj_new_int_from_ll(_err), 
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[1] = {
     mp_obj_new_float((double)outPtr)};
 
 
-  return mp_obj_new_tuple(2, _outs);
+  return mp_obj_new_tuple(1, _outs);
 }
 
 mp_obj_t resonite__value__get_double(mp_obj_t refId) {
@@ -299,12 +335,14 @@ mp_obj_t resonite__value__get_double(mp_obj_t refId) {
   resonite_error_t _err = value__get_double(
     mp_obj_int_get_uint64_checked(refId), 
     &outPtr);
-  mp_obj_t _outs[2] = {
-    mp_obj_new_int_from_ll(_err), 
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[1] = {
     mp_obj_new_float(outPtr)};
 
 
-  return mp_obj_new_tuple(2, _outs);
+  return mp_obj_new_tuple(1, _outs);
 }
 
 mp_obj_t resonite__value__set_int(mp_obj_t refId, mp_obj_t value) {
@@ -312,11 +350,13 @@ mp_obj_t resonite__value__set_int(mp_obj_t refId, mp_obj_t value) {
   resonite_error_t _err = value__set_int(
     mp_obj_int_get_uint64_checked(refId), 
     (int32_t)mp_obj_get_int(value));
-  mp_obj_t _outs[1] = {
-    mp_obj_new_int_from_ll(_err)};
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[0] = {};
 
 
-  return mp_obj_new_tuple(1, _outs);
+  return mp_obj_new_tuple(0, _outs);
 }
 
 mp_obj_t resonite__value__set_float(mp_obj_t refId, mp_obj_t value) {
@@ -324,11 +364,13 @@ mp_obj_t resonite__value__set_float(mp_obj_t refId, mp_obj_t value) {
   resonite_error_t _err = value__set_float(
     mp_obj_int_get_uint64_checked(refId), 
     (float)mp_obj_get_float(value));
-  mp_obj_t _outs[1] = {
-    mp_obj_new_int_from_ll(_err)};
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[0] = {};
 
 
-  return mp_obj_new_tuple(1, _outs);
+  return mp_obj_new_tuple(0, _outs);
 }
 
 mp_obj_t resonite__value__set_double(mp_obj_t refId, mp_obj_t value) {
@@ -336,10 +378,12 @@ mp_obj_t resonite__value__set_double(mp_obj_t refId, mp_obj_t value) {
   resonite_error_t _err = value__set_double(
     mp_obj_int_get_uint64_checked(refId), 
     (double)mp_obj_get_float(value));
-  mp_obj_t _outs[1] = {
-    mp_obj_new_int_from_ll(_err)};
+
+  mp_resonite_check_error(_err);
+
+  mp_obj_t _outs[0] = {};
 
 
-  return mp_obj_new_tuple(1, _outs);
+  return mp_obj_new_tuple(0, _outs);
 }
 

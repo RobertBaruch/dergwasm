@@ -1,6 +1,7 @@
 USERMODULES_DIR := $(USERMOD_DIR)
 
 # Add all C files to SRC_USERMOD.
+SRC_USERMOD += $(USERMODULES_DIR)/resonite_api_types.c
 SRC_USERMOD += $(USERMODULES_DIR)/mp_resonite.c
 SRC_USERMOD += $(USERMODULES_DIR)/mp_resonite_api.c
 SRC_USERMOD += $(USERMODULES_DIR)/mp_resonite_utils.c

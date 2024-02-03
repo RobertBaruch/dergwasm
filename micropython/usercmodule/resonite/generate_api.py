@@ -318,7 +318,10 @@ class Main:
                     else:
                         converted = self.py_to_wasm(p["GenericType"], argname)
                     call_args.append(f"\n    {converted}")
-                f.write(f'{", ".join(call_args)});\n')
+                f.write(f'{", ".join(call_args)});\n\n')
+
+                # If there was an error, throw an exception.
+                f.write("  mp_resonite_check_error(_err);\n\n")
 
                 # Any lists that were returned need to be converted to Python lists.
                 # By convention, the output after a list is its length.
@@ -344,13 +347,8 @@ class Main:
                     f.write(f"      {converted});\n")
                     f.write("  }\n")
 
-                # The return value is always a tuple. The first element is
-                # always the ResoniteError, and the remaining elements are
-                # the out parameters.
+                # The return value is always a tuple.
                 out_elements: list[str] = []
-                generic_type = GenericType.parse_generic_type("ResoniteError")
-                converted = self.wasm_to_py(generic_type, "_err")
-                out_elements.append(f"\n    {converted}")
 
                 for p in out_params:
                     # This is, by definition, an Output<T>, so get T.

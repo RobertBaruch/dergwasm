@@ -104,3 +104,12 @@ mp_obj_t mp_obj_new_null_terminated_str(char *str)
 {
     return mp_obj_new_str(str, strlen(str));
 }
+
+void mp_resonite_check_error(resonite_error_code_t err)
+{
+    if (err != RESONITE_ERROR_SUCCESS)
+    {
+        mp_raise_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("Resonite API error: %s"),
+            resonite_error_code_to_string(err));
+    }
+}
