@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Derg;
 using Derg.Resonite;
 using Derg.Wasm;
 using Derg.Instructions;
@@ -73,6 +74,7 @@ namespace Derg.Runtime
             Add(v => v.Bool, v => new Value { u32 = v ? 1u : 0u });
             // Complex Primitives
             Add(v => (ResoniteError)v.s32, v => new Value { s32 = (int)v });
+            Add(v => (ResoniteEnv.ResoniteType)v.s32, v => new Value { s32 = (int)v });
             Add(v => new Ptr(v.s32), v => new Value { s32 = v.Addr });
             Add(v => new RefID(v.u64), v => new Value { u64 = (ulong)v });
             Add(v => new NullTerminatedString(v.s32), v => new Value { s32 = v.Data.Addr });
@@ -86,14 +88,6 @@ namespace Derg.Runtime
 
         private static Func<Value, T> CreateGetter<T>()
         {
-            if (typeof(T) == typeof(NullTerminatedString))
-            {
-                var method = typeof(ValueAccessor).GetMethod(
-                    nameof(NullTerminatedStringGetter),
-                    BindingFlags.Static | BindingFlags.NonPublic
-                );
-                return (Func<Value, T>)method.Invoke(null, null);
-            }
             if (typeof(T).IsConstructedGenericType)
             {
                 if (typeof(T).GetGenericTypeDefinition() == typeof(Ptr<>))
@@ -105,17 +99,35 @@ namespace Derg.Runtime
                     var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
                     return (Func<Value, T>)method.Invoke(null, null);
                 }
+                if (typeof(T).GetGenericTypeDefinition() == typeof(Output<>))
+                {
+                    var genericMethod = typeof(ValueAccessor).GetMethod(
+                        nameof(OutputGetter),
+                        BindingFlags.Static | BindingFlags.NonPublic
+                    );
+                    var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
+                    return (Func<Value, T>)method.Invoke(null, null);
+                }
                 if (typeof(T).GetGenericTypeDefinition() == typeof(WasmRefID<>))
                 {
                     var genericMethod = typeof(ValueAccessor).GetMethod(
-                        nameof(WRefIdGetter),
+                        nameof(WasmRefIdGetter),
+                        BindingFlags.Static | BindingFlags.NonPublic
+                    );
+                    var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
+                    return (Func<Value, T>)method.Invoke(null, null);
+                }
+                if (typeof(T).GetGenericTypeDefinition() == typeof(WasmArray<>))
+                {
+                    var genericMethod = typeof(ValueAccessor).GetMethod(
+                        nameof(WasmArrayGetter),
                         BindingFlags.Static | BindingFlags.NonPublic
                     );
                     var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
                     return (Func<Value, T>)method.Invoke(null, null);
                 }
             }
-            throw new NotImplementedException();
+            throw new NotImplementedException($"There is no getter for {typeof(T)}");
         }
 
         private static Func<Value, Ptr<T>> PtrGetter<T>()
@@ -124,27 +136,26 @@ namespace Derg.Runtime
             return v => new Ptr<T>(v.s32);
         }
 
-        private static Func<Value, WasmRefID<T>> WRefIdGetter<T>()
+        private static Func<Value, Output<T>> OutputGetter<T>()
+            where T : struct
+        {
+            return v => new Output<T>(v.s32);
+        }
+
+        private static Func<Value, WasmRefID<T>> WasmRefIdGetter<T>()
             where T : class, IWorldElement
         {
             return v => new WasmRefID<T>(v.u64);
         }
 
-        private static Func<Value, NullTerminatedString> NullTerminatedStringGetter()
+        private static Func<Value, WasmArray<T>> WasmArrayGetter<T>()
+            where T : struct
         {
-            return v => new NullTerminatedString(v.s32);
+            return v => new WasmArray<T>(v.s32);
         }
 
         private static Func<T, Value> CreateSetter<T>()
         {
-            if (typeof(T) == typeof(NullTerminatedString))
-            {
-                var method = typeof(ValueAccessor).GetMethod(
-                    nameof(NullTerminatedStringSetter),
-                    BindingFlags.Static | BindingFlags.NonPublic
-                );
-                return (Func<T, Value>)method.Invoke(null, null);
-            }
             if (typeof(T).IsConstructedGenericType)
             {
                 if (typeof(T).GetGenericTypeDefinition() == typeof(Ptr<>))
@@ -156,17 +167,35 @@ namespace Derg.Runtime
                     var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
                     return (Func<T, Value>)method.Invoke(null, null);
                 }
+                if (typeof(T).GetGenericTypeDefinition() == typeof(Output<>))
+                {
+                    var genericMethod = typeof(ValueAccessor).GetMethod(
+                        nameof(OutputSetter),
+                        BindingFlags.Static | BindingFlags.NonPublic
+                    );
+                    var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
+                    return (Func<T, Value>)method.Invoke(null, null);
+                }
                 if (typeof(T).GetGenericTypeDefinition() == typeof(WasmRefID<>))
                 {
                     var genericMethod = typeof(ValueAccessor).GetMethod(
-                        nameof(WRefIdSetter),
+                        nameof(WasmRefIdSetter),
+                        BindingFlags.Static | BindingFlags.NonPublic
+                    );
+                    var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
+                    return (Func<T, Value>)method.Invoke(null, null);
+                }
+                if (typeof(T).GetGenericTypeDefinition() == typeof(WasmArray<>))
+                {
+                    var genericMethod = typeof(ValueAccessor).GetMethod(
+                        nameof(WasmArraySetter),
                         BindingFlags.Static | BindingFlags.NonPublic
                     );
                     var method = genericMethod.MakeGenericMethod(typeof(T).GenericTypeArguments);
                     return (Func<T, Value>)method.Invoke(null, null);
                 }
             }
-            throw new NotImplementedException();
+            throw new NotImplementedException($"There is no setter for {typeof(T)}");
         }
 
         private static Func<Ptr<T>, Value> PtrSetter<T>()
@@ -175,13 +204,20 @@ namespace Derg.Runtime
             return v => new Value { s32 = v.Addr };
         }
 
-        private static Func<WasmRefID<T>, Value> WRefIdSetter<T>()
+        private static Func<Output<T>, Value> OutputSetter<T>()
+            where T : struct
+        {
+            return v => new Value { s32 = v.Ptr.Addr };
+        }
+
+        private static Func<WasmRefID<T>, Value> WasmRefIdSetter<T>()
             where T : class, IWorldElement
         {
             return v => new Value { u64 = v.Id };
         }
 
-        private static Func<NullTerminatedString, Value> NullTerminatedStringSetter()
+        private static Func<WasmArray<T>, Value> WasmArraySetter<T>()
+            where T : struct
         {
             return v => new Value { s32 = v.Data.Addr };
         }
