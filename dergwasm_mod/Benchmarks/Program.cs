@@ -13,6 +13,7 @@ using DergwasmTests.testing;
 using FrooxEngine;
 using static Derg.ResoniteEnv;
 using Dergwasm.Runtime;
+using System.Reflection;
 
 namespace DergwasmTests
 {
@@ -136,19 +137,20 @@ namespace DergwasmTests
         }
     }
 
-    // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3693/22H2/2022Update)
-    // Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
-    //   [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
-    //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
+    // BenchmarkDotNet v0.13.10, Windows 11 (10.0.22621.3007/22H2/2022Update/SunValley2)
+    // 11th Gen Intel Core i7-11700K 3.60GHz, 1 CPU, 16 logical and 8 physical cores
+    //   [Host]               : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+    //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
     //
     // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
     //
-    // | Method             | N   | Mean     | Error     | StdDev    | Ratio | RatioSD |
-    // |------------------- |---- |---------:|----------:|----------:|------:|--------:|
-    // | BaselinePushPopInt | 100 | 1.223 us | 0.0092 us | 0.0082 us |  1.00 |    0.00 |
-    // | PopAsInt           | 100 | 1.506 us | 0.0191 us | 0.0169 us |  1.23 |    0.02 |
-    // | PushOverloadInt    | 100 | 1.240 us | 0.0225 us | 0.0350 us |  1.03 |    0.04 |
-    // | PushGenericInt     | 100 | 1.485 us | 0.0120 us | 0.0106 us |  1.21 |    0.01 |
+    // | Method             | N   | Mean     | Error     | StdDev    | Ratio |
+    // |------------------- |---- |---------:|----------:|----------:|------:|
+    // | BaselinePushPopInt | 100 | 1.111 us | 0.0015 us | 0.0014 us |  1.00 |
+    // | PopAsInt           | 100 | 1.357 us | 0.0012 us | 0.0010 us |  1.22 |
+    // | PopOutInt          | 100 | 1.122 us | 0.0022 us | 0.0021 us |  1.01 |
+    // | PushOverloadInt    | 100 | 1.121 us | 0.0012 us | 0.0011 us |  1.01 |
+    // | PushGenericInt     | 100 | 1.280 us | 0.0013 us | 0.0011 us |  1.15 |
     [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
     public class PushPop : TestMachine
     {
@@ -163,16 +165,6 @@ namespace DergwasmTests
             frame = CreateFrame();
         }
 
-        // BenchmarkDotNet v0.13.10, Windows 11 (10.0.22621.2428/22H2/2022Update/SunValley2)
-        // 11th Gen Intel Core i7-11700K 3.60GHz, 1 CPU, 16 logical and 8 physical cores
-        //  [Host]               : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
-        //  .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
-        //
-        // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
-        //
-        // | Method     | Mean     | Error    | StdDev   | Median   | Ratio |
-        // |----------- |---------:|---------:|---------:|---------:|------:|
-        // | PushPopInt | 22.30 ns | 0.414 ns | 0.991 ns | 21.96 ns |  1.00 |
         [Benchmark(Baseline = true)]
         public int BaselinePushPopInt()
         {
@@ -193,6 +185,20 @@ namespace DergwasmTests
             {
                 frame.Push(new Value { s32 = 1 });
                 x += frame.Pop<int>();
+            }
+            return x;
+        }
+
+        [Benchmark]
+        public int PopOutInt()
+        {
+            int x = 0;
+            int y;
+            for (int i = 0; i < N; i++)
+            {
+                frame.Push(new Value { s32 = 1 });
+                frame.Pop(out y);
+                x += y;
             }
             return x;
         }
@@ -222,17 +228,18 @@ namespace DergwasmTests
         }
     }
 
-    // BenchmarkDotNet v0.13.10, Windows 10 (10.0.19045.3930/22H2/2022Update)
-    // Intel Core i7-7660U CPU 2.50GHz(Kaby Lake), 1 CPU, 4 logical and 2 physical cores
-    //   [Host]               : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
-    //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9195.0), X64 RyuJIT VectorSize=256
+    // BenchmarkDotNet v0.13.10, Windows 11 (10.0.22621.3007/22H2/2022Update/SunValley2)
+    // 11th Gen Intel Core i7-11700K 3.60GHz, 1 CPU, 16 logical and 8 physical cores
+    //   [Host]               : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256 [AttachedDebugger]
+    //   .NET Framework 4.7.2 : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
     //
     // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
     //
-    // | Method       | N    | Mean     | Error   | StdDev  | Ratio |
-    // |------------- |----- |---------:|--------:|--------:|------:|
-    // | HostFuncCall | 1000 | 314.0 us | 4.39 us | 4.11 us |  1.00 |
+    // | Method       | N    | Mean     | Error   | StdDev  | Ratio | Allocated | Alloc Ratio |
+    // |------------- |----- |---------:|--------:|--------:|------:|----------:|------------:|
+    // | HostFuncCall | 1000 | 151.0 us | 0.18 us | 0.17 us |  1.00 |         - |          NA |
     [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
+    [MemoryDiagnoser]
     public class HostFuncCallBenchmark : InstructionTestFixture
     {
         [Params(1000)]
