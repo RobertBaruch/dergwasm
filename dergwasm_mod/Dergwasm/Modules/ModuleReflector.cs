@@ -10,12 +10,50 @@ using System.Reflection;
 
 namespace Derg.Modules
 {
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.ReturnValue | AttributeTargets.Struct)]
+    public class MarshalWithAttribute : Attribute
+    {
+        public Type Marshaller { get; }
+
+        public MarshalWithAttribute(Type marshaller)
+        {
+            Marshaller = marshaller;
+        }
+    }
+
     public static class ModuleReflector
     {
         private static readonly ConcurrentDictionary<
             Type,
             Func<object, (ApiFunc, HostFunc)[]>
         > _reflectedFuncs = new ConcurrentDictionary<Type, Func<object, (ApiFunc, HostFunc)[]>>();
+
+        public static Runtime.ValueType[] ValueTypesFor(Type type)
+        {
+            var valueTypes = (Runtime.ValueType[])
+                typeof(Value)
+                    .GetMethod(nameof(Value.ValueType))
+                    .MakeGenericMethod(type)
+                    .Invoke(null, null);
+            return valueTypes;
+        }
+
+        public static Type MarshallerFor(ParameterInfo info)
+        {
+            var marshaller = info.GetCustomAttribute<MarshalWithAttribute>()?.Marshaller ??
+                info.ParameterType.GetCustomAttribute<MarshalWithAttribute>()?.Marshaller ??
+                typeof(DirectMarshaller<>).MakeGenericType(info.ParameterType);
+            if (marshaller.IsByRef)
+            {
+                throw new InvalidOperationException("Marshallers must be structs.");
+            }
+            if (marshaller.IsGenericTypeDefinition)
+            {
+                // If the marshaller is a generic type, assume the marshaller has the same type arguments.
+                marshaller = marshaller.MakeGenericType(info.ParameterType.GenericTypeArguments);
+            }
+            return marshaller;
+        }
 
         public static (ApiFunc, HostFunc)[] ReflectHostFuncs<T>(T ctx)
         {
@@ -92,16 +130,6 @@ namespace Derg.Modules
             return lambda.Compile();
         }
 
-        private static Runtime.ValueType[] ValueTypesFor(Type type)
-        {
-            var valueTypes = (Runtime.ValueType[])
-                typeof(Value)
-                    .GetMethod(nameof(Value.ValueType))
-                    .MakeGenericMethod(type)
-                    .Invoke(null, null);
-            return valueTypes;
-        }
-
         private static Expression /*(ApiFunc, HostFunc)*/
         ReflectHostFunc(string name, string module, MethodInfo method, ParameterExpression context)
         {
@@ -157,7 +185,7 @@ namespace Derg.Modules
             var machine = Expression.Parameter(typeof(Machine), "machine");
             var frame = Expression.Parameter(typeof(Frame), "frame");
 
-            var poppers = new List<Expression>();
+            var body = new List<Expression>();
             var callParams = new List<ParameterExpression>();
             var outVars = new List<ParameterExpression>();
             foreach (var param in method.GetParameters())
@@ -182,35 +210,23 @@ namespace Derg.Modules
                 outVars.Add(poppedValue);
 
                 // Call the appropriate pop method for the type.
-                string refTypeName = param.ParameterType.MakeByRefType().Name;
-                MethodInfo popper = typeof(Frame)
-                    .GetMethods()
-                    .Where(m => m.Name == "Pop")
-                    .Where(m => m.GetParameters().Length == 1)
-                    .Where(m => m.GetParameters()[0].IsOut)
-                    .Where(m => m.GetParameters()[0].ParameterType.Name == refTypeName)
-                    .First();
-                if (param.ParameterType.IsGenericType)
-                {
-                    popper = popper.MakeGenericMethod(param.ParameterType.GetGenericArguments());
-                }
-                MethodCallExpression popperCaller = Expression.Call(frame, popper, poppedValue);
-                poppers.Add(popperCaller);
+                Type marshaller = MarshallerFor(param);
+                MethodInfo popper = marshaller.GetMethod(nameof(IWasmMarshaller<int>.From));
+                Expression popperCaller = Expression.Assign(poppedValue, Expression.Call(
+                    Expression.Default(marshaller),
+                    popper,
+                    frame,
+                    machine));
+                body.Add(popperCaller);
 
-                funcData.Parameters.Add(
-                    new Parameter
-                    {
-                        Name = param.Name,
-                        Types = ValueTypesFor(param.ParameterType),
-                        CSType = param.ParameterType.GetNiceName()
-                    }
-                );
-                funcData.ParameterValueTypes.AddRange(ValueTypesFor(param.ParameterType));
+                marshaller.GetMethod(nameof(IWasmMarshaller<int>.AddParams))
+                    .Invoke(marshaller.GetDefault(),
+                    new object[] { param.Name, funcData.Parameters });
             }
 
             // The poppers need to be reversed. The first value pushed is the first call arg,
             // which means that the first value popped is the *last* call arg.
-            poppers.Reverse();
+            body.Reverse();
 
             // The actual inner call to the host func.
             var result = Expression.Call(method.IsStatic ? null : context, method, callParams);
@@ -220,29 +236,27 @@ namespace Derg.Modules
             {
                 returnsCount++;
                 // Process return value.
-                result = Expression.Call(
+                ParameterInfo param = method.ReturnParameter;
+                Type marshaller = MarshallerFor(param);
+                MethodInfo pusher = marshaller.GetMethod(nameof(IWasmMarshaller<int>.To));
+                MethodCallExpression pusherCaller = Expression.Call(
+                    Expression.Default(marshaller),
+                    pusher,
                     frame,
-                    typeof(Frame)
-                        .GetMethods()
-                        .First(m => m.Name == nameof(Frame.Push) && m.IsGenericMethod)
-                        .MakeGenericMethod(method.ReturnType),
-                    result
-                );
+                    machine,
+                    result);
 
-                funcData.Returns.Add(
-                    new Parameter
-                    {
-                        Types = ValueTypesFor(method.ReturnType),
-                        CSType = method.ReturnType.GetNiceName()
-                    }
-                );
-                funcData.ReturnValueTypes.AddRange(ValueTypesFor(method.ReturnType));
+                result = pusherCaller;
+
+                marshaller.GetMethod(nameof(IWasmMarshaller<int>.AddParams))
+                    .Invoke(marshaller.GetDefault(),
+                    new object[] { null, funcData.Returns });
 
                 // TODO: Add the ability to process value tuple based return values.
             }
-            poppers.Add(result);
+            body.Add(result);
 
-            BlockExpression block = Expression.Block(outVars.ToArray(), poppers);
+            BlockExpression block = Expression.Block(outVars.ToArray(), body);
 
             // This is the invoked callsite. To improve per-call performance, optimize the expression
             // structure going into this compilation.

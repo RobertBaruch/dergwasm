@@ -193,7 +193,7 @@ namespace Derg.Modules
         public void BuffArgPassedCorrectly()
         {
             var method = module.GetHostFunc("buff_arg");
-            frame.Push(new Buff<byte>(new Ptr<byte>(5), 10));
+            new BuffMarshaller<byte>().To(frame, machine, new Buff<byte>(new Ptr<byte>(5), 10));
             frame.InvokeFunc(machine, method);
             Assert.Equal(10, module.ReceivedBuffArg.Length);
             Assert.Equal(5, module.ReceivedBuffArg.Ptr.Addr);

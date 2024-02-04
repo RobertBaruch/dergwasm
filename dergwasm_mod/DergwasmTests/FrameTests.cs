@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Derg.Wasm;
 using Derg.Runtime;
-using Elements.Core;
 using FrooxEngine;
 using Xunit;
-using Derg;
 using System.Reflection;
 using System.Linq.Expressions;
 
@@ -16,7 +12,7 @@ namespace DergwasmTests
 {
     public class FrameTests
     {
-        [Fact]
+        [Fact(Skip = "Test not relevant with marshallers.")]
         public void TestFrame()
         {
             Frame f = new Frame(null, null, null);

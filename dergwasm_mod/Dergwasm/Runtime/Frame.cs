@@ -102,93 +102,9 @@ namespace Derg.Runtime
 
         public T Pop<T>() => Pop().As<T>();
 
-        public void Pop(out bool val) => val = (Pop().s32 != 0 ? true : false);
-
-        public void Pop(out int val) => val = Pop().s32;
-
-        public void Pop(out uint val) => val = Pop().u32;
-
-        public void Pop(out long val) => val = Pop().s64;
-
-        public void Pop(out ulong val) => val = Pop().u64;
-
-        public void Pop(out float val) => val = Pop().f32;
-
-        public void Pop(out double val) => val = Pop().f64;
-
-        public void Pop(out ResoniteError val) => val = (ResoniteError)Pop().s32;
-
-        public void Pop(out ResoniteEnv.ResoniteType val) =>
-            val = (ResoniteEnv.ResoniteType)Pop().s32;
-
-        public void Pop<T>(out WasmRefID<T> refId)
-            where T : class, IWorldElement => refId = new WasmRefID<T>(Pop().u64);
-
-        public void Pop<T>(out Ptr<T> ptr)
-            where T : struct => ptr = new Ptr<T>(Pop().s32);
-
-        public void Pop(out NullTerminatedString ptr) => ptr = new NullTerminatedString(Pop().s32);
-
-        public void Pop<T>(out Output<T> ptr)
-            where T : struct => ptr = new Output<T>(Pop().s32);
-
-        public void Pop<T>(out WasmArray<T> ptr)
-            where T : struct => ptr = new WasmArray<T>(Pop().s32);
-
-        public void Pop<T>(out Buff<T> buff)
-            where T : struct
-        {
-            // The first value pushed is the first call arg.
-            // The first value popped is the last call arg.
-            // A buff argument is (data, len), so in pop order, it's (len, data).
-            int len = Pop().s32;
-            int data = Pop().s32;
-            buff = new Buff<T>(data, len);
-        }
-
         public void Push<T>(in T value) => value_stack.Push(Value.From(value));
 
         public void Push(Value val) => value_stack.Push(val);
-
-        public void Push(bool val) => Push(new Value { u32 = val ? 1u : 0u });
-
-        public void Push(int val) => Push(new Value { s32 = val });
-
-        public void Push(uint val) => Push(new Value { u32 = val });
-
-        public void Push(long val) => Push(new Value { s64 = val });
-
-        public void Push(ulong val) => Push(new Value { u64 = val });
-
-        public void Push(float val) => Push(new Value { f32 = val });
-
-        public void Push(double val) => Push(new Value { f64 = val });
-
-        public void Push(ResoniteError val) => Push((int)val);
-
-        public void Push(ResoniteEnv.ResoniteType val) => Push((int)val);
-
-        public void Push<T>(WasmRefID<T> val)
-            where T : class, IWorldElement => Push(val.Id);
-
-        public void Push<T>(Ptr<T> val)
-            where T : struct => Push(val.Addr);
-
-        public void Push(NullTerminatedString val) => Push(val.Data.Addr);
-
-        public void Push<T>(Output<T> val)
-            where T : struct => Push(val.Ptr.Addr);
-
-        public void Push<T>(WasmArray<T> val)
-            where T : struct => Push(val.Data.Addr);
-
-        public void Push<T>(Buff<T> val)
-            where T : struct
-        {
-            // A buff argument is (data, len).
-            Push(val.Ptr.Addr);
-            Push(val.Length);
-        }
 
         public int StackLevel() => value_stack.Count;
 

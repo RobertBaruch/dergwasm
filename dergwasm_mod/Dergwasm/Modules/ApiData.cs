@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Serialization;
 using Derg.Runtime;
 
@@ -15,21 +16,13 @@ namespace Derg.Modules
     {
         public string Module { get; set; }
         public string Name { get; set; }
-        public List<Parameter> Parameters { get; }
-        public List<Parameter> Returns { get; }
+        public List<Parameter> Parameters { get; } = new List<Parameter>();
+        public List<Parameter> Returns { get; } = new List<Parameter>();
 
         [JsonIgnore]
-        public List<ValueType> ParameterValueTypes { get; }
+        public IEnumerable<ValueType> ParameterValueTypes => Parameters.SelectMany(p => p.Types);
 
         [JsonIgnore]
-        public List<ValueType> ReturnValueTypes { get; }
-
-        public ApiFunc()
-        {
-            Parameters = new List<Parameter>();
-            Returns = new List<Parameter>();
-            ParameterValueTypes = new List<ValueType>();
-            ReturnValueTypes = new List<ValueType>();
-        }
+        public IEnumerable<ValueType> ReturnValueTypes => Returns.SelectMany(p => p.Types);
     }
 }
