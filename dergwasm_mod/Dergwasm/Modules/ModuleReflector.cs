@@ -92,14 +92,14 @@ namespace Derg.Modules
             return lambda.Compile();
         }
 
-        private static Runtime.ValueType ValueTypeFor(Type type)
+        private static Runtime.ValueType[] ValueTypesFor(Type type)
         {
-            var valueType = (Runtime.ValueType)
+            var valueTypes = (Runtime.ValueType[])
                 typeof(Value)
                     .GetMethod(nameof(Value.ValueType))
                     .MakeGenericMethod(type)
                     .Invoke(null, null);
-            return valueType;
+            return valueTypes;
         }
 
         private static Expression /*(ApiFunc, HostFunc)*/
@@ -201,11 +201,11 @@ namespace Derg.Modules
                     new Parameter
                     {
                         Name = param.Name,
-                        Type = ValueTypeFor(param.ParameterType),
+                        Types = ValueTypesFor(param.ParameterType),
                         CSType = param.ParameterType.GetNiceName()
                     }
                 );
-                funcData.ParameterValueTypes.Add(ValueTypeFor(param.ParameterType));
+                funcData.ParameterValueTypes.AddRange(ValueTypesFor(param.ParameterType));
             }
 
             // The poppers need to be reversed. The first value pushed is the first call arg,
@@ -232,11 +232,11 @@ namespace Derg.Modules
                 funcData.Returns.Add(
                     new Parameter
                     {
-                        Type = ValueTypeFor(method.ReturnType),
+                        Types = ValueTypesFor(method.ReturnType),
                         CSType = method.ReturnType.GetNiceName()
                     }
                 );
-                funcData.ReturnValueTypes.Add(ValueTypeFor(method.ReturnType));
+                funcData.ReturnValueTypes.AddRange(ValueTypesFor(method.ReturnType));
 
                 // TODO: Add the ability to process value tuple based return values.
             }

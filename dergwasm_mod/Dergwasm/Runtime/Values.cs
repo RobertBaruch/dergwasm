@@ -291,24 +291,29 @@ namespace Derg.Runtime
             return ValueAccessor<T>.Set(value);
         }
 
-        public static unsafe ValueType ValueType<T>()
+        public static unsafe ValueType[] ValueType<T>()
         {
+            if (typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(Buff<>))
+            {
+                // Buffs are represented as a pointer to the data and a length.
+                return new ValueType[] { Runtime.ValueType.I32, Runtime.ValueType.I32 };
+            }
             if (typeof(T) == typeof(float))
             {
-                return Runtime.ValueType.F32;
+                return new ValueType[] { Runtime.ValueType.F32 };
             }
             else if (typeof(T) == typeof(double))
             {
-                return Runtime.ValueType.F64;
+                return new ValueType[] { Runtime.ValueType.F64 };
             }
 #pragma warning disable CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
             else if (sizeof(T) <= 4)
             {
-                return Runtime.ValueType.I32;
+                return new ValueType[] { Runtime.ValueType.I32 };
             }
             else if (sizeof(T) == 8)
             {
-                return Runtime.ValueType.I64;
+                return new ValueType[] { Runtime.ValueType.I64 };
             }
 #pragma warning restore CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
             throw new Exception($"Unknown type {typeof(T)}");

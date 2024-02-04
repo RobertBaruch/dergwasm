@@ -143,7 +143,7 @@ namespace Derg.Runtime
             // A buff argument is (data, len), so in pop order, it's (len, data).
             int len = Pop().s32;
             int data = Pop().s32;
-            buff = new Buff<T>(len, data);
+            buff = new Buff<T>(data, len);
         }
 
         public void Push<T>(in T value) => value_stack.Push(Value.From(value));
