@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using static HarmonyLib.Code;
 
 namespace Derg.Wasm
 {

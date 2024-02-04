@@ -1,7 +1,42 @@
+using Derg.Modules;
+using Derg.Runtime;
+using Dergwasm.Runtime;
+using Elements.Core;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace Derg.Wasm
 {
+    public struct BuffMarshaller : IWasmMarshaller<Buff>
+    {
+        public void AddParams(string name, List<Parameter> parameters) {
+            parameters.Add(new Parameter
+            {
+                Name = $"{name}_ptr",
+                Type = ModuleReflector.ValueTypeFor(typeof(int)),
+                CSType = typeof(int).GetNiceName()
+            }); parameters.Add(new Parameter
+            {
+                Name = $"{name}_len",
+                Type = ModuleReflector.ValueTypeFor(typeof(int)),
+                CSType = typeof(int).GetNiceName()
+            });
+        }
+
+        public Buff From(Frame frame, Machine machine)
+        {
+            var addr = frame.Pop().s32;
+            var size = frame.Pop().s32;
+            return new Buff(addr, size);
+        }
+
+        public void To(Frame frame, Machine machine, Buff value)
+        {
+            frame.Push(value.Ptr);
+            frame.Push(value.Length);
+        }
+    }
+
     /// <summary>
     /// Represents a buffer that encapsulates a pointer and a length. This structure
     /// is used to manage a block of memory, providing two constructors for initializing
@@ -15,6 +50,7 @@ namespace Derg.Wasm
     /// receiver is responsible for freeing that memory.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
+    [MarshalWith(typeof(BuffMarshaller))]
     public readonly struct Buff
     {
         public readonly Ptr Ptr;
@@ -37,6 +73,37 @@ namespace Derg.Wasm
         public Buff<T> Reinterpret<T>() where T : struct => new Buff<T>(Ptr.Reinterpret<T>(), Length);
     }
 
+    public struct BuffMarshaller<T> : IWasmMarshaller<Buff<T>> where T : struct
+    {
+        public void AddParams(string name, List<Parameter> parameters)
+        {
+            parameters.Add(new Parameter
+            {
+                Name = $"{name}_ptr",
+                Type = ModuleReflector.ValueTypeFor(typeof(int)),
+                CSType = typeof(int).GetNiceName()
+            }); parameters.Add(new Parameter
+            {
+                Name = $"{name}_len",
+                Type = ModuleReflector.ValueTypeFor(typeof(int)),
+                CSType = typeof(int).GetNiceName()
+            });
+        }
+
+        public Buff<T> From(Frame frame, Machine machine)
+        {
+            var addr = frame.Pop().s32;
+            var size = frame.Pop().s32;
+            return new Buff<T>(addr, size);
+        }
+
+        public void To(Frame frame, Machine machine, Buff<T> value)
+        {
+            frame.Push(value.Ptr.Addr);
+            frame.Push(value.Length);
+        }
+    }
+
     /// <summary>
     /// Represents a generic buffer for unmanaged types, encapsulating a typed pointer
     /// and a length. This structure is designed to handle memory blocks in a type-safe
@@ -53,6 +120,7 @@ namespace Derg.Wasm
     /// receiver is responsible for freeing that memory.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
+    [MarshalWith(typeof(BuffMarshaller<>))]
     public readonly struct Buff<T> where T : struct
     {
         public readonly Ptr<T> Ptr;

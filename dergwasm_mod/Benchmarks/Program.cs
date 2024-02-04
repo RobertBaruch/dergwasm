@@ -197,7 +197,7 @@ namespace DergwasmTests
             for (int i = 0; i < N; i++)
             {
                 frame.Push(new Value { s32 = 1 });
-                frame.Pop(out y);
+                y = frame.Pop<int>();
                 x += y;
             }
             return x;
