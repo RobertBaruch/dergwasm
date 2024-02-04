@@ -12,7 +12,7 @@ namespace DergwasmTests
 {
     public class FrameTests
     {
-        [Fact]
+        [Fact(Skip = "Test not relevant with marshallers.")]
         public void TestFrame()
         {
             Frame f = new Frame(null, null, null);
