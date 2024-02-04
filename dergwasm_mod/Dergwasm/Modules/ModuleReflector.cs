@@ -157,17 +157,19 @@ namespace Derg.Modules
             var machine = Expression.Parameter(typeof(Machine), "machine");
             var frame = Expression.Parameter(typeof(Frame), "frame");
 
-            var expressions = new List<Expression>();
+            var poppers = new List<Expression>();
+            var callParams = new List<ParameterExpression>();
+            var outVars = new List<ParameterExpression>();
             foreach (var param in method.GetParameters())
             {
                 if (param.ParameterType == typeof(Machine))
                 {
-                    expressions.Add(machine);
+                    callParams.Add(machine);
                     continue;
                 }
                 else if (param.ParameterType == typeof(Frame))
                 {
-                    expressions.Add(frame);
+                    callParams.Add(frame);
                     continue;
                 }
 
@@ -176,7 +178,8 @@ namespace Derg.Modules
                     param.ParameterType,
                     param.Name
                 );
-                expressions.Add(poppedValue);
+                callParams.Add(poppedValue);
+                outVars.Add(poppedValue);
 
                 // Call the appropriate pop method for the type.
                 string refTypeName = param.ParameterType.MakeByRefType().Name;
@@ -187,8 +190,12 @@ namespace Derg.Modules
                     .Where(m => m.GetParameters()[0].IsOut)
                     .Where(m => m.GetParameters()[0].ParameterType.Name == refTypeName)
                     .First();
+                if (param.ParameterType.IsGenericType)
+                {
+                    popper = popper.MakeGenericMethod(param.ParameterType.GetGenericArguments());
+                }
                 MethodCallExpression popperCaller = Expression.Call(frame, popper, poppedValue);
-                expressions.Add(popperCaller);
+                poppers.Add(popperCaller);
 
                 funcData.Parameters.Add(
                     new Parameter
@@ -200,6 +207,10 @@ namespace Derg.Modules
                 );
                 funcData.ParameterValueTypes.Add(ValueTypeFor(param.ParameterType));
             }
+
+            // The poppers need to be reversed. The first value pushed is the first call arg,
+            // which means that the first value popped is the *last* call arg.
+            poppers.Reverse();
 
             if (false)
             {
@@ -246,7 +257,7 @@ namespace Derg.Modules
             }
 
             // The actual inner call.
-            var result = Expression.Call(method.IsStatic ? null : context, method, expressions);
+            var result = Expression.Call(method.IsStatic ? null : context, method, callParams);
 
             var returnsCount = 0;
             if (method.ReturnType != typeof(void))
@@ -273,9 +284,12 @@ namespace Derg.Modules
 
                 // TODO: Add the ability to process value tuple based return values.
             }
+            poppers.Add(result);
+
+            BlockExpression block = Expression.Block(outVars.ToArray(), poppers);
 
             // This is the invoked callsite. To improve per-call performance, optimize the expression structure going into this compilation.
-            var callImpl = Expression.Lambda<HostProxy>(result, machine, frame);
+            var callImpl = Expression.Lambda<HostProxy>(block, machine, frame);
 
             var funcCtor = Expression.New(
                 typeof(HostFunc).GetConstructors().First(),

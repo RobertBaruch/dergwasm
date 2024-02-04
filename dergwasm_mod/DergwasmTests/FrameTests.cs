@@ -20,8 +20,8 @@ namespace DergwasmTests
         public void TestFrame()
         {
             Frame f = new Frame(null, null, null);
-            f.Push(2);
-            f.Push(3);
+            f.Push(2UL);
+            f.Push(3UL);
 
             var expressions = new List<Expression>();
 
@@ -31,36 +31,43 @@ namespace DergwasmTests
                 .Where(m => m.GetParameters().Length == 1)
                 .Where(m => m.GetParameters()[0].IsOut)
                 .Where(
-                    m => m.GetParameters()[0].ParameterType.Name == typeof(int).MakeByRefType().Name
+                    m =>
+                        m.GetParameters()[0].ParameterType.Name
+                        == typeof(WasmRefID<Slot>).MakeByRefType().Name
                 )
                 .First();
+
+            Type t = typeof(WasmRefID<Slot>);
+            Type innerType = t.GetGenericArguments()[0];
 
             var locals = new List<ParameterExpression>();
             var popperCallers = new List<MethodCallExpression>();
 
             ParameterExpression frame = Expression.Variable(typeof(Frame), "frame");
-            ParameterExpression x = Expression.Variable(typeof(int), "x");
-            ParameterExpression y = Expression.Variable(typeof(int), "y");
+            ParameterExpression x = Expression.Variable(t, "x");
+            ParameterExpression y = Expression.Variable(t, "y");
             locals.Add(frame);
             locals.Add(x);
             locals.Add(y);
 
-            MethodCallExpression callx = Expression.Call(frame, method, x);
-            MethodCallExpression cally = Expression.Call(frame, method, y);
+            MethodCallExpression callx = Expression.Call(
+                frame,
+                method.MakeGenericMethod(innerType),
+                x
+            );
+            MethodCallExpression cally = Expression.Call(
+                frame,
+                method.MakeGenericMethod(innerType),
+                y
+            );
             popperCallers.Add(callx);
             popperCallers.Add(cally);
 
-            BlockExpression block = Expression.Block(
-                new[] { x, y },
-                callx,
-                cally,
-                Expression.AddAssign(x, y),
-                x
-            );
+            BlockExpression block = Expression.Block(new[] { x, y }, callx, cally, x);
 
-            var thing = Expression.Lambda<Func<Frame, int>>(block, frame).Compile();
+            var thing = Expression.Lambda<Func<Frame, WasmRefID<Slot>>>(block, frame).Compile();
 
-            Assert.Equal(5, thing(f));
+            Assert.Equal(3UL, thing(f).Id);
         }
     }
 }

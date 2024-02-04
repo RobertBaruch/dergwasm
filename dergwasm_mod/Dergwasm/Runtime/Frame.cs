@@ -231,21 +231,21 @@ namespace Derg.Runtime
             int arity = f.Signature.returns.Length;
             int args = f.Signature.args.Length;
 
-            Frame next_frame = new HostFrame(f, Module, this);
+            //Frame next_frame = new HostFrame(f, Module, this);
 
             // The first value pushed is the first local (first call arg).
             // The first value popped is the last local (last call arg).
-            for (int i = args - 1; i >= 0; --i)
-            {
-                next_frame.Locals[i] = value_stack.Pop();
-            }
+            //for (int i = args - 1; i >= 0; --i)
+            //{
+            //    next_frame.Locals[i] = value_stack.Pop();
+            //}
 
             // For consistency, we also stick a label in.
-            next_frame.Label = new Label(arity, 0);
+            //next_frame.Label = new Label(arity, 0);
 
-            f.Proxy.Invoke(machine, next_frame);
+            f.Proxy.Invoke(machine, this);
 
-            next_frame.EndFrame();
+            //next_frame.EndFrame();
         }
 
         // Executes a module function call. This sets up a new frame, pops the args off the current frame and
