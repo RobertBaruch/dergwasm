@@ -157,49 +157,96 @@ namespace Derg.Modules
             var machine = Expression.Parameter(typeof(Machine), "machine");
             var frame = Expression.Parameter(typeof(Frame), "frame");
 
-            // Parameter Processing
-            var argsCount = 0;
-            var parameters = new List<Expression>();
+            var expressions = new List<Expression>();
             foreach (var param in method.GetParameters())
             {
                 if (param.ParameterType == typeof(Machine))
                 {
-                    parameters.Add(machine);
+                    expressions.Add(machine);
+                    continue;
                 }
                 else if (param.ParameterType == typeof(Frame))
                 {
-                    parameters.Add(frame);
+                    expressions.Add(frame);
+                    continue;
                 }
-                else
+
+                // Declare a local var for the popped value.
+                ParameterExpression poppedValue = Expression.Variable(
+                    param.ParameterType,
+                    param.Name
+                );
+                expressions.Add(poppedValue);
+
+                // Call the appropriate pop method for the type.
+                string refTypeName = param.ParameterType.MakeByRefType().Name;
+                MethodInfo popper = typeof(Frame)
+                    .GetMethods()
+                    .Where(m => m.Name == "Pop")
+                    .Where(m => m.GetParameters().Length == 1)
+                    .Where(m => m.GetParameters()[0].IsOut)
+                    .Where(m => m.GetParameters()[0].ParameterType.Name == refTypeName)
+                    .First();
+                MethodCallExpression popperCaller = Expression.Call(frame, popper, poppedValue);
+                expressions.Add(popperCaller);
+
+                funcData.Parameters.Add(
+                    new Parameter
+                    {
+                        Name = param.Name,
+                        Type = ValueTypeFor(param.ParameterType),
+                        CSType = param.ParameterType.GetNiceName()
+                    }
+                );
+                funcData.ParameterValueTypes.Add(ValueTypeFor(param.ParameterType));
+            }
+
+            if (false)
+            {
+                // Parameter Processing
+                var argsCount = 0;
+                var parameters = new List<Expression>();
+                foreach (var param in method.GetParameters())
                 {
-                    parameters.Add(
-                        Expression.Call(
-                            Expression.ArrayIndex(
-                                Expression.PropertyOrField(frame, nameof(Frame.Locals)),
-                                Expression.Constant(argsCount)
-                            ),
-                            typeof(Value)
-                                .GetMethod(nameof(Value.As))
-                                .MakeGenericMethod(param.ParameterType)
-                        )
-                    );
+                    if (param.ParameterType == typeof(Machine))
+                    {
+                        parameters.Add(machine);
+                    }
+                    else if (param.ParameterType == typeof(Frame))
+                    {
+                        parameters.Add(frame);
+                    }
+                    else
+                    {
+                        parameters.Add(
+                            Expression.Call(
+                                Expression.ArrayIndex(
+                                    Expression.PropertyOrField(frame, nameof(Frame.Locals)),
+                                    Expression.Constant(argsCount)
+                                ),
+                                typeof(Value)
+                                    .GetMethod(nameof(Value.As))
+                                    .MakeGenericMethod(param.ParameterType)
+                            )
+                        );
 
-                    funcData.Parameters.Add(
-                        new Parameter
-                        {
-                            Name = param.Name,
-                            Type = ValueTypeFor(param.ParameterType),
-                            CSType = param.ParameterType.GetNiceName()
-                        }
-                    );
-                    funcData.ParameterValueTypes.Add(ValueTypeFor(param.ParameterType));
+                        funcData.Parameters.Add(
+                            new Parameter
+                            {
+                                Name = param.Name,
+                                Type = ValueTypeFor(param.ParameterType),
+                                CSType = param.ParameterType.GetNiceName()
+                            }
+                        );
+                        funcData.ParameterValueTypes.Add(ValueTypeFor(param.ParameterType));
 
-                    argsCount++;
+                        argsCount++;
+                    }
                 }
             }
 
             // The actual inner call.
-            var result = Expression.Call(method.IsStatic ? null : context, method, parameters);
+            var result = Expression.Call(method.IsStatic ? null : context, method, expressions);
 
             var returnsCount = 0;
             if (method.ReturnType != typeof(void))
