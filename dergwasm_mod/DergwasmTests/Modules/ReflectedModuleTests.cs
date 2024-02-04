@@ -16,6 +16,7 @@ namespace Derg.Modules
         public WasmRefID<Slot> SlotArg { get; private set; }
         public Ptr<byte> BytePtrArg { get; private set; }
         public bool ReceivedBoolArg { get; private set; }
+        public Buff<byte> ReceivedBuffArg { get; private set; }
 
         public NullTerminatedString StringArg { get; private set; }
 
@@ -36,6 +37,12 @@ namespace Derg.Modules
         public void PtrArg(Frame frame, Ptr<byte> ptr)
         {
             BytePtrArg = ptr;
+        }
+
+        [ModFn("buff_arg")]
+        public void BuffArg(Frame frame, Buff<byte> buff)
+        {
+            ReceivedBuffArg = buff;
         }
 
         [ModFn("string_arg")]
@@ -105,8 +112,8 @@ namespace Derg.Modules
             );
             Assert.Collection(
                 apiData.Parameters,
-                p => Assert.Equal(ValueType.I32, p.Type),
-                p => Assert.Equal(ValueType.I32, p.Type)
+                p => Assert.Equal(new ValueType[] { ValueType.I32 }, p.Types),
+                p => Assert.Equal(new ValueType[] { ValueType.I32 }, p.Types)
             );
             Assert.Collection(
                 apiData.Parameters,
@@ -129,7 +136,10 @@ namespace Derg.Modules
             Assert.Equal("test", apiData.Module);
             Assert.Equal("refid_arg", apiData.Name);
             Assert.Equal("WasmRefID<Slot>", Assert.Single(apiData.Parameters).CSType);
-            Assert.Equal(ValueType.I64, Assert.Single(apiData.Parameters).Type);
+            Assert.Equal(
+                new ValueType[] { ValueType.I64 },
+                Assert.Single(apiData.Parameters).Types
+            );
             Assert.Empty(apiData.Returns);
         }
 
@@ -149,7 +159,10 @@ namespace Derg.Modules
             Assert.Equal("test", apiData.Module);
             Assert.Equal("ptr_arg", apiData.Name);
             Assert.Equal("Ptr<byte>", Assert.Single(apiData.Parameters).CSType);
-            Assert.Equal(ValueType.I32, Assert.Single(apiData.Parameters).Type);
+            Assert.Equal(
+                new ValueType[] { ValueType.I32 },
+                Assert.Single(apiData.Parameters).Types
+            );
             Assert.Empty(apiData.Returns);
         }
 
@@ -163,13 +176,40 @@ namespace Derg.Modules
         }
 
         [Fact]
+        public void BuffArgApiDataIsCorrect()
+        {
+            var apiData = module.GetApiFunc("buff_arg");
+            Assert.Equal("test", apiData.Module);
+            Assert.Equal("buff_arg", apiData.Name);
+            Assert.Equal("Buff<byte>", Assert.Single(apiData.Parameters).CSType);
+            Assert.Equal(
+                new ValueType[] { ValueType.I32, ValueType.I32 },
+                Assert.Single(apiData.Parameters).Types
+            );
+            Assert.Empty(apiData.Returns);
+        }
+
+        [Fact]
+        public void BuffArgPassedCorrectly()
+        {
+            var method = module.GetHostFunc("buff_arg");
+            frame.Push(new Buff<byte>(new Ptr<byte>(5), 10));
+            frame.InvokeFunc(machine, method);
+            Assert.Equal(10, module.ReceivedBuffArg.Length);
+            Assert.Equal(5, module.ReceivedBuffArg.Ptr.Addr);
+        }
+
+        [Fact]
         public void StringArgApiDataIsCorrect()
         {
             var apiData = module.GetApiFunc("string_arg");
             Assert.Equal("test", apiData.Module);
             Assert.Equal("string_arg", apiData.Name);
             Assert.Equal("NullTerminatedString", Assert.Single(apiData.Parameters).CSType);
-            Assert.Equal(ValueType.I32, Assert.Single(apiData.Parameters).Type);
+            Assert.Equal(
+                new ValueType[] { ValueType.I32 },
+                Assert.Single(apiData.Parameters).Types
+            );
             Assert.Empty(apiData.Returns);
         }
 
@@ -189,7 +229,10 @@ namespace Derg.Modules
             Assert.Equal("test", apiData.Module);
             Assert.Equal("bool_arg", apiData.Name);
             Assert.Equal("bool", Assert.Single(apiData.Parameters).CSType);
-            Assert.Equal(ValueType.I32, Assert.Single(apiData.Parameters).Type);
+            Assert.Equal(
+                new ValueType[] { ValueType.I32 },
+                Assert.Single(apiData.Parameters).Types
+            );
             Assert.Empty(apiData.Returns);
         }
 
@@ -210,7 +253,7 @@ namespace Derg.Modules
             Assert.Equal("refid_return", apiData.Name);
             Assert.Empty(apiData.Parameters);
             Assert.Equal("WasmRefID<Slot>", Assert.Single(apiData.Returns).CSType);
-            Assert.Equal(ValueType.I64, Assert.Single(apiData.Returns).Type);
+            Assert.Equal(new ValueType[] { ValueType.I64 }, Assert.Single(apiData.Returns).Types);
         }
 
         [Fact]
@@ -229,7 +272,7 @@ namespace Derg.Modules
             Assert.Equal("ptr_return", apiData.Name);
             Assert.Empty(apiData.Parameters);
             Assert.Equal("Ptr<byte>", Assert.Single(apiData.Returns).CSType);
-            Assert.Equal(ValueType.I32, Assert.Single(apiData.Returns).Type);
+            Assert.Equal(new ValueType[] { ValueType.I32 }, Assert.Single(apiData.Returns).Types);
         }
 
         [Fact]
@@ -248,7 +291,7 @@ namespace Derg.Modules
             Assert.Equal("string_return", apiData.Name);
             Assert.Empty(apiData.Parameters);
             Assert.Equal("NullTerminatedString", Assert.Single(apiData.Returns).CSType);
-            Assert.Equal(ValueType.I32, Assert.Single(apiData.Returns).Type);
+            Assert.Equal(new ValueType[] { ValueType.I32 }, Assert.Single(apiData.Returns).Types);
         }
 
         [Fact]
@@ -267,7 +310,7 @@ namespace Derg.Modules
             Assert.Equal("bool_return", apiData.Name);
             Assert.Empty(apiData.Parameters);
             Assert.Equal("bool", Assert.Single(apiData.Returns).CSType);
-            Assert.Equal(ValueType.I32, Assert.Single(apiData.Returns).Type);
+            Assert.Equal(new ValueType[] { ValueType.I32 }, Assert.Single(apiData.Returns).Types);
         }
 
         [Fact]

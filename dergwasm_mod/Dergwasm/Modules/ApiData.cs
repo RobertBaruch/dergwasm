@@ -8,7 +8,7 @@ namespace Derg.Modules
     public class Parameter
     {
         public string Name { get; set; }
-        public ValueType Type { get; set; }
+        public ValueType[] Types { get; set; }
         public string CSType { get; set; }
     }
 
