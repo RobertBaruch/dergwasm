@@ -212,50 +212,6 @@ namespace Derg.Modules
             // which means that the first value popped is the *last* call arg.
             poppers.Reverse();
 
-            if (false)
-            {
-                // Parameter Processing
-                var argsCount = 0;
-                var parameters = new List<Expression>();
-                foreach (var param in method.GetParameters())
-                {
-                    if (param.ParameterType == typeof(Machine))
-                    {
-                        parameters.Add(machine);
-                    }
-                    else if (param.ParameterType == typeof(Frame))
-                    {
-                        parameters.Add(frame);
-                    }
-                    else
-                    {
-                        parameters.Add(
-                            Expression.Call(
-                                Expression.ArrayIndex(
-                                    Expression.PropertyOrField(frame, nameof(Frame.Locals)),
-                                    Expression.Constant(argsCount)
-                                ),
-                                typeof(Value)
-                                    .GetMethod(nameof(Value.As))
-                                    .MakeGenericMethod(param.ParameterType)
-                            )
-                        );
-
-                        funcData.Parameters.Add(
-                            new Parameter
-                            {
-                                Name = param.Name,
-                                Type = ValueTypeFor(param.ParameterType),
-                                CSType = param.ParameterType.GetNiceName()
-                            }
-                        );
-                        funcData.ParameterValueTypes.Add(ValueTypeFor(param.ParameterType));
-
-                        argsCount++;
-                    }
-                }
-            }
-
             // The actual inner call to the host func.
             var result = Expression.Call(method.IsStatic ? null : context, method, callParams);
 

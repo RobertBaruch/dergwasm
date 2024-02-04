@@ -235,10 +235,9 @@ namespace DergwasmTests
     //
     // Job=.NET Framework 4.7.2  Runtime=.NET Framework 4.7.2
     //
-    // | Method       | N    | Mean     | Error   | StdDev  | Ratio |
-    // |------------- |----- |---------:|--------:|--------:|------:|
-    // | HostFuncCall | 1000 | 291.5 us | 0.76 us | 0.59 us |  1.00 |
-    // | HostFuncCall | 1000 | 152.0 us | 0.33 us | 0.25 us |  1.00 |
+    // | Method       | N    | Mean     | Error   | StdDev  | Ratio | Allocated | Alloc Ratio |
+    // |------------- |----- |---------:|--------:|--------:|------:|----------:|------------:|
+    // | HostFuncCall | 1000 | 151.0 us | 0.18 us | 0.17 us |  1.00 |         - |          NA |
     [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
     [MemoryDiagnoser]
     public class HostFuncCallBenchmark : InstructionTestFixture
