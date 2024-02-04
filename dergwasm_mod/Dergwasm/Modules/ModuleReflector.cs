@@ -256,7 +256,7 @@ namespace Derg.Modules
                 }
             }
 
-            // The actual inner call.
+            // The actual inner call to the host func.
             var result = Expression.Call(method.IsStatic ? null : context, method, callParams);
 
             var returnsCount = 0;
@@ -288,7 +288,8 @@ namespace Derg.Modules
 
             BlockExpression block = Expression.Block(outVars.ToArray(), poppers);
 
-            // This is the invoked callsite. To improve per-call performance, optimize the expression structure going into this compilation.
+            // This is the invoked callsite. To improve per-call performance, optimize the expression
+            // structure going into this compilation.
             var callImpl = Expression.Lambda<HostProxy>(block, machine, frame);
 
             var funcCtor = Expression.New(

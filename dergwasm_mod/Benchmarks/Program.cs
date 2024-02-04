@@ -238,7 +238,9 @@ namespace DergwasmTests
     // | Method       | N    | Mean     | Error   | StdDev  | Ratio |
     // |------------- |----- |---------:|--------:|--------:|------:|
     // | HostFuncCall | 1000 | 291.5 us | 0.76 us | 0.59 us |  1.00 |
+    // | HostFuncCall | 1000 | 152.0 us | 0.33 us | 0.25 us |  1.00 |
     [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
+    [MemoryDiagnoser]
     public class HostFuncCallBenchmark : InstructionTestFixture
     {
         [Params(1000)]
