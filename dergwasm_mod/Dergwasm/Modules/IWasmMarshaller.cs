@@ -1,7 +1,6 @@
 using Derg.Runtime;
 using Dergwasm.Runtime;
 using Elements.Core;
-using System;
 using System.Collections.Generic;
 
 namespace Derg.Modules {
@@ -14,13 +13,12 @@ namespace Derg.Modules {
 
     public struct DirectMarshaller<T> : IWasmMarshaller<T>
     {
-
         public void AddParams(string name, List<Parameter> parameters)
         {
             parameters.Add(new Parameter
             {
                 Name = name,
-                Type = ModuleReflector.ValueTypeFor(typeof(T)),
+                Types = ModuleReflector.ValueTypesFor(typeof(T)),
                 CSType = typeof(T).GetNiceName()
             });
         }

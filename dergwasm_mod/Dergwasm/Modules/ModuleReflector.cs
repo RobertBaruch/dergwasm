@@ -28,14 +28,14 @@ namespace Derg.Modules
             Func<object, (ApiFunc, HostFunc)[]>
         > _reflectedFuncs = new ConcurrentDictionary<Type, Func<object, (ApiFunc, HostFunc)[]>>();
 
-        public static Runtime.ValueType ValueTypeFor(Type type)
+        public static Runtime.ValueType[] ValueTypesFor(Type type)
         {
-            var valueType = (Runtime.ValueType)
+            var valueTypes = (Runtime.ValueType[])
                 typeof(Value)
                     .GetMethod(nameof(Value.ValueType))
                     .MakeGenericMethod(type)
                     .Invoke(null, null);
-            return valueType;
+            return valueTypes;
         }
 
         public static Type MarshallerFor(ParameterInfo info)
@@ -50,7 +50,7 @@ namespace Derg.Modules
             if (marshaller.IsGenericTypeDefinition)
             {
                 // If the marshaller is a generic type, assume the marshaller has the same type arguments.
-                marshaller = marshaller.MakeGenericType(info.ParameterType.GetGenericTypeDefinition());
+                marshaller = marshaller.MakeGenericType(info.ParameterType.GenericTypeArguments);
             }
             return marshaller;
         }

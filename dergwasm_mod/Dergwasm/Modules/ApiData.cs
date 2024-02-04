@@ -16,19 +16,13 @@ namespace Derg.Modules
     {
         public string Module { get; set; }
         public string Name { get; set; }
-        public List<Parameter> Parameters { get; }
-        public List<Parameter> Returns { get; }
+        public List<Parameter> Parameters { get; } = new List<Parameter>();
+        public List<Parameter> Returns { get; } = new List<Parameter>();
 
         [JsonIgnore]
-        public IEnumerable<ValueType> ParameterValueTypes => Parameters.Select(p => p.Type);
+        public IEnumerable<ValueType> ParameterValueTypes => Parameters.SelectMany(p => p.Types);
 
         [JsonIgnore]
-        public IEnumerable<ValueType> ReturnValueTypes => Returns.Select(p => p.Type);
-
-        public ApiFunc()
-        {
-            Parameters = new List<Parameter>();
-            Returns = new List<Parameter>();
-        }
+        public IEnumerable<ValueType> ReturnValueTypes => Returns.SelectMany(p => p.Types);
     }
 }

@@ -9,24 +9,23 @@ namespace Derg.Wasm
 {
     public struct BuffMarshaller : IWasmMarshaller<Buff>
     {
-        public void AddParams(string name, List<Parameter> parameters) {
+        public void AddParams(string name, List<Parameter> parameters)
+        {
             parameters.Add(new Parameter
             {
-                Name = $"{name}_ptr",
-                Type = ModuleReflector.ValueTypeFor(typeof(int)),
-                CSType = typeof(int).GetNiceName()
-            }); parameters.Add(new Parameter
-            {
-                Name = $"{name}_len",
-                Type = ModuleReflector.ValueTypeFor(typeof(int)),
-                CSType = typeof(int).GetNiceName()
+                Name = name,
+                Types = new[] {
+                    ValueType.I32,
+                    ValueType.I32
+                },
+                CSType = typeof(Buff).GetNiceName()
             });
         }
 
         public Buff From(Frame frame, Machine machine)
         {
-            var addr = frame.Pop().s32;
             var size = frame.Pop().s32;
+            var addr = frame.Pop().s32;
             return new Buff(addr, size);
         }
 
@@ -79,21 +78,19 @@ namespace Derg.Wasm
         {
             parameters.Add(new Parameter
             {
-                Name = $"{name}_ptr",
-                Type = ModuleReflector.ValueTypeFor(typeof(int)),
-                CSType = typeof(int).GetNiceName()
-            }); parameters.Add(new Parameter
-            {
-                Name = $"{name}_len",
-                Type = ModuleReflector.ValueTypeFor(typeof(int)),
-                CSType = typeof(int).GetNiceName()
+                Name = name,
+                Types = new[] {
+                    ValueType.I32,
+                    ValueType.I32
+                },
+                CSType = typeof(Buff<T>).GetNiceName()
             });
         }
 
         public Buff<T> From(Frame frame, Machine machine)
         {
-            var addr = frame.Pop().s32;
             var size = frame.Pop().s32;
+            var addr = frame.Pop().s32;
             return new Buff<T>(addr, size);
         }
 
