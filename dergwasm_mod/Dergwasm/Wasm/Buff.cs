@@ -11,15 +11,14 @@ namespace Derg.Wasm
     {
         public void AddParams(string name, List<Parameter> parameters)
         {
-            parameters.Add(new Parameter
-            {
-                Name = name,
-                Types = new[] {
-                    ValueType.I32,
-                    ValueType.I32
-                },
-                CSType = typeof(Buff).GetNiceName()
-            });
+            parameters.Add(
+                new Parameter
+                {
+                    Name = name,
+                    Types = new[] { ValueType.I32, ValueType.I32 },
+                    CSType = typeof(Buff).GetNiceName()
+                }
+            );
         }
 
         public Buff From(Frame frame, Machine machine)
@@ -69,22 +68,23 @@ namespace Derg.Wasm
 
         public Ptr ToPointer() => Ptr;
 
-        public Buff<T> Reinterpret<T>() where T : struct => new Buff<T>(Ptr.Reinterpret<T>(), Length);
+        public Buff<T> Reinterpret<T>()
+            where T : struct => new Buff<T>(Ptr.Reinterpret<T>(), Length);
     }
 
-    public struct BuffMarshaller<T> : IWasmMarshaller<Buff<T>> where T : struct
+    public struct BuffMarshaller<T> : IWasmMarshaller<Buff<T>>
+        where T : struct
     {
         public void AddParams(string name, List<Parameter> parameters)
         {
-            parameters.Add(new Parameter
-            {
-                Name = name,
-                Types = new[] {
-                    ValueType.I32,
-                    ValueType.I32
-                },
-                CSType = typeof(Buff<T>).GetNiceName()
-            });
+            parameters.Add(
+                new Parameter
+                {
+                    Name = name,
+                    Types = new[] { ValueType.I32, ValueType.I32 },
+                    CSType = typeof(Buff<T>).GetNiceName()
+                }
+            );
         }
 
         public Buff<T> From(Frame frame, Machine machine)
@@ -118,7 +118,8 @@ namespace Derg.Wasm
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     [MarshalWith(typeof(BuffMarshaller<>))]
-    public readonly struct Buff<T> where T : struct
+    public readonly struct Buff<T>
+        where T : struct
     {
         public readonly Ptr<T> Ptr;
         public readonly int Length;
@@ -137,6 +138,19 @@ namespace Derg.Wasm
         {
             Ptr = new Ptr<T>(ptr);
             Length = length;
+        }
+
+        public static Buff<U> Make<U>(Machine machine, Frame frame, List<U> elements)
+            where U : struct
+        {
+            Buff<U> buff = machine.HeapAlloc<U>(frame, elements.Count);
+            Ptr<U> ptr = buff.Ptr;
+            foreach (U element in elements)
+            {
+                machine.HeapSet(ptr, element);
+                ptr++;
+            }
+            return buff;
         }
 
         public Ptr<T> ToPointer() => Ptr;

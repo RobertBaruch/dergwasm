@@ -59,9 +59,8 @@ EMSCRIPTEN_KEEPALIVE resonite_error_t _slot__get_child(
 }
 EMSCRIPTEN_KEEPALIVE resonite_error_t _slot__get_children(
     resonite_refid_t slot, 
-    resonite_refid_t** outChildListData, 
-    int32_t* outChildListLength) {
-    return slot__get_children(slot, outChildListData, outChildListLength);
+    resonite_buff_t* outChildren) {
+    return slot__get_children(slot, outChildren);
 }
 EMSCRIPTEN_KEEPALIVE resonite_error_t _slot__find_child_by_name(
     resonite_refid_t slot, 
@@ -87,9 +86,8 @@ EMSCRIPTEN_KEEPALIVE resonite_error_t _slot__get_component(
 }
 EMSCRIPTEN_KEEPALIVE resonite_error_t _slot__get_components(
     resonite_refid_t slot, 
-    resonite_refid_t** outComponentListData, 
-    int32_t* outComponentListLength) {
-    return slot__get_components(slot, outComponentListData, outComponentListLength);
+    resonite_buff_t* outComponents) {
+    return slot__get_components(slot, outComponents);
 }
 EMSCRIPTEN_KEEPALIVE resonite_error_t _component__get_type_name(
     resonite_refid_t component, 

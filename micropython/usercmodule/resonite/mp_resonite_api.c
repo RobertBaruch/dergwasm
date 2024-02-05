@@ -157,28 +157,25 @@ mp_obj_t resonite__slot__get_child(mp_obj_t slot, mp_obj_t index) {
 }
 
 mp_obj_t resonite__slot__get_children(mp_obj_t slot) {
-  resonite_refid_t* outChildListData;
-  int32_t outChildListLength;
+  resonite_buff_t outChildren;
 
   resonite_error_t _err = slot__get_children(
     mp_obj_int_get_uint64_checked(slot), 
-    &outChildListData, 
-    &outChildListLength);
+    &outChildren);
 
   mp_resonite_check_error(_err);
 
-  mp_obj_t _list_outChildListData = mp_obj_new_list(0, NULL);
-  for (size_t i = 0; i < outChildListLength; i++) {
-    mp_obj_list_append(_list_outChildListData,
-      mp_obj_new_int_from_ll(outChildListData[i]));
+  mp_obj_t outChildren__list = mp_obj_new_list(0, NULL);
+  for (size_t i = 0; i < outChildren.len; i++) {
+    mp_obj_list_append(outChildren__list,
+      mp_obj_new_int_from_ll(((resonite_refid_t*)outChildren.ptr)[i]));
   }
-  mp_obj_t _outs[2] = {
-    _list_outChildListData, 
-    mp_obj_new_int_from_ll(outChildListLength)};
+  mp_obj_t _outs[1] = {
+    outChildren__list};
 
-  free(outChildListData);
+  free(outChildren.ptr);
 
-  return mp_obj_new_tuple(2, _outs);
+  return mp_obj_new_tuple(1, _outs);
 }
 
 mp_obj_t resonite__slot__find_child_by_name(size_t n_args, const mp_obj_t *args) {
@@ -237,28 +234,25 @@ mp_obj_t resonite__slot__get_component(mp_obj_t slot, mp_obj_t typeName) {
 }
 
 mp_obj_t resonite__slot__get_components(mp_obj_t slot) {
-  resonite_refid_t* outComponentListData;
-  int32_t outComponentListLength;
+  resonite_buff_t outComponents;
 
   resonite_error_t _err = slot__get_components(
     mp_obj_int_get_uint64_checked(slot), 
-    &outComponentListData, 
-    &outComponentListLength);
+    &outComponents);
 
   mp_resonite_check_error(_err);
 
-  mp_obj_t _list_outComponentListData = mp_obj_new_list(0, NULL);
-  for (size_t i = 0; i < outComponentListLength; i++) {
-    mp_obj_list_append(_list_outComponentListData,
-      mp_obj_new_int_from_ll(outComponentListData[i]));
+  mp_obj_t outComponents__list = mp_obj_new_list(0, NULL);
+  for (size_t i = 0; i < outComponents.len; i++) {
+    mp_obj_list_append(outComponents__list,
+      mp_obj_new_int_from_ll(((resonite_refid_t*)outComponents.ptr)[i]));
   }
-  mp_obj_t _outs[2] = {
-    _list_outComponentListData, 
-    mp_obj_new_int_from_ll(outComponentListLength)};
+  mp_obj_t _outs[1] = {
+    outComponents__list};
 
-  free(outComponentListData);
+  free(outComponents.ptr);
 
-  return mp_obj_new_tuple(2, _outs);
+  return mp_obj_new_tuple(1, _outs);
 }
 
 mp_obj_t resonite__component__get_type_name(mp_obj_t component) {

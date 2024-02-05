@@ -88,5 +88,14 @@ namespace DergwasmTests
             Assert.Equal(120, v.s32);
             Assert.Equal(0u, v.value_hi);
         }
+
+        [Fact]
+        public void BuffHasTwoValues()
+        {
+            Assert.Equal(
+                new ValueType[] { ValueType.I32, ValueType.I32 },
+                Value.ValueType<Buff<WasmRefID<Slot>>>()
+            );
+        }
     }
 }

@@ -279,18 +279,11 @@
         "CSType": "WasmRefID\u003CSlot\u003E"
       },
       {
-        "Name": "outChildListData",
+        "Name": "outChildren",
         "Types": [
           127
         ],
-        "CSType": "Output\u003CWasmArray\u003CWasmRefID\u003CSlot\u003E\u003E\u003E"
-      },
-      {
-        "Name": "outChildListLength",
-        "Types": [
-          127
-        ],
-        "CSType": "Output\u003Cint\u003E"
+        "CSType": "Output\u003CBuff\u003CWasmRefID\u003CSlot\u003E\u003E\u003E"
       }
     ],
     "Returns": [
@@ -451,18 +444,11 @@
         "CSType": "WasmRefID\u003CSlot\u003E"
       },
       {
-        "Name": "outComponentListData",
+        "Name": "outComponents",
         "Types": [
           127
         ],
-        "CSType": "Output\u003CWasmArray\u003CWasmRefID\u003CComponent\u003E\u003E\u003E"
-      },
-      {
-        "Name": "outComponentListLength",
-        "Types": [
-          127
-        ],
-        "CSType": "Output\u003Cint\u003E"
+        "CSType": "Output\u003CBuff\u003CWasmRefID\u003CComponent\u003E\u003E\u003E"
       }
     ],
     "Returns": [

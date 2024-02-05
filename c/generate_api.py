@@ -123,6 +123,8 @@ class Main:
             return "resonite_error_t"
         if cc_type_str == "ResoniteType":
             return "resonite_type_t"
+        if cc_type_str == "Buff":
+            return "resonite_buff_t"
         raise ValueError(f"Unknown type: {cc_type_str}")
 
     def get_api_data(self) -> list[dict]:

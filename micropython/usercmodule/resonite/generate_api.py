@@ -144,11 +144,6 @@ WASM_TO_PY: dict[ValueType, str] = {
     ValueType.F64: "mp_obj_new_float",
 }
 
-# If an out parameter has one of these types, it should be freed after
-# "absorbing" it into a Python object.
-CC_TYPES_TO_FREE: list[str] = ["WasmArray"]
-
-
 class Main:
     """The main class for the Micropython API generator."""
 
@@ -184,6 +179,8 @@ class Main:
             return "resonite_error_t"
         if cc_type_str == "ResoniteType":
             return "resonite_type_t"
+        if cc_type_str == "Buff":
+            return "resonite_buff_t"
         raise ValueError(f"Unknown type: {cc_type_str}")
 
     @staticmethod
@@ -237,6 +234,8 @@ class Main:
             return f"mp_obj_new_int_from_ll({val})"
         if cc_type_str == "NullTerminatedString":
             return f"mp_obj_new_null_terminated_str({val})"
+        if cc_type_str == "Buff":
+            return f"<FIXME>({val})"
         raise ValueError(f"Unknown type: {cc_type_str}")
 
     def get_api_data(self) -> list[dict]:
@@ -247,7 +246,7 @@ class Main:
         for item in data:
             for p in item["Parameters"]:
                 p["GenericType"] = GenericType.parse_generic_type(p["CSType"])
-                p["ValueType"] = ValueType(p["Type"])
+                p["ValueTypes"] = [ValueType(t) for t in p["Types"]]
 
         return data
 
@@ -324,26 +323,26 @@ class Main:
                 f.write("  mp_resonite_check_error(_err);\n\n")
 
                 # Any lists that were returned need to be converted to Python lists.
-                # By convention, the output after a list is its length.
                 ps = iter(out_params)
                 for p in ps:
                     generic_type = p["GenericType"].type_params[0]
-                    if generic_type.base_type != "WasmArray":
+                    if generic_type.base_type != "Buff":
                         continue
 
                     # Get the type this is an array of.
                     generic_type = generic_type.type_params[0]
                     c_type = self.wasm_to_c(generic_type)
-                    converted = self.wasm_to_py(generic_type, f"{p['Name']}[i]")
+                    converted = self.wasm_to_py(generic_type,
+                                                f"(({c_type}*){p['Name']}.ptr)[i]")
 
                     # Get the length of the array.
-                    len_name = next(ps)["Name"]
+                    len_name = f"{p['Name']}.len"
 
                     f.write(
-                        f'  mp_obj_t _list_{p["Name"]} = mp_obj_new_list(0, NULL);\n'
+                        f'  mp_obj_t {p["Name"]}__list = mp_obj_new_list(0, NULL);\n'
                     )
                     f.write(f"  for (size_t i = 0; i < {len_name}; i++) {{\n")
-                    f.write(f'    mp_obj_list_append(_list_{p["Name"]},\n')
+                    f.write(f'    mp_obj_list_append({p["Name"]}__list,\n')
                     f.write(f"      {converted});\n")
                     f.write("  }\n")
 
@@ -353,8 +352,8 @@ class Main:
                 for p in out_params:
                     # This is, by definition, an Output<T>, so get T.
                     generic_type = p["GenericType"].type_params[0]
-                    if generic_type.base_type == "WasmArray":
-                        converted = f"_list_{p['Name']}"
+                    if generic_type.base_type == "Buff":
+                        converted = f"{p['Name']}__list"
                     else:
                         converted = self.wasm_to_py(generic_type, p["Name"])
                     out_elements.append(f"\n    {converted}")
@@ -370,9 +369,8 @@ class Main:
                     if not p["GenericType"].is_output():
                         continue
                     generic_type = p["GenericType"].type_params[0]
-                    if generic_type.base_type not in CC_TYPES_TO_FREE:
-                        continue
-                    f.write(f"  free({p['Name']});\n")
+                    if generic_type.base_type == "Buff":
+                        f.write(f"  free({p['Name']}.ptr);\n")
                 f.write("\n")
 
                 f.write(f"  return mp_obj_new_tuple({out_count}, _outs);\n")

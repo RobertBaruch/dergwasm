@@ -7,6 +7,7 @@ using Derg.Runtime;
 using Elements.Core;
 using FrooxEngine;
 using Dergwasm.Runtime;
+using System.Linq;
 
 namespace Derg
 {
@@ -347,23 +348,20 @@ namespace Derg
         public ResoniteError slot__get_components(
             Frame frame,
             WasmRefID<Slot> slot,
-            Output<WasmArray<WasmRefID<Slot>>> outChildListData,
-            Output<int> outChildListLength
+            Output<Buff<WasmRefID<Slot>>> outChildren
         )
         {
             try
             {
-                outChildListLength.CheckNullArg("outChildListLength");
-                outChildListData.CheckNullArg("outChildListData");
+                outChildren.CheckNullArg("outChildren");
                 slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
 
-                WasmRefIDList<Slot> list = WasmRefIDList<Slot>.Make(
+                Buff<WasmRefID<Slot>> list = Buff<WasmRefID<Slot>>.Make(
                     machine,
                     frame,
-                    slotInstance.Children
+                    slotInstance.Children.Select(e => e.GetWasmRef()).ToList()
                 );
-                machine.HeapSet(outChildListLength, list.buff.Length);
-                machine.HeapSet(outChildListData, new WasmArray<WasmRefID<Slot>>(list.buff.Ptr));
+                machine.HeapSet(outChildren, list);
             }
             catch (Exception e)
             {
@@ -473,26 +471,20 @@ namespace Derg
         public ResoniteError slot__get_components(
             Frame frame,
             WasmRefID<Slot> slot,
-            Output<WasmArray<WasmRefID<Component>>> outComponentListData,
-            Output<int> outComponentListLength
+            Output<Buff<WasmRefID<Component>>> outComponents
         )
         {
             try
             {
-                outComponentListLength.CheckNullArg("outComponentListLength");
-                outComponentListData.CheckNullArg("outComponentListData");
+                outComponents.CheckNullArg("outComponents");
                 slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
 
-                WasmRefIDList<Component> list = WasmRefIDList<Component>.Make(
+                Buff<WasmRefID<Component>> list = Buff<WasmRefID<Component>>.Make(
                     machine,
                     frame,
-                    slotInstance.Components
+                    slotInstance.Components.Select(e => e.GetWasmRef()).ToList()
                 );
-                machine.HeapSet(outComponentListLength, list.buff.Length);
-                machine.HeapSet(
-                    outComponentListData,
-                    new WasmArray<WasmRefID<Component>>(list.buff.Ptr)
-                );
+                machine.HeapSet(outComponents, list);
             }
             catch (Exception e)
             {
