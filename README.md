@@ -31,7 +31,7 @@ Dergwasm includes a WASM binary, `firmware.wasm`, which implements a [MicroPytho
 > WARNING: Installation at this point isn't turnkey. You must be familiar with the Dev Tool, the inspector, and the ProtoFlux tool.
 
 1. If you haven't already done so, install [Resonite Mod Loader](https://github.com/resonite-modding-group/ResoniteModLoader).
-2. From the [latest release](https://github.com/RobertBaruch/dergwasm/releases), under Assets, download `Dergwasm.dll` and `firmware.wasm`.
+2. From the [latest release](https://github.com/RobertBaruch/dergwasm/releases), under Assets, download `Dergwasm.dll`.
 3. Copy `Dergwasm.dll` into your `rml_mods` directory. See the [Resonite Mod Loader instructions](https://github.com/resonite-modding-group/ResoniteModLoader) for details about that.
 4. Start Resonite.
 5. To verify that the mod loaded, you can look in your Resonite logs for something like this line:
@@ -40,7 +40,7 @@ Dergwasm includes a WASM binary, `firmware.wasm`, which implements a [MicroPytho
     6:38:54 PM.614 ( -1 FPS)	[INFO] [ResoniteModLoader/Dergwasm] Dergwasm patches applied
     ```
 
-6. Copy this URL, and paste it into your world in Resonite: `resrec:///U-Xekri/R-c67b56f1-8b83-4108-8ac7-0846ed8ce8b9`. This is a Dergwasm slot hierarchy, already set up.
+6. Copy this URL, and paste it into your world in Resonite: `resrec:///U-Xekri/R-dccc5d61-435f-4bc2-ac88-b8de3ccfd678`. This is a Dergwasm slot hierarchy, already set up with a WASM file and slot-based filesystem implementing MicroPython.
    ![The Dergwasm slot](dergwasm_slot.jpg)
 7. Re-initialize Dergwasm by using the ProtofluxTool to create a Dynamic Impulse Trigger node. Set its `Tag` to `_dergwasm_init` and its `TargetHierarchy` to the top-level Dergwasm slot. Now trigger the node. There will be a slight hitch as the WASM file is read in and parsed.
 
@@ -84,6 +84,7 @@ If you want to compile the mod, I'm not sure I captured all the requirements. At
 3. On the Linux system, clone the [MicroPython repo](https://github.com/micropython/micropython).
 4. Make a directory `user_modules/resonite` in the repo root.
 5. Copy everything from `usercmodule/resonite` into that directory.
+5. Copy everything from `c` into that directory.
 6. `cd ports/webassembly`
 7. `make clean`
 8. `make V=1 USER_C_MODULES=../../user_modules`
