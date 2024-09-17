@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
@@ -20,6 +20,10 @@
 		<ResoniteNmlMods>$(ResonitePath)\rml_mods</ResoniteNmlMods>
 		<ResoniteLibs>$(ResonitePath)\Libraries</ResoniteLibs>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="System.Text.Json" Version="8.0.4" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<Reference Include="0Harmony">
@@ -49,7 +53,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Dergwasm\Dergwasm.csproj" />
+		<ProjectReference Include="..\..\Dergwasm\Dergwasm.csproj" />
 	</ItemGroup>
 
 </Project>

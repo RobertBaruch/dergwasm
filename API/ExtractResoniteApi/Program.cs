@@ -1,7 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text.Json;
 using Derg;
-using Derg.Modules;
 
 namespace DergwasmExtractResoniteApi
 {
@@ -14,19 +14,24 @@ namespace DergwasmExtractResoniteApi
             resoniteEnv = new ResoniteEnv(null, null, null);
         }
 
-        void Run()
+        void Run(string path)
         {
             var options = new JsonSerializerOptions { WriteIndented = true };
 
-            File.WriteAllText(
-                "../../../../../resonite_api.json",
-                JsonSerializer.Serialize(resoniteEnv.ApiData, options)
-            );
+            var api = JsonSerializer.Serialize(resoniteEnv.ApiData, options);
+            if (path != null)
+            {
+                File.WriteAllText(path, api);
+            }
+            else
+            {
+                Console.WriteLine(api);
+            }
         }
 
         public static void Main(string[] args)
         {
-            new Program().Run();
+            new Program().Run(args.Length > 0 ? args[0] : null);
         }
     }
 }

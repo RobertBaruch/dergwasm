@@ -64,27 +64,3 @@ extern __attribute__((import_module("resonite"))) resonite_error_t component__ge
     resonite_refid_t component, 
     char ** outTypeName);
 extern __attribute__((import_module("resonite"))) resonite_error_t component__get_member(
-    resonite_refid_t component, 
-    const char * name, 
-    resonite_type_t* outType, 
-    resonite_refid_t* outMember);
-extern __attribute__((import_module("resonite"))) resonite_error_t value__get_int(
-    resonite_refid_t refId, 
-    int32_t* outPtr);
-extern __attribute__((import_module("resonite"))) resonite_error_t value__get_float(
-    resonite_refid_t refId, 
-    float* outPtr);
-extern __attribute__((import_module("resonite"))) resonite_error_t value__get_double(
-    resonite_refid_t refId, 
-    double* outPtr);
-extern __attribute__((import_module("resonite"))) resonite_error_t value__set_int(
-    resonite_refid_t refId, 
-    int32_t value);
-extern __attribute__((import_module("resonite"))) resonite_error_t value__set_float(
-    resonite_refid_t refId, 
-    float value);
-extern __attribute__((import_module("resonite"))) resonite_error_t value__set_double(
-    resonite_refid_t refId, 
-    double value);
-
-#endif // __DERGWASM_C_RESONITE_API_H__

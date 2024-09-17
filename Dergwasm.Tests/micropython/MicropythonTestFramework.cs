@@ -16,7 +16,7 @@ namespace DergwasmTests.micropython
 
             worldServices.AddAssetFile(
                 new Uri("file:///firmware.wasm"),
-                "../../../../../firmware.wasm"
+                "firmware.wasm"
             );
 
             DergwasmMachine.InitStage0(worldServices, dergwasmSlots);

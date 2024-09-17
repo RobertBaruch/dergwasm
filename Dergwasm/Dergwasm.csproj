@@ -2,10 +2,8 @@
 
 	<PropertyGroup>
 		<TargetFramework>net472</TargetFramework>
-
-		<IsPackable>false</IsPackable>
-		<IsTestProject>true</IsTestProject>
-		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<Version>0.1.4.1</Version>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -26,12 +24,6 @@
 	<ItemGroup>
 		<Reference Include="0Harmony">
 			<HintPath>$(ResoniteNmlLibs)\0Harmony.dll</HintPath>
-		</Reference>
-		<Reference Include="BepuPhysics">
-			<HintPath>$(ResoniteCoreLibs)\BepuPhysics.dll</HintPath>
-		</Reference>
-		<Reference Include="BepuUtilities">
-			<HintPath>$(ResoniteCoreLibs)\BepuUtilities.dll</HintPath>
 		</Reference>
 		<Reference Include="Elements.Assets">
 			<HintPath>$(ResoniteCoreLibs)\Elements.Assets.dll</HintPath>
@@ -57,38 +49,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
 		<PackageReference Include="System.Memory" Version="4.5.5" />
-		<PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
 		<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
-		<PackageReference Include="xunit" Version="2.6.6" />
-		<PackageReference Include="xunit.runner.visualstudio" Version="2.5.6">
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-			<PrivateAssets>all</PrivateAssets>
-		</PackageReference>
-		<PackageReference Include="coverlet.collector" Version="6.0.0">
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-			<PrivateAssets>all</PrivateAssets>
-		</PackageReference>
+		<PackageReference Include="System.Text.Json" Version="8.0.4" />
+		<PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
+		<PackageReference Include="System.ValueTuple" Version="4.5.0" />
 	</ItemGroup>
 
-	<ItemGroup>
-		<ProjectReference Include="..\Dergwasm\Dergwasm.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Compile Update="Properties\Settings.Designer.cs">
-	    <DesignTimeSharedInput>True</DesignTimeSharedInput>
-	    <AutoGen>True</AutoGen>
-	    <DependentUpon>Settings.settings</DependentUpon>
-	  </Compile>
-	</ItemGroup>
-
-	<ItemGroup>
-	  <None Update="Properties\Settings.settings">
-	    <Generator>SettingsSingleFileGenerator</Generator>
-	    <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-	  </None>
-	</ItemGroup>
+	<Target Name="CopyPluginLibrary" AfterTargets="PostBuildEvent" Condition="Exists($(ResoniteNmlMods))">
+		<Exec Command="copy &quot;$(TargetDir)\$(TargetName).dll&quot; &quot;$(ResoniteNmlMods)\&quot;" />
+	</Target>
 
 </Project>

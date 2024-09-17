@@ -513,7 +513,7 @@
         "Types": [
           127
         ],
-        "CSType": "Output\u003CResoniteType\u003E"
+        "CSType": "Output\u003CResoniteEnv\u002BResoniteType\u003E"
       },
       {
         "Name": "outMember",
