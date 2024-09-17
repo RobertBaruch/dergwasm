@@ -472,7 +472,7 @@ namespace DergwasmTests
         [Benchmark]
         public DergwasmLoadModule.Program LoadMicropython()
         {
-            return new DergwasmLoadModule.Program("../../../../../firmware.wasm");
+            return new DergwasmLoadModule.Program("firmware.wasm");
         }
     }
 
@@ -496,7 +496,7 @@ namespace DergwasmTests
 
         public MicropythonMallocFreeBenchmark()
         {
-            program = new DergwasmLoadModule.Program("../../../../../firmware.wasm");
+            program = new DergwasmLoadModule.Program("firmware.wasm");
             program.InitMicropython(64 * 1024);
         }
 
@@ -563,7 +563,7 @@ namespace DergwasmTests
 
         public MicropythonSerializationBenchmark()
         {
-            program = new DergwasmLoadModule.Program("../../../../../firmware.wasm");
+            program = new DergwasmLoadModule.Program("firmware.wasm");
             program.InitMicropython(64 * 1024);
             frame = program.emscriptenEnv.EmptyFrame();
         }

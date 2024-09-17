@@ -41,30 +41,30 @@ Dergwasm includes a WASM binary, `firmware.wasm`, which implements a [MicroPytho
     ```
 
 6. Copy this URL, and paste it into your world in Resonite: `resrec:///U-Xekri/R-dccc5d61-435f-4bc2-ac88-b8de3ccfd678`. This is a Dergwasm slot hierarchy, already set up with a WASM file and slot-based filesystem implementing MicroPython.
-   ![The Dergwasm slot](dergwasm_slot.jpg)
+   ![The Dergwasm slot](Images/dergwasm_slot.jpg)
 7. Re-initialize Dergwasm by using the ProtofluxTool to create a Dynamic Impulse Trigger node. Set its `Tag` to `_dergwasm_init` and its `TargetHierarchy` to the top-level Dergwasm slot. Now trigger the node. There will be a slight hitch as the WASM file is read in and parsed.
 
 ### The `Dergwasm` slot
 
 1. The `firwmware.wasm` slot has a tag `_dergwasm_wasm_file`. It's just an imported WASM file. The name of the slot doesn't matter, since Dergwasm searches for it by tag. You can actually set this for any WASM file you have, but there must be only one under the Dergwasm hierarchy.
-   ![The firmware.wasm slot](dergwasm_wasm_file.jpg)
+   ![The firmware.wasm slot](Images/dergwasm_wasm_file.jpg)
 
 2. There is a `Text` object (`ByteDisplay`) with tag `_dergwasm_byte_display`. Currently this object is only intended to display your computer's file path where it loads `firmware.wasm` from.
-    ![The byte display slot](dergwasm_byte_display.jpg)
+    ![The byte display slot](Images/dergwasm_byte_display.jpg)
 
 3. The `Console` slot is a text display adapted slightly from the standard text display that Resonite spawns when you import a text file. This will display debug messages from Dergwasm, as well as any printed output from WASM. Buried within this hiearchy is a Content slot with tag `_dergwasm_console_content`, which is how Dergwasm finds the text for the console.
-    ![The dergwasm console slot](dergwasm_console_tag.jpg)
+    ![The dergwasm console slot](Images/dergwasm_console_tag.jpg)
 
 4. There's a slot under the `Dergwasm` slot called `Args`, with tag `_dergwasm_args`. It has a `ValueField<string>` component. This field contains the WASM function name you want to call.
     > If you're just interested in running MicroPython, the value in the field should be `mp_js_do_str`.
-    ![The dergwasm args slot](dergwasm_args.jpg)
+    ![The dergwasm args slot](Images/dergwasm_args.jpg)
 
 5. Under the `Args` slot, you can add as many slots as you want, one for each argument to the WASM function. Make sure the `OrderOffset` fields are set to order the slots according to the argument order. Each slot must have one `ValueField` component.
    > If you're just interested in running MicroPython, you only want one argument with a `ValueField<string>` component, containing your Python code. Here I used a `Text` object, and used a `ValueCopy` component to copy the text into the `ValueField<string>` component.
-    ![The dergwasm args first slot](dergwasm_arg_1.jpg)
+    ![The dergwasm args first slot](Images/dergwasm_arg_1.jpg)
 
 6. Create a `Dynamic Impulse Trigger` ProtoFlux node. Set its tag input to `_dergwasm` and its hierarchy input to your `Args` slot. Call it when you want to execute a WASM function.
-    ![Dergwasm calling from ProtoFlux](dergwasm_call_protoflux.jpg)
+    ![Dergwasm calling from ProtoFlux](Images/dergwasm_call_protoflux.jpg)
 
 ## Technical notes
 
