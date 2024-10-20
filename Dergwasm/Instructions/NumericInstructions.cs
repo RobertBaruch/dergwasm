@@ -818,4 +818,4 @@ namespace Derg.Instructions
             Frame frame
         ) { }
     }
-}
+} // namespace Derg.Instructions

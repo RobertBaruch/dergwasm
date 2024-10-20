@@ -21,4 +21,4 @@ namespace Derg.Instructions
             frame.Push(Value.RefOfFuncAddr(addr));
         }
     }
-}
+} // namespace Derg.Instructions

@@ -16,4 +16,4 @@ namespace Derg.Instructions
             frame.Push(cond ? v1 : v2);
         }
     }
-}
+} // namespace Derg.Instructions

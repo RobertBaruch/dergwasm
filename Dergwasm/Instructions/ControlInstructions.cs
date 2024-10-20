@@ -180,4 +180,4 @@ namespace Derg.Instructions
             frame.PC = frame.Code.Count;
         }
     }
-}
+} // namespace Derg.Instructions

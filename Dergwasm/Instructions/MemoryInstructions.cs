@@ -282,4 +282,4 @@ namespace Derg.Instructions
             machine.DropDataSegment(frame.GetDataSegmentAddrForIndex(elemidx));
         }
     }
-}
+} // namespace Derg.Instructions

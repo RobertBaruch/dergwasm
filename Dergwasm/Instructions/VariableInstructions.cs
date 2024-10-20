@@ -38,4 +38,4 @@ namespace Derg.Instructions
             machine.Globals[frame.GetGlobalAddrForIndex(idx)] = val;
         }
     }
-}
+} // namespace Derg.Instructions

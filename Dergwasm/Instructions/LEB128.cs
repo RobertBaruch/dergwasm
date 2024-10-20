@@ -158,4 +158,4 @@ namespace Derg.Instructions
         public static ulong ReadLEB128Unsigned(this BinaryReader stream, out int bytes) =>
             stream.BaseStream.ReadLEB128Unsigned(out bytes);
     }
-}
+} // namespace Derg.Instructions

@@ -254,4 +254,4 @@ namespace Derg.Instructions
             { InstructionType.UNREACHABLE, ControlInstructions.Unreachable },
         };
     }
-}
+} // namespace Derg.Instructions
