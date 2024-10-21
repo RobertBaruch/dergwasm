@@ -2,6 +2,7 @@
 
 ## Directories
 
-* [Instructions](Instructions/README.md): Code for decoding and implementing instructions.
+* [Instructions](Instructions/README.md): Decoding and implementing instructions.
+* [Runtime](Runtime/README.md): A WASM virtual machine.
 
 ## Files
