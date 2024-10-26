@@ -29,10 +29,20 @@ Finally, a module may specify a [start function](https://webassembly.github.io/s
 
 A function is a linear list of instructions. Although a WASM machine is said to have a stack, functions do not have access to the stacks of callers or callees. Functions are guaranteed not to underflow their stacks due to the validation step that is supposed to be done during module instantiation. However, Dergwasm does not implement validation, instead assuming that WASM code is valid. Executing invalid WASM code leads to undefined behavior at worst, or a Trap exception at best.
 
-A "host" function differs from a function in that it is a function provided by the machine. They can be considered "system" functions or "nonnative" functions. As an example, printing to the console has to be implemented as a host function, since WASM does not have a console. Host functions needed by a module are specified in its imports, although the module name for such an import isn't a WASM module, but rather a kind of namespace that the machine knows about.
+A "host" function differs from a function in that it is a function provided by the machine. They can be considered "system" functions or "external" functions. As an example, printing to the console has to be implemented as a host function, since WASM does not have a console. Host functions needed by a module are specified in its imports, although the module name for such an import isn't a WASM module, but rather a kind of namespace that the machine knows about.
 
 A frame consists of a reference to the function that is executing, any function local values, a program counter (an index to the instruction within the function's list of instructions), a stack of values, and a reference to the caller's frame (returned to after the function is done).
 
 ## The stack
 
 As mentioned above, each function has its own stack of values. Dergwasm implements the stack as a stack of 128-bit values, which is enough to store any numeric value (any of I32, I64, F32, F64, V128) in WASM, and any non-numeric value (a reference). Since WASM modules are supposed to be validated, and validation includes checking that all operations on the  stack are performed on the correct types, it means that we don't have to store type information. As mentioned above, Dergwasm assumes modules are valid.
+
+## How WASM calls work
+
+WASM arguments to functions are placed on the stack of the currently executing function. When a call instruction executes, a new frame is created, and the function's arguments are pulled from the caller's stack and placed in the new frame's locals. Once the call completes, the return values are popped off the call's stack and pushed onto the caller's stack.
+
+This is true even for host functions. The frame is actually the interface between the host and the WASM machine.
+
+## How host function calls work
+
+Since the only values WASM understands are the basic numeric values, and it's inconvenient to translate other values to basic numeric values by hand, Dergwasm provides a `ModuleReflector` which goes through the functions in a host module and creates proxies which marshal and unmarshal parameters and return values for the host function. See [Modules](../Modules/README.md) for more explanation.
