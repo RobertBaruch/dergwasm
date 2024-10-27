@@ -92,8 +92,7 @@ namespace DergwasmTests.testing
             PropertyInfo propertyInfo = obj.GetType().GetProperty("ReferenceID");
             var setterMethod = propertyInfo.GetSetMethod(true);
             if (setterMethod == null)
-                setterMethod = propertyInfo
-                    .DeclaringType
+                setterMethod = propertyInfo.DeclaringType
                     .GetProperty("ReferenceID")
                     .GetSetMethod(true);
             RefID refID = worldServices.GetNextRefID();

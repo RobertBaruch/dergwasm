@@ -40,5 +40,21 @@ namespace DergwasmTests.testing
                 return false; // skip original method
             }
         }
+
+        // The setter on SyncType.Value uses World, which we can't instantiate.
+        // So instead we just set the value without any of the checks.
+        [HarmonyPatch(typeof(SyncType), "set_Value")]
+        class SyncTypeSetValuePatch
+        {
+            static bool Prefix(SyncType __instance, Type value)
+            {
+                FieldInfo fieldInfo = typeof(SyncType).GetField(
+                    "_value",
+                    BindingFlags.Instance | BindingFlags.NonPublic
+                );
+                fieldInfo.SetValue(__instance, value);
+                return false; // skip original method
+            }
+        }
     }
 }
