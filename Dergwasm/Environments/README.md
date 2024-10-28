@@ -2,9 +2,13 @@
 
 An environment is a set of host functions bundled together in a module that WASM knows about. Environment classes are annotated with `Mod`, giving the WASM name for the module, and each function to be available to WASM is annotated with `ModFn`, giving the WASM name for the function.
 
+For how host functions marshal and unmarshal their parameters and return values between C# and WASM, see [Modules](../Modules/README.md).
+
 ## FilesystemEnv
 
-This class provides a filesystem for WASM, with module name `env`. The WASM functions are defined by Emscripten.
+Module name: `env`
+
+This class provides a filesystem for WASM. The WASM functions are defined by Emscripten.
 
 Dergwasm implements a filesystem starting at a given Resonite slot which represents the root of the filesystem ("/"). Children of this slot are either files or directories. Both are slots, but files additionally have a `ValueField<string>` component attached to them, which contains the contents of the file.
 
@@ -38,9 +42,11 @@ The header file for all syscalls is in `system/lib/libc/musl/arch/emscripten/sys
 
 ## EmscriptenEnv
 
-This class contains host functions required by Emscripten and MicroPython, with module name `env`, and also utility functions for converting between C# types and WASM data.
+Module name: `env`
 
-The following WASM functions are implemented in this class:
+This class contains host functions required by Emscripten and MicroPython, and also utility functions for converting between C# types and WASM data.
+
+The following WASM functions are implemented in this environment:
 
 * `_emscripten_throw_longjmp`
 * `emscripten_memcpy_js`
@@ -76,3 +82,57 @@ int __syscall_chdir(intptr_t path);
 ```
 
 The pointer is a pointer into the WASM heap (i.e. memory 0), and is simply a UTF-8 encoded NUL-terminated string. Thus, Dergwasm's implementation gets the data from the heap and converts it into a C# string via `GetUTF8StringFromMem`.
+
+## EmscriptenWasi
+
+Module name: `wasi_snapshot_preview1`
+
+This environment implements functions in [WASI snapshot preview 1](https://github.com/WebAssembly/WASI/blob/main/legacy/preview1/witx/wasi_snapshot_preview1.witx), as used by Emscripten.
+
+The following WASM functions are implemented in this environment:
+
+* `proc_exit`
+* `environ_get`
+* `environ_sizes_get`
+* `fd_write`
+* `fd_seek`
+* `fd_read`
+* `fd_close`
+* `fd_sync`
+
+## ResoniteEnv
+
+Module name: `resonite`
+
+This environment implements functions for accessing Resonite data structures. The function names are of the form `<class>__<function>`. Languages that compile to WASM need to have some library that knows about these functions, and these are in the API directory.
+
+The following WASM functions are implemented for Slots:
+
+* `slot__root_slot`
+* `slot__get_parent`
+* `slot__get_active_user`
+* `slot__get_active_user_root`
+* `slot__get_object_root`
+* `slot__get_name`
+* `slot__set_name`
+* `slot__get_num_children`
+* `slot__get_child`
+* `slot__get_children`
+* `slot__find_child_by_name`
+* `slot__find_child_by_tag`
+* `slot__get_component`
+* `slot__get_components`
+
+The following WASM functions are implemented for Components:
+
+* `component__get_type_name`
+* `component__get_member`
+
+The following WASM functions are implemented for Values:
+
+* `value__get_int`
+* `value__get_float`
+* `value__get_double`
+* `value__set_int`
+* `value__set_float`
+* `value__set_double`

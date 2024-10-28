@@ -1,4 +1,4 @@
-# Code for the Dergwasm Mod for Resonite.
+# Code for the Dergwasm Mod for Resonite
 
 ## Directories
 
