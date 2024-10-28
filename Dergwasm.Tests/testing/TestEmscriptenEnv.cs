@@ -1,5 +1,5 @@
-﻿using Derg;
-using Derg.Runtime;
+﻿using Dergwasm.Runtime;
+using Dergwasm.Environments;
 
 namespace DergwasmTests.testing
 {

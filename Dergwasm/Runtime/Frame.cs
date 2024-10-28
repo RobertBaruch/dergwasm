@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Derg.Instructions;
-using Derg.Resonite;
-using Derg.Wasm;
-using Dergwasm.Runtime;
-using FrooxEngine;
+using Dergwasm.Instructions;
 
-namespace Derg.Runtime
+namespace Dergwasm.Runtime
 {
     // Represents the state of the machine, in the context of executing a function.
     //

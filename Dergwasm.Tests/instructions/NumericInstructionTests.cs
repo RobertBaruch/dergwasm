@@ -1,7 +1,7 @@
 ﻿using System;
-using Derg;
-using Derg.Instructions;
-using Derg.Runtime;
+using Dergwasm;
+using Dergwasm.Instructions;
+using Dergwasm.Runtime;
 using Xunit;
 
 namespace DergwasmTests.instructions

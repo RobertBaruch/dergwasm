@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Derg.Instructions;
+using Dergwasm.Instructions;
 using Dergwasm.Runtime;
 
-namespace Derg.Runtime
+namespace Dergwasm.Runtime
 {
     // The file representation of a module.
     public class Module

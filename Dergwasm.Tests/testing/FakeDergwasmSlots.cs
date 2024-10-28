@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Derg;
+using Dergwasm;
 using FrooxEngine;
 
 namespace DergwasmTests.testing

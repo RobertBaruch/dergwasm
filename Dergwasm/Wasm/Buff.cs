@@ -1,11 +1,10 @@
-using Derg.Modules;
-using Derg.Runtime;
+using Dergwasm.Modules;
 using Dergwasm.Runtime;
 using Elements.Core;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace Derg.Wasm
+namespace Dergwasm.Wasm
 {
     public struct BuffMarshaller : IWasmMarshaller<Buff>
     {

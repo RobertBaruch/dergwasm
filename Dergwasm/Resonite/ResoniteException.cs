@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Derg.Resonite
+namespace Dergwasm.Resonite
 {
     public class ResoniteException : Exception
     {

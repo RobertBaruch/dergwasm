@@ -1,4 +1,4 @@
-﻿using Derg;
+﻿using Dergwasm;
 using DergwasmTests.testing;
 using Elements.Core;
 using FrooxEngine;

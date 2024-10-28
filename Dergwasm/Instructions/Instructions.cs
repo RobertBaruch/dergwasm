@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Derg.Runtime;
+using Dergwasm.Runtime;
 
-namespace Derg.Instructions
+namespace Dergwasm.Instructions
 {
     public enum InstructionType : int
     {

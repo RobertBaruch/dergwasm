@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.InteropServices;
 
-namespace Derg.Wasm
+namespace Dergwasm.Wasm
 {
     // Represents a pointer to bytes to be interpreted as a NUL-terminated UTF8-encoded
     // string.

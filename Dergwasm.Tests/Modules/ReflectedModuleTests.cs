@@ -1,12 +1,12 @@
 using System.Linq;
-using Derg.Wasm;
-using Derg.Runtime;
+using Dergwasm.Wasm;
+using Dergwasm.Runtime;
 using DergwasmTests.testing;
 using FrooxEngine;
 using Xunit;
 using Dergwasm.Runtime;
 
-namespace Derg.Modules
+namespace Dergwasm.Modules
 {
     [Mod("test")]
     public class TestModule : ReflectedModule

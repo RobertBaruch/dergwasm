@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Derg
+namespace Dergwasm
 {
     public static class TypeExtensions
     {

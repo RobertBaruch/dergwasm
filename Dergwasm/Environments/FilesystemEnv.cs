@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using Derg.Modules;
-using Derg.Runtime;
+using Dergwasm.Modules;
 using Dergwasm.Runtime;
 using FrooxEngine;
 
-namespace Derg
+namespace Dergwasm.Environments
 {
     // Provides the filesystem environment for the WASM VM. These functions are defined by
     // Emscripten.
@@ -42,8 +41,8 @@ namespace Derg
         )
         {
             this.machine = machine;
-            this.fsRoot = fsRootSlot;
-            this.env = emscriptenEnv;
+            fsRoot = fsRootSlot;
+            env = emscriptenEnv;
             this.wasi = wasi;
         }
 

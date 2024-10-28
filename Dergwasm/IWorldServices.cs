@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Derg.Wasm;
+using Dergwasm.Wasm;
 using Elements.Core;
 using FrooxEngine;
 using SkyFrost.Base;
 
-namespace Derg
+namespace Dergwasm
 {
     // Interface for calls involving World, for testability.
     public abstract class IWorldServices

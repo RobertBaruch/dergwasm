@@ -1,6 +1,6 @@
 ﻿using System.Text;
-using Derg;
-using Derg.Wasm;
+using Dergwasm.Wasm;
+using Dergwasm.Environments;
 using DergwasmTests.testing;
 using Xunit;
 

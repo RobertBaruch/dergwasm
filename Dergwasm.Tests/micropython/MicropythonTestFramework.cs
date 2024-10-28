@@ -1,5 +1,5 @@
 ﻿using System;
-using Derg;
+using Dergwasm;
 using DergwasmTests.testing;
 using FrooxEngine;
 
@@ -14,10 +14,7 @@ namespace DergwasmTests.micropython
         {
             ResonitePatches.Apply();
 
-            worldServices.AddAssetFile(
-                new Uri("file:///firmware.wasm"),
-                "firmware.wasm"
-            );
+            worldServices.AddAssetFile(new Uri("file:///firmware.wasm"), "firmware.wasm");
 
             DergwasmMachine.InitStage0(worldServices, dergwasmSlots);
         }

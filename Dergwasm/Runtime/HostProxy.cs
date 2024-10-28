@@ -1,6 +1,4 @@
-﻿using Dergwasm.Runtime;
-
-namespace Derg.Runtime
+﻿namespace Dergwasm.Runtime
 {
     public delegate void HostProxy(Machine machine, Frame frame);
 }

@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using Derg.Wasm;
+using Dergwasm.Wasm;
+using Dergwasm.Environments;
 
-namespace Derg.Resonite
+namespace Dergwasm.Resonite
 {
     // Error codes for API return values.
     public enum ResoniteError : int

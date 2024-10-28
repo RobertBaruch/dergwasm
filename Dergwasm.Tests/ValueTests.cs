@@ -1,5 +1,5 @@
-using Derg.Wasm;
-using Derg.Runtime;
+using Dergwasm.Wasm;
+using Dergwasm.Runtime;
 using Elements.Core;
 using FrooxEngine;
 using Xunit;

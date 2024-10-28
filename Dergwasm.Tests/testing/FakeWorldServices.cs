@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Derg;
-using Derg.Wasm;
+using Dergwasm;
+using Dergwasm.Wasm;
 using Elements.Core;
 using FrooxEngine;
 using SkyFrost.Base;

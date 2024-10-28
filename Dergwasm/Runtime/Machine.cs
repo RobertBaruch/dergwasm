@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using Derg.Modules;
-using Derg.Wasm;
-using Derg.Runtime;
-using Elements.Core;
+using Dergwasm.Modules;
+using Dergwasm.Wasm;
 using FrooxEngine;
-using Derg;
+using Dergwasm.Environments;
 
 namespace Dergwasm.Runtime
 {

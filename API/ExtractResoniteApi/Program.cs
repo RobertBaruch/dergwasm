@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text.Json;
-using Derg;
+using Dergwasm.Environments;
 
 namespace DergwasmExtractResoniteApi
 {

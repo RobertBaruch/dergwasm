@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using Derg.Instructions;
+using Dergwasm.Instructions;
 
-namespace Derg.Runtime
+namespace Dergwasm.Runtime
 {
     // Minimum and optional maximum limits for resizable storage.
     public struct Limits

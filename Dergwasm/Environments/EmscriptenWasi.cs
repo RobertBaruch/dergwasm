@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Derg.Modules;
-using Derg.Wasm;
-using Derg.Runtime;
-using FrooxEngine;
+using Dergwasm.Modules;
+using Dergwasm.Wasm;
 using Dergwasm.Runtime;
+using FrooxEngine;
 
-namespace Derg
+namespace Dergwasm.Environments
 {
     public class Stream
     {

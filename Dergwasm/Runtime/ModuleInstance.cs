@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Derg.Instructions;
-using Dergwasm.Runtime;
+using Dergwasm.Instructions;
 
-namespace Derg.Runtime
+namespace Dergwasm.Runtime
 {
     // The runtime representation of a module.
     public class ModuleInstance

@@ -2,7 +2,7 @@
 using System.Reflection;
 using FrooxEngine;
 
-namespace Derg
+namespace Dergwasm
 {
     // Utilities for working primarily with the sync fields and properties of a
     // Component, but they'll work with any object. Uses reflection.

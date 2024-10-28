@@ -3,17 +3,16 @@ using System.Collections.Generic;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
-using Derg;
-using Derg.Modules;
-using Derg.Wasm;
-using Derg.Instructions;
-using Derg.Runtime;
+using Dergwasm;
+using Dergwasm.Modules;
+using Dergwasm.Wasm;
+using Dergwasm.Instructions;
+using Dergwasm.Runtime;
 using DergwasmTests.instructions;
 using DergwasmTests.testing;
 using FrooxEngine;
-using static Derg.ResoniteEnv;
-using Dergwasm.Runtime;
-using System.Reflection;
+using static Dergwasm.Environments.ResoniteEnv;
+using Dergwasm.Environments;
 
 namespace DergwasmTests
 {
@@ -37,10 +36,10 @@ namespace DergwasmTests
         {
             frame = CreateFrame();
             ModuleFunc func = new ModuleFunc("test", "$-1", frame.GetFuncTypeForIndex(0));
-            func.Locals = new Derg.Runtime.ValueType[]
+            func.Locals = new Dergwasm.Runtime.ValueType[]
             {
-                Derg.Runtime.ValueType.I32,
-                Derg.Runtime.ValueType.I32
+                Dergwasm.Runtime.ValueType.I32,
+                Dergwasm.Runtime.ValueType.I32
             };
             List<UnflattenedInstruction> instructions = new List<UnflattenedInstruction>
             {
@@ -105,7 +104,7 @@ namespace DergwasmTests
         {
             frame = CreateFrame();
             ModuleFunc func = new ModuleFunc("test", "$-1", frame.GetFuncTypeForIndex(0));
-            func.Locals = new Derg.Runtime.ValueType[] { };
+            func.Locals = new Dergwasm.Runtime.ValueType[] { };
 
             List<UnflattenedInstruction> instructions = new List<UnflattenedInstruction>();
             for (int i = 0; i < N; i++)

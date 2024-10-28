@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Elements.Core; // For UniLog
 using FrooxEngine;
 
-namespace Derg
+namespace Dergwasm
 {
     public class DergwasmSlots : IDergwasmSlots
     {

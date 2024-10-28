@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Derg.Wasm
+namespace Dergwasm.Wasm
 {
     /// <summary>
     /// A utility type to use in blit marshalling where C# < 7.3 does not allow unmanaged generic types as bitable types.

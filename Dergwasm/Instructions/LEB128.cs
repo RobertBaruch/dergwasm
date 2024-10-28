@@ -4,7 +4,7 @@
 using System;
 using System.IO;
 
-namespace Derg.Instructions
+namespace Dergwasm.Instructions
 {
     /// <summary>
     /// Single-file utility to read and write integers in the LEB128 (7-bit little endian base-128) format.

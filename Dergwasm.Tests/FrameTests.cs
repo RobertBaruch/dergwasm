@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Derg.Wasm;
-using Derg.Runtime;
+using Dergwasm.Wasm;
+using Dergwasm.Runtime;
 using FrooxEngine;
 using Xunit;
 using System.Reflection;

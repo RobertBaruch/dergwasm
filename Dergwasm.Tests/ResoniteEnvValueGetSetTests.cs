@@ -1,10 +1,11 @@
-﻿using Derg;
-using Derg.Resonite;
-using Derg.Wasm;
-using Derg.Runtime;
+﻿using Dergwasm;
+using Dergwasm.Resonite;
+using Dergwasm.Wasm;
+using Dergwasm.Runtime;
 using DergwasmTests.testing;
 using FrooxEngine;
 using Xunit;
+using Dergwasm.Environments;
 
 namespace DergwasmTests
 {

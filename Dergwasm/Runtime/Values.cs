@@ -4,14 +4,14 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using Derg;
-using Derg.Resonite;
-using Derg.Wasm;
-using Derg.Instructions;
+using Dergwasm.Resonite;
+using Dergwasm.Wasm;
+using Dergwasm.Instructions;
 using Elements.Core;
 using FrooxEngine;
+using Dergwasm.Environments;
 
-namespace Derg.Runtime
+namespace Dergwasm.Runtime
 {
     // Encodings for value types.
     public enum ValueType : byte

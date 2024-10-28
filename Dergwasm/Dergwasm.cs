@@ -2,17 +2,17 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using Derg.Wasm;
-using Derg.Instructions;
-using Derg.Runtime;
+using Dergwasm.Wasm;
+using Dergwasm.Instructions;
+using Dergwasm.Runtime;
 using Elements.Core; // For UniLog
 using FrooxEngine;
 using FrooxEngine.ProtoFlux;
 using HarmonyLib;
 using ResoniteModLoader;
-using Dergwasm.Runtime;
+using Dergwasm.Environments;
 
-namespace Derg
+namespace Dergwasm
 {
     public class Dergwasm : ResoniteMod
     {

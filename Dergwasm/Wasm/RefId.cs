@@ -1,12 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Derg.Runtime;
 using Dergwasm.Runtime;
 using Elements.Core;
 using FrooxEngine;
 
-namespace Derg.Wasm
+namespace Dergwasm.Wasm
 {
     /// <summary>
     /// A utility type to use in blit marshalling where C# < 7.3 does not allow

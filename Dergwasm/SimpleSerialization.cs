@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Derg.Runtime;
 using Dergwasm.Runtime;
+using Dergwasm.Environments;
 using Elements.Core;
 using FrooxEngine;
 
-namespace Derg
+namespace Dergwasm
 {
     public static class SimpleSerialization
     {

@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Text;
-using Derg.Modules;
-using Derg.Wasm;
-using Derg.Runtime;
+using Dergwasm.Modules;
+using Dergwasm.Wasm;
 using Dergwasm.Runtime;
 
-namespace Derg
+namespace Dergwasm.Environments
 {
     // Exception thrown when longjmp is called in a C program. The WASM code and the EmscriptenEnv
     // work together to implement setjmp/longjmp functionality.
@@ -370,13 +369,13 @@ namespace Derg
         public int malloc(Frame frame, int amt) =>
             machine.CallExportedFunc<int, int>("malloc", frame, amt);
 
-        public void free(Frame frame, int ptr) => machine.CallExportedFunc<int>("free", frame, ptr);
+        public void free(Frame frame, int ptr) => machine.CallExportedFunc("free", frame, ptr);
 
         public void setThrew(Frame frame, int a, int b) =>
-            machine.CallExportedFunc<int, int>("setThrew", frame, a, b);
+            machine.CallExportedFunc("setThrew", frame, a, b);
 
         public void setTempRet0(Frame frame, int a) =>
-            machine.CallExportedFunc<int>("setTempRet0", frame, a);
+            machine.CallExportedFunc("setTempRet0", frame, a);
 
         public void emscripten_stack_init(Frame frame) =>
             machine.CallExportedFunc("emscripten_stack_init", frame);
@@ -396,7 +395,7 @@ namespace Derg
         public int stackSave(Frame frame) => machine.CallExportedFunc<int>("stackSave", frame);
 
         public void stackRestore(Frame frame, int ptr) =>
-            machine.CallExportedFunc<int>("stackRestore", frame, ptr);
+            machine.CallExportedFunc("stackRestore", frame, ptr);
 
         public int stackAlloc(Frame frame, int size) =>
             machine.CallExportedFunc<int, int>("stackAlloc", frame, size);
@@ -415,7 +414,7 @@ namespace Derg
             machine.CallExportedFunc<int, int>("mp_js_process_char", frame, a);
 
         public void mp_js_init(Frame frame, int a) =>
-            machine.CallExportedFunc<int>("mp_js_init", frame, a);
+            machine.CallExportedFunc("mp_js_init", frame, a);
 
         public void mp_js_init_repl(Frame frame) =>
             machine.CallExportedFunc("mp_js_init_repl", frame);
@@ -740,10 +739,10 @@ namespace Derg
         {
             byte[] data = new byte[len];
             Array.Copy(machine.Heap, ptr, data, 0, len);
-            Console.WriteLine($"  MicroPython wrote: {System.Text.Encoding.UTF8.GetString(data)}");
+            Console.WriteLine($"  MicroPython wrote: {Encoding.UTF8.GetString(data)}");
             if (outputWriter != null)
             {
-                outputWriter(System.Text.Encoding.UTF8.GetString(data));
+                outputWriter(Encoding.UTF8.GetString(data));
             }
         }
     }

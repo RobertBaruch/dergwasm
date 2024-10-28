@@ -1,5 +1,4 @@
-﻿using Derg.Runtime;
-using Dergwasm.Runtime;
+﻿using Dergwasm.Runtime;
 using Elements.Core;
 using System;
 using System.Collections.Concurrent;
@@ -8,9 +7,11 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Derg.Modules
+namespace Dergwasm.Modules
 {
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.ReturnValue | AttributeTargets.Struct)]
+    [AttributeUsage(
+        AttributeTargets.Field | AttributeTargets.ReturnValue | AttributeTargets.Struct
+    )]
     public class MarshalWithAttribute : Attribute
     {
         public Type Marshaller { get; }
@@ -40,9 +41,10 @@ namespace Derg.Modules
 
         public static Type MarshallerFor(ParameterInfo info)
         {
-            var marshaller = info.GetCustomAttribute<MarshalWithAttribute>()?.Marshaller ??
-                info.ParameterType.GetCustomAttribute<MarshalWithAttribute>()?.Marshaller ??
-                typeof(DirectMarshaller<>).MakeGenericType(info.ParameterType);
+            var marshaller =
+                info.GetCustomAttribute<MarshalWithAttribute>()?.Marshaller
+                ?? info.ParameterType.GetCustomAttribute<MarshalWithAttribute>()?.Marshaller
+                ?? typeof(DirectMarshaller<>).MakeGenericType(info.ParameterType);
             if (marshaller.IsByRef)
             {
                 throw new InvalidOperationException("Marshallers must be structs.");
@@ -212,16 +214,18 @@ namespace Derg.Modules
                 // Call the appropriate pop method for the type.
                 Type marshaller = MarshallerFor(param);
                 MethodInfo popper = marshaller.GetMethod(nameof(IWasmMarshaller<int>.From));
-                Expression popperCaller = Expression.Assign(poppedValue, Expression.Call(
-                    Expression.Default(marshaller),
-                    popper,
-                    frame,
-                    machine));
+                Expression popperCaller = Expression.Assign(
+                    poppedValue,
+                    Expression.Call(Expression.Default(marshaller), popper, frame, machine)
+                );
                 body.Add(popperCaller);
 
-                marshaller.GetMethod(nameof(IWasmMarshaller<int>.AddParams))
-                    .Invoke(marshaller.GetDefault(),
-                    new object[] { param.Name, funcData.Parameters });
+                marshaller
+                    .GetMethod(nameof(IWasmMarshaller<int>.AddParams))
+                    .Invoke(
+                        marshaller.GetDefault(),
+                        new object[] { param.Name, funcData.Parameters }
+                    );
             }
 
             // The poppers need to be reversed. The first value pushed is the first call arg,
@@ -244,13 +248,14 @@ namespace Derg.Modules
                     pusher,
                     frame,
                     machine,
-                    result);
+                    result
+                );
 
                 result = pusherCaller;
 
-                marshaller.GetMethod(nameof(IWasmMarshaller<int>.AddParams))
-                    .Invoke(marshaller.GetDefault(),
-                    new object[] { null, funcData.Returns });
+                marshaller
+                    .GetMethod(nameof(IWasmMarshaller<int>.AddParams))
+                    .Invoke(marshaller.GetDefault(), new object[] { null, funcData.Returns });
 
                 // TODO: Add the ability to process value tuple based return values.
             }

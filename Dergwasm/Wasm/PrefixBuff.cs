@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using Dergwasm.Runtime;
 
-namespace Derg.Wasm
+namespace Dergwasm.Wasm
 {
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct PrefixBuff

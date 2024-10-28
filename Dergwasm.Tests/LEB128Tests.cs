@@ -1,5 +1,5 @@
 ﻿using System.IO;
-using Derg.Instructions;
+using Dergwasm.Instructions;
 using Xunit;
 
 namespace DergwasmTests

@@ -1,6 +1,6 @@
-﻿using Derg.Modules;
-using Derg.Instructions;
-using Derg.Runtime;
+﻿using Dergwasm.Modules;
+using Dergwasm.Instructions;
+using Dergwasm.Runtime;
 using Xunit;
 
 namespace DergwasmTests.instructions

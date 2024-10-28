@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using Derg.Modules;
-using Derg.Resonite;
-using Derg.Wasm;
-using Derg.Runtime;
+using Dergwasm.Modules;
+using Dergwasm.Resonite;
+using Dergwasm.Wasm;
+using Dergwasm.Runtime;
 using Elements.Core;
 using FrooxEngine;
-using Dergwasm.Runtime;
 using System.Linq;
 
-namespace Derg
+namespace Dergwasm.Environments
 {
     // Provides the functions in resonite_api.h. A ResoniteEnv, like a Machine, is specific
     // to a World.

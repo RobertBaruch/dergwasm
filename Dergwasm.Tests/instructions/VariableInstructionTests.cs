@@ -1,5 +1,5 @@
-﻿using Derg.Runtime;
-using Derg.Instructions;
+﻿using Dergwasm.Runtime;
+using Dergwasm.Instructions;
 using DergwasmTests.testing;
 using Xunit;
 

@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using FrooxEngine;
 
-namespace Derg
+namespace Dergwasm
 {
     public interface IDergwasmSlots
     {

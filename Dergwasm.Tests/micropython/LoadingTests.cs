@@ -1,4 +1,4 @@
-﻿using Derg;
+﻿using Dergwasm;
 using Xunit;
 
 namespace DergwasmTests.micropython

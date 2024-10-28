@@ -1,5 +1,5 @@
-﻿using Derg.Instructions;
-using Derg.Runtime;
+﻿using Dergwasm.Instructions;
+using Dergwasm.Runtime;
 using Xunit;
 
 namespace DergwasmTests.instructions

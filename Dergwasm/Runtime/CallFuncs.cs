@@ -1,6 +1,6 @@
 ﻿using Dergwasm.Runtime;
 
-namespace Derg.Runtime
+namespace Dergwasm.Runtime
 {
     // Extensions to Machine which make it easier to call WASM functions.
     //

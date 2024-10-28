@@ -1,6 +1,6 @@
-using Derg.Runtime;
+using Dergwasm.Runtime;
 
-namespace Derg.Wasm
+namespace Dergwasm.Wasm
 {
     public interface IWasmAllocator
     {
