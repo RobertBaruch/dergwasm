@@ -229,6 +229,8 @@ namespace Dergwasm.Runtime
             for (int i = 0; i < num_types; i++)
             {
                 module.FuncTypes[i] = FuncType.Read(stream);
+                if (Module.Debug)
+                    Console.WriteLine($"  Type[{i}]: {module.FuncTypes[i]}");
             }
         }
 

@@ -184,11 +184,16 @@ namespace DergwasmLoadModule
 
         public static void Main(string[] args)
         {
+            if (args.Length < 1)
+            {
+                Console.WriteLine("Usage: LoadModule <filename>");
+                return;
+            }
             Module.Debug = true;
             Console.WriteLine($"Reading WASM file '{args[0]}'");
             Program program = new Program(args[0]);
-            // program.RunMain();
-            program.RunMicropython();
+            program.RunMain();
+            // program.RunMicropython();
         }
     }
 }
