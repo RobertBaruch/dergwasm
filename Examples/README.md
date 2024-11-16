@@ -101,7 +101,7 @@ Running _start
 Hello, World!
 ```
 
-Finally, we call the module's `_start` function. At some point the code calls the environment to print out `Hello, World!` (with a newline) and then exist.
+Finally, we call the module's `_start` function. At some point the code calls the environment to print out `Hello, World!` (with a newline) and then exits.
 
 ## hello_world.c (optimized)
 

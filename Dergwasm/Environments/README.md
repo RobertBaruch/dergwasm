@@ -40,6 +40,8 @@ Much of the implementation of these system calls is ported from the C code at [E
 
 The header file for all syscalls is in `system/lib/libc/musl/arch/emscripten/syscall_arch.h`.
 
+Currently the system calls are heavily integrated into Resonite's Slot hierarchy. System calls cannot access the user's files. Opening a "file" is equivalent to reading a string value from a Resonite Slot. Writing is not supported. Directories are relative to a given "filesystem" Slot.
+
 ## EmscriptenEnv
 
 Module name: `env`
@@ -87,7 +89,7 @@ The pointer is a pointer into the WASM heap (i.e. memory 0), and is simply a UTF
 
 Module name: `wasi_snapshot_preview1`
 
-This environment implements functions in [WASI snapshot preview 1](https://github.com/WebAssembly/WASI/blob/main/legacy/preview1/witx/wasi_snapshot_preview1.witx), as used by Emscripten.
+This environment implements functions in [WASI snapshot preview 1](https://github.com/WebAssembly/WASI/blob/main/legacy/preview1/witx/wasi_snapshot_preview1.witx), as used by Emscripten. It is also takes an `EmscriptenEnv` to use it for various services.
 
 The following WASM functions are implemented in this environment:
 
@@ -99,6 +101,12 @@ The following WASM functions are implemented in this environment:
 * `fd_read`
 * `fd_close`
 * `fd_sync`
+
+If the file descriptor written to by `fd_write` is 1, then the environment will treat this as a write to stdout. It will check the `EmscriptenEnv`'s `outputWriter` public member. If `null`, then the output is written to the console. Otherwise the `outputWriter` is called with the string to output.
+
+Writing to stderr (file descriptor 2) is not supported.
+
+Reading from stdin (file descriptor 0) is not supported.
 
 ## ResoniteEnv
 
