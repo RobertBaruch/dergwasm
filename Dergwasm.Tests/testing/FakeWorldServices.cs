@@ -39,32 +39,32 @@ namespace DergwasmTests.testing
         }
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-        public override async ValueTask<string> GatherAssetFile(
+        public async ValueTask<string> GatherAssetFile(
             Uri assetURL,
             float priority,
             DB_Endpoint? overrideEndpoint = null
         ) => assetFiles[assetURL];
 #pragma warning restore CS1998
 
-        public override string GetName() => "TestWorld";
+        public string GetName() => "TestWorld";
 
-        public override IWorldElement GetObjectOrNull(RefID refID) =>
+        public IWorldElement GetObjectOrNull(RefID refID) =>
             objects.TryGetValue(refID, out IWorldElement obj) ? obj : null;
 
-        public override T GetObjectOrNull<T>(WasmRefID<T> wasmRefID) =>
-            GetObjectOrNull((RefID)wasmRefID) as T;
+        public T GetObjectOrNull<T>(WasmRefID<T> wasmRefID)
+            where T : class, IWorldElement => GetObjectOrNull((RefID)wasmRefID) as T;
 
-        public override Slot GetRootSlot() => root;
+        public Slot GetRootSlot() => root;
 
-        public override Task<T> StartTask<T>(Func<Task<T>> task, IUpdatable updatable = null)
+        public Task<T> StartTask<T>(Func<Task<T>> task, IUpdatable updatable = null)
         {
             Task<T> runningTask = Task.Run(task);
             runningTask.Wait();
             return runningTask;
         }
 
-        public override void ToBackground() { }
+        public void ToBackground() { }
 
-        public override void ToWorld() { }
+        public void ToWorld() { }
     }
 }

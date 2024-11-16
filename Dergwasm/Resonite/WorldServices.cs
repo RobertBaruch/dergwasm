@@ -16,33 +16,28 @@ namespace Dergwasm.Resonite
             this.world = world;
         }
 
-        public override string GetName() => world.Name;
+        public string GetName() => world.Name;
 
-        public override IWorldElement GetObjectOrNull(RefID refID) =>
+        public IWorldElement GetObjectOrNull(RefID refID) =>
             world.ReferenceController.GetObjectOrNull(refID);
 
-        public override T GetObjectOrNull<T>(WasmRefID<T> wasmRefID) =>
+        public T GetObjectOrNull<T>(WasmRefID<T> wasmRefID)
+            where T : class, IWorldElement =>
             world.ReferenceController.GetObjectOrNull(wasmRefID) as T;
 
-        public override Slot GetRootSlot() => world.RootSlot;
+        public Slot GetRootSlot() => world.RootSlot;
 
-        public override async ValueTask<string> GatherAssetFile(
+        public async ValueTask<string> GatherAssetFile(
             Uri assetURL,
             float priority,
             DB_Endpoint? overrideEndpoint = null
         ) => await world.Engine.AssetManager.GatherAssetFile(assetURL, priority, overrideEndpoint);
 
-        public override Task<T> StartTask<T>(Func<Task<T>> task, IUpdatable updatable = null) =>
+        public Task<T> StartTask<T>(Func<Task<T>> task, IUpdatable updatable = null) =>
             world.Coroutines.StartTask<T>(task, updatable);
 
-        public override async void ToBackground()
-        {
-            await new ToBackground();
-        }
+        public async void ToBackground() => await new ToBackground();
 
-        public override async void ToWorld()
-        {
-            await new ToWorld();
-        }
+        public async void ToWorld() => await new ToWorld();
     }
 }
