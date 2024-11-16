@@ -11,6 +11,7 @@ using FrooxEngine.ProtoFlux;
 using HarmonyLib;
 using ResoniteModLoader;
 using Dergwasm.Environments;
+using Dergwasm.Resonite;
 
 namespace Dergwasm
 {

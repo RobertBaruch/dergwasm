@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Dergwasm
+namespace Dergwasm.Resonite
 {
     public class BinaryAssetLoader
     {

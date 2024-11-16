@@ -5,7 +5,7 @@ using Elements.Core;
 using FrooxEngine;
 using SkyFrost.Base;
 
-namespace Dergwasm
+namespace Dergwasm.Resonite
 {
     // Interface for calls involving World, for testability.
     public abstract class IWorldServices

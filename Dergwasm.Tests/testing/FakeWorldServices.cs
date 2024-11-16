@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Dergwasm;
+using Dergwasm.Resonite;
 using Dergwasm.Wasm;
 using Elements.Core;
 using FrooxEngine;

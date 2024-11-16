@@ -4,7 +4,6 @@ using Dergwasm.Runtime;
 using DergwasmTests.testing;
 using FrooxEngine;
 using Xunit;
-using Dergwasm.Runtime;
 
 namespace Dergwasm.Modules
 {

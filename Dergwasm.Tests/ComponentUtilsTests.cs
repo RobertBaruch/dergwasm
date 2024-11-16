@@ -1,4 +1,4 @@
-﻿using Dergwasm;
+﻿using Dergwasm.Resonite;
 using DergwasmTests.testing;
 using Elements.Core;
 using FrooxEngine;

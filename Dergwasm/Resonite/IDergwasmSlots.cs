@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using FrooxEngine;
 
-namespace Dergwasm
+namespace Dergwasm.Resonite
 {
     public interface IDergwasmSlots
     {
