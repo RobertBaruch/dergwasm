@@ -46,12 +46,12 @@ namespace Dergwasm.Resonite
         public static void CheckValidRef<T>(
             this WasmRefID<T> refID,
             string argname,
-            IWorldServices worldServices,
+            IWorld world,
             out T instance
         )
             where T : class, FrooxEngine.IWorldElement
         {
-            instance = worldServices.GetObjectOrNull(refID);
+            instance = world.GetObjectOrNull(refID);
             if (instance == null)
             {
                 throw new ResoniteException(

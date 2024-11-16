@@ -15,18 +15,16 @@ namespace Dergwasm.Resonite
 
         public bool Ready => DergwasmRoot != null && WasmBinarySlot != null;
 
-        public DergwasmSlots(IWorldServices worldServices)
+        public DergwasmSlots(IWorld world)
         {
             WasmBinarySlot = null;
             ConsoleSlot = null;
             FilesystemSlot = null;
-            DergwasmRoot = worldServices
-                .GetRootSlot()
-                .FindChild(s => s.Tag == "_dergwasm", maxDepth: 0);
+            DergwasmRoot = world.GetRootSlot().FindChild(s => s.Tag == "_dergwasm", maxDepth: 0);
             if (DergwasmRoot == null)
             {
                 UniLog.Log(
-                    $"[Dergwasm] Couldn't find dergwasm slot with tag _dergwasm in world {worldServices.GetName()}"
+                    $"[Dergwasm] Couldn't find dergwasm slot with tag _dergwasm in world {world.GetName()}"
                 );
                 return;
             }
@@ -43,12 +41,12 @@ namespace Dergwasm.Resonite
         }
 
         // Code adapted from BinaryExportable.Export.
-        public async Task<string> GatherWasmBinary(IWorldServices worldServices)
+        public async Task<string> GatherWasmBinary(IWorld world)
         {
             if (!Ready)
             {
                 UniLog.Log(
-                    $"[Dergwasm] World {worldServices.GetName()} slots are not set up to gather WASM binary"
+                    $"[Dergwasm] World {world.GetName()} slots are not set up to gather WASM binary"
                 );
                 return null;
             }
@@ -57,7 +55,7 @@ namespace Dergwasm.Resonite
             if (binary == null)
             {
                 UniLog.Log(
-                    $"[Dergwasm] Couldn't access WASM StaticBinary component in world {worldServices.GetName()}"
+                    $"[Dergwasm] Couldn't access WASM StaticBinary component in world {world.GetName()}"
                 );
                 return null;
             }
@@ -67,10 +65,10 @@ namespace Dergwasm.Resonite
                 metadata.IsProcessing.Value = true;
             Uri url = binary.URL.Value;
 
-            worldServices.ToBackground();
-            string filename = await worldServices.GatherAssetFile(url, 100f);
+            world.ToBackground();
+            string filename = await world.GatherAssetFile(url, 100f);
             UniLog.Log($"[Dergwasm] Gathered binary asset file {filename}");
-            worldServices.ToWorld();
+            world.ToWorld();
 
             if (metadata != null)
                 metadata.IsProcessing.Value = false;

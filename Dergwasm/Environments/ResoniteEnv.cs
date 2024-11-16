@@ -19,24 +19,20 @@ namespace Dergwasm.Environments
     public class ResoniteEnv : ReflectedModule
     {
         public Machine machine;
-        public IWorldServices worldServices;
+        public IWorld world;
         public EmscriptenEnv emscriptenEnv;
 
-        public ResoniteEnv(
-            Machine machine,
-            IWorldServices worldServices,
-            EmscriptenEnv emscriptenEnv
-        )
+        public ResoniteEnv(Machine machine, IWorld world, EmscriptenEnv emscriptenEnv)
         {
             this.machine = machine;
-            this.worldServices = worldServices;
+            this.world = world;
             this.emscriptenEnv = emscriptenEnv;
         }
 
         public T FromRefID<T>(RefID slot_id)
             where T : class, IWorldElement
         {
-            return worldServices.GetObjectOrNull(slot_id) as T;
+            return world.GetObjectOrNull(slot_id) as T;
         }
 
         List<Value> ExtractArgs(Slot argsSlot, List<Ptr> allocations)
@@ -160,7 +156,7 @@ namespace Dergwasm.Environments
             try
             {
                 outSlot.CheckNullArg("outSlot");
-                machine.HeapSet(outSlot, new WasmRefID<Slot>(worldServices.GetRootSlot()));
+                machine.HeapSet(outSlot, new WasmRefID<Slot>(world.GetRootSlot()));
             }
             catch (Exception e)
             {
@@ -179,7 +175,7 @@ namespace Dergwasm.Environments
             try
             {
                 outParent.CheckNullArg("outParent");
-                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
+                slot.CheckValidRef("slot", world, out Slot slotInstance);
 
                 machine.HeapSet(outParent, new WasmRefID<Slot>(slotInstance.Parent));
             }
@@ -200,7 +196,7 @@ namespace Dergwasm.Environments
             try
             {
                 outUser.CheckNullArg("outUser");
-                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
+                slot.CheckValidRef("slot", world, out Slot slotInstance);
 
                 machine.HeapSet(outUser, new WasmRefID<User>(slotInstance.ActiveUser));
             }
@@ -221,7 +217,7 @@ namespace Dergwasm.Environments
             try
             {
                 outUserRoot.CheckNullArg("outUserRoot");
-                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
+                slot.CheckValidRef("slot", world, out Slot slotInstance);
 
                 machine.HeapSet(outUserRoot, new WasmRefID<UserRoot>(slotInstance.ActiveUserRoot));
             }
@@ -243,7 +239,7 @@ namespace Dergwasm.Environments
             try
             {
                 outObjectRoot.CheckNullArg("outObjectRoot");
-                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
+                slot.CheckValidRef("slot", world, out Slot slotInstance);
 
                 machine.HeapSet(
                     outObjectRoot,
@@ -267,7 +263,7 @@ namespace Dergwasm.Environments
             try
             {
                 outName.CheckNullArg("outName");
-                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
+                slot.CheckValidRef("slot", world, out Slot slotInstance);
 
                 machine.HeapSet(emscriptenEnv, frame, outName, slotInstance.Name);
             }
@@ -287,7 +283,7 @@ namespace Dergwasm.Environments
         {
             try
             {
-                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
+                slot.CheckValidRef("slot", world, out Slot slotInstance);
                 // The name can be null, and that's ok.
                 slotInstance.Name = emscriptenEnv.GetUTF8StringFromMem(name);
             }
@@ -308,7 +304,7 @@ namespace Dergwasm.Environments
             try
             {
                 outNumChildren.CheckNullArg("outNumChildren");
-                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
+                slot.CheckValidRef("slot", world, out Slot slotInstance);
 
                 machine.HeapSet(outNumChildren, slotInstance.ChildrenCount);
             }
@@ -330,7 +326,7 @@ namespace Dergwasm.Environments
             try
             {
                 outChild.CheckNullArg("outChild");
-                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
+                slot.CheckValidRef("slot", world, out Slot slotInstance);
 
                 machine.HeapSet(outChild, new WasmRefID<Slot>(slotInstance[index]));
             }
@@ -353,7 +349,7 @@ namespace Dergwasm.Environments
             try
             {
                 outChildren.CheckNullArg("outChildren");
-                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
+                slot.CheckValidRef("slot", world, out Slot slotInstance);
 
                 Buff<WasmRefID<Slot>> list = Buff<WasmRefID<Slot>>.Make(
                     machine,
@@ -386,7 +382,7 @@ namespace Dergwasm.Environments
             {
                 name.CheckNullArg("name", emscriptenEnv, out string searchName);
                 outChild.CheckNullArg("outChild");
-                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
+                slot.CheckValidRef("slot", world, out Slot slotInstance);
 
                 machine.HeapSet(
                     outChild,
@@ -417,7 +413,7 @@ namespace Dergwasm.Environments
             {
                 tag.CheckNullArg("tag", emscriptenEnv, out string tagName);
                 outChild.CheckNullArg("outChild");
-                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
+                slot.CheckValidRef("slot", world, out Slot slotInstance);
 
                 machine.HeapSet(
                     outChild,
@@ -442,7 +438,7 @@ namespace Dergwasm.Environments
             try
             {
                 outComponent.CheckNullArg("outComponent");
-                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
+                slot.CheckValidRef("slot", world, out Slot slotInstance);
                 typeName.CheckNullArg("typeName", emscriptenEnv, out string typeNameStr);
                 Type type = Type.GetType(typeNameStr);
                 if (type == null)
@@ -476,7 +472,7 @@ namespace Dergwasm.Environments
             try
             {
                 outComponents.CheckNullArg("outComponents");
-                slot.CheckValidRef("slot", worldServices, out Slot slotInstance);
+                slot.CheckValidRef("slot", world, out Slot slotInstance);
 
                 Buff<WasmRefID<Component>> list = Buff<WasmRefID<Component>>.Make(
                     machine,
@@ -502,11 +498,7 @@ namespace Dergwasm.Environments
             try
             {
                 outTypeName.CheckNullArg("outTypeName");
-                component.CheckValidRef(
-                    "component",
-                    worldServices,
-                    out Component componentInstance
-                );
+                component.CheckValidRef("component", world, out Component componentInstance);
                 machine.HeapSet(
                     emscriptenEnv,
                     frame,
@@ -552,11 +544,7 @@ namespace Dergwasm.Environments
                 name.CheckNullArg("name", emscriptenEnv, out string fieldName);
                 outType.CheckNullArg("outType");
                 outMember.CheckNullArg("outMember");
-                component.CheckValidRef(
-                    "component",
-                    worldServices,
-                    out Component componentInstance
-                );
+                component.CheckValidRef("component", world, out Component componentInstance);
 
                 var member = componentInstance.GetSyncMember(fieldName);
                 if (member == null)
@@ -587,7 +575,7 @@ namespace Dergwasm.Environments
             try
             {
                 outPtr.CheckNullArg("outPtr");
-                refId.CheckValidRef("refId", worldServices, out IValue<T> field);
+                refId.CheckValidRef("refId", world, out IValue<T> field);
 
                 machine.HeapSet(outPtr, field.Value);
             }
@@ -606,7 +594,7 @@ namespace Dergwasm.Environments
         {
             try
             {
-                refId.CheckValidRef("refId", worldServices, out IValue<T> field);
+                refId.CheckValidRef("refId", world, out IValue<T> field);
 
                 field.Value = value;
             }

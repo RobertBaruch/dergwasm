@@ -13,6 +13,6 @@ namespace Dergwasm.Resonite
 
         bool Ready { get; }
 
-        Task<string> GatherWasmBinary(IWorldServices worldServices);
+        Task<string> GatherWasmBinary(IWorld world);
     }
 }

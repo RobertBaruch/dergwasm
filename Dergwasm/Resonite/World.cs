@@ -7,11 +7,11 @@ using SkyFrost.Base;
 
 namespace Dergwasm.Resonite
 {
-    public class WorldServices : IWorldServices
+    public class World : IWorld
     {
-        World world;
+        FrooxEngine.World world;
 
-        public WorldServices(World world)
+        public World(FrooxEngine.World world)
         {
             this.world = world;
         }

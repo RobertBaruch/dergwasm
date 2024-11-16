@@ -4,19 +4,19 @@ namespace Dergwasm.Resonite
 {
     public class BinaryAssetLoader
     {
-        public IWorldServices worldServices;
+        public IWorld world;
         public IDergwasmSlots dergwasmSlots;
 
-        public BinaryAssetLoader(IWorldServices worldServices, IDergwasmSlots dergwasmSlots)
+        public BinaryAssetLoader(IWorld world, IDergwasmSlots dergwasmSlots)
         {
-            this.worldServices = worldServices;
+            this.world = world;
             this.dergwasmSlots = dergwasmSlots;
         }
 
         public async Task<string> Load()
         {
-            string filename = await dergwasmSlots.GatherWasmBinary(worldServices);
-            DergwasmMachine.Init(worldServices, filename);
+            string filename = await dergwasmSlots.GatherWasmBinary(world);
+            DergwasmMachine.Init(world, filename);
             return filename;
         }
     }

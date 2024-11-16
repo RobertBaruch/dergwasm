@@ -8,15 +8,15 @@ namespace DergwasmTests
 {
     public class ComponentUtilsTests
     {
-        FakeWorldServices worldServices;
+        FakeWorld world;
         TestComponent testComponent;
 
         public ComponentUtilsTests()
         {
             ResonitePatches.Apply();
 
-            worldServices = new FakeWorldServices();
-            testComponent = new TestComponent(worldServices);
+            world = new FakeWorld();
+            testComponent = new TestComponent(world);
             testComponent.Initialize();
         }
 

@@ -17,9 +17,9 @@ namespace DergwasmTests.testing
 
         public bool Ready => true;
 
-        public async Task<string> GatherWasmBinary(IWorldServices worldServices)
+        public async Task<string> GatherWasmBinary(IWorld world)
         {
-            return await worldServices.GatherAssetFile(new Uri("file:///firmware.wasm"), 100f);
+            return await world.GatherAssetFile(new Uri("file:///firmware.wasm"), 100f);
         }
     }
 }

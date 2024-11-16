@@ -7,16 +7,16 @@ namespace DergwasmTests.micropython
 {
     public class MicropythonTestFramework
     {
-        public FakeWorldServices worldServices = new FakeWorldServices();
+        public FakeWorld world = new FakeWorld();
         public FakeDergwasmSlots dergwasmSlots = new FakeDergwasmSlots();
 
         public MicropythonTestFramework()
         {
             ResonitePatches.Apply();
 
-            worldServices.AddAssetFile(new Uri("file:///firmware.wasm"), "firmware.wasm");
+            world.AddAssetFile(new Uri("file:///firmware.wasm"), "firmware.wasm");
 
-            DergwasmMachine.InitStage0(worldServices, dergwasmSlots);
+            DergwasmMachine.InitStage0(world, dergwasmSlots);
         }
     }
 }

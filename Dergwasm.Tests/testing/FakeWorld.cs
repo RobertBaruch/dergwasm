@@ -9,14 +9,14 @@ using SkyFrost.Base;
 
 namespace DergwasmTests.testing
 {
-    public class FakeWorldServices : IWorldServices
+    public class FakeWorld : IWorld
     {
         Dictionary<RefID, IWorldElement> objects = new Dictionary<RefID, IWorldElement>();
         Dictionary<Uri, string> assetFiles = new Dictionary<Uri, string>();
         Slot root;
         ulong nextRefID = 1;
 
-        public FakeWorldServices()
+        public FakeWorld()
         {
             root = null;
         }

@@ -11,7 +11,7 @@ namespace DergwasmTests
 {
     public class ResoniteEnvValueGetSetTests : TestMachine
     {
-        FakeWorldServices worldServices;
+        FakeWorld world;
         ResoniteEnv env;
         TestEmscriptenEnv emscriptenEnv;
         Frame frame;
@@ -20,13 +20,13 @@ namespace DergwasmTests
         public ResoniteEnvValueGetSetTests()
         {
             ResonitePatches.Apply();
-            worldServices = new FakeWorldServices();
+            world = new FakeWorld();
             emscriptenEnv = new TestEmscriptenEnv();
-            env = new ResoniteEnv(this, worldServices, emscriptenEnv);
+            env = new ResoniteEnv(this, world, emscriptenEnv);
             SimpleSerialization.Initialize(env);
             frame = emscriptenEnv.EmptyFrame(null);
 
-            testComponent = new TestComponent(worldServices);
+            testComponent = new TestComponent(world);
             testComponent.Initialize();
         }
 

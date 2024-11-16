@@ -14,17 +14,14 @@ namespace DergwasmTests.micropython
         )]
         public void RunSlotDumper()
         {
-            FakeWorldServices worldServices = new FakeWorldServices();
+            FakeWorld world = new FakeWorld();
             FakeDergwasmSlots dergwasmSlots = new FakeDergwasmSlots();
 
             ResonitePatches.Apply();
 
-            worldServices.AddAssetFile(
-                new Uri("file:///firmware.wasm"),
-                "../../../../../firmware.wasm"
-            );
+            world.AddAssetFile(new Uri("file:///firmware.wasm"), "../../../../../firmware.wasm");
 
-            DergwasmMachine.InitStage0(worldServices, dergwasmSlots);
+            DergwasmMachine.InitStage0(world, dergwasmSlots);
 
             string text = "";
 

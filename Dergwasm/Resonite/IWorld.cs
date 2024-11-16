@@ -8,7 +8,7 @@ using SkyFrost.Base;
 namespace Dergwasm.Resonite
 {
     // Interface for calls involving World, for testability.
-    public interface IWorldServices
+    public interface IWorld
     {
         // Gets the world name.
         string GetName();

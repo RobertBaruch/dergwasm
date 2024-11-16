@@ -597,7 +597,7 @@ namespace DergwasmTests
     [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
     public class GetIntFieldBenchmark : TestMachine
     {
-        FakeWorldServices worldServices;
+        FakeWorld world;
         ResoniteEnv env;
         TestEmscriptenEnv emscriptenEnv;
         TestComponent testComponent;
@@ -609,13 +609,13 @@ namespace DergwasmTests
         public GetIntFieldBenchmark()
         {
             ResonitePatches.Apply();
-            worldServices = new FakeWorldServices();
+            world = new FakeWorld();
             emscriptenEnv = new TestEmscriptenEnv();
-            env = new ResoniteEnv(this, worldServices, emscriptenEnv);
+            env = new ResoniteEnv(this, world, emscriptenEnv);
             SimpleSerialization.Initialize(env);
             frame = emscriptenEnv.EmptyFrame();
 
-            testComponent = new TestComponent(worldServices);
+            testComponent = new TestComponent(world);
             testComponent.Initialize();
             testComponent.IntField.Value = 1;
         }

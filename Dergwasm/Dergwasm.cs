@@ -31,16 +31,16 @@ namespace Dergwasm
             Msg("Dergwasm patches applied");
         }
 
-        [HarmonyPatch(typeof(World), nameof(World.Load))]
+        [HarmonyPatch(typeof(FrooxEngine.World), nameof(FrooxEngine.World.Load))]
         class StartRunningPatch
         {
-            static void Postfix(World __instance)
+            static void Postfix(FrooxEngine.World __instance)
             {
                 Msg("Postfix called on World.Load");
                 Msg($"... WorldName {__instance.Configuration.WorldName.Value}");
                 Msg($"... SessionID {__instance.Configuration.SessionID.Value}");
-                WorldServices worldServices = new WorldServices(__instance);
-                DergwasmMachine.InitStage0(worldServices, new DergwasmSlots(worldServices));
+                Resonite.World world = new Resonite.World(__instance);
+                DergwasmMachine.InitStage0(world, new DergwasmSlots(world));
             }
         }
 
@@ -76,8 +76,8 @@ namespace Dergwasm
                         DergwasmMachine.resoniteEnv.CallWasmFunction(hierarchy);
                     else if (tag == "_dergwasm_init")
                     {
-                        WorldServices worldServices = new WorldServices(context.World);
-                        DergwasmMachine.InitStage0(worldServices, new DergwasmSlots(worldServices));
+                        Resonite.World world = new Resonite.World(context.World);
+                        DergwasmMachine.InitStage0(world, new DergwasmSlots(world));
                     }
                 }
                 catch (Exception e)
@@ -90,7 +90,7 @@ namespace Dergwasm
 
     public static class DergwasmMachine
     {
-        public static IWorldServices worldServices = null;
+        public static IWorld world = null;
         public static IDergwasmSlots dergwasmSlots = null;
         public static Machine machine = null;
         public static ModuleInstance moduleInstance = null;
@@ -133,9 +133,9 @@ namespace Dergwasm
                 Msg($"{(mem.Length / 8) * 8:X4}: {collect}");
         }
 
-        public static void InitStage0(IWorldServices worldServices, IDergwasmSlots dergwasmSlots)
+        public static void InitStage0(IWorld world, IDergwasmSlots dergwasmSlots)
         {
-            DergwasmMachine.worldServices = worldServices;
+            DergwasmMachine.world = world;
             DergwasmMachine.dergwasmSlots = dergwasmSlots;
             machine = null;
             moduleInstance = null;
@@ -147,21 +147,21 @@ namespace Dergwasm
 
             if (!dergwasmSlots.Ready)
             {
-                Msg($"[Dergwasm] Slots in world {worldServices.GetName()} are not set up");
+                Msg($"[Dergwasm] Slots in world {world.GetName()} are not set up");
                 return;
             }
 
-            BinaryAssetLoader loader = new BinaryAssetLoader(worldServices, dergwasmSlots);
+            BinaryAssetLoader loader = new BinaryAssetLoader(world, dergwasmSlots);
 
-            Task<string> task = worldServices.StartTask(loader.Load);
+            Task<string> task = world.StartTask(loader.Load);
             if (task == null)
             {
-                Msg($"Couldn't start task in world {worldServices.GetName()}");
+                Msg($"Couldn't start task in world {world.GetName()}");
                 return;
             }
         }
 
-        public static void Init(IWorldServices worldServices, string filename)
+        public static void Init(IWorld world, string filename)
         {
             try
             {
@@ -182,7 +182,7 @@ namespace Dergwasm
                 emscriptenWasi = new EmscriptenWasi(machine, emscriptenEnv);
                 machine.RegisterModule(emscriptenWasi);
 
-                resoniteEnv = new ResoniteEnv(machine, worldServices, emscriptenEnv);
+                resoniteEnv = new ResoniteEnv(machine, world, emscriptenEnv);
                 machine.RegisterModule(resoniteEnv);
 
                 filesystemEnv = new FilesystemEnv(

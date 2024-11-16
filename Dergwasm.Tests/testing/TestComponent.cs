@@ -8,7 +8,7 @@ namespace DergwasmTests.testing
 {
     public class TestComponent : Component
     {
-        FakeWorldServices worldServices;
+        FakeWorld world;
         public Sync<int> IntField;
         public Sync<float> FloatField;
         public Sync<double> DoubleField;
@@ -16,9 +16,9 @@ namespace DergwasmTests.testing
         public SyncRef<IField<int>> IntFieldRefField;
         public SyncType TypeField;
 
-        public TestComponent(FakeWorldServices worldServices)
+        public TestComponent(FakeWorld world)
         {
-            this.worldServices = worldServices;
+            this.world = world;
         }
 
         public override ISyncMember GetSyncMember(int index)
@@ -95,9 +95,9 @@ namespace DergwasmTests.testing
                 setterMethod = propertyInfo.DeclaringType
                     .GetProperty("ReferenceID")
                     .GetSetMethod(true);
-            RefID refID = worldServices.GetNextRefID();
+            RefID refID = world.GetNextRefID();
             setterMethod.Invoke(obj, new object[] { refID });
-            worldServices.AddRefID(obj, refID);
+            world.AddRefID(obj, refID);
         }
 
         void SetInfo()
