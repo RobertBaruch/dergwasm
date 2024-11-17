@@ -340,7 +340,7 @@ namespace Dergwasm.Environments
         // Gets a list of child ref IDs for the given slot. The caller is responsible for
         // freeing the data at outChildListData.
         [ModFn("slot__get_children")]
-        public ResoniteError slot__get_components(
+        public ResoniteError slot__get_children(
             Frame frame,
             WasmRefID<Slot> slot,
             Output<Buff<WasmRefID<Slot>>> outChildren
